@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .Title }} | {{ .Site.Title }}</title>
-    {{ if fileExists "static/assets/dist/styles.js" }}
-        <link rel="stylesheet" href="/assets/dist/styles.css">
-    {{ end }}
+    <link rel="stylesheet" href="/assets/dist/styles.css">
     <!-- Load pre-built Tailwind CSS if using standard Vite build -->
     <script type="module" crossorigin src="/assets/dist/app.js"></script>
-    <link rel="stylesheet" href="/assets/dist/app.css">
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans antialiased">
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
