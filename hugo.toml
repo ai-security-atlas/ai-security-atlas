@@ -1,0 +1,11 @@
+baseURL = "https://example.org/"
+locale = "en-us"
+title = "AI Security Atlas"
+
+[markup]
+  [markup.goldmark.renderer]
+    unsafe = true
+
+[params]
+  author = "Security Researcher"
+  description = "A repository-backed, static, evidence-linked AI security knowledge website"

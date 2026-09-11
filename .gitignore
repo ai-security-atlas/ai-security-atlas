@@ -1,0 +1,10 @@
+node_modules/
+dist/
+public/
+static/assets/dist/
+.venv
+content/nodes/
+content/sources/
+content/views/
+content/graph/
+static/data/

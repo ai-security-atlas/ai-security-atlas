@@ -1,0 +1,16 @@
+{{ define "main" }}
+<div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+    <h1 class="text-3xl font-extrabold tracking-tight text-gray-900 mb-8">{{ .Title }}</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {{ range .Pages }}
+        <a href="{{ .RelPermalink }}" class="block group">
+            <div class="p-6 rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200 h-full">
+                <h2 class="text-xl font-bold text-gray-900 group-hover:text-blue-600 mb-2">{{ .Title }}</h2>
+                <div class="text-sm text-gray-500 mb-4">{{ .Params.node_type | default "Entry" }}</div>
+                <p class="text-gray-600 line-clamp-3">{{ .Params.summary }}</p>
+            </div>
+        </a>
+        {{ end }}
+    </div>
+</div>
+{{ end }}
