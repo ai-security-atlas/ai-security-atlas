@@ -3,6 +3,59 @@ import ForceGraph2D from 'react-force-graph-2d';
 import { Search, ShieldAlert, Cpu, Network, Shield, ChevronRight, ChevronDown, X, Maximize2, BookOpen, ExternalLink, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const IndexTreeNode = ({ node, parentId, getChildren, expandedIndexNodes, toggleIndexNode, handleNodeClick, selectedNode, getIconForType, depth = 0 }) => {
+  const children = getChildren(node.id, parentId);
+  const isExpanded = expandedIndexNodes.has(node.id);
+  const isSelected = selectedNode?.id === node.id;
+  
+  return (
+    <div className="mb-0.5">
+      <div 
+        className={`flex items-center gap-2 py-1.5 cursor-pointer transition-colors ${
+          isSelected ? 'bg-[color-mix(in_srgb,currentColor_5%,transparent)] text-[var(--theme-ink)] font-medium' : 'text-[var(--theme-muted)] hover:text-[var(--theme-ink)] hover:bg-[color-mix(in_srgb,currentColor_3%,transparent)]'
+        }`}
+        style={{ paddingLeft: `${depth * 1.25 + 0.75}rem`, paddingRight: '0.75rem' }}
+        onClick={() => handleNodeClick(node)}
+      >
+        <button 
+          onClick={(e) => toggleIndexNode(e, node.id)}
+          className={`p-0.5 rounded text-[var(--theme-muted)] hover:text-[var(--theme-ink)] ${children.length === 0 ? 'invisible' : ''}`}
+        >
+          {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        </button>
+        <div className="shrink-0">{getIconForType(node.type, "w-3.5 h-3.5")}</div>
+        <span className="text-sm truncate select-none">{node.name}</span>
+      </div>
+      
+      <AnimatePresence>
+        {isExpanded && children.length > 0 && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            {children.map(child => (
+              <IndexTreeNode 
+                key={child.id}
+                node={child}
+                parentId={node.id}
+                getChildren={getChildren}
+                expandedIndexNodes={expandedIndexNodes}
+                toggleIndexNode={toggleIndexNode}
+                handleNodeClick={handleNodeClick}
+                selectedNode={selectedNode}
+                getIconForType={getIconForType}
+                depth={depth + 1}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export function GraphApp() {
   const [data, setData] = useState({ nodes: [], links: [], allEdges: [] });
   const [visibleNodeIds, setVisibleNodeIds] = useState(new Set());
@@ -104,21 +157,16 @@ export function GraphApp() {
     return { nodes: visibleNodes, links: visibleLinks };
   }, [data, visibleNodeIds]);
 
-  // Build hierarchical index
-  const indexTree = useMemo(() => {
-    const goals = data.nodes.filter(n => n.type === 'goal');
-    return goals.map(goal => {
-      // Find children for this goal
-      const childrenIds = data.links
-        .filter(l => {
-          const tId = typeof l.target === 'object' ? l.target.id : l.target;
-          return tId === goal.id;
-        })
-        .map(l => typeof l.source === 'object' ? l.source.id : l.source);
-        
-      const children = data.nodes.filter(n => childrenIds.includes(n.id));
-      return { ...goal, children };
+  // Helper to find children recursively
+  const getChildren = useCallback((nodeId, parentId) => {
+    const adjacentIds = new Set();
+    data.links.forEach(l => {
+      const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+      const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+      if (sourceId === nodeId && targetId !== parentId) adjacentIds.add(targetId);
+      if (targetId === nodeId && sourceId !== parentId) adjacentIds.add(sourceId);
     });
+    return data.nodes.filter(n => adjacentIds.has(n.id));
   }, [data]);
 
   const toggleIndexNode = (e, nodeId) => {
@@ -173,48 +221,18 @@ export function GraphApp() {
               <div className="px-3 pb-2 text-xs font-semibold tracking-widest uppercase text-[var(--theme-muted)]">
                 Index
               </div>
-              {indexTree.map(goal => (
-                <div key={goal.id} className="mb-1">
-                  <div 
-                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${
-                      selectedNode?.id === goal.id ? 'bg-[color-mix(in_srgb,currentColor_5%,transparent)] font-semibold' : 'hover:bg-[color-mix(in_srgb,currentColor_3%,transparent)]'
-                    }`}
-                    onClick={() => handleNodeClick(goal)}
-                  >
-                    <button 
-                      onClick={(e) => toggleIndexNode(e, goal.id)}
-                      className="p-0.5 hover:bg-[color-mix(in_srgb,currentColor_10%,transparent)] rounded text-[var(--theme-muted)]"
-                    >
-                      {expandedIndexNodes.has(goal.id) ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    </button>
-                    {getIconForType(goal.type)}
-                    <span className="text-sm truncate">{goal.name}</span>
-                  </div>
-                  
-                  <AnimatePresence>
-                    {expandedIndexNodes.has(goal.id) && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        {goal.children.map(child => (
-                          <div 
-                            key={child.id}
-                            className={`flex items-center gap-2 pl-10 pr-3 py-1.5 cursor-pointer text-sm transition-colors ${
-                              selectedNode?.id === child.id ? 'bg-[color-mix(in_srgb,currentColor_5%,transparent)] text-[var(--theme-ink)] font-medium' : 'text-[var(--theme-muted)] hover:text-[var(--theme-ink)]'
-                            }`}
-                            onClick={() => handleNodeClick(child)}
-                          >
-                            {getIconForType(child.type, "w-3 h-3")}
-                            <span className="truncate">{child.name}</span>
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+              {data.nodes.filter(n => n.type === 'goal').map(goal => (
+                <IndexTreeNode 
+                  key={goal.id}
+                  node={goal}
+                  parentId={null}
+                  getChildren={getChildren}
+                  expandedIndexNodes={expandedIndexNodes}
+                  toggleIndexNode={toggleIndexNode}
+                  handleNodeClick={handleNodeClick}
+                  selectedNode={selectedNode}
+                  getIconForType={getIconForType}
+                />
               ))}
             </div>
           )}
