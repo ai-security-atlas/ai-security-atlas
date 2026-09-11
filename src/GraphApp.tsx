@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { Search, ShieldAlert, Cpu, Network, Shield, ChevronRight, ChevronDown, X, Maximize2, BookOpen, ExternalLink, ArrowRight } from 'lucide-react';
+import { Search, ShieldAlert, Cpu, Network, Shield, ChevronRight, ChevronDown, Maximize2, BookOpen, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const IndexTreeNode = ({ node, parentId, getChildren, expandedIndexNodes, toggleIndexNode, handleNodeClick, selectedNode, getIconForType, depth = 0 }) => {
+const IndexTreeNode = ({ node, parentId, path, getChildren, expandedIndexNodes, toggleIndexNode, handleNodeClick, selectedNode, getIconForType, depth = 0 }) => {
   const children = getChildren(node.id, parentId);
-  const isExpanded = expandedIndexNodes.has(node.id);
+  const currentPath = path ? `${path}/${node.id}` : node.id;
+  const isExpanded = expandedIndexNodes.has(currentPath);
   const isSelected = selectedNode?.id === node.id;
   
   return (
@@ -18,7 +19,7 @@ const IndexTreeNode = ({ node, parentId, getChildren, expandedIndexNodes, toggle
         onClick={() => handleNodeClick(node)}
       >
         <button 
-          onClick={(e) => toggleIndexNode(e, node.id)}
+          onClick={(e) => toggleIndexNode(e, currentPath)}
           className={`p-0.5 rounded text-[var(--theme-muted)] hover:text-[var(--theme-ink)] ${children.length === 0 ? 'invisible' : ''}`}
         >
           {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -37,9 +38,10 @@ const IndexTreeNode = ({ node, parentId, getChildren, expandedIndexNodes, toggle
           >
             {children.map(child => (
               <IndexTreeNode 
-                key={child.id}
+                key={`${currentPath}/${child.id}`}
                 node={child}
                 parentId={node.id}
+                path={currentPath}
                 getChildren={getChildren}
                 expandedIndexNodes={expandedIndexNodes}
                 toggleIndexNode={toggleIndexNode}
@@ -63,6 +65,11 @@ export function GraphApp() {
   const [hoverNode, setHoverNode] = useState(null);
   const [search, setSearch] = useState('');
   const [expandedIndexNodes, setExpandedIndexNodes] = useState(new Set());
+  
+  // Mobile UI and Graph Toggle state
+  const [isMobileIndexOpen, setIsMobileIndexOpen] = useState(true);
+  const [showGraph, setShowGraph] = useState(false);
+  
   const graphRef = useRef();
 
   // Color mapping based on 0perant theme feel
@@ -131,11 +138,15 @@ export function GraphApp() {
       next.add(node.id);
       return next;
     });
-    if (graphRef.current) {
+    
+    // Switch to content view on mobile
+    setIsMobileIndexOpen(false);
+    
+    if (showGraph && graphRef.current) {
       graphRef.current.centerAt(node.x, node.y, 1000);
       graphRef.current.zoom(1.5, 1000);
     }
-  }, [expandNode]);
+  }, [expandNode, showGraph]);
 
   const getIconForType = (type, className = "w-4 h-4") => {
     switch(type) {
@@ -183,9 +194,9 @@ export function GraphApp() {
     <div className="flex h-screen w-full bg-[var(--theme-bg)] text-[var(--theme-ink)] font-sans overflow-hidden">
       
       {/* Left Sidebar - Index */}
-      <div className="w-80 border-r border-[color-mix(in_srgb,currentColor_15%,transparent)] bg-[var(--theme-surface)] flex flex-col z-10 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+      <div className={`${isMobileIndexOpen ? 'flex' : 'hidden'} md:flex w-full md:w-[350px] border-r border-[color-mix(in_srgb,currentColor_15%,transparent)] bg-[var(--theme-surface)] flex-col z-10 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]`}>
         <div className="p-5 border-b border-[color-mix(in_srgb,currentColor_15%,transparent)]">
-          <h2 className="mb-4 flex items-center gap-2" style={{ fontSize: '1.25rem' }}>
+          <h2 className="mb-4 flex items-center gap-2 font-bold" style={{ fontSize: '1.25rem' }}>
             <Shield className="w-5 h-5 text-[var(--theme-action)]" /> AI Security Atlas
           </h2>
           <div className="relative">
@@ -226,6 +237,7 @@ export function GraphApp() {
                   key={goal.id}
                   node={goal}
                   parentId={null}
+                  path={null}
                   getChildren={getChildren}
                   expandedIndexNodes={expandedIndexNodes}
                   toggleIndexNode={toggleIndexNode}
@@ -239,101 +251,118 @@ export function GraphApp() {
         </div>
       </div>
 
-      {/* Main Graph Area */}
-      <div className="flex-1 relative cursor-move">
-        <ForceGraph2D
-          ref={graphRef}
-          graphData={graphData}
-          nodeLabel="name"
-          nodeColor={node => {
-            if (selectedNode && selectedNode.id === node.id) return 'var(--theme-focus)';
-            if (hoverNode && hoverNode.id === node.id) return 'var(--theme-action)';
-            return getColor(node.type);
-          }}
-          nodeRelSize={5}
-          linkColor={() => 'color-mix(in srgb, currentColor 15%, transparent)'}
-          linkWidth={1.5}
-          onNodeClick={handleNodeClick}
-          onNodeHover={setHoverNode}
-          d3VelocityDecay={0.3}
-          backgroundColor="var(--theme-bg)"
-        />
-
-        {/* Action Bar */}
-        <div className="absolute top-5 right-5 flex gap-2">
+      {/* Main Content Area */}
+      <div className={`${!isMobileIndexOpen ? 'flex' : 'hidden'} md:flex flex-1 flex-col relative min-w-0`}>
+        
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-[color-mix(in_srgb,currentColor_15%,transparent)] bg-[var(--theme-surface)] shrink-0 h-[73px]">
+          <div className="flex items-center gap-4">
+            <button 
+              className="md:hidden flex items-center gap-2 text-[var(--theme-muted)] hover:text-[var(--theme-ink)]"
+              onClick={() => setIsMobileIndexOpen(true)}
+            >
+              <ChevronRight className="w-5 h-5 rotate-180" />
+              <span className="text-sm font-medium">Index</span>
+            </button>
+            <div className="hidden md:block text-sm font-medium text-[var(--theme-muted)] truncate max-w-md">
+              {selectedNode ? selectedNode.name : 'Select a topic'}
+            </div>
+          </div>
           <button 
-            onClick={() => {
-              if (graphRef.current) graphRef.current.zoomToFit(400);
-            }}
-            className="p-2 bg-[var(--theme-surface)] border border-[color-mix(in_srgb,currentColor_15%,transparent)] shadow-sm text-[var(--theme-ink)] hover:text-[var(--theme-action)] transition-colors"
-            title="Zoom to Fit"
+            onClick={() => setShowGraph(!showGraph)}
+            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium border transition-colors ${
+              showGraph 
+                ? 'bg-[var(--theme-action)] text-white border-[var(--theme-action)]' 
+                : 'border-[color-mix(in_srgb,currentColor_15%,transparent)] hover:border-[var(--theme-action)]'
+            }`}
           >
-            <Maximize2 className="w-5 h-5" />
+            <Network className="w-4 h-4" />
+            {showGraph ? 'Hide Graph' : 'View Graph'}
           </button>
         </div>
-      </div>
 
-      {/* Right Panel - Reading Pane */}
-      <AnimatePresence>
-        {selectedNode && (
-          <motion.div 
-            initial={{ x: 400, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 400, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="w-96 bg-[var(--theme-surface)] border-l border-[color-mix(in_srgb,currentColor_15%,transparent)] shadow-[-4px_0_24px_rgba(0,0,0,0.05)] flex flex-col z-20 shrink-0 absolute right-0 top-0 bottom-0"
-          >
-            <div className="flex items-center justify-between p-4 border-b border-[color-mix(in_srgb,currentColor_15%,transparent)]">
-              <div className="flex items-center gap-2">
+        {/* Content Body */}
+        <div className="flex-1 overflow-y-auto relative bg-[var(--theme-bg)]">
+          {showGraph ? (
+            <div className="absolute inset-0 cursor-move">
+              <ForceGraph2D
+                ref={graphRef}
+                graphData={graphData}
+                nodeLabel="name"
+                nodeColor={node => {
+                  if (selectedNode && selectedNode.id === node.id) return 'var(--theme-focus)';
+                  if (hoverNode && hoverNode.id === node.id) return 'var(--theme-action)';
+                  return getColor(node.type);
+                }}
+                nodeRelSize={5}
+                linkColor={() => 'color-mix(in srgb, currentColor 15%, transparent)'}
+                linkWidth={1.5}
+                onNodeClick={handleNodeClick}
+                onNodeHover={setHoverNode}
+                d3VelocityDecay={0.3}
+                backgroundColor="var(--theme-bg)"
+              />
+              <div className="absolute top-4 right-4 z-10">
+                <button 
+                  onClick={() => {
+                    if (graphRef.current) graphRef.current.zoomToFit(400);
+                  }}
+                  className="p-2 bg-[var(--theme-surface)] border border-[color-mix(in_srgb,currentColor_15%,transparent)] shadow-sm text-[var(--theme-ink)] hover:text-[var(--theme-action)] transition-colors"
+                  title="Zoom to Fit"
+                >
+                  <Maximize2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ) : selectedNode ? (
+            <div className="p-6 md:p-12 max-w-4xl mx-auto w-full">
+              <div className="flex items-center gap-2 mb-4">
                 {getIconForType(selectedNode.type)}
                 <span className="text-[0.6875rem] font-bold uppercase tracking-[0.1em] text-[var(--theme-muted)]">
                   {selectedNode.type}
                 </span>
               </div>
-              <button 
-                onClick={() => setSelectedNode(null)}
-                className="p-1.5 hover:bg-[color-mix(in_srgb,currentColor_10%,transparent)] text-[var(--theme-muted)] hover:text-[var(--theme-ink)] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1">
-              <h2 className="mb-4">
+              
+              <h1 className="text-3xl md:text-4xl font-bold mb-6 text-[var(--theme-ink)]">
                 {selectedNode.name}
-              </h2>
+              </h1>
               
               {selectedNode.aliases && selectedNode.aliases.length > 0 && (
-                <div className="mb-6 flex flex-wrap gap-1.5">
+                <div className="mb-8 flex flex-wrap gap-2">
                   {selectedNode.aliases.map(a => (
-                    <span key={a} className="px-2 py-1 text-xs bg-[color-mix(in_srgb,currentColor_5%,transparent)] text-[var(--theme-muted)] border border-[color-mix(in_srgb,currentColor_10%,transparent)]">
+                    <span key={a} className="px-3 py-1.5 text-sm bg-[color-mix(in_srgb,currentColor_5%,transparent)] text-[var(--theme-muted)] border border-[color-mix(in_srgb,currentColor_10%,transparent)]">
                       {a}
                     </span>
                   ))}
                 </div>
               )}
 
-              <div className="prose prose-sm max-w-none text-[var(--theme-muted)] leading-relaxed mb-8">
+              <div className="prose prose-lg max-w-none text-[var(--theme-muted)] leading-relaxed mb-12">
                 <p>{selectedNode.summary || 'No detailed summary available in seed data.'}</p>
               </div>
 
               {selectedNode.prerequisites && selectedNode.prerequisites.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-[0.75rem] font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Prerequisites</h3>
-                  <div className="flex flex-col gap-2">
+                <div className="mb-12">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-4">Prerequisites</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {selectedNode.prerequisites.map(reqId => {
                       const reqNode = data.nodes.find(n => n.id === reqId);
                       return reqNode ? (
                         <button 
                           key={reqId}
                           onClick={() => handleNodeClick(reqNode)}
-                          className="flex items-center justify-between p-2.5 border border-[color-mix(in_srgb,currentColor_15%,transparent)] hover:border-[var(--theme-action)] text-left group transition-colors"
+                          className="flex flex-col p-4 border border-[color-mix(in_srgb,currentColor_15%,transparent)] hover:border-[var(--theme-action)] text-left group transition-colors bg-[var(--theme-surface)]"
                         >
-                          <div className="flex items-center gap-2">
-                            {getIconForType(reqNode.type)}
-                            <span className="text-sm font-medium">{reqNode.name}</span>
+                          <div className="flex items-center gap-2 mb-2 w-full">
+                            {getIconForType(reqNode.type, "w-4 h-4 shrink-0")}
+                            <span className="text-[0.65rem] font-bold uppercase tracking-[0.1em] text-[var(--theme-muted)]">
+                              {reqNode.type}
+                            </span>
                           </div>
-                          <ArrowRight className="w-4 h-4 text-[var(--theme-muted)] group-hover:text-[var(--theme-action)]" />
+                          <div className="flex items-center justify-between w-full">
+                            <span className="text-base font-medium text-[var(--theme-ink)] line-clamp-1 pr-2">{reqNode.name}</span>
+                            <ArrowRight className="w-5 h-5 shrink-0 text-[var(--theme-muted)] group-hover:text-[var(--theme-action)]" />
+                          </div>
                         </button>
                       ) : null;
                     })}
@@ -341,19 +370,26 @@ export function GraphApp() {
                 </div>
               )}
 
-              <div className="mt-8 pt-6 border-t border-[color-mix(in_srgb,currentColor_15%,transparent)]">
+              <div className="pt-8 border-t border-[color-mix(in_srgb,currentColor_15%,transparent)]">
                 <a 
                   href={`/nodes/${selectedNode.id}`}
                   target="_blank"
-                  className="inline-flex min-h-[44px] items-center justify-center gap-2 border border-current px-4 py-2 text-[0.875rem] font-[650] leading-none transition-colors w-full bg-[var(--theme-ink)] text-[var(--theme-bg)] hover:bg-[var(--theme-action)] hover:border-[var(--theme-action)]"
+                  rel="noreferrer"
+                  className="inline-flex min-h-[48px] items-center justify-center gap-2 border border-current px-6 py-2.5 text-base font-[650] leading-none transition-colors w-full sm:w-auto bg-[var(--theme-ink)] text-[var(--theme-bg)] hover:bg-[var(--theme-action)] hover:border-[var(--theme-action)]"
                 >
-                  <BookOpen className="w-4 h-4" /> View Full Article
+                  <BookOpen className="w-5 h-5" /> View Full Article
                 </a>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-[var(--theme-muted)] p-8 text-center">
+              <BookOpen className="w-16 h-16 mb-4 opacity-20" />
+              <h2 className="text-xl font-medium mb-2 text-[var(--theme-ink)]">Welcome to the Atlas</h2>
+              <p className="max-w-md">Select a topic from the index on the left to explore its details, or toggle the graph view to see how concepts are connected.</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
