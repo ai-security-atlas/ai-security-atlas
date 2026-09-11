@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { Search, ShieldAlert, Cpu, Network, Shield, ChevronRight, ChevronDown, Maximize2, BookOpen, ArrowRight } from 'lucide-react';
+import { Search, ShieldAlert, Cpu, Network, Shield, ChevronRight, ChevronDown, Maximize2, BookOpen, ArrowRight, AlertTriangle, Database, FileText, Link as LinkIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const IndexTreeNode = ({ node, parentId, path, getChildren, expandedIndexNodes, toggleIndexNode, handleNodeClick, selectedNode, getIconForType, depth = 0 }) => {
@@ -59,7 +59,7 @@ const IndexTreeNode = ({ node, parentId, path, getChildren, expandedIndexNodes, 
 };
 
 export function GraphApp() {
-  const [data, setData] = useState({ nodes: [], links: [], allEdges: [] });
+  const [data, setData] = useState({ nodes: [], links: [], allEdges: [], sources: [], framework_mappings: [], access_profiles: [], views: [] });
   const [visibleNodeIds, setVisibleNodeIds] = useState(new Set());
   const [selectedNode, setSelectedNode] = useState(null);
   const [hoverNode, setHoverNode] = useState(null);
@@ -163,7 +163,15 @@ export function GraphApp() {
           nodes.some(n => n.id === l.target)
         );
 
-        setData({ nodes, links, allEdges });
+        setData({ 
+          nodes, 
+          links, 
+          allEdges, 
+          sources: json.sources || [], 
+          framework_mappings: json.framework_mappings || [], 
+          access_profiles: json.access_profiles || [],
+          views: json.views || []
+        });
         
         // Initial visible nodes: only goals
         const initialVisible = new Set(nodes.filter(n => n.type === 'goal').map(n => n.id));
