@@ -22,6 +22,16 @@ def main():
     os.makedirs("content/views", exist_ok=True)
     os.makedirs("content/graph", exist_ok=True)
 
+    # Pre-process framework mappings per node
+    node_framework_mappings = {}
+    for fm in data.get("framework_mappings", []):
+        for n_id in fm.get("node_ids", []):
+            if n_id not in node_framework_mappings:
+                node_framework_mappings[n_id] = []
+            node_framework_mappings[n_id].append(fm)
+
+    access_profiles_dict = {ap["id"]: ap for ap in data.get("access_profiles", [])}
+
     # 1. Nodes
     for node in data.get("nodes", []):
         nid = node.get("id")
@@ -29,6 +39,13 @@ def main():
         node_type = node.get("type", "node")
         summary = node.get("summary", "")
         
+        node_aps = []
+        for ap_id in node.get("access_profile_ids", []):
+            if ap_id in access_profiles_dict:
+                node_aps.append(access_profiles_dict[ap_id])
+
+        node_fms = node_framework_mappings.get(nid, [])
+
         frontmatter = {
             "title": title,
             "id": nid,
@@ -42,6 +59,12 @@ def main():
             "priority": node.get("priority", ""),
             "content_status": node.get("content_status", ""),
             "evidence_status": node.get("evidence_status", ""),
+            "access_profiles": node_aps,
+            "framework_mappings": node_fms,
+            "observations": node.get("observations", []),
+            "caveat": node.get("caveat", ""),
+            "claims": node.get("claims", []),
+            "scope_ids": node.get("scope_ids", []),
         }
         
         # Optional: Add the rest of the fields to a "params" dict or root
@@ -58,7 +81,7 @@ def main():
             "title": title,
             "id": sid,
             "type": "source",
-            "source_kind": source.get("source_kind", ""),
+            "source_kind": source.get("kind", ""),
             "link": source.get("url", ""),
             "verification_depth": source.get("verification_depth", ""),
             "year": source.get("year", ""),

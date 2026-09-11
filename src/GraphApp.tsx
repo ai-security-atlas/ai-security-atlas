@@ -64,7 +64,63 @@ export function GraphApp() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [hoverNode, setHoverNode] = useState(null);
   const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const [expandedIndexNodes, setExpandedIndexNodes] = useState(new Set());
+
+  useEffect(() => {
+    const initPagefind = async () => {
+      if (typeof window !== 'undefined' && !window.pagefind) {
+        try {
+          window.pagefind = await import(/* @vite-ignore */ '/pagefind/pagefind.js');
+          await window.pagefind.options({ baseUrl: '/' });
+          await window.pagefind.init();
+        } catch (e) {
+          console.error('Failed to load pagefind', e);
+        }
+      }
+    };
+    initPagefind();
+  }, []);
+
+  const handleSearchChange = async (e) => {
+    const query = e.target.value;
+    setSearch(query);
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
+    if (window.pagefind) {
+      const searchData = await window.pagefind.search(query);
+      const results = await Promise.all(searchData.results.map(r => r.data()));
+      setSearchResults(results);
+    } else {
+      setSearchResults(
+        data.nodes
+          .filter(n => n.name.toLowerCase().includes(query.toLowerCase()))
+          .map(n => ({
+            url: `/nodes/${n.id}/`,
+            meta: { title: n.name },
+            excerpt: n.summary || ''
+          }))
+      );
+    }
+  };
+
+  const onResultClick = (result) => {
+    const match = result.url.match(/\/(?:nodes|sources)\/([^/]+)/);
+    if (match) {
+      const id = match[1];
+      const node = data.nodes.find(n => n.id === id) || (data.sources && data.sources.find(s => s.id === id));
+      if (node) {
+        handleNodeClick(node);
+      } else {
+        window.location.href = result.url;
+      }
+    } else {
+      window.location.href = result.url;
+    }
+  };
+
   
   // Mobile UI and Graph Toggle state
   const [isMobileIndexOpen, setIsMobileIndexOpen] = useState(true);
@@ -206,7 +262,7 @@ export function GraphApp() {
               placeholder="Search concepts..."
               className="w-full pl-9 pr-4 py-2 bg-[var(--theme-bg)] border border-[color-mix(in_srgb,currentColor_25%,transparent)] rounded-none focus:outline-none focus:border-[var(--theme-focus)] text-sm transition-colors"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
         </div>
@@ -214,18 +270,24 @@ export function GraphApp() {
         <div className="flex-1 overflow-y-auto p-2">
           {search ? (
             <div className="space-y-1">
-              {data.nodes.filter(n => n.name.toLowerCase().includes(search.toLowerCase())).map(node => (
+              {searchResults.map((result, idx) => (
                 <div 
-                  key={node.id}
-                  className="px-3 py-2 hover:bg-[color-mix(in_srgb,currentColor_5%,transparent)] cursor-pointer flex items-center gap-3 transition-colors"
-                  onClick={() => handleNodeClick(node)}
+                  key={idx}
+                  className="px-3 py-2 hover:bg-[color-mix(in_srgb,currentColor_5%,transparent)] cursor-pointer flex flex-col gap-1 transition-colors border-b border-[color-mix(in_srgb,currentColor_10%,transparent)] last:border-0"
+                  onClick={() => onResultClick(result)}
                 >
-                  {getIconForType(node.type)}
-                  <div>
-                    <div className="font-medium text-sm text-[var(--theme-ink)]">{node.name}</div>
-                  </div>
+                  <div className="text-sm font-medium text-[var(--theme-ink)]">{result.meta?.title || result.url}</div>
+                  <div 
+                    className="text-xs text-[var(--theme-muted)] line-clamp-2 [&>mark]:bg-[var(--theme-focus)] [&>mark]:text-white [&>mark]:px-0.5 [&>mark]:rounded-sm" 
+                    dangerouslySetInnerHTML={{ __html: result.excerpt }} 
+                  />
                 </div>
               ))}
+              {searchResults.length === 0 && (
+                <div className="p-4 text-sm text-[var(--theme-muted)] text-center">
+                  No results found.
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-1 pt-2">
@@ -337,9 +399,145 @@ export function GraphApp() {
                 </div>
               )}
 
-              <div className="prose prose-lg max-w-none text-[var(--theme-muted)] leading-relaxed mb-12">
+              {selectedNode.caveat && (
+                <div className="mb-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 rounded-r">
+                  <div className="flex gap-3">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-yellow-800 dark:text-yellow-500 uppercase tracking-wider mb-1">Caveat</h4>
+                      <p className="text-yellow-700 dark:text-yellow-400 text-sm leading-relaxed">{selectedNode.caveat}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="prose prose-lg max-w-none text-[var(--theme-muted)] leading-relaxed mb-8">
                 <p>{selectedNode.summary || 'No detailed summary available in seed data.'}</p>
               </div>
+              
+              {selectedNode.scope_ids && selectedNode.scope_ids.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Relevant Scopes</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedNode.scope_ids.map(s => {
+                       const scopeNode = data.nodes.find(n => n.id === s);
+                       return (
+                         <span key={s} className="px-3 py-1.5 text-sm bg-[color-mix(in_srgb,currentColor_5%,transparent)] text-[var(--theme-muted)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] flex items-center gap-2 cursor-pointer hover:bg-[color-mix(in_srgb,currentColor_10%,transparent)]" onClick={() => scopeNode && handleNodeClick(scopeNode)}>
+                           <Cpu className="w-3.5 h-3.5" />
+                           {scopeNode ? scopeNode.name : s}
+                         </span>
+                       );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {selectedNode.access_profile_ids && selectedNode.access_profile_ids.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Access Profiles</h3>
+                  <div className="grid gap-3">
+                    {selectedNode.access_profile_ids.map(apId => {
+                      const profile = data.access_profiles.find(ap => ap.id === apId);
+                      if (!profile) return null;
+                      return (
+                        <div key={apId} className="p-4 bg-[color-mix(in_srgb,currentColor_2%,transparent)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] rounded">
+                          <h4 className="font-semibold text-[var(--theme-ink)] text-sm mb-1">{profile.title}</h4>
+                          {profile.caveat && <p className="text-xs text-[var(--theme-muted)] mt-2 italic">{profile.caveat}</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {data.framework_mappings.some(fm => fm.node_ids && fm.node_ids.includes(selectedNode.id)) && (
+                <div className="mb-8">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Framework Mappings</h3>
+                  <div className="grid gap-3">
+                    {data.framework_mappings.filter(fm => fm.node_ids && fm.node_ids.includes(selectedNode.id)).map((fm, idx) => (
+                      <div key={idx} className="p-3 flex items-start gap-3 bg-[color-mix(in_srgb,currentColor_2%,transparent)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] rounded">
+                        <Database className="w-4 h-4 mt-0.5 text-[var(--theme-muted)] shrink-0" />
+                        <div>
+                          <div className="text-sm font-medium text-[var(--theme-ink)]">{fm.framework} {fm.edition && `(${fm.edition})`}</div>
+                          <div className="text-xs text-[var(--theme-muted)] mt-1">{fm.external_id}: {fm.title}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedNode.claims && selectedNode.claims.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Claims</h3>
+                  <div className="space-y-3">
+                    {selectedNode.claims.map(claim => (
+                      <div key={claim.id} className="p-4 bg-[color-mix(in_srgb,currentColor_2%,transparent)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] rounded">
+                        <div className="flex gap-2 items-start mb-2">
+                          <FileText className="w-4 h-4 mt-0.5 shrink-0 text-[var(--theme-action)]" />
+                          <div className="text-sm text-[var(--theme-ink)] font-medium leading-relaxed">{claim.statement}</div>
+                        </div>
+                        {claim.limitations && (
+                          <div className="text-xs text-[var(--theme-muted)] ml-6 mt-2 border-l-2 pl-3 border-[color-mix(in_srgb,currentColor_15%,transparent)]">
+                            <span className="font-semibold">Limitations:</span> {claim.limitations}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedNode.observations && selectedNode.observations.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Observations</h3>
+                  <div className="space-y-3">
+                    {selectedNode.observations.map(obs => (
+                      <div key={obs.id} className="p-4 bg-[color-mix(in_srgb,currentColor_2%,transparent)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] rounded text-sm">
+                        <div className="font-semibold text-[var(--theme-ink)] mb-1">Target: {obs.target_label}</div>
+                        <div className="text-[var(--theme-muted)] mb-2">{obs.claim}</div>
+                        {obs.limitations && (
+                          <div className="text-xs text-[var(--theme-muted)] italic border-l-2 pl-3 border-[color-mix(in_srgb,currentColor_15%,transparent)]">
+                            {obs.limitations}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedNode.references && selectedNode.references.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Sources</h3>
+                  <div className="space-y-2">
+                    {selectedNode.references.map(refId => {
+                      const source = data.sources.find(s => s.id === refId);
+                      return source ? (
+                        <a 
+                          key={refId} 
+                          href={source.url} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="flex items-start gap-3 p-3 bg-[color-mix(in_srgb,currentColor_2%,transparent)] hover:bg-[color-mix(in_srgb,currentColor_5%,transparent)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] rounded transition-colors group"
+                        >
+                          <LinkIcon className="w-4 h-4 mt-0.5 shrink-0 text-[var(--theme-muted)] group-hover:text-[var(--theme-action)]" />
+                          <div>
+                            <div className="text-sm font-medium text-[var(--theme-ink)] group-hover:text-[var(--theme-action)] leading-snug">{source.title}</div>
+                            <div className="flex gap-3 text-xs text-[var(--theme-muted)] mt-1.5">
+                              {source.year && <span>{source.year}</span>}
+                              {source.kind && <span className="capitalize">{source.kind.replace(/_/g, ' ')}</span>}
+                              {source.verification_depth && <span className="text-[var(--theme-action)]">{source.verification_depth.replace(/_/g, ' ')}</span>}
+                            </div>
+                          </div>
+                        </a>
+                      ) : (
+                        <div key={refId} className="text-sm text-[var(--theme-muted)]">{refId}</div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {selectedNode.prerequisites && selectedNode.prerequisites.length > 0 && (
                 <div className="mb-12">

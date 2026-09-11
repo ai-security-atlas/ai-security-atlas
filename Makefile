@@ -8,6 +8,7 @@ help:
 
 build: update
 	hugo --minify
+	npx pagefind --site public
 
 serve: update
 	hugo server -D
