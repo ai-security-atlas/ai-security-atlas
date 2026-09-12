@@ -1,4 +1,4 @@
-baseURL = "https://example.org/"
+baseURL = "https://ai-security-atlas.github.io/"
 languageCode = "en-us"
 title = "AI Security Atlas"
 enableRobotsTXT = true

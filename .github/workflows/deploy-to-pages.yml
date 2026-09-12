@@ -1,0 +1,69 @@
+name: Deploy to GitHub Pages
+
+# Builds the site and pushes the generated public/ into the separate
+# ai-security-atlas/AI-SECURITY-ATLAS.github.io repository, which GitHub Pages
+# serves at https://ai-security-atlas.github.io/.
+#
+# Requires a repository secret DEPLOY_TOKEN: a fine-grained PAT (or classic PAT
+# with `repo`) that has write access to the target Pages repository.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: latest
+          extended: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Build (production)
+        run: make build-prod
+
+      - name: Checkout target Pages repo
+        uses: actions/checkout@v4
+        with:
+          repository: ai-security-atlas/AI-SECURITY-ATLAS.github.io
+          token: ${{ secrets.DEPLOY_TOKEN }}
+          path: target-repo
+
+      - name: Sync build output
+        run: |
+          rsync -a --delete --exclude='.git' --exclude='CNAME' public/ target-repo/
+
+      - name: Commit and push
+        working-directory: target-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to deploy."
+          else
+            git commit -m "Deploy from ${{ github.repository }}@${{ github.sha }}"
+            git push
+          fi

@@ -1,0 +1,4 @@
+# Production overlay — applied by `make build-prod`
+#   hugo --minify --config hugo.toml,config.production.toml
+# Override this baseURL if you move to a custom domain (and add a static/CNAME).
+baseURL = "https://ai-security-atlas.github.io/"
