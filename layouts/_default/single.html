@@ -7,8 +7,16 @@
 {{ else }}
 {{ $tm := index $atlas.typeMeta $n.type }}
 {{ $relOrder := slice "routesToGoal" "reachableVia" "memberOf" "hasMember" "requires" "requiredBy" "mitigatedBy" "canMitigate" "evaluatedBy" "evaluates" "inScopeOf" "hasRelevantTopic" "uses" "usedBy" "variantOf" "hasVariant" "canEnable" "mayBeEnabledBy" "distinctFrom" }}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"TechArticle","headline":{{ $n.title | jsonify }},"description":{{ $n.summary | jsonify }},"articleSection":{{ $tm.label | jsonify }},"url":{{ .Permalink | jsonify }},"isPartOf":{"@type":"WebSite","name":{{ .Site.Title | jsonify }},"url":{{ .Site.BaseURL | jsonify }}},"publisher":{"@type":"Organization","name":{{ .Site.Title | jsonify }}}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Atlas","item":{{ .Site.BaseURL | jsonify }}},{"@type":"ListItem","position":2,"name":"Topics","item":{{ (absURL "nodes/") | jsonify }}},{"@type":"ListItem","position":3,"name":{{ $n.title | jsonify }},"item":{{ .Permalink | jsonify }}}]}
+</script>
 <main class="doc reader" style="--accent: {{ $tm.color }}">
-    <a href="/nodes/" class="backlink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> All topics</a>
+    <nav class="crumbs-doc" aria-label="Breadcrumb">
+        <a href="/">Atlas</a><span class="sep">/</span><a href="/nodes/">Topics</a><span class="sep">/</span><span aria-current="page">{{ $n.title }}</span>
+    </nav>
     <a href="/?node={{ $id }}" class="chip openexp" style="--accent: {{ $tm.color }}"><span>Open in Explorer</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
 
     <div class="reader__eyebrow">
@@ -24,7 +32,10 @@
     {{ with $n.caveat }}<div class="caveat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p>{{ . }}</p></div>{{ end }}
     {{ with $n.summary }}<p class="summary">{{ . }}</p>{{ end }}
 
-    {{ with .Content }}<div class="prose" style="margin:1.6rem 0">{{ . }}</div>{{ end }}
+    {{ if .Content }}
+    <div class="draft-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> AI-generated draft · conceptual overview, not yet reviewed</div>
+    <div class="prose" data-article-body>{{ .Content }}</div>
+    {{ end }}
 
     {{/* ---- Relationships ---- */}}
     {{ range $k := $relOrder }}

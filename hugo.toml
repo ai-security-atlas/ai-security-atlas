@@ -1,11 +1,21 @@
 baseURL = "https://example.org/"
-locale = "en-us"
+languageCode = "en-us"
 title = "AI Security Atlas"
+enableRobotsTXT = true
 
 [markup]
   [markup.goldmark.renderer]
     unsafe = true
 
 [params]
-  author = "Security Researcher"
-  description = "A repository-backed, static, evidence-linked AI security knowledge website"
+  author = "Lenin Alevski"
+  description = "An opinionated, evidence-linked knowledge graph of how AI systems are attacked, defended, and evaluated."
+  ogImage = "og.png"
+  # Set to a measurement ID (e.g. G-XXXXXXX) to enable cookieless analytics.
+  # Left empty by design: the Atlas ships with no tracking (see PRD D10/7.6).
+  googleAnalytics = ""
+  twitter = ""
+
+[sitemap]
+  changefreq = "weekly"
+  priority = 0.6

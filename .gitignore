@@ -12,3 +12,4 @@ data/
 .playwright-mcp/
 test-results/
 *.png
+!static/og.png

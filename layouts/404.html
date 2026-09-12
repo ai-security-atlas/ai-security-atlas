@@ -1,0 +1,17 @@
+{{ define "main" }}
+<main class="doc" style="text-align:center; padding-top:4rem">
+    <div class="eyb eyb--accent" style="--accent: var(--theme-action); justify-content:center; margin-bottom:1rem"><span class="type-dot"></span> ERROR 404</div>
+    <h1 style="font-size:clamp(2.2rem,6vw,3.4rem); letter-spacing:-0.04em; margin-bottom:1rem">This topic isn't on the map.</h1>
+    <p class="summary" style="border:none; padding:0; text-align:center; color:var(--theme-muted); max-width:42ch; margin:0 auto 2rem">
+        The page you were looking for doesn't exist — it may have been renamed or moved. Try the explorer or the topic index.
+    </p>
+    <div style="display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap">
+        <a class="readmore" href="/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/><path d="M12 16V8"/></svg>
+            Open the Explorer
+        </a>
+        <a class="chip" href="/nodes/" style="--accent: var(--theme-action); padding:0.65rem 1.05rem"><span>Browse all topics</span></a>
+        <a class="chip" href="/sources/" style="--accent: var(--theme-action); padding:0.65rem 1.05rem"><span>Sources</span></a>
+    </div>
+</main>
+{{ end }}

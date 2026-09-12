@@ -1,0 +1,10 @@
+{{ define "main" }}
+<main class="doc">
+    <nav class="crumbs-doc" aria-label="Breadcrumb">
+        <a href="/">Atlas</a><span class="sep">/</span><span aria-current="page">{{ .Title }}</span>
+    </nav>
+    <div class="eyb eyb--accent" style="--accent: var(--theme-action); margin-bottom:0.8rem"><span class="type-dot"></span> {{ .Params.eyebrow | default "About" }}</div>
+    <h1 style="font-size:clamp(2rem,4vw,3rem); letter-spacing:-0.035em; margin-bottom:1.4rem">{{ .Title }}</h1>
+    <div class="prose">{{ .Content }}</div>
+</main>
+{{ end }}

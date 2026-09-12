@@ -188,10 +188,22 @@ def main():
     def sort_by_title(ids):
         return sorted(ids, key=lambda i: title_of(i).lower())
 
+    # Optional authored prose lives in articles/<id>.md and survives rebuilds
+    # (the seed carries no article bodies). Presence promotes seed -> draft.
+    def read_article(nid):
+        p = os.path.join("articles", f"{nid}.md")
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as fh:
+                return fh.read().strip()
+        return ""
+
+    node_articles = {n["id"]: read_article(n["id"]) for n in nodes_raw}
+
     atlas_nodes = {}
     for n in nodes_raw:
         nid = n["id"]
         groups = {k: sort_by_title(v) for k, v in rel[nid].items() if v}
+        has_article = bool(node_articles.get(nid))
         atlas_nodes[nid] = {
             "id": nid,
             "title": n.get("title", nid),
@@ -200,7 +212,7 @@ def main():
             "aliases": n.get("aliases", []),
             "caveat": n.get("caveat", "") or "",
             "priority": n.get("priority", ""),
-            "content_status": n.get("content_status", ""),
+            "content_status": "draft" if has_article else n.get("content_status", ""),
             "evidence_status": n.get("evidence_status", ""),
             "last_reviewed": n.get("last_reviewed", ""),
             "references": n.get("references", []),
@@ -208,6 +220,7 @@ def main():
             "observations": n.get("observations", []),
             "frameworks": fw_by_node.get(nid, []),
             "rel": groups,
+            "has_article": has_article,
         }
 
     # --- Curated navigation (PRD 7.4) ----------------------------------------
@@ -375,8 +388,9 @@ def main():
 
     for n in nodes_raw:
         nid = n["id"]
+        body = node_articles.get(nid, "")
         # Thin front matter; single.html resolves relationships from atlas data.
-        # aliases/summary/text stay for Pagefind full-text indexing.
+        # The authored body (if any) feeds Hugo's renderer and Pagefind.
         fm = {
             "title": n.get("title", nid),
             "id": nid,
@@ -385,14 +399,12 @@ def main():
             "summary": n.get("summary", ""),
             "aliases": n.get("aliases", []),
             "evidence_status": n.get("evidence_status", ""),
-            "content_status": n.get("content_status", ""),
+            "content_status": "draft" if body else n.get("content_status", ""),
             "priority": n.get("priority", ""),
             "caveat": n.get("caveat", "") or "",
+            "has_article": bool(body),
         }
-        # Body text feeds Pagefind: summary + aliases + relationship titles.
-        body_terms = [n.get("summary", "")]
-        body_terms += n.get("aliases", [])
-        write_md(f"content/nodes/{nid}.md", fm, content="")
+        write_md(f"content/nodes/{nid}.md", fm, content=body)
     write_md("content/nodes/_index.md", {"title": "Topics", "type": "node"})
 
     for s in sources_raw:

@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Site.Title }}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <title>{{ .Site.Title }} · AI attack, defense & evaluation knowledge graph</title>
+    <meta name="description" content="{{ .Site.Params.description }}">
+    {{ partial "head-seo.html" . }}
     <script type="module" crossorigin src="/assets/dist/app.js?v={{ now.Unix }}"></script>
     <link rel="stylesheet" crossorigin href="/assets/dist/styles.css?v={{ now.Unix }}">
 </head>

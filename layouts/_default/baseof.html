@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
     <meta name="description" content="{{ with .Params.summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+    {{ partial "head-seo.html" . }}
     <link rel="stylesheet" href="/assets/dist/styles.css?v={{ now.Unix }}">
     <script>
       (function () {
@@ -31,5 +33,21 @@
         </nav>
     </header>
     {{ block "main" . }}{{ end }}
+    <footer class="site-foot">
+        <div class="site-foot__inner">
+            <div class="site-foot__brand">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                AI Security Atlas — a research reference, not an attack toolkit.
+            </div>
+            <nav class="site-foot__links">
+                <a href="/">Explorer</a>
+                <a href="/nodes/">Topics</a>
+                <a href="/sources/">Sources</a>
+                <a href="/views/">Views</a>
+                <a href="/about/">About</a>
+                <a href="/privacy/">Privacy</a>
+            </nav>
+        </div>
+    </footer>
 </body>
 </html>
