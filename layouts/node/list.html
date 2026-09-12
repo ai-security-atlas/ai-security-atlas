@@ -1,0 +1,54 @@
+{{ define "main" }}
+{{ $atlas := .Site.Data.atlas }}
+{{ $typeOrder := slice "goal" "technique_family" "attack" "method" "defense" "evaluation" "concept" "architecture" "component" "lifecycle" "format" }}
+<main class="doc-wide">
+    <div class="idx-head">
+        <div>
+            <div class="eyb eyb--accent" style="--accent: var(--theme-action); margin-bottom:0.7rem"><span class="type-dot"></span> TOPIC INDEX</div>
+            <h1>All topics</h1>
+            <p>{{ $atlas.meta.counts.nodes }} entries across {{ len $typeOrder }} types. Filter by kind, or open the <a href="/" style="color:var(--theme-action)">Explorer</a> for graph navigation.</p>
+        </div>
+    </div>
+
+    <div class="filters" id="filters">
+        <button class="filter" data-type="all" data-on="true">All</button>
+        {{ range $type := $typeOrder }}{{ $meta := index $atlas.typeMeta $type }}
+        <button class="filter" data-type="{{ $type }}" data-on="false"><i style="background:{{ $meta.color }}"></i>{{ $meta.plural }}</button>
+        {{ end }}
+    </div>
+
+    {{ range $type := $typeOrder }}
+        {{ $meta := index $atlas.typeMeta $type }}
+        {{ $items := slice }}
+        {{ range $atlas.nodes }}{{ if eq .type $type }}{{ $items = $items | append . }}{{ end }}{{ end }}
+        {{ with $items }}
+        <div class="grouplabel" data-group="{{ $type }}"><i style="background:{{ $meta.color }}"></i>{{ $meta.plural }}<span class="n">{{ len . }}</span></div>
+        <div class="cardgrid" data-group="{{ $type }}">
+            {{ range sort $items "title" }}
+            {{ $m := index $atlas.typeMeta .type }}
+            <a class="ncard" href="/nodes/{{ .id }}/" style="--accent:{{ $m.color }}">
+                <span class="ncard__type"><i></i>{{ $m.label }}</span>
+                <div class="ncard__title">{{ .title }}</div>
+                <div class="ncard__sum">{{ .summary }}</div>
+            </a>
+            {{ end }}
+        </div>
+        {{ end }}
+    {{ end }}
+</main>
+<script>
+(function () {
+  var f = document.getElementById('filters');
+  if (!f) return;
+  f.addEventListener('click', function (e) {
+    var b = e.target.closest('.filter'); if (!b) return;
+    var t = b.dataset.type;
+    f.querySelectorAll('.filter').forEach(function (x) { x.dataset.on = 'false'; });
+    b.dataset.on = 'true';
+    document.querySelectorAll('[data-group]').forEach(function (g) {
+      g.style.display = (t === 'all' || g.dataset.group === t) ? '' : 'none';
+    });
+  });
+})();
+</script>
+{{ end }}

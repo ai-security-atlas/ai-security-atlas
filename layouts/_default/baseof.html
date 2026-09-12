@@ -3,50 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Title }} | {{ .Site.Title }}</title>
+    <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
+    <meta name="description" content="{{ with .Params.summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
     <link rel="stylesheet" href="/assets/dist/styles.css?v={{ now.Unix }}">
-    <!-- Load pre-built Tailwind CSS if using standard Vite build -->
-    <script type="module" crossorigin src="/assets/dist/app.js?v={{ now.Unix }}"></script>
     <script>
-        (function() {
-            var theme = localStorage.getItem('theme');
-            if (!theme) {
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    theme = 'dark';
-                } else {
-                    theme = 'light';
-                }
-            }
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-                document.documentElement.setAttribute('data-theme', 'dark');
-            } else {
-                document.documentElement.classList.add('light');
-                document.documentElement.setAttribute('data-theme', 'light');
-            }
-        })();
+      (function () {
+        var t = localStorage.getItem('theme');
+        if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        var r = document.documentElement;
+        r.classList.add(t); r.setAttribute('data-theme', t);
+      })();
     </script>
 </head>
-<body class="bg-[var(--theme-bg)] text-[var(--theme-ink)] font-sans antialiased">
-    <nav class="bg-[var(--theme-surface)] border-b border-[color-mix(in_srgb,currentColor_15%,transparent)] sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <a href="/" class="flex items-center gap-2 text-[var(--theme-ink)] hover:text-[var(--theme-action)] transition-colors">
-                        <svg class="w-6 h-6 text-[var(--theme-action)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                        <span class="font-bold text-xl tracking-tight">AI Security Atlas</span>
-                    </a>
-                </div>
-                <div class="flex items-center gap-6">
-                    <a href="/nodes" class="text-sm font-medium text-[var(--theme-muted)] hover:text-[var(--theme-ink)] transition-colors">Nodes</a>
-                    <a href="/sources" class="text-sm font-medium text-[var(--theme-muted)] hover:text-[var(--theme-ink)] transition-colors">Sources</a>
-                    <a href="/graph" class="text-sm font-medium bg-[color-mix(in_srgb,var(--theme-action)_10%,transparent)] text-[var(--theme-action)] px-3 py-1.5 rounded-md hover:bg-[color-mix(in_srgb,var(--theme-action)_20%,transparent)] transition-colors">Explorer</a>
-                </div>
-            </div>
-        </div>
-    </nav>
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 min-h-[calc(100vh-4rem)]">
-        {{ block "main" . }}{{ end }}
-    </main>
+<body class="docpage">
+    <header class="sitehead">
+        <a href="/" class="sitehead__brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+            AI Security Atlas <small>ATLAS</small>
+        </a>
+        <nav class="sitehead__nav">
+            <a href="/nodes/" class="hideS">Topics</a>
+            <a href="/sources/" class="hideS">Sources</a>
+            <a href="/" class="cta">Explorer</a>
+            <button class="tt" onclick="(function(){var r=document.documentElement;var d=r.getAttribute('data-theme')==='dark';var t=d?'light':'dark';r.classList.remove('dark','light');r.classList.add(t);r.setAttribute('data-theme',t);localStorage.setItem('theme',t);})()" aria-label="Toggle theme" title="Toggle theme">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </button>
+        </nav>
+    </header>
+    {{ block "main" . }}{{ end }}
 </body>
 </html>

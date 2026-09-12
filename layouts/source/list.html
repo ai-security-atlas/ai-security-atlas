@@ -1,0 +1,26 @@
+{{ define "main" }}
+{{ $atlas := .Site.Data.atlas }}
+<main class="doc-wide">
+    <div class="idx-head">
+        <div>
+            <div class="eyb eyb--accent" style="--accent: var(--theme-action); margin-bottom:0.7rem"><span class="type-dot"></span> EVIDENCE REGISTRY</div>
+            <h1>Sources</h1>
+            <p>{{ $atlas.meta.counts.sources }} primary sources. Verification depth is shown honestly — a citation does not imply full-text review.</p>
+        </div>
+    </div>
+    <div class="cardgrid">
+        {{ range .Pages.ByTitle }}
+        {{ $s := index $atlas.sources .Params.id }}
+        <a class="ncard" href="{{ .RelPermalink }}" style="--accent: var(--theme-action)">
+            <span class="ncard__type"><i></i>{{ with $s }}{{ replace .kind "_" " " }}{{ else }}source{{ end }}</span>
+            <div class="ncard__title">{{ .Title }}</div>
+            {{ with $s }}<div class="srcmeta" style="margin:0.2rem 0 0">
+                {{ with .publisher }}<span>{{ . }}</span>{{ end }}
+                {{ with .year }}<span>{{ . }}</span>{{ end }}
+                {{ with .verification_depth }}<span class="vd">{{ replace . "_" " " }}</span>{{ end }}
+            </div>{{ end }}
+        </a>
+        {{ end }}
+    </div>
+</main>
+{{ end }}

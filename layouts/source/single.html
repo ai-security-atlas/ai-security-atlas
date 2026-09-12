@@ -1,0 +1,43 @@
+{{ define "main" }}
+{{ $atlas := .Site.Data.atlas }}
+{{ $id := .Params.id }}
+{{ $s := index $atlas.sources $id }}
+<main class="doc" style="--accent: var(--theme-action)">
+    <a href="/sources/" class="backlink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> All sources</a>
+    {{ if $s }}
+    <div class="reader__eyebrow">
+        <span class="eyb eyb--accent"><span class="type-dot"></span> Source</span>
+        {{ with $s.verification_depth }}<span class="badge badge--ev">{{ replace . "_" " " }}</span>{{ end }}
+        {{ if $s.full_text_reviewed }}<span class="badge">full text reviewed</span>{{ else }}<span class="badge">abstract only</span>{{ end }}
+    </div>
+    <h1 style="font-size:clamp(1.7rem,3vw,2.3rem);letter-spacing:-0.03em;line-height:1.06;margin-bottom:0.8rem">{{ $s.title }}</h1>
+    <div class="srcmeta">
+        {{ with $s.kind }}<span>{{ replace . "_" " " }}</span>{{ end }}
+        {{ with $s.publisher }}<span>{{ . }}</span>{{ end }}
+        {{ with $s.year }}<span>{{ . }}</span>{{ end }}
+        {{ if $s.experiments_reproduced }}<span class="vd">reproduced</span>{{ end }}
+    </div>
+    {{ with $s.relevance }}<p class="summary">{{ . }}</p>{{ end }}
+    {{ with $s.url }}
+    <a class="readmore" href="{{ . }}" target="_blank" rel="noreferrer" style="margin-bottom:1rem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+        View original source
+    </a>
+    {{ end }}
+
+    {{ with $s.node_ids }}
+    <div class="section-title">Cited by · {{ len . }} topics</div>
+    <div class="chips">
+        {{ range $tid := . }}
+            {{ $t := index $atlas.nodes $tid }}
+            {{ if $t }}{{ $ttm := index $atlas.typeMeta $t.type }}
+            <a class="chip" data-doc href="/nodes/{{ $tid }}/" style="--accent: {{ $ttm.color }}"><i class="tdot"></i><span>{{ $t.title }}</span></a>
+            {{ end }}
+        {{ end }}
+    </div>
+    {{ end }}
+    {{ else }}
+    <h1>{{ .Title }}</h1>
+    {{ end }}
+</main>
+{{ end }}

@@ -393,7 +393,7 @@ def main():
         body_terms = [n.get("summary", "")]
         body_terms += n.get("aliases", [])
         write_md(f"content/nodes/{nid}.md", fm, content="")
-    write_md("content/nodes/_index.md", {"title": "Topics", "type": "node-list"})
+    write_md("content/nodes/_index.md", {"title": "Topics", "type": "node"})
 
     for s in sources_raw:
         sid = s["id"]
@@ -409,14 +409,14 @@ def main():
             "relevance": s.get("relevance", ""),
         }
         write_md(f"content/sources/{sid}.md", fm, content="")
-    write_md("content/sources/_index.md", {"title": "Sources", "type": "source-list"})
+    write_md("content/sources/_index.md", {"title": "Sources", "type": "source"})
 
     for v in atlas_views:
         write_md(f"content/views/{v['id']}.md", {
             "title": v["title"], "id": v["id"], "type": "view",
             "summary": v["description"],
         }, content="")
-    write_md("content/views/_index.md", {"title": "Views", "type": "view-list"})
+    write_md("content/views/_index.md", {"title": "Views", "type": "view"})
 
     write_md("content/graph/_index.md", {"title": "Graph Explorer", "type": "graph", "layout": "explorer"})
     write_md("content/_index.md", {"title": "AI Security Atlas", "type": "homepage"})

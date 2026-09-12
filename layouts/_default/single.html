@@ -1,37 +1,115 @@
 {{ define "main" }}
-<article class="prose prose-blue max-w-none bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-    <header class="mb-8">
-        <div class="flex items-center gap-3 mb-4">
-            <span class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 rounded-full">
-                {{ .Params.node_type | default "Concept" }}
-            </span>
-            {{ if .Params.evidence_status }}
-            <span class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-green-600 bg-green-50 rounded-full">
-                {{ .Params.evidence_status }}
-            </span>
-            {{ end }}
-        </div>
-        <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 mb-4">{{ .Title }}</h1>
-        {{ if .Params.summary }}
-        <p class="text-xl text-gray-500 leading-relaxed">{{ .Params.summary }}</p>
-        {{ end }}
-    </header>
-    
-    <div class="mt-8 pt-8 border-t border-gray-100">
-        {{ .Content }}
+{{ $atlas := .Site.Data.atlas }}
+{{ $id := .Params.id }}
+{{ $n := index $atlas.nodes $id }}
+{{ if not $n }}
+<main class="doc"><h1>{{ .Title }}</h1><p class="summary">{{ .Params.summary }}</p></main>
+{{ else }}
+{{ $tm := index $atlas.typeMeta $n.type }}
+{{ $relOrder := slice "routesToGoal" "reachableVia" "memberOf" "hasMember" "requires" "requiredBy" "mitigatedBy" "canMitigate" "evaluatedBy" "evaluates" "inScopeOf" "hasRelevantTopic" "uses" "usedBy" "variantOf" "hasVariant" "canEnable" "mayBeEnabledBy" "distinctFrom" }}
+<main class="doc reader" style="--accent: {{ $tm.color }}">
+    <a href="/nodes/" class="backlink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> All topics</a>
+    <a href="/?node={{ $id }}" class="chip openexp" style="--accent: {{ $tm.color }}"><span>Open in Explorer</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+
+    <div class="reader__eyebrow">
+        <span class="eyb eyb--accent"><span class="type-dot"></span> {{ $tm.label }}</span>
+        {{ with $n.evidence_status }}<span class="badge badge--ev">{{ replace . "_" " " }}</span>{{ end }}
+        {{ with $n.content_status }}<span class="badge">{{ . }}</span>{{ end }}
+        {{ with $n.priority }}<span class="badge">{{ . }}</span>{{ end }}
     </div>
 
-    {{ if .Params.prerequisites }}
-    <div class="mt-10 pt-8 border-t border-gray-100">
-        <h3 class="text-lg font-bold mb-4">Prerequisites</h3>
-        <div class="flex flex-wrap gap-2">
-            {{ range .Params.prerequisites }}
-            <a href="/nodes/{{ . }}" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-                {{ . }}
-            </a>
-            {{ end }}
+    <h1 style="font-size:clamp(1.9rem,3.4vw,2.6rem);letter-spacing:-0.035em;line-height:1.02;margin-bottom:0.9rem">{{ $n.title }}</h1>
+
+    {{ with $n.aliases }}<div class="aliases">{{ range . }}<span class="alias">{{ . }}</span>{{ end }}</div>{{ end }}
+    {{ with $n.caveat }}<div class="caveat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p>{{ . }}</p></div>{{ end }}
+    {{ with $n.summary }}<p class="summary">{{ . }}</p>{{ end }}
+
+    {{ with .Content }}<div class="prose" style="margin:1.6rem 0">{{ . }}</div>{{ end }}
+
+    {{/* ---- Relationships ---- */}}
+    {{ range $k := $relOrder }}
+        {{ with index $n.rel $k }}
+        <div class="rel">
+            <div class="rel__head"><h3>{{ index $atlas.relLabels $k }}</h3><span class="n">{{ len . }}</span></div>
+            <div class="chips">
+                {{ range $tid := . }}
+                    {{ $t := index $atlas.nodes $tid }}
+                    {{ if $t }}{{ $ttm := index $atlas.typeMeta $t.type }}
+                    <a class="chip" data-doc href="/nodes/{{ $tid }}/" style="--accent: {{ $ttm.color }}" title="{{ $ttm.label }}"><i class="tdot"></i><span>{{ $t.title }}</span></a>
+                    {{ end }}
+                {{ end }}
+            </div>
         </div>
+        {{ end }}
+    {{ end }}
+
+    {{/* ---- Evidence: sources ---- */}}
+    {{ with $n.references }}
+    <div class="section-title">Sources · {{ len . }}</div>
+    {{ range $sid := . }}
+        {{ $s := index $atlas.sources $sid }}
+        {{ if $s }}
+        <a class="card card--link" href="{{ $s.url }}" target="_blank" rel="noreferrer">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg></span>
+            <div>
+                <div class="card__title">{{ $s.title }}</div>
+                <div class="card__meta">
+                    {{ with $s.year }}<span>{{ . }}</span>{{ end }}
+                    {{ with $s.kind }}<span>{{ replace . "_" " " }}</span>{{ end }}
+                    {{ with $s.publisher }}<span>{{ . }}</span>{{ end }}
+                    {{ with $s.verification_depth }}<span class="vd">{{ replace . "_" " " }}</span>{{ end }}
+                </div>
+            </div>
+        </a>
+        {{ end }}
+    {{ end }}
+    {{ end }}
+
+    {{/* ---- Observations ---- */}}
+    {{ with $n.observations }}
+    <div class="section-title">Observations · {{ len . }}</div>
+    {{ range . }}
+    <div class="card">
+        <div class="card__title">Target: {{ with .target_label }}{{ . }}{{ else }}unspecified{{ end }}</div>
+        {{ with .claim }}<div class="card__body">{{ . }}</div>{{ end }}
+        <div class="card__meta">
+            {{ with .verification_depth }}<span class="vd">{{ replace . "_" " " }}</span>{{ end }}
+            <span>{{ if .reproduced }}reproduced{{ else }}not reproduced{{ end }}</span>
+        </div>
+        {{ with .limitations }}<div class="card__limit">{{ . }}</div>{{ end }}
     </div>
     {{ end }}
-</article>
+    {{ end }}
+
+    {{/* ---- Access profiles ---- */}}
+    {{ with $n.access_profile_ids }}
+    <div class="section-title">Access profiles · {{ len . }}</div>
+    {{ range $apid := . }}
+        {{ $ap := index $atlas.accessProfiles $apid }}
+        {{ if $ap }}
+        <div class="card">
+            <div class="card__title">{{ $ap.title }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.5rem">
+                {{ range $ap.all_of }}<span class="acap">{{ replace . "_" " " }}</span>{{ end }}
+                {{ range $ap.any_of }}<span class="acap">any: {{ replace . "_" " " }}</span>{{ end }}
+                {{ range $ap.not_required }}<span class="acap acap--not">{{ replace . "_" " " }}</span>{{ end }}
+            </div>
+            {{ with $ap.caveat }}<div class="card__limit">{{ . }}</div>{{ end }}
+        </div>
+        {{ end }}
+    {{ end }}
+    {{ end }}
+
+    {{/* ---- Framework mappings ---- */}}
+    {{ with $n.frameworks }}
+    <div class="section-title">Framework mappings · {{ len . }}</div>
+    {{ range . }}
+    <div class="card">
+        <div class="card__title">{{ .framework }}{{ with .edition }} · {{ . }}{{ end }}</div>
+        <div class="card__body">{{ .external_id }}: {{ .title }}</div>
+    </div>
+    {{ end }}
+    {{ end }}
+</main>
+{{ end }}
 {{ end }}

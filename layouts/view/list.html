@@ -1,0 +1,21 @@
+{{ define "main" }}
+{{ $atlas := .Site.Data.atlas }}
+<main class="doc-wide">
+    <div class="idx-head">
+        <div>
+            <div class="eyb eyb--accent" style="--accent: var(--theme-action); margin-bottom:0.7rem"><span class="type-dot"></span> PROJECTIONS</div>
+            <h1>Views</h1>
+            <p>Curated projections over the graph — objectives, learning paths and domain lenses. Each opens a bounded neighborhood in the Explorer.</p>
+        </div>
+    </div>
+    <div class="cardgrid">
+        {{ range $atlas.views }}
+        <a class="ncard" href="/?view={{ .id }}{{ with index .root_ids 0 }}&node={{ . }}{{ end }}" style="--accent: var(--theme-action)">
+            <span class="ncard__type"><i></i>View</span>
+            <div class="ncard__title">{{ .title }}</div>
+            <div class="ncard__sum">{{ .description }}</div>
+        </a>
+        {{ end }}
+    </div>
+</main>
+{{ end }}
