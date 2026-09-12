@@ -3,7 +3,7 @@ import ForceGraph2D from 'react-force-graph-2d';
 import {
   Search, ChevronRight, ChevronDown, X, Moon, Sun, ArrowLeft, ArrowUpRight,
   BookOpen, ExternalLink, Share2, Maximize2, AlertTriangle, FileText, Link2,
-  Key, Shield, ScrollText, Layers, List as ListIcon, Compass, Crosshair, PenLine,
+  Key, Shield, ScrollText, Layers, List as ListIcon, Compass, Crosshair, PenLine, Home,
 } from 'lucide-react';
 import {
   Atlas, AtlasNode, loadAtlas, glyphFor, REL_ORDER, OVERVIEW_RELS,
@@ -100,8 +100,8 @@ function NavRow({ atlas, id, active, depth, expandable, expanded, onToggle, onOp
   );
 }
 
-function Sidebar({ atlas, selectedId, onOpen, search, onSearch, results, expanded, toggle }: {
-  atlas: Atlas; selectedId: string | null; onOpen: (id: string) => void;
+function Sidebar({ atlas, selectedId, onOpen, onHome, search, onSearch, results, expanded, toggle }: {
+  atlas: Atlas; selectedId: string | null; onOpen: (id: string) => void; onHome: () => void;
   search: string; onSearch: (e: any) => void; results: any[];
   expanded: Set<string>; toggle: (key: string) => void;
 }) {
@@ -110,11 +110,11 @@ function Sidebar({ atlas, selectedId, onOpen, search, onSearch, results, expande
   return (
     <>
       <div className="nav__head">
-        <div className="nav__brand">
+        <button className="nav__brand" onClick={onHome} aria-label="AI Security Atlas — home">
           <Shield className="w-5 h-5" />
-          AI Security Atlas
+          AI Security
           <small>ATLAS</small>
-        </div>
+        </button>
         <div className="search">
           <Search />
           <input value={search} onChange={onSearch} placeholder="Search techniques, concepts…" aria-label="Search" />
@@ -619,7 +619,7 @@ export function GraphApp() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<any[]>([]);
-  const [mobileTab, setMobileTab] = useState<'index' | 'article' | 'graph'>('index');
+  const [mobileTab, setMobileTab] = useState<'home' | 'index' | 'graph'>('home');
   const { theme, toggle } = useTheme();
 
   // --- load atlas ---
@@ -666,7 +666,7 @@ export function GraphApp() {
     setTab('overview');
     setTrail(prev => opts.push ? [...prev.filter(x => x !== id), id] : [id]);
     expandAncestors(id, atlas);
-    setMobileTab('article');
+    setMobileTab('home');
     setSearch(''); setResults([]);
     try { history.pushState({ id }, '', `/?node=${id}`); } catch {}
     document.querySelector('.stage__reader')?.scrollTo({ top: 0 });
@@ -681,8 +681,8 @@ export function GraphApp() {
     const applyFromURL = () => {
       const p = new URLSearchParams(window.location.search);
       const id = p.get('node');
-      if (id && atlas.nodes[id]) { setSelectedId(id); setTrail([id]); expandAncestors(id, atlas); setMobileTab('article'); }
-      else { setSelectedId(null); setMobileTab('index'); }
+      if (id && atlas.nodes[id]) { setSelectedId(id); setTrail([id]); expandAncestors(id, atlas); setMobileTab('home'); }
+      else { setSelectedId(null); setMobileTab('home'); }
     };
     applyFromURL();
     const onPop = () => applyFromURL();
@@ -719,6 +719,12 @@ export function GraphApp() {
     setExpanded(prev => { const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n; });
   }, []);
 
+  const goHome = useCallback(() => {
+    setSelectedId(null); setTrail([]); setGraphFull(false); setMobileTab('home');
+    setSearch(''); setResults([]);
+    try { history.pushState({}, '', '/'); } catch {}
+  }, []);
+
   if (!atlas) {
     return <div className="atlas"><div className="empty"><div className="empty__box"><Shield className="big" /><h2>Loading the atlas…</h2></div></div></div>;
   }
@@ -730,7 +736,7 @@ export function GraphApp() {
     <div className="atlas">
       {/* NAV */}
       <aside className="nav" data-mobile-hidden={mobileTab !== 'index'}>
-        <Sidebar atlas={atlas} selectedId={selectedId} onOpen={open} search={search} onSearch={onSearch}
+        <Sidebar atlas={atlas} selectedId={selectedId} onOpen={open} onHome={goHome} search={search} onSearch={onSearch}
           results={results} expanded={expanded} toggle={toggleKey} />
       </aside>
 
@@ -738,9 +744,9 @@ export function GraphApp() {
       <div className="main" data-mobile-hidden={mobileTab === 'index'}>
         <div className="topbar">
           <div className="topbar__left">
-            <button className="iconbtn mobile-only" onClick={() => setMobileTab('index')} aria-label="Back to index"><ArrowLeft /></button>
+            <button className="iconbtn mobile-only" onClick={() => setMobileTab('index')} aria-label="Browse index"><ListIcon /></button>
             <div className="crumbs">
-              <button onClick={() => { setSelectedId(null); setTrail([]); setMobileTab('index'); try { history.pushState({}, '', '/'); } catch {} }}>Atlas</button>
+              <button onClick={goHome}>Atlas</button>
               {trail.length > 0 && <span className="sep">/</span>}
               {trail.map((id, i) => (
                 <React.Fragment key={id}>
@@ -783,8 +789,8 @@ export function GraphApp() {
 
       {/* MOBILE TAB BAR */}
       <nav className="mtabbar">
+        <button className="mtab" data-on={mobileTab === 'home' && !selectedId} onClick={goHome}><Home /> Home</button>
         <button className="mtab" data-on={mobileTab === 'index'} onClick={() => setMobileTab('index')}><ListIcon /> Index</button>
-        <button className="mtab" data-on={mobileTab === 'article'} onClick={() => setMobileTab(node ? 'article' : 'index')}><BookOpen /> Article</button>
         <button className="mtab" data-on={mobileTab === 'graph'} onClick={() => setMobileTab('graph')}><Share2 /> Graph</button>
       </nav>
     </div>

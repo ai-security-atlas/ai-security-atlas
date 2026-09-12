@@ -3483,3 +3483,18 @@ body.docpage { background: var(--theme-bg); color: var(--theme-ink); min-height:
 /* Fix: .atlas a{color:inherit} outranks .readmore inverted text in the SPA reader */
 .atlas .readmore { color: var(--theme-bg); }
 .atlas .readmore:hover { color: #fff; }
+
+/* ---- Fixes: clickable cursor + mobile flex scrolling ---- */
+.nav-row { cursor: pointer; }
+.nav__section-label[role="button"], button.nav__section-label { cursor: pointer; }
+/* Flex children must be allowed to shrink so their inner overflow can scroll
+   (critical on mobile where .atlas is a 100dvh flex column). */
+.nav, .main { min-height: 0; }
+@media (max-width: 767px) {
+  .mtabbar { position: static; }
+  .nav[data-mobile-hidden="false"], .main[data-mobile-hidden="false"] { min-height: 0; flex: 1 1 0; }
+}
+
+/* Clickable brand (home link) */
+.nav__brand { padding: 0; text-align: left; width: fit-content; }
+.nav__brand:hover { color: var(--theme-action); }
