@@ -3498,3 +3498,7 @@ body.docpage { background: var(--theme-bg); color: var(--theme-ink); min-height:
 /* Clickable brand (home link) */
 .nav__brand { padding: 0; text-align: left; width: fit-content; }
 .nav__brand:hover { color: var(--theme-action); }
+
+/* GitHub link in the topbar reads as a muted icon button like the theme toggle */
+.atlas a.iconbtn { color: var(--theme-muted); }
+.atlas a.iconbtn:hover { color: var(--theme-ink); }
