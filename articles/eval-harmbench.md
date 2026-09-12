@@ -1,0 +1,7 @@
+The HarmBench benchmark is a source-specific reference for standardized automated red teaming and evaluation of robust refusal. It provides a common framework so that attacks and refusal defenses can be compared under consistent conditions rather than through ad hoc, one-off tests, which makes results across methods more comparable.
+
+## What it evaluates
+
+It is used to assess prompt-level attacks against aligned models, including [gradient-guided adversarial suffixes](../nodes/attack-gcg.md), [jailbreaking and refusal bypass](../nodes/attack-jailbreak.md), [many-shot context attacks](../nodes/attack-many-shot.md), and [transfer of adversarial prompts](../nodes/attack-transfer-prompts.md). Standardizing the harmful-behavior set and the judging procedure lets these techniques be scored on a shared scale.
+
+Standardization is the benchmark's strength and also the source of its limits. Coverage is scope-limited to the behaviors, attack implementations, and grading rules the framework defines; a result on it reflects those choices rather than the full space of possible harms. A model scoring well on refusal robustness here is not proven safe against attacks or behaviors outside the suite, nor against an adaptive attacker tuning to the benchmark, and a strong attack result does not guarantee the same effect on untested models. Automated judging can also miss or miscount edge cases. Defer to the cited source for the exact behavior taxonomy, attack set, and evaluation methodology, and for reported empirical figures.

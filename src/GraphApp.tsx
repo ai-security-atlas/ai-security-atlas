@@ -3,7 +3,7 @@ import ForceGraph2D from 'react-force-graph-2d';
 import {
   Search, ChevronRight, ChevronDown, X, Moon, Sun, ArrowLeft, ArrowUpRight,
   BookOpen, ExternalLink, Share2, Maximize2, AlertTriangle, FileText, Link2,
-  Key, Shield, ScrollText, Layers, List as ListIcon, Compass, Crosshair,
+  Key, Shield, ScrollText, Layers, List as ListIcon, Compass, Crosshair, PenLine,
 } from 'lucide-react';
 import {
   Atlas, AtlasNode, loadAtlas, glyphFor, REL_ORDER, OVERVIEW_RELS,
@@ -291,6 +291,53 @@ function GoalFamilies({ atlas, goalId, onOpen }: { atlas: Atlas; goalId: string;
   );
 }
 
+// Renders the authored article body by fetching the Hugo-rendered fragment
+// (PRD 10.3: reuse the same-origin HTML, don't re-render Markdown client-side).
+function ArticleBody({ id, onOpen }: { id: string; onOpen: (id: string) => void }) {
+  const [html, setHtml] = useState<string | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ok' | 'none'>('loading');
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setStatus('loading'); setHtml(null);
+    fetch(`/nodes/${id}/`, { cache: 'no-cache' })
+      .then(r => (r.ok ? r.text() : Promise.reject()))
+      .then(txt => {
+        if (cancelled) return;
+        const doc = new DOMParser().parseFromString(txt, 'text/html');
+        const el = doc.querySelector('[data-article-body]');
+        if (el && el.textContent && el.textContent.trim()) { setHtml(el.innerHTML); setStatus('ok'); }
+        else setStatus('none');
+      })
+      .catch(() => { if (!cancelled) setStatus('none'); });
+    return () => { cancelled = true; };
+  }, [id]);
+
+  // Keep in-article links inside the SPA.
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement).closest('a');
+      if (!a) return;
+      const m = (a.getAttribute('href') || '').match(/^\/nodes\/([^/]+)\/?$/);
+      if (m) { e.preventDefault(); onOpen(m[1]); }
+    };
+    root.addEventListener('click', onClick);
+    return () => root.removeEventListener('click', onClick);
+  }, [html, onOpen]);
+
+  if (status === 'none') return null;
+  if (status === 'loading') return <div className="prose" style={{ opacity: 0.4, fontSize: '0.9rem' }}>Loading overview…</div>;
+  return (
+    <div style={{ marginBottom: '2rem' }}>
+      <div className="draft-note"><PenLine /> AI-generated draft · conceptual overview, not yet reviewed</div>
+      <div className="prose" ref={ref} dangerouslySetInnerHTML={{ __html: html! }} />
+    </div>
+  );
+}
+
 function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
   atlas: Atlas; node: AtlasNode; tab: string; setTab: (t: any) => void;
   onOpen: (id: string) => void; onGraph: () => void;
@@ -337,9 +384,11 @@ function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
 
       {tab === 'overview' && (
         <>
+          {node.has_article && <ArticleBody id={node.id} onOpen={onOpen} />}
+          {node.has_article && (isGoal || overviewKeys.length > 0) && <div className="section-title" style={{ marginTop: 0 }}>Connections</div>}
           {isGoal && <GoalFamilies atlas={atlas} goalId={node.id} onOpen={onOpen} />}
           {!isGoal && overviewKeys.map(k => <RelGroup key={k} atlas={atlas} groupKey={k} ids={rel[k]} onOpen={onOpen} />)}
-          {!isGoal && overviewKeys.length === 0 && (
+          {!isGoal && !node.has_article && overviewKeys.length === 0 && (
             <p style={{ color: 'var(--theme-muted)', fontSize: '0.9rem' }}>
               This is a seed entry: it carries a definition and routing metadata. See the Relationships and Evidence tabs for its connections and sources.
             </p>

@@ -3479,3 +3479,7 @@ body.docpage { background: var(--theme-bg); color: var(--theme-ink); min-height:
 /* Fix: .docpage a{color:inherit} outranks .readmore's inverted text on doc pages */
 .docpage .readmore { color: var(--theme-bg); }
 .docpage .readmore:hover { color: #fff; }
+
+/* Fix: .atlas a{color:inherit} outranks .readmore inverted text in the SPA reader */
+.atlas .readmore { color: var(--theme-bg); }
+.atlas .readmore:hover { color: #fff; }

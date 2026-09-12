@@ -1,0 +1,7 @@
+Attention is the mechanism a model uses to combine representations: for each position, it computes a weighted blend of other positions' representations, where the weights ("attention scores") reflect how relevant each one is. Instead of processing tokens in isolation, the model lets every position draw on information from others. This builds on [input and output embeddings](../nodes/concept-embeddings.md), which supply the vectors that attention weights and mixes.
+
+*Self-attention* mixes representations within a single sequence. *Cross-attention* introduces a second stream: queries come from one sequence while keys and values come from another, letting an external signal steer the computation. This makes cross-attention a distinct conditioning surface — a defined place where separate information, such as a text prompt guiding image generation, is injected into the model.
+
+Attention underpins several downstream topics. [KV caches and prefix reuse](../nodes/concept-kv-cache.md) exist because the keys and values attention computes can be stored and reused across steps. [Text, image and control conditioning](../nodes/concept-conditioning.md) often flows through cross-attention layers.
+
+For a security engineer, the point is that cross-attention marks where outside content enters the model's internal processing. Where such conditioning surfaces exist, they define channels worth reasoning about; the specific behaviors and failure modes are covered by the techniques that depend on this concept.

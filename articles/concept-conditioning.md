@@ -1,0 +1,7 @@
+Conditioning is how a generative model is steered toward a particular output rather than sampling freely. In text-to-image systems, for example, the conditioning is the prompt (and any auxiliary control signal) that tells the model *what* to generate. Crucially, conditioning can enter through several distinct pathways: a text encoder that turns a prompt into vectors, [cross-attention](../nodes/concept-attention.md) layers that inject those vectors into the generation process, or additional control branches that carry structural signals such as edges or poses.
+
+Because it builds on attention, conditioning inherits attention's role as an injection point — each pathway is a separate surface where external information shapes the result. Recognizing that there is more than one such surface is the practical takeaway: text, spatial control, and other modalities may each reach the model through their own route.
+
+This concept is a prerequisite for [classifier-free guidance](../nodes/concept-guidance.md), which amplifies how strongly the output follows the conditioning, and for [ControlNet-style conditioning](../nodes/adapt-controlnet.md), which adds dedicated control branches.
+
+For a security engineer, conditioning surfaces are where the "instructions" to a generative model live. Whether a given surface can be manipulated, and to what effect, depends on the specific system and is treated by the techniques that build on this concept; the concept itself just maps where those inputs enter.

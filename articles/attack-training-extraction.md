@@ -1,0 +1,9 @@
+Language-model training-data extraction recovers text that a model saw during training, through interaction in a setting that permits verifying the recovered content. Under the OWASP LLM Top 10 it falls within sensitive-information disclosure, and its objective is to [obtain protected information](../nodes/goal-information.md).
+
+## How it works
+
+The technique probes a model and inspects its [logits, probabilities and observable outputs](../nodes/concept-logits.md), exploiting [memorization](../nodes/concept-memorization.md) — the tendency of models, especially where data was duplicated, to reproduce specific training text. The attacker supplies prompts and scores candidate continuations; the memorized content is a property of the trained weights. A crucial caveat governs claims: verbatim-looking output is not proof of membership without a verification method, and some procedures rely on scoring signals rather than raw generation to confirm a match.
+
+This is distinct from [unauthorized retrieved-document disclosure](../nodes/attack-rag-disclosure.md): here the sensitive text is baked into model parameters, not fetched from a retrievable store through a missing access check. The technique targets [decoder-only language models](../nodes/arch-decoder.md).
+
+Candidate mitigations, applied conditionally, include [differentially private training](../nodes/defense-dp.md) and [training-data minimization and deduplication](../nodes/defense-data-hygiene.md). Evaluation is framed through an explicit [threat model](../nodes/eval-threat-model.md), [attack success and severity](../nodes/eval-asr.md), and [privacy verification and baselines](../nodes/eval-privacy.md). A cited study reported recovery of training-specific verbatim text in the model it studied; exact checkpoint identity and access details must be taken from the full source rather than assumed.

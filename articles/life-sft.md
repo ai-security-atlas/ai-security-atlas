@@ -1,0 +1,7 @@
+Supervised fine-tuning (SFT) is a post-training stage that optimizes a model on labeled demonstrations or input–output examples, teaching it to produce desired responses for given inputs. It requires [post-training](../nodes/life-posttrain.md) as its context and moves a base model toward specific behaviors by imitation of curated examples.
+
+SFT underpins a wide range of later work. [Safety and instruction tuning](../nodes/life-safety.md) builds on it to instill constraints, and adaptation methods including [full-parameter fine-tuning](../nodes/adapt-full.md), [parameter-efficient fine-tuning](../nodes/adapt-peft.md), [knowledge distillation](../nodes/adapt-distillation.md) and [DreamBooth personalization](../nodes/adapt-dreambooth.md) all use this labeled-example paradigm.
+
+## Security-relevant scope
+
+Because SFT changes a model's behavior from data, the sourcing of its demonstrations matters. [Instruction-tuning data poisoning](../nodes/attack-sft-poison.md) and [adversarial fine-tuning to alter constraints](../nodes/attack-safety-finetune.md) are the manipulation scenarios relevant to this stage — concerns about who supplies the examples and objective, not demonstrated properties of any particular run. Fine-tuning can also affect behaviors established earlier, so properties present before SFT may warrant re-checking afterward. The cited instruction-following work and the study of fine-tuning's effect on safety describe these dynamics; consult them for empirical results.

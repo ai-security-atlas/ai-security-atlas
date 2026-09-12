@@ -1,0 +1,7 @@
+Adaptive defense evaluation measures whether a defense holds against an attacker who knows how it works, rather than only against a fixed, stale set of prompts or perturbations. The core idea is that a defense's apparent strength can be an artifact of the attack used to test it: an evasion crafted against an undefended model may fail once the defense is present, making the defense look robust when a defense-aware attacker would simply re-optimize against it.
+
+## What it evaluates
+
+This method is applied to attacks whose difficulty shifts once the defense is known, including [evasion of an ML security detector](../nodes/attack-detector-evasion.md), [gradient-based adversarial perturbations / FGSM](../nodes/attack-fgsm.md), [iterative projected adversarial optimization](../nodes/attack-pgd.md), [optimized visual jailbreaks](../nodes/attack-visual-jailbreak.md), and [physical-world adversarial examples](../nodes/attack-physical.md). The point is to let the attack adapt to the defense, not to freeze it.
+
+A common pitfall is testing against non-adaptive baselines and reporting the result as general robustness. Passing an adaptive evaluation is scope-limited: it reflects the specific adaptive attacks tried and their compute budgets, and it is not proof that no stronger defense-aware attack exists or that a deployed system is safe. Adaptive results are strongest when the attacker's knowledge and effort are stated explicitly. Consult the cited sources for empirical adaptive-attack constructions and their configurations.

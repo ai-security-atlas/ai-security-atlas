@@ -1,0 +1,7 @@
+Safety and instruction tuning is the lifecycle stage that trains intended behavioral constraints into a model — the refusals, guardrails and instruction-following norms an operator wants it to observe. It requires [supervised fine-tuning](../nodes/life-sft.md), building on demonstration-based training to instill behaviors the base model would not otherwise reliably produce.
+
+The central framing is that these constraints are learned properties, not immutable guarantees. Because they are acquired through training, they are contingent on it, and any modification made after this stage can affect whether they still hold — which is why re-evaluation after changes is part of taking them seriously.
+
+## Security-relevant scope
+
+Two scenarios are relevant to constraints introduced here. [Jailbreaking and refusal bypass](../nodes/attack-jailbreak.md) concerns pushing a deployed model past these limits at inference time, while [persistent conditional LLM backdoors](../nodes/attack-sleeper.md) concern behavior that evades them under specific triggers. Both are scope for this stage — reasons its learned constraints warrant evaluation — rather than claims about any particular model. The cited instruction-following work and the study of how fine-tuning can compromise safety describe these dynamics; defer to them for empirical detail, and treat post-modification evaluation as the recurring theme.

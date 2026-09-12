@@ -1,0 +1,7 @@
+Query, token, latency and compute cost captures the resource dimension of an attack or defense: how many queries or tokens it consumes, how much latency it induces, and what compute budget it assumes. Reporting these figures alongside the exact experimental configuration is what makes a result interpretable, because cost is meaningless without the hardware, model, batch settings, and query accounting under which it was measured.
+
+## What it evaluates
+
+This measure is central to resource-exhaustion techniques, where cost is the attack's very objective: [energy and latency amplification / sponge inputs](../nodes/attack-sponge.md), [token, context and inference-budget exhaustion](../nodes/attack-token-exhaustion.md), and [tool-loop and recursive-delegation exhaustion](../nodes/attack-agent-loop.md). For these, an amplification factor or a per-request cost only means something relative to a stated baseline and setup.
+
+A common pitfall is comparing costs across incomparable configurations, or citing a query budget without the model and infrastructure it was measured on. Cost figures are scope-limited: they describe the tested configuration and do not, on their own, establish that an attack is economically viable at scale or that a system is safe from resource abuse. Cost is best read together with an effectiveness metric, since a cheap attack that rarely succeeds and an expensive one that reliably does are different threats. Defer to the cited sources for measured budgets, amplification results, and their experimental conditions.

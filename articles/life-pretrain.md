@@ -1,0 +1,7 @@
+Pretraining is the initial lifecycle stage in which a model acquires broad capabilities by optimizing a training objective over a large corpus. It requires [data collection, filtering and deduplication](../nodes/life-data.md) to supply that corpus and an understanding of [losses, gradients and optimization](../nodes/concept-gradients.md) to drive the learning. The result is a base model whose general patterns later stages build on: [continued pretraining](../nodes/life-continued.md) extends it, and [post-training](../nodes/life-posttrain.md) adapts it toward specific behaviors.
+
+Pretraining differs from those later stages in objective and intent. Here the goal is broad learning from the corpus rather than instruction-following, preference alignment or task specialization; those are the concerns of the post-training branch.
+
+## Security-relevant scope
+
+Because pretraining absorbs a large, diverse corpus, its exposure is tied to the trust placed in that data. [Pretraining data poisoning](../nodes/attack-pretrain-poison.md) and [trigger-conditioned model backdoors](../nodes/attack-backdoor.md) are the manipulation scenarios relevant to this stage — possibilities that depend on what enters the corpus, not demonstrated properties of any particular model. Whatever a base model learns here, desirable or otherwise, becomes the substrate every downstream stage inherits. The cited BERT and text-to-text transfer works describe representative pretraining objectives; consult them for methodological detail.

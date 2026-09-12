@@ -1,0 +1,7 @@
+Evaluation data and benchmark governance is the lifecycle stage concerned with how a model is measured: which datasets are used to assess it, and how those datasets are kept separate across training, attack development, validation and final testing. The purpose is to produce measurements that reflect genuine capability or safety properties rather than artifacts of overlap between what a model trained on and what it is later scored against. It requires disciplined [data collection, filtering and deduplication](../nodes/life-data.md), because clean separation begins upstream in how corpora are partitioned.
+
+## Security-relevant scope
+
+The governing concern is that when the boundary between training and evaluation material breaks down, scores stop meaning what they appear to. [Benchmark or evaluation contamination](../nodes/attack-eval-contamination.md) is the failure mode relevant to this stage, and sound governance is what lets [safety and utility regression testing](../nodes/defense-regression.md) and [evaluation pipelines and automated judges](../nodes/system-eval.md) be trusted. Keeping attack-development data apart from final test data is part of the same discipline.
+
+The cited HarmBench and AgentDojo frameworks illustrate standardized evaluation and agentic testing; defer to them for concrete methodology, and treat contamination as a governance risk to guard against rather than a claim about any specific benchmark.

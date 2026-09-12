@@ -190,11 +190,34 @@ def main():
 
     # Optional authored prose lives in articles/<id>.md and survives rebuilds
     # (the seed carries no article bodies). Presence promotes seed -> draft.
+    import re as _re
+    _node_ids = {n["id"] for n in nodes_raw}
+    _src_ids = {s["id"] for s in sources_raw}
+
+    def _fix_links(text):
+        # Rewrite authored markdown links to deployable URLs. Goldmark does not
+        # resolve relative .md links, so normalise every form to /nodes|sources/.
+        def repl(m):
+            dirp, stem = m.group(1), m.group(2)
+            if dirp == "sources/" or (stem in _src_ids and stem not in _node_ids):
+                if stem in _src_ids:
+                    return f"](/sources/{stem}/)"
+            if dirp == "nodes/" or stem in _node_ids:
+                if stem in _node_ids:
+                    return f"](/nodes/{stem}/)"
+                if stem in _src_ids:
+                    return f"](/sources/{stem}/)"
+            return m.group(0)
+        return _re.sub(
+            r"\]\((?:\.{0,2}/)*(nodes/|sources/)?([a-z0-9][a-z0-9\-]*)\.md\)",
+            repl, text,
+        )
+
     def read_article(nid):
         p = os.path.join("articles", f"{nid}.md")
         if os.path.exists(p):
             with open(p, "r", encoding="utf-8") as fh:
-                return fh.read().strip()
+                return _fix_links(fh.read().strip())
         return ""
 
     node_articles = {n["id"]: read_article(n["id"]) for n in nodes_raw}

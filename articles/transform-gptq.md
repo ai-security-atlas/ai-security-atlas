@@ -1,0 +1,5 @@
+GPTQ is a specific post-training weight-quantization method for large models. It reduces the numerical precision of already-trained weights, using a calibration procedure that accounts for the error introduced by rounding so that accuracy is better preserved than under naive rounding. The method is described in *GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers*.
+
+GPTQ requires [quantization and numerical precision](../nodes/transform-quantization.md) as its conceptual foundation; it is one concrete algorithm within that broader technique rather than a separate idea. A useful clarification from its summary is that GPTQ is a quantization method, not a general model family: names like it describe how weights are compressed, not a distinct class of models.
+
+Its purpose is neutral and practical: shrink a model's memory footprint and speed up inference so that large models run on more constrained hardware, ideally with minimal quality loss. Within this dataset GPTQ carries no direct link to a specific attack. The details of its calibration step, the bit widths it targets, and the accuracy it retains are left to the cited source.

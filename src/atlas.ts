@@ -21,6 +21,7 @@ export interface AtlasNode {
   references: string[]; access_profile_ids: string[];
   observations: Observation[]; frameworks: Framework[];
   rel: Record<string, string[]>;
+  has_article?: boolean;
 }
 export interface Source {
   id: string; title: string; url: string; kind: string; publisher: string;
@@ -102,7 +103,8 @@ export const OVERVIEW_RELS: Record<string, string[]> = {
 };
 
 export async function loadAtlas(): Promise<Atlas> {
-  const res = await fetch('/data/atlas.json');
+  // no-cache => conditional revalidation, so a redeploy's atlas is never stale.
+  const res = await fetch('/data/atlas.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`atlas fetch failed: ${res.status}`);
   return res.json();
 }
