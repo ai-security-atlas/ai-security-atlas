@@ -3427,3 +3427,10 @@ body.docpage { background: var(--theme-bg); color: var(--theme-ink); min-height:
 .srcmeta { display: flex; flex-wrap: wrap; gap: 0.7rem; margin: 0.6rem 0 1.2rem; font-family: var(--mono);
   font-size: 0.72rem; color: var(--theme-muted); }
 .srcmeta .vd { color: var(--theme-action); }
+
+/* a11y + spacing refinements */
+.nav-row:focus-visible { outline: 2px solid var(--theme-focus); outline-offset: -2px; border-radius: 7px; }
+.doc .summary { margin-bottom: 2rem; }
+.doc .rel:first-of-type { margin-top: 0.4rem; }
+/* keep long single-column graph labels from ever forcing body scroll */
+.stage__graph, .graphwrap { overflow: hidden; }

@@ -80,12 +80,16 @@ function NavRow({ atlas, id, active, depth, expandable, expanded, onToggle, onOp
   if (!n) return null;
   const Glyph = glyphFor(atlas.typeMeta[n.type]?.glyph || 'BookOpen');
   return (
-    <div className="nav-row" data-active={active} style={{ ...accentVar(atlas, n.type), paddingLeft: `${0.4 + depth * 0.85}rem` }} onClick={onOpen}>
+    <div className="nav-row" data-active={active} role="button" tabIndex={0}
+      aria-label={n.title} aria-current={active ? 'true' : undefined}
+      style={{ ...accentVar(atlas, n.type), paddingLeft: `${0.4 + depth * 0.85}rem` }}
+      onClick={onOpen}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } }}>
       <span className="nav-row__mark" />
       <button
         className={`nav-row__chev ${expandable ? '' : 'nav-row__chev--hidden'}`}
         onClick={e => { e.stopPropagation(); onToggle(); }}
-        aria-label={expanded ? 'Collapse' : 'Expand'}
+        aria-label={expanded ? 'Collapse' : 'Expand'} tabIndex={-1}
       >
         {expanded ? <ChevronDown /> : <ChevronRight />}
       </button>
@@ -455,7 +459,10 @@ function GraphView({ atlas, focusId, onOpen, fullWidth }: {
     const idSet = new Set(capped);
     const nodes = capped.map(id => {
       const n = atlas.nodes[id];
-      return { id, name: n.title, type: n.type, color: atlas.typeMeta[n.type]?.color, focus: id === focusId };
+      const focus = id === focusId;
+      // Pin the focus node at the origin so the neighborhood forms a clean hub.
+      return { id, name: n.title, type: n.type, color: atlas.typeMeta[n.type]?.color, focus,
+        ...(focus ? { fx: 0, fy: 0 } : {}) };
     });
     const links = atlas.edges
       .filter(e => idSet.has(e.source) && idSet.has(e.target))
@@ -463,30 +470,48 @@ function GraphView({ atlas, focusId, onOpen, fullWidth }: {
     return { nodes, links };
   }, [atlas, focusId]);
 
+  // Spread the neighborhood so labels don't collide; pin fit after settle.
   useEffect(() => {
-    const t = setTimeout(() => ref.current?.zoomToFit(400, 60), reduced ? 50 : 500);
+    const g = ref.current;
+    if (!g) return;
+    try {
+      g.d3Force('charge')?.strength(-220);
+      g.d3Force('link')?.distance(70);
+    } catch {}
+    const t = setTimeout(() => g.zoomToFit(400, 85), reduced ? 60 : 650);
     return () => clearTimeout(t);
   }, [data, reduced]);
 
   const drawNode = useCallback((node: any, ctx: CanvasRenderingContext2D, scale: number) => {
-    const r = node.focus ? 6 : 4;
+    const ink = getComputedStyle(document.documentElement).getPropertyValue('--theme-ink').trim() || '#111';
+    const surface = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg').trim() || '#fff';
+    const r = node.focus ? 6.5 : 4.5;
+    // node disc
     ctx.beginPath();
     ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
     ctx.fillStyle = node.color || '#888';
     ctx.fill();
     if (node.focus) {
-      ctx.lineWidth = 2 / scale;
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--theme-ink') || '#000';
+      ctx.lineWidth = 2.4 / scale;
+      ctx.strokeStyle = ink;
       ctx.stroke();
     }
-    if (scale > 0.6 || node.focus) {
-      const label = node.name.length > 34 ? node.name.slice(0, 32) + '…' : node.name;
-      const fs = Math.max(3.2, 11 / scale);
-      ctx.font = `${node.focus ? 600 : 400} ${fs}px ui-sans-serif, system-ui, sans-serif`;
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--theme-ink') || '#000';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(label, node.x + r + 2, node.y);
+    // label below the node with a legibility backing plate
+    if (scale > 0.45 || node.focus) {
+      const label = node.name.length > 26 ? node.name.slice(0, 24) + '…' : node.name;
+      const fs = node.focus ? 5.2 : 4.4;
+      ctx.font = `${node.focus ? 600 : 450} ${fs}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const tw = ctx.measureText(label).width;
+      const pad = 1.4;
+      const ly = node.y + r + 2.2;
+      ctx.globalAlpha = 0.82;
+      ctx.fillStyle = surface;
+      ctx.fillRect(node.x - tw / 2 - pad, ly - pad, tw + pad * 2, fs + pad * 2);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = ink;
+      ctx.fillText(label, node.x, ly);
     }
   }, []);
 
