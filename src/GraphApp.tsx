@@ -1,601 +1,718 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { Search, ShieldAlert, Cpu, Network, Shield, ChevronRight, ChevronDown, Maximize2, BookOpen, ArrowRight, AlertTriangle, Database, FileText, Link as LinkIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Search, ChevronRight, ChevronDown, X, Moon, Sun, ArrowLeft, ArrowUpRight,
+  BookOpen, ExternalLink, Share2, Maximize2, AlertTriangle, FileText, Link2,
+  Key, Shield, ScrollText, Layers, List as ListIcon, Compass, Crosshair,
+} from 'lucide-react';
+import {
+  Atlas, AtlasNode, loadAtlas, glyphFor, REL_ORDER, OVERVIEW_RELS,
+  humanizeToken,
+} from './atlas';
 
-const IndexTreeNode = ({ node, parentId, path, getChildren, expandedIndexNodes, toggleIndexNode, handleNodeClick, selectedNode, getIconForType, depth = 0 }) => {
-  const children = getChildren(node.id, parentId);
-  const currentPath = path ? `${path}/${node.id}` : node.id;
-  const isExpanded = expandedIndexNodes.has(currentPath);
-  const isSelected = selectedNode?.id === node.id;
-  
-  return (
-    <div className="mb-0.5">
-      <div 
-        className={`flex items-center gap-2 py-1.5 cursor-pointer transition-colors ${
-          isSelected ? 'bg-[color-mix(in_srgb,currentColor_5%,transparent)] text-[var(--theme-ink)] font-medium' : 'text-[var(--theme-muted)] hover:text-[var(--theme-ink)] hover:bg-[color-mix(in_srgb,currentColor_3%,transparent)]'
-        }`}
-        style={{ paddingLeft: `${depth * 1.25 + 0.75}rem`, paddingRight: '0.75rem' }}
-        onClick={() => handleNodeClick(node)}
-      >
-        <button 
-          onClick={(e) => toggleIndexNode(e, currentPath)}
-          className={`p-0.5 rounded text-[var(--theme-muted)] hover:text-[var(--theme-ink)] ${children.length === 0 ? 'invisible' : ''}`}
-        >
-          {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        </button>
-        <div className="shrink-0">{getIconForType(node.type, "w-3.5 h-3.5")}</div>
-        <span className="text-sm truncate select-none">{node.name}</span>
-      </div>
-      
-      <AnimatePresence>
-        {isExpanded && children.length > 0 && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            {children.map(child => (
-              <IndexTreeNode 
-                key={`${currentPath}/${child.id}`}
-                node={child}
-                parentId={node.id}
-                path={currentPath}
-                getChildren={getChildren}
-                expandedIndexNodes={expandedIndexNodes}
-                toggleIndexNode={toggleIndexNode}
-                handleNodeClick={handleNodeClick}
-                selectedNode={selectedNode}
-                getIconForType={getIconForType}
-                depth={depth + 1}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+/* ------------------------------------------------------------------ helpers */
+
+const useTheme = () => {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window === 'undefined') return 'light';
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark' || stored === 'light') return stored;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+  useEffect(() => {
+    const r = document.documentElement;
+    r.classList.toggle('dark', theme === 'dark');
+    r.classList.toggle('light', theme === 'light');
+    r.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+  return { theme, toggle: () => setTheme(t => (t === 'dark' ? 'light' : 'dark')) };
 };
 
-export function GraphApp() {
-  const [data, setData] = useState({ nodes: [], links: [], allEdges: [], sources: [], framework_mappings: [], access_profiles: [], views: [] });
-  const [visibleNodeIds, setVisibleNodeIds] = useState(new Set());
-  const [selectedNode, setSelectedNode] = useState(null);
-  const [hoverNode, setHoverNode] = useState(null);
-  const [search, setSearch] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [expandedIndexNodes, setExpandedIndexNodes] = useState(new Set());
+function TypeIcon({ atlas, type, className }: { atlas: Atlas; type: string; className?: string }) {
+  const meta = atlas.typeMeta[type];
+  const Glyph = glyphFor(meta?.glyph || 'BookOpen');
+  return <Glyph className={className} style={{ color: meta?.color }} />;
+}
 
-  useEffect(() => {
-    const initPagefind = async () => {
-      if (typeof window !== 'undefined' && !window.pagefind) {
-        try {
-          window.pagefind = await import(/* @vite-ignore */ '/pagefind/pagefind.js');
-          await window.pagefind.options({ baseUrl: '/' });
-          await window.pagefind.init();
-        } catch (e) {
-          console.error('Failed to load pagefind', e);
-        }
-      }
-    };
-    initPagefind();
-  }, []);
+function accentVar(atlas: Atlas, type: string): React.CSSProperties {
+  return { ['--accent' as any]: atlas.typeMeta[type]?.color || 'var(--theme-action)' };
+}
 
-  const handleSearchChange = async (e) => {
-    const query = e.target.value;
-    setSearch(query);
-    if (!query) {
-      setSearchResults([]);
-      return;
-    }
-    if (window.pagefind) {
-      const searchData = await window.pagefind.search(query);
-      const results = await Promise.all(searchData.results.map(r => r.data()));
-      setSearchResults(results);
-    } else {
-      setSearchResults(
-        data.nodes
-          .filter(n => n.name.toLowerCase().includes(query.toLowerCase()))
-          .map(n => ({
-            url: `/nodes/${n.id}/`,
-            meta: { title: n.name },
-            excerpt: n.summary || ''
-          }))
-      );
-    }
-  };
+/* ------------------------------------------------------------------- chips */
 
-  const onResultClick = (result) => {
-    const match = result.url.match(/\/(?:nodes|sources)\/([^/]+)/);
-    if (match) {
-      const id = match[1];
-      const node = data.nodes.find(n => n.id === id) || (data.sources && data.sources.find(s => s.id === id));
-      if (node) {
-        handleNodeClick(node);
-      } else {
-        window.location.href = result.url;
-      }
-    } else {
-      window.location.href = result.url;
-    }
-  };
+function NodeChip({ atlas, id, onOpen }: { atlas: Atlas; id: string; onOpen: (id: string) => void }) {
+  const n = atlas.nodes[id];
+  if (!n) return null;
+  const Glyph = glyphFor(atlas.typeMeta[n.type]?.glyph || 'BookOpen');
+  return (
+    <button className="chip" style={accentVar(atlas, n.type)} onClick={() => onOpen(id)} title={n.title}>
+      <Glyph />
+      <span>{n.title}</span>
+    </button>
+  );
+}
 
-  
-  // Mobile UI and Graph Toggle state
-  const [isMobileIndexOpen, setIsMobileIndexOpen] = useState(true);
-  const [showGraph, setShowGraph] = useState(false);
-  
-  const graphRef = useRef();
+function RelGroup({ atlas, groupKey, ids, onOpen }: {
+  atlas: Atlas; groupKey: string; ids: string[]; onOpen: (id: string) => void;
+}) {
+  if (!ids?.length) return null;
+  return (
+    <div className="rel">
+      <div className="rel__head">
+        <h3>{atlas.relLabels[groupKey] || groupKey}</h3>
+        <span className="n">{ids.length}</span>
+      </div>
+      <div className="chips">
+        {ids.map(id => <NodeChip key={id} atlas={atlas} id={id} onOpen={onOpen} />)}
+      </div>
+    </div>
+  );
+}
 
-  // Color mapping based on 0perant theme feel
-  const getColor = (type) => {
-    switch(type) {
-      case 'goal': return 'var(--theme-action)'; 
-      case 'attack': return '#e11d48'; 
-      case 'architecture': return '#2563eb';
-      case 'concept': return '#059669';
-      case 'method': return '#7c3aed';
-      default: return 'var(--theme-muted)';
-    }
-  };
+/* ------------------------------------------------------------- navigation */
 
-  useEffect(() => {
-    fetch('/data/graph.json')
-      .then(res => res.json())
-      .then(json => {
-        const nodes = json.nodes.map(n => ({
-          ...n,
-          id: n.id,
-          name: n.title,
-          val: n.type === 'goal' ? 4 : n.type === 'attack' ? 3 : 2
-        }));
-        
-        const allEdges = json.edges || [];
-        
-        const links = allEdges.map(e => ({
-          source: e.source,
-          target: e.target,
-          type: e.type,
-          name: e.conditions
-        })).filter(l => 
-          nodes.some(n => n.id === l.source) && 
-          nodes.some(n => n.id === l.target)
-        );
+function NavRow({ atlas, id, active, depth, expandable, expanded, onToggle, onOpen, count }: {
+  atlas: Atlas; id: string; active: boolean; depth: number; expandable: boolean;
+  expanded: boolean; onToggle: () => void; onOpen: () => void; count?: number;
+}) {
+  const n = atlas.nodes[id];
+  if (!n) return null;
+  const Glyph = glyphFor(atlas.typeMeta[n.type]?.glyph || 'BookOpen');
+  return (
+    <div className="nav-row" data-active={active} style={{ ...accentVar(atlas, n.type), paddingLeft: `${0.4 + depth * 0.85}rem` }} onClick={onOpen}>
+      <span className="nav-row__mark" />
+      <button
+        className={`nav-row__chev ${expandable ? '' : 'nav-row__chev--hidden'}`}
+        onClick={e => { e.stopPropagation(); onToggle(); }}
+        aria-label={expanded ? 'Collapse' : 'Expand'}
+      >
+        {expanded ? <ChevronDown /> : <ChevronRight />}
+      </button>
+      <span className="nav-row__glyph"><Glyph /></span>
+      <span className="nav-row__label">{n.title}</span>
+      {count != null && <span className="nav-row__count">{count}</span>}
+    </div>
+  );
+}
 
-        setData({ 
-          nodes, 
-          links, 
-          allEdges, 
-          sources: json.sources || [], 
-          framework_mappings: json.framework_mappings || [], 
-          access_profiles: json.access_profiles || [],
-          views: json.views || []
-        });
-        
-        // Initial visible nodes: only goals
-        const initialVisible = new Set(nodes.filter(n => n.type === 'goal').map(n => n.id));
-        setVisibleNodeIds(initialVisible);
-      });
-  }, []);
-
-  const expandNode = useCallback((nodeId) => {
-    setVisibleNodeIds(prev => {
-      const next = new Set(prev);
-      next.add(nodeId);
-      // Add all directly connected nodes
-      data.links.forEach(l => {
-        const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
-        const targetId = typeof l.target === 'object' ? l.target.id : l.target;
-        if (sourceId === nodeId) next.add(targetId);
-        if (targetId === nodeId) next.add(sourceId);
-      });
-      return next;
-    });
-  }, [data.links]);
-
-  const handleNodeClick = useCallback((node) => {
-    setSelectedNode(node);
-    expandNode(node.id);
-    setExpandedIndexNodes(prev => {
-      const next = new Set(prev);
-      next.add(node.id);
-      return next;
-    });
-    
-    // Switch to content view on mobile
-    setIsMobileIndexOpen(false);
-    
-    if (showGraph && graphRef.current) {
-      graphRef.current.centerAt(node.x, node.y, 1000);
-      graphRef.current.zoom(1.5, 1000);
-    }
-  }, [expandNode, showGraph]);
-
-  const getIconForType = (type, className = "w-4 h-4") => {
-    switch(type) {
-      case 'goal': return <ShieldAlert className={className} style={{ color: getColor(type) }} />;
-      case 'architecture': return <Cpu className={className} style={{ color: getColor(type) }} />;
-      case 'method': return <Network className={className} style={{ color: getColor(type) }} />;
-      case 'attack': return <Shield className={className} style={{ color: getColor(type) }} />;
-      default: return <BookOpen className={className} style={{ color: getColor(type) }} />;
-    }
-  };
-
-  const graphData = useMemo(() => {
-    const visibleNodes = data.nodes.filter(n => visibleNodeIds.has(n.id));
-    const visibleLinks = data.links.filter(l => {
-      const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
-      const targetId = typeof l.target === 'object' ? l.target.id : l.target;
-      return visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId);
-    });
-    return { nodes: visibleNodes, links: visibleLinks };
-  }, [data, visibleNodeIds]);
-
-  // Helper to find children recursively
-  const getChildren = useCallback((nodeId, parentId) => {
-    const adjacentIds = new Set();
-    data.links.forEach(l => {
-      const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
-      const targetId = typeof l.target === 'object' ? l.target.id : l.target;
-      if (sourceId === nodeId && targetId !== parentId) adjacentIds.add(targetId);
-      if (targetId === nodeId && sourceId !== parentId) adjacentIds.add(sourceId);
-    });
-    return data.nodes.filter(n => adjacentIds.has(n.id));
-  }, [data]);
-
-  const toggleIndexNode = (e, nodeId) => {
-    e.stopPropagation();
-    setExpandedIndexNodes(prev => {
-      const next = new Set(prev);
-      if (next.has(nodeId)) next.delete(nodeId);
-      else next.add(nodeId);
-      return next;
-    });
-  };
+function Sidebar({ atlas, selectedId, onOpen, search, onSearch, results, expanded, toggle }: {
+  atlas: Atlas; selectedId: string | null; onOpen: (id: string) => void;
+  search: string; onSearch: (e: any) => void; results: any[];
+  expanded: Set<string>; toggle: (key: string) => void;
+}) {
+  const is = (k: string) => expanded.has(k);
 
   return (
-    <div className="flex h-screen w-full bg-[var(--theme-bg)] text-[var(--theme-ink)] font-sans overflow-hidden">
-      
-      {/* Left Sidebar - Index */}
-      <div className={`${isMobileIndexOpen ? 'flex' : 'hidden'} md:flex w-full md:w-[350px] border-r border-[color-mix(in_srgb,currentColor_15%,transparent)] bg-[var(--theme-surface)] flex-col z-10 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]`}>
-        <div className="p-5 border-b border-[color-mix(in_srgb,currentColor_15%,transparent)]">
-          <h2 className="mb-4 flex items-center gap-2 font-bold" style={{ fontSize: '1.25rem' }}>
-            <Shield className="w-5 h-5 text-[var(--theme-action)]" /> AI Security Atlas
-          </h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--theme-muted)]" />
-            <input 
-              type="text"
-              placeholder="Search concepts..."
-              className="w-full pl-9 pr-4 py-2 bg-[var(--theme-bg)] border border-[color-mix(in_srgb,currentColor_25%,transparent)] rounded-none focus:outline-none focus:border-[var(--theme-focus)] text-sm transition-colors"
-              value={search}
-              onChange={handleSearchChange}
-            />
-          </div>
+    <>
+      <div className="nav__head">
+        <div className="nav__brand">
+          <Shield className="w-5 h-5" />
+          AI Security Atlas
+          <small>ATLAS</small>
         </div>
-
-        <div className="flex-1 overflow-y-auto p-2">
-          {search ? (
-            <div className="space-y-1">
-              {searchResults.map((result, idx) => (
-                <div 
-                  key={idx}
-                  className="px-3 py-2 hover:bg-[color-mix(in_srgb,currentColor_5%,transparent)] cursor-pointer flex flex-col gap-1 transition-colors border-b border-[color-mix(in_srgb,currentColor_10%,transparent)] last:border-0"
-                  onClick={() => onResultClick(result)}
-                >
-                  <div className="text-sm font-medium text-[var(--theme-ink)]">{result.meta?.title || result.url}</div>
-                  <div 
-                    className="text-xs text-[var(--theme-muted)] line-clamp-2 [&>mark]:bg-[var(--theme-focus)] [&>mark]:text-white [&>mark]:px-0.5 [&>mark]:rounded-sm" 
-                    dangerouslySetInnerHTML={{ __html: result.excerpt }} 
-                  />
-                </div>
-              ))}
-              {searchResults.length === 0 && (
-                <div className="p-4 text-sm text-[var(--theme-muted)] text-center">
-                  No results found.
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-1 pt-2">
-              <div className="px-3 pb-2 text-xs font-semibold tracking-widest uppercase text-[var(--theme-muted)]">
-                Index
-              </div>
-              {data.nodes.filter(n => n.type === 'goal').map(goal => (
-                <IndexTreeNode 
-                  key={goal.id}
-                  node={goal}
-                  parentId={null}
-                  path={null}
-                  getChildren={getChildren}
-                  expandedIndexNodes={expandedIndexNodes}
-                  toggleIndexNode={toggleIndexNode}
-                  handleNodeClick={handleNodeClick}
-                  selectedNode={selectedNode}
-                  getIconForType={getIconForType}
-                />
-              ))}
-            </div>
-          )}
+        <div className="search">
+          <Search />
+          <input value={search} onChange={onSearch} placeholder="Search techniques, concepts…" aria-label="Search" />
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className={`${!isMobileIndexOpen ? 'flex' : 'hidden'} md:flex flex-1 flex-col relative min-w-0`}>
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[color-mix(in_srgb,currentColor_15%,transparent)] bg-[var(--theme-surface)] shrink-0 h-[73px]">
-          <div className="flex items-center gap-4">
-            <button 
-              className="md:hidden flex items-center gap-2 text-[var(--theme-muted)] hover:text-[var(--theme-ink)]"
-              onClick={() => setIsMobileIndexOpen(true)}
-            >
-              <ChevronRight className="w-5 h-5 rotate-180" />
-              <span className="text-sm font-medium">Index</span>
-            </button>
-            <div className="hidden md:block text-sm font-medium text-[var(--theme-muted)] truncate max-w-md">
-              {selectedNode ? selectedNode.name : 'Select a topic'}
-            </div>
+      <div className="nav__scroll">
+        {search ? (
+          <div className="sr">
+            {results.map((r, i) => {
+              const id = (r.url || '').match(/\/(?:nodes|sources)\/([^/]+)/)?.[1];
+              const n = id ? atlas.nodes[id] : null;
+              return (
+                <div key={i} className="sr__item" style={n ? accentVar(atlas, n.type) : undefined}
+                  onClick={() => id && atlas.nodes[id] ? onOpen(id) : (window.location.href = r.url)}>
+                  <div className="sr__title">
+                    {n && <TypeIcon atlas={atlas} type={n.type} />}
+                    {r.meta?.title || n?.title || r.url}
+                  </div>
+                  {r.excerpt && <div className="sr__excerpt" dangerouslySetInnerHTML={{ __html: r.excerpt }} />}
+                </div>
+              );
+            })}
+            {results.length === 0 && <div className="sr__empty">No matches for “{search}”.</div>}
           </div>
-          <button 
-            onClick={() => setShowGraph(!showGraph)}
-            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium border transition-colors ${
-              showGraph 
-                ? 'bg-[var(--theme-action)] text-white border-[var(--theme-action)]' 
-                : 'border-[color-mix(in_srgb,currentColor_15%,transparent)] hover:border-[var(--theme-action)]'
-            }`}
-          >
-            <Network className="w-4 h-4" />
-            {showGraph ? 'Hide Graph' : 'View Graph'}
-          </button>
-        </div>
+        ) : (
+          <>
+            <div className="nav__section-label"><Compass /> Adversary objectives</div>
+            {atlas.nav.objectives.map(obj => {
+              const gKey = `g:${obj.goalId}`;
+              const gOpen = is(gKey);
+              return (
+                <div key={obj.goalId}>
+                  <NavRow atlas={atlas} id={obj.goalId} active={selectedId === obj.goalId} depth={0}
+                    expandable={obj.families.length + obj.looseAttackIds.length > 0} expanded={gOpen}
+                    onToggle={() => toggle(gKey)} onOpen={() => onOpen(obj.goalId)} count={obj.count} />
+                  {gOpen && (
+                    <div className="nav-children">
+                      {obj.families.map(fam => {
+                        const fKey = `${gKey}/f:${fam.id}`;
+                        const fOpen = is(fKey);
+                        return (
+                          <div key={fam.id}>
+                            <NavRow atlas={atlas} id={fam.id} active={selectedId === fam.id} depth={1}
+                              expandable={fam.attackIds.length > 0} expanded={fOpen}
+                              onToggle={() => toggle(fKey)} onOpen={() => onOpen(fam.id)} count={fam.attackIds.length} />
+                            {fOpen && fam.attackIds.map(aid => (
+                              <NavRow key={aid} atlas={atlas} id={aid} active={selectedId === aid} depth={2}
+                                expandable={false} expanded={false} onToggle={() => {}} onOpen={() => onOpen(aid)} />
+                            ))}
+                          </div>
+                        );
+                      })}
+                      {obj.looseAttackIds.map(aid => (
+                        <NavRow key={aid} atlas={atlas} id={aid} active={selectedId === aid} depth={1}
+                          expandable={false} expanded={false} onToggle={() => {}} onOpen={() => onOpen(aid)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto relative bg-[var(--theme-bg)]">
-          {showGraph ? (
-            <div className="absolute inset-0 cursor-move">
-              <ForceGraph2D
-                ref={graphRef}
-                graphData={graphData}
-                nodeLabel="name"
-                nodeColor={node => {
-                  if (selectedNode && selectedNode.id === node.id) return 'var(--theme-focus)';
-                  if (hoverNode && hoverNode.id === node.id) return 'var(--theme-action)';
-                  return getColor(node.type);
-                }}
-                nodeRelSize={5}
-                linkColor={() => 'color-mix(in srgb, currentColor 15%, transparent)'}
-                linkWidth={1.5}
-                onNodeClick={handleNodeClick}
-                onNodeHover={setHoverNode}
-                d3VelocityDecay={0.3}
-                backgroundColor="var(--theme-bg)"
-              />
-              <div className="absolute top-4 right-4 z-10">
-                <button 
-                  onClick={() => {
-                    if (graphRef.current) graphRef.current.zoomToFit(400);
-                  }}
-                  className="p-2 bg-[var(--theme-surface)] border border-[color-mix(in_srgb,currentColor_15%,transparent)] shadow-sm text-[var(--theme-ink)] hover:text-[var(--theme-action)] transition-colors"
-                  title="Zoom to Fit"
-                >
-                  <Maximize2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          ) : selectedNode ? (
-            <div className="p-6 md:p-12 max-w-4xl mx-auto w-full">
-              <div className="flex items-center gap-2 mb-4">
-                {getIconForType(selectedNode.type)}
-                <span className="text-[0.6875rem] font-bold uppercase tracking-[0.1em] text-[var(--theme-muted)]">
-                  {selectedNode.type}
-                </span>
-              </div>
-              
-              <h1 className="text-3xl md:text-4xl font-bold mb-6 text-[var(--theme-ink)]">
-                {selectedNode.name}
-              </h1>
-              
-              {selectedNode.aliases && selectedNode.aliases.length > 0 && (
-                <div className="mb-8 flex flex-wrap gap-2">
-                  {selectedNode.aliases.map(a => (
-                    <span key={a} className="px-3 py-1.5 text-sm bg-[color-mix(in_srgb,currentColor_5%,transparent)] text-[var(--theme-muted)] border border-[color-mix(in_srgb,currentColor_10%,transparent)]">
-                      {a}
-                    </span>
+            {atlas.nav.sections.map(sec => {
+              const sKey = `s:${sec.id}`;
+              const sOpen = is(sKey);
+              const Glyph = glyphFor(sec.glyph);
+              const total = sec.groups.reduce((a, g) => a + g.ids.length, 0);
+              return (
+                <div key={sec.id}>
+                  <button className="nav__section-label" style={{ width: '100%' }} onClick={() => toggle(sKey)}>
+                    {sOpen ? <ChevronDown /> : <ChevronRight />}<Glyph /> {sec.label}
+                    <span style={{ marginLeft: 'auto', opacity: 0.7 }}>{total}</span>
+                  </button>
+                  {sOpen && sec.groups.map(grp => (
+                    <div key={grp.label}>
+                      {sec.groups.length > 1 && (
+                        <div style={{ padding: '0.4rem 0.75rem 0.15rem 1.6rem', fontFamily: 'var(--mono)', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--theme-muted)', opacity: 0.8 }}>{grp.label}</div>
+                      )}
+                      {grp.ids.map(id => (
+                        <NavRow key={id} atlas={atlas} id={id} active={selectedId === id} depth={1}
+                          expandable={false} expanded={false} onToggle={() => {}} onOpen={() => onOpen(id)} />
+                      ))}
+                    </div>
                   ))}
                 </div>
-              )}
+              );
+            })}
+          </>
+        )}
+      </div>
+    </>
+  );
+}
 
-              {selectedNode.caveat && (
-                <div className="mb-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 rounded-r">
-                  <div className="flex gap-3">
-                    <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-bold text-yellow-800 dark:text-yellow-500 uppercase tracking-wider mb-1">Caveat</h4>
-                      <p className="text-yellow-700 dark:text-yellow-400 text-sm leading-relaxed">{selectedNode.caveat}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+/* ---------------------------------------------------------------- landing */
 
-              <div className="prose prose-lg max-w-none text-[var(--theme-muted)] leading-relaxed mb-8">
-                <p>{selectedNode.summary || 'No detailed summary available in seed data.'}</p>
-              </div>
-              
-              {selectedNode.scope_ids && selectedNode.scope_ids.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Relevant Scopes</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedNode.scope_ids.map(s => {
-                       const scopeNode = data.nodes.find(n => n.id === s);
-                       return (
-                         <span key={s} className="px-3 py-1.5 text-sm bg-[color-mix(in_srgb,currentColor_5%,transparent)] text-[var(--theme-muted)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] flex items-center gap-2 cursor-pointer hover:bg-[color-mix(in_srgb,currentColor_10%,transparent)]" onClick={() => scopeNode && handleNodeClick(scopeNode)}>
-                           <Cpu className="w-3.5 h-3.5" />
-                           {scopeNode ? scopeNode.name : s}
-                         </span>
-                       );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {selectedNode.access_profile_ids && selectedNode.access_profile_ids.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Access Profiles</h3>
-                  <div className="grid gap-3">
-                    {selectedNode.access_profile_ids.map(apId => {
-                      const profile = data.access_profiles.find(ap => ap.id === apId);
-                      if (!profile) return null;
-                      return (
-                        <div key={apId} className="p-4 bg-[color-mix(in_srgb,currentColor_2%,transparent)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] rounded">
-                          <h4 className="font-semibold text-[var(--theme-ink)] text-sm mb-1">{profile.title}</h4>
-                          {profile.caveat && <p className="text-xs text-[var(--theme-muted)] mt-2 italic">{profile.caveat}</p>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {data.framework_mappings.some(fm => fm.node_ids && fm.node_ids.includes(selectedNode.id)) && (
-                <div className="mb-8">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Framework Mappings</h3>
-                  <div className="grid gap-3">
-                    {data.framework_mappings.filter(fm => fm.node_ids && fm.node_ids.includes(selectedNode.id)).map((fm, idx) => (
-                      <div key={idx} className="p-3 flex items-start gap-3 bg-[color-mix(in_srgb,currentColor_2%,transparent)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] rounded">
-                        <Database className="w-4 h-4 mt-0.5 text-[var(--theme-muted)] shrink-0" />
-                        <div>
-                          <div className="text-sm font-medium text-[var(--theme-ink)]">{fm.framework} {fm.edition && `(${fm.edition})`}</div>
-                          <div className="text-xs text-[var(--theme-muted)] mt-1">{fm.external_id}: {fm.title}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedNode.claims && selectedNode.claims.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Claims</h3>
-                  <div className="space-y-3">
-                    {selectedNode.claims.map(claim => (
-                      <div key={claim.id} className="p-4 bg-[color-mix(in_srgb,currentColor_2%,transparent)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] rounded">
-                        <div className="flex gap-2 items-start mb-2">
-                          <FileText className="w-4 h-4 mt-0.5 shrink-0 text-[var(--theme-action)]" />
-                          <div className="text-sm text-[var(--theme-ink)] font-medium leading-relaxed">{claim.statement}</div>
-                        </div>
-                        {claim.limitations && (
-                          <div className="text-xs text-[var(--theme-muted)] ml-6 mt-2 border-l-2 pl-3 border-[color-mix(in_srgb,currentColor_15%,transparent)]">
-                            <span className="font-semibold">Limitations:</span> {claim.limitations}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedNode.observations && selectedNode.observations.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Observations</h3>
-                  <div className="space-y-3">
-                    {selectedNode.observations.map(obs => (
-                      <div key={obs.id} className="p-4 bg-[color-mix(in_srgb,currentColor_2%,transparent)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] rounded text-sm">
-                        <div className="font-semibold text-[var(--theme-ink)] mb-1">Target: {obs.target_label}</div>
-                        <div className="text-[var(--theme-muted)] mb-2">{obs.claim}</div>
-                        {obs.limitations && (
-                          <div className="text-xs text-[var(--theme-muted)] italic border-l-2 pl-3 border-[color-mix(in_srgb,currentColor_15%,transparent)]">
-                            {obs.limitations}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedNode.references && selectedNode.references.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-3">Sources</h3>
-                  <div className="space-y-2">
-                    {selectedNode.references.map(refId => {
-                      const source = data.sources.find(s => s.id === refId);
-                      return source ? (
-                        <a 
-                          key={refId} 
-                          href={source.url} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="flex items-start gap-3 p-3 bg-[color-mix(in_srgb,currentColor_2%,transparent)] hover:bg-[color-mix(in_srgb,currentColor_5%,transparent)] border border-[color-mix(in_srgb,currentColor_10%,transparent)] rounded transition-colors group"
-                        >
-                          <LinkIcon className="w-4 h-4 mt-0.5 shrink-0 text-[var(--theme-muted)] group-hover:text-[var(--theme-action)]" />
-                          <div>
-                            <div className="text-sm font-medium text-[var(--theme-ink)] group-hover:text-[var(--theme-action)] leading-snug">{source.title}</div>
-                            <div className="flex gap-3 text-xs text-[var(--theme-muted)] mt-1.5">
-                              {source.year && <span>{source.year}</span>}
-                              {source.kind && <span className="capitalize">{source.kind.replace(/_/g, ' ')}</span>}
-                              {source.verification_depth && <span className="text-[var(--theme-action)]">{source.verification_depth.replace(/_/g, ' ')}</span>}
-                            </div>
-                          </div>
-                        </a>
-                      ) : (
-                        <div key={refId} className="text-sm text-[var(--theme-muted)]">{refId}</div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {selectedNode.prerequisites && selectedNode.prerequisites.length > 0 && (
-                <div className="mb-12">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--theme-ink)] mb-4">Prerequisites</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {selectedNode.prerequisites.map(reqId => {
-                      const reqNode = data.nodes.find(n => n.id === reqId);
-                      return reqNode ? (
-                        <button 
-                          key={reqId}
-                          onClick={() => handleNodeClick(reqNode)}
-                          className="flex flex-col p-4 border border-[color-mix(in_srgb,currentColor_15%,transparent)] hover:border-[var(--theme-action)] text-left group transition-colors bg-[var(--theme-surface)]"
-                        >
-                          <div className="flex items-center gap-2 mb-2 w-full">
-                            {getIconForType(reqNode.type, "w-4 h-4 shrink-0")}
-                            <span className="text-[0.65rem] font-bold uppercase tracking-[0.1em] text-[var(--theme-muted)]">
-                              {reqNode.type}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between w-full">
-                            <span className="text-base font-medium text-[var(--theme-ink)] line-clamp-1 pr-2">{reqNode.name}</span>
-                            <ArrowRight className="w-5 h-5 shrink-0 text-[var(--theme-muted)] group-hover:text-[var(--theme-action)]" />
-                          </div>
-                        </button>
-                      ) : null;
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-8 border-t border-[color-mix(in_srgb,currentColor_15%,transparent)]">
-                <a 
-                  href={`/nodes/${selectedNode.id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-h-[48px] items-center justify-center gap-2 border border-current px-6 py-2.5 text-base font-[650] leading-none transition-colors w-full sm:w-auto bg-[var(--theme-ink)] text-[var(--theme-bg)] hover:bg-[var(--theme-action)] hover:border-[var(--theme-action)]"
-                >
-                  <BookOpen className="w-5 h-5" /> View Full Article
-                </a>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-[var(--theme-muted)] p-8 text-center">
-              <BookOpen className="w-16 h-16 mb-4 opacity-20" />
-              <h2 className="text-xl font-medium mb-2 text-[var(--theme-ink)]">Welcome to the Atlas</h2>
-              <p className="max-w-md">Select a topic from the index on the left to explore its details, or toggle the graph view to see how concepts are connected.</p>
-            </div>
-          )}
+function Landing({ atlas, onOpen }: { atlas: Atlas; onOpen: (id: string) => void }) {
+  const c = atlas.meta.counts;
+  return (
+    <div className="landing">
+      <div className="landing__hero">
+        <div className="eyb eyb--accent" style={{ ['--accent' as any]: 'var(--theme-action)' }}>
+          <span className="type-dot" /> AI SECURITY RESEARCH GRAPH
+        </div>
+        <h1>An opinionated map of how AI systems are attacked, defended, and evaluated.</h1>
+        <p className="landing__lead">
+          Start from an adversary objective and descend to the mechanism, its prerequisites,
+          the architectures it applies to, the evidence behind it, and the controls that address
+          it. Every claim links to a source; nothing here is a working exploit.
+        </p>
+        <div className="landing__stats">
+          <div className="stat"><b>{c.nodes}</b><small>Topics</small></div>
+          <div className="stat"><b>{c.edges}</b><small>Relationships</small></div>
+          <div className="stat"><b>{c.sources}</b><small>Sources</small></div>
+          <div className="stat"><b>{c.types.attack}</b><small>Attacks</small></div>
+          <div className="stat"><b>{c.types.defense}</b><small>Defenses</small></div>
         </div>
       </div>
+
+      <div className="eyb" style={{ marginBottom: '1rem' }}><Crosshair style={{ width: '0.85rem', height: '0.85rem' }} /> ADVERSARY OBJECTIVES</div>
+      <div className="obj-grid">
+        {atlas.nav.objectives.map((obj, i) => {
+          const g = atlas.nodes[obj.goalId];
+          if (!g) return null;
+          const misuse = obj.goalId === 'goal-misuse';
+          return (
+            <button key={obj.goalId} className={`obj-card ${misuse ? 'obj-card--misuse' : ''}`}
+              style={accentVar(atlas, 'goal')} onClick={() => onOpen(obj.goalId)}>
+              <div className="obj-card__n">{misuse ? 'ADJACENT LENS' : `OBJECTIVE ${String(i + 1).padStart(2, '0')}`}</div>
+              <div className="obj-card__title">{g.title}</div>
+              <div className="obj-card__sum">{g.summary}</div>
+              <div className="obj-card__foot">
+                <span className="obj-card__count"><b>{obj.count}</b> techniques · {obj.families.length} families</span>
+                <span className="obj-card__go"><ArrowUpRight style={{ width: '1.1rem', height: '1.1rem' }} /></span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------- reader */
+
+function GoalFamilies({ atlas, goalId, onOpen }: { atlas: Atlas; goalId: string; onOpen: (id: string) => void }) {
+  const obj = atlas.nav.objectives.find(o => o.goalId === goalId);
+  if (!obj) return null;
+  return (
+    <>
+      {obj.families.map(fam => {
+        const f = atlas.nodes[fam.id];
+        return (
+          <div key={fam.id} className="famblock" style={accentVar(atlas, 'technique_family')}>
+            <div className="famblock__head">
+              <TypeIcon atlas={atlas} type="technique_family" />
+              <button className="t" onClick={() => onOpen(fam.id)} style={{ cursor: 'pointer' }}>{f?.title || fam.id}</button>
+              <span className="rel__head" style={{ marginLeft: 'auto' }}><span className="n">{fam.attackIds.length}</span></span>
+            </div>
+            <div className="chips">
+              {fam.attackIds.map(aid => <NodeChip key={aid} atlas={atlas} id={aid} onOpen={onOpen} />)}
+            </div>
+          </div>
+        );
+      })}
+      {obj.looseAttackIds.length > 0 && (
+        <div className="rel">
+          <div className="rel__head"><h3>Other techniques</h3><span className="n">{obj.looseAttackIds.length}</span></div>
+          <div className="chips">{obj.looseAttackIds.map(aid => <NodeChip key={aid} atlas={atlas} id={aid} onOpen={onOpen} />)}</div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
+  atlas: Atlas; node: AtlasNode; tab: string; setTab: (t: any) => void;
+  onOpen: (id: string) => void; onGraph: () => void;
+}) {
+  const meta = atlas.typeMeta[node.type];
+  const rel = node.rel || {};
+  const overviewKeys = (OVERVIEW_RELS[node.type] || REL_ORDER).filter(k => rel[k]?.length);
+  const allRelKeys = REL_ORDER.filter(k => rel[k]?.length);
+
+  // Evidence counts
+  const sources = node.references.map(id => atlas.sources[id]).filter(Boolean);
+  const access = node.access_profile_ids.map(id => atlas.accessProfiles[id]).filter(Boolean);
+  const evCount = sources.length + node.observations.length + node.frameworks.length + access.length;
+  const relCount = allRelKeys.reduce((a, k) => a + rel[k].length, 0);
+
+  const isGoal = node.type === 'goal';
+
+  return (
+    <div className="reader" style={accentVar(atlas, node.type)}>
+      <div className="reader__eyebrow">
+        <span className="eyb eyb--accent"><span className="type-dot" /> {meta?.label || node.type}</span>
+        {node.evidence_status && <span className="badge badge--ev"><ScrollText />{humanizeToken(node.evidence_status)}</span>}
+        {node.content_status && <span className="badge">{node.content_status}</span>}
+        {node.priority && <span className="badge">{node.priority}</span>}
+      </div>
+
+      <h1>{node.title}</h1>
+
+      {node.aliases?.length > 0 && (
+        <div className="aliases">{node.aliases.map(a => <span key={a} className="alias">{a}</span>)}</div>
+      )}
+
+      {node.caveat && (
+        <div className="caveat"><AlertTriangle /><p>{node.caveat}</p></div>
+      )}
+
+      {node.summary && <p className="summary">{node.summary}</p>}
+
+      <div className="tabs">
+        <button className="tab" data-on={tab === 'overview'} onClick={() => setTab('overview')}>Overview</button>
+        <button className="tab" data-on={tab === 'evidence'} onClick={() => setTab('evidence')}>Evidence<span className="tab__n">{evCount}</span></button>
+        <button className="tab" data-on={tab === 'map'} onClick={() => setTab('map')}>Relationships<span className="tab__n">{relCount}</span></button>
+      </div>
+
+      {tab === 'overview' && (
+        <>
+          {isGoal && <GoalFamilies atlas={atlas} goalId={node.id} onOpen={onOpen} />}
+          {!isGoal && overviewKeys.map(k => <RelGroup key={k} atlas={atlas} groupKey={k} ids={rel[k]} onOpen={onOpen} />)}
+          {!isGoal && overviewKeys.length === 0 && (
+            <p style={{ color: 'var(--theme-muted)', fontSize: '0.9rem' }}>
+              This is a seed entry: it carries a definition and routing metadata. See the Relationships and Evidence tabs for its connections and sources.
+            </p>
+          )}
+          <a className="readmore" href={`/nodes/${node.id}/`} target="_blank" rel="noreferrer">
+            <BookOpen /> Open full article
+          </a>
+          <button className="readmore desktop-only" style={{ marginLeft: '0.6rem', background: 'transparent', color: 'var(--theme-ink)' }} onClick={onGraph}>
+            <Share2 /> Focus in graph
+          </button>
+        </>
+      )}
+
+      {tab === 'evidence' && (
+        <>
+          {sources.length > 0 && <div className="section-title">Sources · {sources.length}</div>}
+          {sources.map(s => (
+            <a key={s.id} className="card card--link" href={s.url} target="_blank" rel="noreferrer">
+              <span className="ic"><Link2 /></span>
+              <div>
+                <div className="card__title">{s.title}</div>
+                <div className="card__meta">
+                  {s.year && <span>{s.year}</span>}
+                  {s.kind && <span>{humanizeToken(s.kind)}</span>}
+                  {s.publisher && <span>{s.publisher}</span>}
+                  {s.verification_depth && <span className="vd">{humanizeToken(s.verification_depth)}</span>}
+                </div>
+              </div>
+            </a>
+          ))}
+
+          {node.observations.length > 0 && <div className="section-title">Observations · {node.observations.length}</div>}
+          {node.observations.map((o, i) => (
+            <div key={o.id || i} className="card">
+              <div className="card__title">Target: {o.target_label || 'unspecified'}</div>
+              {o.claim && <div className="card__body">{o.claim}</div>}
+              <div className="card__meta">
+                {o.verification_depth && <span className="vd">{humanizeToken(o.verification_depth)}</span>}
+                <span>{o.reproduced ? 'reproduced' : 'not reproduced'}</span>
+              </div>
+              {o.limitations && <div className="card__limit">{o.limitations}</div>}
+            </div>
+          ))}
+
+          {access.length > 0 && <div className="section-title">Access profiles · {access.length}</div>}
+          {access.map(ap => (
+            <div key={ap.id} className="card">
+              <div className="card__title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Key style={{ width: '0.9rem', height: '0.9rem', color: 'var(--accent)' }} />{ap.title}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.5rem' }}>
+                {ap.all_of.map(t => <span key={t} className="acap">{humanizeToken(t)}</span>)}
+                {ap.any_of.map(t => <span key={t} className="acap">any: {humanizeToken(t)}</span>)}
+                {ap.not_required.map(t => <span key={t} className="acap acap--not">{humanizeToken(t)}</span>)}
+              </div>
+              {ap.caveat && <div className="card__limit">{ap.caveat}</div>}
+            </div>
+          ))}
+
+          {node.frameworks.length > 0 && <div className="section-title">Framework mappings · {node.frameworks.length}</div>}
+          {node.frameworks.map((f, i) => (
+            <div key={i} className="card" style={{ display: 'flex', gap: '0.7rem' }}>
+              <span className="ic"><FileText style={{ width: '1rem', height: '1rem', color: 'var(--theme-muted)' }} /></span>
+              <div>
+                <div className="card__title">{f.framework}{f.edition ? ` · ${f.edition}` : ''}</div>
+                <div className="card__body">{f.external_id}: {f.title}</div>
+              </div>
+            </div>
+          ))}
+
+          {evCount === 0 && <p style={{ color: 'var(--theme-muted)', fontSize: '0.9rem' }}>No evidence records attached to this entry yet.</p>}
+        </>
+      )}
+
+      {tab === 'map' && (
+        <>
+          {allRelKeys.length === 0 && <p style={{ color: 'var(--theme-muted)', fontSize: '0.9rem' }}>No typed relationships recorded.</p>}
+          {allRelKeys.map(k => <RelGroup key={k} atlas={atlas} groupKey={k} ids={rel[k]} onOpen={onOpen} />)}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ graph */
+
+function GraphView({ atlas, focusId, onOpen, fullWidth }: {
+  atlas: Atlas; focusId: string | null; onOpen: (id: string) => void; fullWidth: boolean;
+}) {
+  const ref = useRef<any>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState({ w: 400, h: 400 });
+  const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setDims({ w: el.clientWidth, h: el.clientHeight }));
+    ro.observe(el);
+    setDims({ w: el.clientWidth, h: el.clientHeight });
+    return () => ro.disconnect();
+  }, []);
+
+  // Local neighborhood projection (PRD 7.5): focus + direct relations, capped.
+  const data = useMemo(() => {
+    const ids = new Set<string>();
+    if (focusId && atlas.nodes[focusId]) {
+      ids.add(focusId);
+      const rel = atlas.nodes[focusId].rel || {};
+      Object.values(rel).flat().forEach(id => ids.add(id));
+    } else {
+      // Overview: goals + their families.
+      atlas.nav.objectives.forEach(o => {
+        ids.add(o.goalId);
+        o.families.forEach(f => ids.add(f.id));
+      });
+    }
+    const capped = Array.from(ids).slice(0, 150);
+    const idSet = new Set(capped);
+    const nodes = capped.map(id => {
+      const n = atlas.nodes[id];
+      return { id, name: n.title, type: n.type, color: atlas.typeMeta[n.type]?.color, focus: id === focusId };
+    });
+    const links = atlas.edges
+      .filter(e => idSet.has(e.source) && idSet.has(e.target))
+      .map(e => ({ source: e.source, target: e.target, type: e.type }));
+    return { nodes, links };
+  }, [atlas, focusId]);
+
+  useEffect(() => {
+    const t = setTimeout(() => ref.current?.zoomToFit(400, 60), reduced ? 50 : 500);
+    return () => clearTimeout(t);
+  }, [data, reduced]);
+
+  const drawNode = useCallback((node: any, ctx: CanvasRenderingContext2D, scale: number) => {
+    const r = node.focus ? 6 : 4;
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+    ctx.fillStyle = node.color || '#888';
+    ctx.fill();
+    if (node.focus) {
+      ctx.lineWidth = 2 / scale;
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--theme-ink') || '#000';
+      ctx.stroke();
+    }
+    if (scale > 0.6 || node.focus) {
+      const label = node.name.length > 34 ? node.name.slice(0, 32) + '…' : node.name;
+      const fs = Math.max(3.2, 11 / scale);
+      ctx.font = `${node.focus ? 600 : 400} ${fs}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--theme-ink') || '#000';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, node.x + r + 2, node.y);
+    }
+  }, []);
+
+  const legendTypes = useMemo(() => {
+    const present = new Set(data.nodes.map(n => n.type));
+    return Object.entries(atlas.typeMeta)
+      .filter(([t]) => present.has(t))
+      .sort((a, b) => a[1].order - b[1].order);
+  }, [data, atlas]);
+
+  return (
+    <div className="graphwrap" ref={wrapRef}>
+      <ForceGraph2D
+        ref={ref}
+        width={dims.w}
+        height={dims.h}
+        graphData={data}
+        nodeCanvasObject={drawNode}
+        nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, 8, 0, 2 * Math.PI);
+          ctx.fill();
+        }}
+        onNodeClick={(node: any) => onOpen(node.id)}
+        linkColor={() => getComputedStyle(document.documentElement).getPropertyValue('--hair-strong') || '#ccc'}
+        linkWidth={1}
+        linkDirectionalArrowLength={2.5}
+        linkDirectionalArrowRelPos={1}
+        cooldownTicks={reduced ? 0 : 80}
+        d3VelocityDecay={0.35}
+        backgroundColor="transparent"
+      />
+      <div className="graph-hint">{focusId ? atlas.nodes[focusId]?.title : 'Adversary objectives'} · local map</div>
+      <div className="graph-tools">
+        <button onClick={() => ref.current?.zoomToFit(400, 60)} title="Fit"><Maximize2 /></button>
+      </div>
+      <div className="graph-legend">
+        {legendTypes.map(([t, m]) => (
+          <span key={t}><i style={{ background: m.color }} />{m.label}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------- app */
+
+export function GraphApp() {
+  const [atlas, setAtlas] = useState<Atlas | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [trail, setTrail] = useState<string[]>([]);
+  const [tab, setTab] = useState<'overview' | 'evidence' | 'map'>('overview');
+  const [graphOpen, setGraphOpen] = useState(false);
+  const [graphFull, setGraphFull] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [mobileTab, setMobileTab] = useState<'index' | 'article' | 'graph'>('index');
+  const { theme, toggle } = useTheme();
+
+  // --- load atlas ---
+  useEffect(() => { loadAtlas().then(setAtlas).catch(e => console.error(e)); }, []);
+
+  // --- pagefind ---
+  useEffect(() => {
+    (async () => {
+      if (typeof window !== 'undefined' && !(window as any).pagefind) {
+        try {
+          const pf = await import(/* @vite-ignore */ '/pagefind/pagefind.js');
+          await pf.options?.({ baseUrl: '/' });
+          await pf.init?.();
+          (window as any).pagefind = pf;
+        } catch { /* fallback to in-memory */ }
+      }
+    })();
+  }, []);
+
+  const expandAncestors = useCallback((id: string, a: Atlas) => {
+    // Expand the nav so the selected node is revealed under an objective/section.
+    setExpanded(prev => {
+      const next = new Set(prev);
+      const n = a.nodes[id];
+      if (!n) return next;
+      for (const obj of a.nav.objectives) {
+        if (obj.goalId === id) next.add(`g:${id}`);
+        for (const fam of obj.families) {
+          if (fam.id === id) next.add(`g:${obj.goalId}`);
+          if (fam.attackIds.includes(id)) { next.add(`g:${obj.goalId}`); next.add(`g:${obj.goalId}/f:${fam.id}`); }
+        }
+        if (obj.looseAttackIds.includes(id)) next.add(`g:${obj.goalId}`);
+      }
+      for (const sec of a.nav.sections) {
+        if (sec.groups.some(g => g.ids.includes(id))) next.add(`s:${sec.id}`);
+      }
+      return next;
+    });
+  }, []);
+
+  const open = useCallback((id: string, opts: { push?: boolean } = {}) => {
+    if (!atlas || !atlas.nodes[id]) return;
+    setSelectedId(id);
+    setTab('overview');
+    setTrail(prev => opts.push ? [...prev.filter(x => x !== id), id] : [id]);
+    expandAncestors(id, atlas);
+    setMobileTab('article');
+    setSearch(''); setResults([]);
+    try { history.pushState({ id }, '', `/?node=${id}`); } catch {}
+    document.querySelector('.stage__reader')?.scrollTo({ top: 0 });
+  }, [atlas, expandAncestors]);
+
+  // Chip / in-reader navigation pushes to the trail.
+  const openLink = useCallback((id: string) => open(id, { push: true }), [open]);
+
+  // --- URL restore + back/forward ---
+  useEffect(() => {
+    if (!atlas) return;
+    const applyFromURL = () => {
+      const p = new URLSearchParams(window.location.search);
+      const id = p.get('node');
+      if (id && atlas.nodes[id]) { setSelectedId(id); setTrail([id]); expandAncestors(id, atlas); setMobileTab('article'); }
+      else { setSelectedId(null); setMobileTab('index'); }
+    };
+    applyFromURL();
+    const onPop = () => applyFromURL();
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [atlas, expandAncestors]);
+
+  // --- search ---
+  const onSearch = useCallback(async (e: any) => {
+    const q = e.target.value;
+    setSearch(q);
+    if (!q) { setResults([]); return; }
+    const pf = (window as any).pagefind;
+    if (pf) {
+      try {
+        const sd = await pf.search(q);
+        const data = await Promise.all(sd.results.slice(0, 20).map((r: any) => r.data()));
+        setResults(data);
+        return;
+      } catch { /* fall through */ }
+    }
+    if (atlas) {
+      const ql = q.toLowerCase();
+      setResults(
+        Object.values(atlas.nodes)
+          .filter(n => n.title.toLowerCase().includes(ql) || n.aliases.some(a => a.toLowerCase().includes(ql)) || n.summary.toLowerCase().includes(ql))
+          .slice(0, 25)
+          .map(n => ({ url: `/nodes/${n.id}/`, meta: { title: n.title }, excerpt: n.summary }))
+      );
+    }
+  }, [atlas]);
+
+  const toggleKey = useCallback((k: string) => {
+    setExpanded(prev => { const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n; });
+  }, []);
+
+  if (!atlas) {
+    return <div className="atlas"><div className="empty"><div className="empty__box"><Shield className="big" /><h2>Loading the atlas…</h2></div></div></div>;
+  }
+
+  const node = selectedId ? atlas.nodes[selectedId] : null;
+  const showGraph = graphOpen || graphFull;
+
+  return (
+    <div className="atlas">
+      {/* NAV */}
+      <aside className="nav" data-mobile-hidden={mobileTab !== 'index'}>
+        <Sidebar atlas={atlas} selectedId={selectedId} onOpen={open} search={search} onSearch={onSearch}
+          results={results} expanded={expanded} toggle={toggleKey} />
+      </aside>
+
+      {/* MAIN */}
+      <div className="main" data-mobile-hidden={mobileTab === 'index'}>
+        <div className="topbar">
+          <div className="topbar__left">
+            <button className="iconbtn mobile-only" onClick={() => setMobileTab('index')} aria-label="Back to index"><ArrowLeft /></button>
+            <div className="crumbs">
+              <button onClick={() => { setSelectedId(null); setTrail([]); setMobileTab('index'); try { history.pushState({}, '', '/'); } catch {} }}>Atlas</button>
+              {trail.length > 0 && <span className="sep">/</span>}
+              {trail.map((id, i) => (
+                <React.Fragment key={id}>
+                  {i > 0 && <span className="sep">/</span>}
+                  {i === trail.length - 1
+                    ? <span className="cur">{atlas.nodes[id]?.title}</span>
+                    : <button onClick={() => { setTrail(trail.slice(0, i + 1)); setSelectedId(id); }}>{atlas.nodes[id]?.title}</button>}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+          <div className="topbar__actions">
+            <button className="segbtn desktop-only" data-on={graphOpen} onClick={() => { setGraphOpen(v => !v); setGraphFull(false); }}>
+              <Share2 /> {graphOpen ? 'Hide graph' : 'Graph'}
+            </button>
+            <button className="iconbtn" onClick={toggle} aria-label="Toggle theme">
+              {theme === 'light' ? <Moon /> : <Sun />}
+            </button>
+          </div>
+        </div>
+
+        {/* mobile graph tab shows full graph */}
+        {mobileTab === 'graph' ? (
+          <div className="stage"><div className="stage__graph"><GraphView atlas={atlas} focusId={selectedId} onOpen={open} fullWidth /></div></div>
+        ) : (
+          <div className={`stage ${graphFull ? 'stage--graphonly' : ''}`}>
+            <div className="stage__reader">
+              {node
+                ? <Reader atlas={atlas} node={node} tab={tab} setTab={setTab} onOpen={openLink} onGraph={() => { setGraphOpen(true); }} />
+                : <Landing atlas={atlas} onOpen={open} />}
+            </div>
+            {showGraph && (
+              <div className="stage__graph desktop-only">
+                <GraphView atlas={atlas} focusId={selectedId} onOpen={openLink} fullWidth={graphFull} />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* MOBILE TAB BAR */}
+      <nav className="mtabbar">
+        <button className="mtab" data-on={mobileTab === 'index'} onClick={() => setMobileTab('index')}><ListIcon /> Index</button>
+        <button className="mtab" data-on={mobileTab === 'article'} onClick={() => setMobileTab(node ? 'article' : 'index')}><BookOpen /> Article</button>
+        <button className="mtab" data-on={mobileTab === 'graph'} onClick={() => setMobileTab('graph')}><Share2 /> Graph</button>
+      </nav>
     </div>
   );
 }

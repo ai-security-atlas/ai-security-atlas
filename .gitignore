@@ -8,3 +8,7 @@ content/sources/
 content/views/
 content/graph/
 static/data/
+data/
+.playwright-mcp/
+test-results/
+*.png

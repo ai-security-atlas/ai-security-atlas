@@ -1,6 +1,4 @@
 ---
-title: AI Security Research Graph
+title: AI Security Atlas
 type: homepage
 ---
-
-Welcome to the AI Security Research Graph.
