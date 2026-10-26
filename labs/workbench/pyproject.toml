@@ -1,0 +1,36 @@
+[project]
+name = "atlas-workbench"
+version = "1.0.0"
+description = "Shared Python environment for the AI Security Atlas hands-on labs (CPU only)."
+requires-python = "==3.12.*"
+dependencies = [
+  "torch==2.14.1",
+  "torchvision==0.29.1",
+  "transformers==5.20.2",
+  "safetensors==0.8.0",
+  "gguf==0.19.0",
+  "numpy==2.5.4",
+  "pillow==13.0.0",
+  "num2words",
+  "fickling==0.1.12",
+  "modelscan==0.8.8",
+  "picklescan==1.0.5",
+  "huggingface_hub==2.3.0",
+  "requests",
+]
+
+[tool.uv]
+# Resolve for both Docker platforms the labs support.
+environments = [
+  "sys_platform == 'linux' and platform_machine == 'aarch64'",
+  "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

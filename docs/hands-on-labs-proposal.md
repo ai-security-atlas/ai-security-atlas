@@ -4,6 +4,8 @@
 **Status:** Proposal for Implementation Agent — stack decision made (see Section 3a)  
 **Reference:** Inspired by [DVKA (Damn Vulnerable Kubernetes Application) Workshop](https://github.com/Alevsk/dvka/tree/master/workshop)
 
+> **Implementation:** this proposal is superseded by the implementation spec [`docs/labs-spec.md`](labs-spec.md) (read its final "Addendum: user decisions"). The labs live in [`labs/`](../labs/) (start with [`labs/README.md`](../labs/README.md)).
+
 ---
 
 ## 1. Context & Problem Statement
@@ -105,9 +107,9 @@ Rather than inventing a new setup for every node, the 204 nodes in the Atlas nat
 
 | Lab Profile | Target Node Types / Families | Reusable Stack Components |
 | :--- | :--- | :--- |
-| **1. Chat & Multimodal Stack** | `family-prompt`, `attack-jailbreak`, `attack-multimodal-injection`, `attack-visual-jailbreak`, `attack-prompt-leak` | `ollama` + `open-webui` (using small text & vision models like `llama3.2:1b` / `llava:7b`) |
+| **1. Chat & Multimodal Stack** | `family-prompt`, `attack-jailbreak`, `attack-multimodal-injection`, `attack-prompt-leak` | `ollama` + `open-webui` (using small text & vision models like `llama3.2:1b` / `llava:7b`) |
 | **2. RAG, Memory & Agent Stack** | `family-agent`, `family-retrieval`, `attack-indirect-injection`, `attack-rag-poison`, `attack-tool-rugpull`, `attack-excessive-agency` | `ollama` + `open-webui` (or lightweight FastAPI/MCP agent) + local vector store (`chromadb`) + mock tools |
-| **3. White-Box & Model Internals Workbench** | `family-representation`, `family-evasion`, `attack-fgsm`, `attack-pgd`, `adapt-abliteration`, `adapt-steering`, `concept-logits`, `concept-gradients` | Isolated Python/PyTorch container (`transformers`, `torch`, `numpy`) running tiny models (`SmolLM2-135M`, `GPT-2`, `MobileNet`) for fast CPU/MPS execution |
+| **3. White-Box & Model Internals Workbench** | `family-representation`, `family-evasion`, `attack-visual-jailbreak` (white-box PGD on a local VLM; model backend optional, used only for a contrast step and transfer checks), `attack-fgsm`, `attack-pgd`, `adapt-abliteration`, `adapt-steering`, `concept-logits`, `concept-gradients` | Isolated Python/PyTorch container (`transformers`, `torch`, `numpy`) running tiny models (`SmolLM2-135M`, `GPT-2`, `MobileNet`) for fast CPU/MPS execution |
 | **4. Supply Chain & Artifact Workbench** | `family-supply`, `attack-unsafe-load`, `attack-artifact-substitution`, `attack-adapter-tamper`, `format-safetensors`, `format-gguf`, `format-pytorch` | Isolated Python CLI container (`torch`, `safetensors`, `gguf`, `pickletools`) |
 
 ---

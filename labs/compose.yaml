@@ -1,0 +1,131 @@
+# AI Security Atlas labs: shared stack. Requires Docker Compose >= 2.20.0.
+# Pick a backend block in .env (see .env.example) and set COMPOSE_PROFILES from the lab's Setup 1.
+# Profiles: ollama (container Ollama + model puller), chat (Open WebUI),
+#           workbench (Python workbench), supply (workbench + hardened sandbox).
+name: atlas-labs
+
+x-model-backend: &model-backend
+  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+  OPENAI_API_BASE_URL: ${OPENAI_API_BASE_URL:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+
+services:
+  # (a) container-ollama: CPU-only on every host in v1.
+  ollama:
+    image: ollama/ollama:${OLLAMA_VERSION:-0.40.11}
+    profiles: ["ollama"]
+    volumes:
+      - ollama-models-v1:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-30m}
+      OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:-4096}
+      OLLAMA_NO_CLOUD: "1"
+      LLAMA_ARG_THREADS: ${OLLAMA_CPU_THREADS:-8}   # mandatory: the default (all vCPUs) stalls under load
+    ports:
+      - "127.0.0.1:${OLLAMA_PORT:-11435}:11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  # One-shot puller of $LAB_MODELS into container Ollama. Host-Ollama users pull on the host.
+  models:
+    image: ollama/ollama:${OLLAMA_VERSION:-0.40.11}
+    profiles: ["ollama"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+        required: false
+    environment:
+      OLLAMA_HOST: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      LAB_MODELS: ${LAB_MODELS:-qwen2.5vl:3b moondream:1.8b}
+    entrypoint: ["/bin/sh", "-c", "for m in $$LAB_MODELS; do echo pulling $$m; ollama pull $$m || exit 1; done; ollama list"]
+    restart: "no"
+
+  # Profile "chat": Open WebUI, talks to Ollama (a/b) or an OpenAI-compatible API (c).
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:${OPEN_WEBUI_VERSION:-v0.12.3-slim}
+    profiles: ["chat"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+        required: false
+    environment:
+      <<: *model-backend
+      ENABLE_OLLAMA_API: ${ENABLE_OLLAMA_API:-True}
+      ENABLE_OPENAI_API: ${ENABLE_OPENAI_API:-False}
+      WEBUI_AUTH: "False"                 # single-user local lab; cannot be flipped once users exist
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-atlas-labs-local-only-not-a-secret-0000}
+      ENABLE_PERSISTENT_CONFIG: "False"   # .env stays the source of truth when switching backends
+      ENABLE_VERSION_UPDATE_CHECK: "False"
+      ENABLE_WEB_SEARCH: "False"
+      DEFAULT_MODELS: ${DEFAULT_MODEL:-qwen2.5vl:3b}
+      TASK_MODEL: ${TASK_MODEL:-}
+      ENABLE_TITLE_GENERATION: "False"    # avoid extra background calls on slow CPU backends
+      ENABLE_FOLLOW_UP_GENERATION: "False"
+      ENABLE_TAGS_GENERATION: "False"
+      # Built-in tools (memory, time, ...) are attached to every browser chat, and Ollama rejects
+      # them for models without tool support (qwen2.5vl:3b: "does not support tools").
+      DEFAULT_MODEL_PARAMS: '{"function_calling":"legacy"}'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - open-webui-data-v1:/app/backend/data
+    ports:
+      - "127.0.0.1:${OPEN_WEBUI_PORT:-3000}:8080"
+    restart: unless-stopped
+
+  # Python workbench: network on, repo mounted read-write. Builds, downloads, white-box work.
+  workbench:
+    build:
+      context: ./workbench
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v1}
+    profiles: ["workbench", "supply"]
+    user: "${LAB_UID:-1000}:${LAB_GID:-1000}"
+    working_dir: /labs
+    volumes:
+      - ./:/labs
+      - hf-cache-v1:/cache/hf
+    environment:
+      <<: *model-backend
+      LAB_BACKEND: ${LAB_BACKEND:-}
+      LAB_LLM_BASE_URL: ${LAB_LLM_BASE_URL:-}
+      LAB_LLM_API_KEY: ${LAB_LLM_API_KEY:-}
+      LAB_VLM_MODEL: ${LAB_VLM_MODEL:-}
+      LAB_TRANSFER_MODELS: ${LAB_TRANSFER_MODELS:-}
+      PYTHONPATH: /labs/_shared
+      HOME: /tmp
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stdin_open: true
+    tty: true
+    command: ["bash"]
+
+  # Same image, isolated: no network, read-only root and checkout, outputs to tmpfs /work.
+  sandbox:
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v1}
+    pull_policy: never
+    profiles: ["supply"]
+    network_mode: none
+    read_only: true
+    tmpfs: ["/tmp", "/work"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    user: "${LAB_UID:-1000}:${LAB_GID:-1000}"
+    working_dir: /labs
+    volumes:
+      - ./:/labs:ro
+    environment:
+      ATLAS_WORK: /work
+      HOME: /tmp
+      PYTHONPATH: /labs/_shared
+    stdin_open: true
+    tty: true
+    command: ["bash"]
+
+volumes:
+  ollama-models-v1:
+  open-webui-data-v1:
+  hf-cache-v1:

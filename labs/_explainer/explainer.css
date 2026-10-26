@@ -1,0 +1,176 @@
+/* AI Security Atlas lab explainer theme.
+ * Layout and motion derived from the laya "No Time to Think" deck (laya-lab, docs/deck.css; MIT, see LICENSE-laya).
+ * Colors and type follow the Atlas design system (src/index.css): warm paper / near-black ink, system sans text,
+ * monospace eyebrows, hairline borders, the lab accent (--lab) for chrome, and node-type colors for diagram roles.
+ * Every rule is scoped to .lx (or body[data-standalone] for a lab's own index.html), so the file can be
+ * loaded into any page. Theme follows html[data-theme] / html.dark / prefers-color-scheme, like the Atlas.
+ * Code font: JetBrains Mono from Google Fonts (loaded by the page), with system monospace fallbacks. */
+.lx {
+  /* Atlas theme: --theme-bg / --theme-surface / --theme-ink / --theme-muted, hairlines as ink mixes */
+  --lx-bg: #f1f0eb; --lx-panel: #f8f7f2; --lx-ink: #171916; --lx-muted: #62665f;
+  --lx-ink-2: color-mix(in srgb, var(--lx-ink) 86%, var(--lx-bg));
+  --lx-panel-2: color-mix(in srgb, var(--lx-ink) 6%, var(--lx-panel));
+  --lx-line: color-mix(in srgb, var(--lx-ink) 14%, var(--lx-panel));
+  --lx-dim: color-mix(in srgb, var(--lx-ink) 36%, var(--lx-panel));
+  --lx-stage: #fbfaf6; --lx-grid: color-mix(in srgb, var(--lx-ink) 10%, var(--lx-stage));
+  --lx-accent: #b03a0a;  /* Atlas --lab */
+  /* diagram roles = Atlas node-type colors (json2hugo.py TYPE_META) */
+  --lx-teal: #2563eb;    /* architecture: clean / benign data */
+  --lx-bad: #e11d48;     /* attack */
+  --lx-violet: #7c3aed;  /* method: model / VM */
+  --lx-warn: #b45309;    /* family amber: model output */
+  --lx-lime: #059669;    /* concept green: canary signal */
+  --lx-ok: #0891b2;      /* defense */
+  --lx-blue: var(--lx-teal);
+  --lx-grad-name: linear-gradient(90deg, var(--lx-accent), var(--lx-bad));
+  --lx-grad-pill: var(--lx-accent);
+  --lx-f-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --lx-f-display: var(--lx-f-sans); --lx-f-head: var(--lx-f-sans); --lx-f-body: var(--lx-f-sans);
+  --lx-f-mono: "JetBrains Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --lx-ease: cubic-bezier(.22, .9, .25, 1);
+}
+:root.dark .lx, :root[data-theme="dark"] .lx {
+  --lx-bg: #0a0b0b; --lx-panel: #111312; --lx-ink: #f2efe7; --lx-muted: #a19b90; --lx-stage: #0d0f0e;
+  --lx-accent: #ff5c35;
+  --lx-teal: #60a5fa; --lx-bad: #fb7185; --lx-violet: #a78bfa; --lx-warn: #fbbf24; --lx-lime: #34d399; --lx-ok: #22d3ee;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not([data-theme="light"]) .lx {
+    --lx-bg: #0a0b0b; --lx-panel: #111312; --lx-ink: #f2efe7; --lx-muted: #a19b90; --lx-stage: #0d0f0e;
+    --lx-accent: #ff5c35;
+    --lx-teal: #60a5fa; --lx-bad: #fb7185; --lx-violet: #a78bfa; --lx-warn: #fbbf24; --lx-lime: #34d399; --lx-ok: #22d3ee;
+  }
+}
+
+.lx { display: block; margin: 1.5rem 0; container-type: inline-size; border: 1px solid var(--lx-line); border-radius: 16px;
+  overflow: hidden; background: var(--lx-bg); color: var(--lx-ink); font: 400 15px/1.55 var(--lx-f-body);
+  text-align: left; -webkit-font-smoothing: antialiased; outline: none; }
+.lx:focus-visible { box-shadow: 0 0 0 3px var(--lx-accent); }
+.lx *, .lx *::before, .lx *::after { box-sizing: border-box; }
+.lx button { font-family: var(--lx-f-body); }
+.lx button:focus-visible { outline: 2px solid var(--lx-accent); outline-offset: 2px; }
+
+/* layout: stacked by default; caption panel beside the stage when the explainer is wide (container query) */
+.lx-in { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "stage" "bar" "cap" "run"; }
+.lx-head { grid-area: head; } .lx-frame { grid-area: stage; } .lx-bar { grid-area: bar; }
+.lx-side { display: contents; } .lx-cap { grid-area: cap; } .lx-run { grid-area: run; }
+@container (min-width: 1000px) {
+  .lx-in { grid-template-columns: minmax(0, 1fr) clamp(300px, 28%, 380px); grid-template-areas: "head head" "stage side" "bar bar"; }
+  .lx-side { grid-area: side; display: flex; flex-direction: column; justify-content: space-between; border-top: 1px solid var(--lx-line);
+    border-left: 1px solid var(--lx-line); background: var(--lx-panel); }
+  .lx-cap { padding-top: 22px; min-height: 0; }
+}
+
+/* header: kicker, title (one outlined word), legend */
+.lx-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; padding: 18px 22px 16px; }
+.lx-kicker { font: 600 11.5px/1.3 var(--lx-f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--lx-accent); }
+.lx-title { margin-top: 6px; font: 500 32px/1.05 var(--lx-f-display); letter-spacing: -.035em; color: var(--lx-ink); }
+.lx .outline { color: var(--lx-accent); }
+.lx .grad { background: var(--lx-grad-name); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lx-legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.lx-legend li { margin: 0; display: inline-flex; align-items: center; gap: 7px; padding: 3px 10px 3px 8px; border: 1px solid var(--lx-line);
+  border-radius: 999px; background: var(--lx-panel); color: var(--lx-muted); font: 600 11.5px/1.4 var(--lx-f-body); letter-spacing: .02em; }
+.lx-legend li::before { content: ""; width: 9px; height: 9px; border-radius: 3px; background: var(--lx-c); }
+
+/* fixed design-size stage, scaled to the frame width; a dark canvas with a faint dot grid */
+.lx-frame { position: relative; width: 100%; overflow: hidden; border-top: 1px solid var(--lx-line); background-color: var(--lx-stage);
+  background-image: radial-gradient(var(--lx-grid) 1px, transparent 1.3px); background-size: 18px 18px; background-position: 9px 9px; }
+.lx-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; color: var(--lx-ink); cursor: pointer; user-select: none;
+  -webkit-user-select: none; font-family: var(--lx-f-body); }
+.lx-stage svg { display: block; overflow: visible; max-width: none; }
+.lx-stage svg text { font-family: var(--lx-f-body); } /* family only: never set fill here, it beats attributes */
+.lx-stage .mono, .lx-stage svg .mono { font-family: var(--lx-f-mono); }
+.lx-stage .display, .lx-stage svg .display { font-family: var(--lx-f-display); font-weight: 500; letter-spacing: -.03em; }
+.lx-stage .head, .lx-stage svg .head { font-family: var(--lx-f-head); }
+
+/* control bar: prev · 5 chapter segments (step dots under the active one) · next · step N/M */
+.lx-bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "prev ch next count";
+  align-items: start; gap: 8px 12px; padding: 12px 16px 10px; border-top: 1px solid var(--lx-line); background: var(--lx-panel); }
+.lx-prev { grid-area: prev; } .lx-next { grid-area: next; } .lx-chapters { grid-area: ch; } .lx-count { grid-area: count; }
+.lx-btn { width: 38px; height: 34px; border-radius: 10px; border: 1px solid var(--lx-line); background: var(--lx-panel-2);
+  color: var(--lx-ink); font: 700 16px/1 var(--lx-f-body); cursor: pointer; transition: border-color .2s, opacity .2s; }
+.lx-btn:hover:not(:disabled) { border-color: var(--lx-accent); }
+.lx-btn:disabled { opacity: .35; cursor: default; }
+.lx-count { align-self: center; min-width: 6.2em; text-align: right; font: 600 12px/1 var(--lx-f-mono); color: var(--lx-muted); white-space: nowrap; }
+.lx-chapters { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.lx-ch { min-width: 0; margin: 0; }
+.lx-ch-btn { display: block; width: 100%; padding: 2px 0 0; border: 0; background: none; cursor: pointer; text-align: left; color: var(--lx-muted); }
+.lx-ch-btn:disabled { cursor: default; }
+.lx-ch-name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 600 10.5px/1.3 var(--lx-f-mono);
+  letter-spacing: .12em; text-transform: uppercase; transition: color .3s; }
+.lx-track { position: relative; display: block; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--lx-line); overflow: hidden; }
+.lx-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 2px; background: var(--lx-dim); transition: width .4s var(--lx-ease); }
+.lx-ch.on .lx-fill { background: var(--lx-grad-pill); }
+.lx-ch.on .lx-ch-name { color: var(--lx-ink); }
+.lx-ch.done .lx-ch-name { color: var(--lx-ink-2); }
+.lx-ch-btn:hover:not(:disabled) .lx-ch-name { color: var(--lx-ink); }
+.lx-dots { display: flex; gap: 2px; margin: 3px 0 0 -5px; visibility: hidden; }
+.lx-ch.on .lx-dots { visibility: visible; }
+.lx-dot { width: 18px; height: 18px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.lx-dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--lx-dim); transition: all .25s var(--lx-ease); }
+.lx-dot.done::after { background: var(--lx-dim); border-color: var(--lx-dim); }
+.lx-dot.on::after { width: 10px; height: 10px; background: var(--lx-accent); border-color: var(--lx-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lx-accent) 25%, transparent); }
+
+/* caption (page-size text) and the "Run it yourself" strip */
+.lx-cap { padding: 16px 22px 14px; background: var(--lx-panel); min-height: 7.4em; }
+.lx-cap-n { margin-bottom: 6px; font: 600 11px/1.4 var(--lx-f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--lx-accent); }
+.lx-cap-t { font: 400 16px/1.6 var(--lx-f-body); color: var(--lx-ink-2); max-width: 62em; }
+.lx-cap-t b, .lx-cap-t strong { color: var(--lx-ink); font-weight: 600; }
+.lx code { font-family: var(--lx-f-mono); font-size: .86em; background: var(--lx-panel-2); padding: .08em .35em; border-radius: 5px; }
+.lx-run { padding: 0 22px 18px; background: var(--lx-panel); }
+.lx-run[hidden] { display: none; }
+.lx-run-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+  font: 600 10.5px/1.3 var(--lx-f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--lx-muted); }
+.lx-copy { padding: 4px 10px; border: 1px solid var(--lx-line); border-radius: 8px; background: var(--lx-panel-2); color: var(--lx-ink);
+  font: 600 11.5px/1.2 var(--lx-f-body); letter-spacing: .02em; text-transform: none; cursor: pointer; }
+.lx-copy:hover { border-color: var(--lx-accent); }
+.lx-cmd { margin: 0; padding: 10px 12px; border: 1px solid var(--lx-line); border-radius: 10px; background: var(--lx-stage);
+  color: var(--lx-ink); font: 400 12.5px/1.55 var(--lx-f-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.lx-cmd::before { content: "$ "; color: var(--lx-dim); }
+.lx-cmd code { background: none; padding: 0; font-size: inherit; }
+
+/* semantic colors (one legend for every lab), for caption spans and stage HTML: <span class="c-bad">...</span> */
+.lx .c-bad { color: var(--lx-bad); } .lx .c-teal { color: var(--lx-teal); } .lx .c-violet { color: var(--lx-violet); }
+.lx .c-warn { color: var(--lx-warn); } .lx .c-lime { color: var(--lx-lime); } .lx .c-ok { color: var(--lx-ok); }
+.lx .c-muted { color: var(--lx-muted); }
+.lx-cap-t [class^="c-"], .lx-cap-t [class*=" c-"] { font-weight: 600; }
+
+/* building blocks inside the stage (laya deck classes) */
+.lx-stage .kicker { font: 600 15px/1 var(--lx-f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--lx-accent); }
+.lx-stage .card { background: var(--lx-panel); border: 2px solid var(--lx-line); border-radius: 18px; padding: 18px 22px; }
+.lx-stage .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; border: 2px solid var(--lx-line); color: var(--lx-muted);
+  font: 600 13px/1.2 var(--lx-f-body); letter-spacing: .06em; text-transform: uppercase; }
+.lx-stage .pill { display: inline-block; padding: 8px 18px; border-radius: 14px; background: var(--lx-grad-pill); color: #fff;
+  font: 800 16px/1.1 var(--lx-f-body); letter-spacing: .04em; text-transform: uppercase; transform: rotate(-4deg); }
+.lx-stage .abs { position: absolute; }
+
+/* fragments: [data-step=n] shows from step n on, [data-only="2,3"] only at those steps (1-based) */
+.lx-stage [data-step], .lx-stage [data-only] { opacity: 0; transform: translateY(12px); transition: opacity .45s var(--lx-ease), transform .45s var(--lx-ease); }
+.lx-stage [data-step].on, .lx-stage [data-only].on { opacity: 1; transform: none; }
+/* focus + context (bbycroft-style): .lx-focus on the stage dims every .dimmable not marked .hot */
+.lx-stage .dimmable { transition: opacity .4s var(--lx-ease); }
+.lx-stage.lx-focus .dimmable:not(.hot) { opacity: .2; }
+
+@container (max-width: 640px) {
+  .lx-head { padding: 14px 16px 12px; }
+  .lx-title { font-size: 22px; }
+  .lx-legend li { font-size: 10.5px; padding: 2px 8px 2px 6px; }
+  .lx-bar { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "ch ch ch" "prev count next"; padding: 12px 12px 10px; }
+  .lx-count { text-align: center; }
+  .lx-chapters { gap: 5px; }
+  .lx-ch-name { font-size: 9px; letter-spacing: .04em; }
+  .lx-cap { padding: 14px 16px 12px; }
+  .lx-cap-t { font-size: 15px; }
+  .lx-run { padding: 0 16px 16px; }
+}
+
+/* a lab's own explainer/index.html (body data-standalone): page background and width; keys work page-wide */
+body[data-standalone] { margin: 0; min-height: 100vh; padding: 28px 16px 40px; background: #f1f0eb; color: #171916; }
+:root.dark body[data-standalone], :root[data-theme="dark"] body[data-standalone] { background: #0a0b0b; color: #f2efe7; }
+@media (prefers-color-scheme: dark) { :root:not(.light):not([data-theme="light"]) body[data-standalone] { background: #0a0b0b; color: #f2efe7; } }
+body[data-standalone] .lx { max-width: 1360px; margin: 0 auto; }
+body[data-standalone] .lx-hint { max-width: 1360px; margin: 14px auto 0; font: 400 13px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; opacity: .65; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lx *, .lx *::before, .lx *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+}

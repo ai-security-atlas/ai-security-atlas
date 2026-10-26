@@ -1,0 +1,35 @@
+<!doctype html>
+<!-- Embed test page: two explainers inside an article that uses a Tailwind-like reset (like the Atlas site). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explainer embed test</title>
+<style>
+  *, ::before, ::after { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid; }
+  img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
+  button { background: transparent; font: inherit; color: inherit; }
+  ol, ul { list-style: none; }
+  :root { --page-bg: #f1f0eb; --page-ink: #171916; }
+  :root.dark, :root[data-theme="dark"] { --page-bg: #0a0b0b; --page-ink: #f2efe7; }
+  body { background: var(--page-bg); color: var(--page-ink); font: 16px/1.6 Georgia, serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px; }
+  main > p { margin: 1em 0; }
+</style>
+<link rel="stylesheet" href="../explainer.css">
+<script src="../explainer.js"></script>
+<script src="../../_template/explainer/data.js"></script>
+<script src="../../_template/explainer/explainer.js"></script>
+<script src="fixture.js"></script>
+</head>
+<body>
+<main>
+  <h1>Article page</h1>
+  <p id="prose">Prose before the explainer. <button id="hostbtn">host button</button></p>
+  <div data-explainer="attack-example"></div>
+  <p>More prose.</p>
+  <div style="height:1400px"></div>
+  <div data-explainer="test-fixture"></div>
+</main>
+</body>
+</html>

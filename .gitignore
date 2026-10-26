@@ -8,11 +8,13 @@ dist/
 resources/
 static/assets/dist/
 static/data/
+static/labs/
 data/
 content/nodes/
 content/sources/
 content/views/
 content/graph/
+content/labs/
 .hugo_build.lock
 
 # Tooling / local
@@ -27,3 +29,19 @@ test-results/
 # Screenshots and scratch images (keep the real social/site assets)
 *.png
 !static/og.png
+
+# Labs
+!labs/.env.example
+!labs/**/assets/*.png
+labs/**/work/
+labs/.env
+labs/**/*.pt
+labs/**/*.pth
+labs/**/*.bin
+labs/**/*.pkl
+labs/_explainer/test/node_modules/
+labs/_explainer/test/shots/
+
+# Python bytecode
+__pycache__/
+*.pyc

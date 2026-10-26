@@ -16,6 +16,8 @@ content/nodes
 content/sources
 content/views
 content/graph
+static/labs
+content/labs
 .hugo_build.lock
 
 # Tooling / local
@@ -32,3 +34,11 @@ test-results
 # Docker
 Dockerfile
 .dockerignore
+
+# Labs: the site image needs only each lab's README (front matter) and the
+# explainers (published under /labs/); lab code, work/ and payloads stay out.
+labs/*
+!labs/*/README.md
+!labs/_explainer
+!labs/*/explainer
+labs/_explainer/test

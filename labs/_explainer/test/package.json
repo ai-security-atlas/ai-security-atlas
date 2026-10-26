@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Playwright smoke test and lint for the lab explainers (labs/_explainer/README.md, Testing).",
+  "scripts": { "test": "node test.mjs" },
+  "devDependencies": { "playwright": "1.64.1" }
+}

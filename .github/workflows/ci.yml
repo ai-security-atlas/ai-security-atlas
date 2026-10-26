@@ -39,7 +39,39 @@ jobs:
           test -f public/index.html
           test -f public/nodes/attack-training-extraction/index.html
           test -d public/pagefind
+          test -f public/labs/index.html
+          for lab in attack-unsafe-load attack-visual-jailbreak; do
+            test -f "public/labs/$lab/explainer/index.html"
+            grep -q labcard "public/nodes/$lab/index.html"
+          done
+          test -f public/labs/_explainer/explainer.js
           echo "Build output looks good."
+
+  labs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint lab READMEs and repo hygiene
+        run: python3 labs/_tools/lint_readme.py
+
+      - name: Payload review
+        run: python3 labs/_shared/test_inert.py
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: labs/_explainer/test/package-lock.json
+
+      - name: Explainer test (Chromium)
+        working-directory: labs/_explainer/test
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          node test.mjs
 
   docker:
     runs-on: ubuntu-latest
