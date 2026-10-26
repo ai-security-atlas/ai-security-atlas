@@ -1,0 +1,113 @@
+"""Maintainer tool: regenerate explainer/data.js from a reference container run. Run from labs/ after
+Steps 1-2 (contrast.json is optional), the reference PGD run that produced assets/adv_eps8.png (pgd_eps8.json)
+and Evaluate, all writing to the same WORK folder:
+    docker compose run --rm workbench python attack-visual-jailbreak/scripts/export_explainer_data.py --hijack-range 5-10
+Writes explainer/data.js (window.LAB_DATA, must stay <= 150 KB). Never run by students.
+"""
+import argparse
+import base64
+import io
+import json
+
+import labkit
+
+labkit.banner()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from PIL import Image  # noqa: E402
+
+import vlm  # noqa: E402
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--hijack-range", default="", help="Step 2 range over repeated runs, e.g. 7-9")
+a = ap.parse_args()
+
+
+def need(name, step):
+    p = labkit.out(name)
+    if not p.exists():
+        raise SystemExit(f"[!!] {p} missing: run {step} first")
+    return json.loads(p.read_text())
+
+
+cap = need("clean_caption.json", "Step 1")["clean_caption"]
+pgd = need("pgd_eps8.json", "the reference PGD run (s03_pgd.py --stop-loss 0.05 --out adv_eps8.png)")
+ev = need("evaluate.json", "Evaluate")
+contrast = None
+if labkit.out("contrast.json").exists():
+    c = json.loads(labkit.out("contrast.json").read_text())
+    lo, hi = (a.hijack_range or f"{c['banner.png']['hijack']}-{c['banner.png']['hijack']}").split("-")
+    contrast = {"model": c["model"], "hijack": [int(lo), int(hi)], "trials": c["banner.png"]["trials"],
+                "clean_hijack": c["clean.png"]["hijack"]}
+
+clean = np.asarray(vlm.open_rgb("assets/clean.png")).astype(int)
+adv = np.asarray(vlm.open_rgb("assets/adv_eps8.png")).astype(int)
+d = adv - clean
+psnr = 10 * np.log10(255 ** 2 / np.mean(d ** 2))
+R, C = 14, 17  # one 16x16 patch where the roof meets the sky (row 14, col 17 of the 32x32 patch grid)
+crop = clean[R * 16:(R + 1) * 16, C * 16:(C + 1) * 16]
+dcrop = d[R * 16:(R + 1) * 16, C * 16:(C + 1) * 16]
+mag = np.abs(d).mean(axis=2)
+p32 = mag.reshape(32, 16, 32, 16).mean(axis=(1, 3))
+b128 = mag.reshape(128, 4, 128, 4).mean(axis=(1, 3))
+
+
+def png_uri(arr):
+    b = io.BytesIO()
+    Image.fromarray(arr.astype(np.uint8)).save(b, "PNG", optimize=True)
+    return "data:image/png;base64," + base64.b64encode(b.getvalue()).decode()
+
+
+def small(arr):
+    return Image.fromarray(arr.astype(np.uint8)).resize((128, 128), Image.BOX)
+
+
+# next-token distribution for the first answer token, clean vs adversarial (white-box view of Step 5)
+proc, model = vlm.load()
+tgt = proc.tokenizer(" " + labkit.TARGET + "<end_of_utterance>", add_special_tokens=False).input_ids
+
+
+def next_tokens(img):
+    enc = vlm.encode(proc, Image.fromarray(img.astype(np.uint8)))
+    ids = torch.cat([enc.input_ids, torch.tensor([tgt])], 1)
+    with torch.no_grad():
+        logits = model(input_ids=ids, attention_mask=torch.ones_like(ids), pixel_values=enc.pixel_values,
+                       pixel_attention_mask=enc.pixel_attention_mask).logits[0]
+    n = enc.input_ids.shape[1]
+    lp = torch.log_softmax(logits[n - 1:n - 1 + len(tgt)], -1)
+    seq = -sum(lp[i, t].item() for i, t in enumerate(tgt))
+    p0 = lp[0].exp()
+    top = torch.topk(p0, 5)
+    toks = [[proc.tokenizer.decode([i]), round(v.item(), 4)] for v, i in zip(top.values, top.indices)]
+    return {"top": toks, "p_first": float(f"{p0[tgt[0]].item():.3g}"), "loss": round(seq, 4)}
+
+
+enc = vlm.encode(proc, Image.fromarray(clean.astype(np.uint8)))
+img_id = proc.tokenizer.convert_tokens_to_ids("<image>")
+kinds = "".join("i" if t == img_id else "t" for t in enc.input_ids[0].tolist())
+banner = Image.open(labkit.inp("assets/banner.png")).convert("RGB").resize((192, 128), Image.BOX)
+
+data = {
+    "target": labkit.TARGET,
+    "prompt": labkit.CAPTION_PROMPT,
+    "clean_caption": cap,
+    "target_tokens": [proc.tokenizer.decode([t]) for t in tgt],
+    "pgd": {"eps": pgd["eps"], "alpha": pgd["alpha"], "steps": pgd["steps"], "seconds": pgd["seconds"],
+            "stop_loss": pgd["stop_loss"], "log": pgd["log"], "psnr": round(psnr, 1),
+            "linf": int(np.abs(d).max()), "mean_abs": round(float(np.abs(d).mean()), 2)},
+    "crop16": {"row": R, "col": C, "rgb": crop.reshape(-1, 3).tolist(), "delta": dcrop.reshape(-1, 3).tolist()},
+    "delta32": [round(float(v), 2) for v in (p32 / p32.max()).reshape(-1)],
+    "delta128": "".join(str(int(round(v))) for v in (b128 / b128.max() * 9).reshape(-1)),
+    "img": {"clean": png_uri(np.asarray(small(clean))), "adv": png_uri(np.asarray(small(adv))),
+            "banner": png_uri(np.asarray(banner))},
+    "tokens": {"patches": (vlm.SIZE // 16) ** 2, "image": kinds.count("i"), "total": len(kinds), "kinds": kinds},
+    "logits": {"clean": next_tokens(clean), "adv": next_tokens(adv)},
+    "robustness": {k: v for k, v in ev.items() if not k.startswith("yours")},
+    "contrast": contrast,
+}
+js = ("/* Generated by scripts/export_explainer_data.py from a reference workbench run. Do not edit by hand. */\n"
+      "window.LAB_DATA = " + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";\n")
+dst = labkit.lab() / "explainer" / "data.js"
+dst.write_text(js, encoding="utf-8")
+print(f"[ok] wrote {dst} ({len(js.encode()) / 1024:.1f} KB)")

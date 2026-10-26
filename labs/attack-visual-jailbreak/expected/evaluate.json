@@ -1,0 +1,4 @@
+{
+ "pgd-eps8":  {"lab_app": "1", "hf_default": "1", "jpeg95": "~", "jpeg75": "0", "blur": "0", "resize": "1"},
+ "eot-eps16": {"lab_app": "1", "hf_default": "1", "jpeg95": "1", "jpeg75": "0", "blur": "1", "resize": "~"}
+}
