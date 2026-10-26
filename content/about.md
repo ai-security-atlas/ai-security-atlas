@@ -5,13 +5,16 @@ eyebrow: About & FAQ
 summary: What the AI Security Atlas is, how it is built, and how to use it.
 ---
 
-The **AI Security Atlas** is an opinionated, evidence-linked knowledge graph of how
-AI systems are attacked, defended, and evaluated. It connects an adversary's
-objective to the underlying mechanism, its prerequisites, the architectures it
-applies to, the evidence behind it, and the controls that address it.
+The **AI Security Atlas** is a **learning platform** for understanding AI security
+through realistic scenarios. It pairs an opinionated, evidence-linked knowledge
+graph of how AI systems are attacked, defended, and evaluated with hands-on labs
+that reproduce selected mechanisms on your own machine. The graph connects an
+adversary's objective to the underlying mechanism, its prerequisites, the
+architectures it applies to, the evidence behind it, and the controls that
+address it.
 
-It is a **research reference and a study aid** — not an attack platform. It does not
-execute attacks, probe third-party services, or distribute payloads.
+The website executes nothing, probes no third-party services and hosts no
+payloads.
 
 ## How to use it
 
@@ -32,6 +35,10 @@ execute attacks, probe third-party services, or distribute payloads.
 No. The Atlas describes mechanisms at a conceptual level and links to published
 research. It is designed for learning and for orienting real, authorized security
 work — not for carrying out attacks.
+
+The hands-on labs are separate from the website: they live under `labs/` in the
+source repository, run only locally in Docker, and reproduce mechanisms with inert
+canary payloads against files and models the learner creates for the lab.
 
 ### What does "seed" or "draft" mean on a topic?
 

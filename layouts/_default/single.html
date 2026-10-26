@@ -24,6 +24,7 @@
         {{ with $n.evidence_status }}<span class="badge badge--ev">{{ replace . "_" " " }}</span>{{ end }}
         {{ with $n.content_status }}<span class="badge">{{ . }}</span>{{ end }}
         {{ with $n.priority }}<span class="badge">{{ . }}</span>{{ end }}
+        {{ if $n.lab }}<span class="badge badge--lab">{{ partial "lab-icon.html" . }}Hands-on lab</span>{{ end }}
     </div>
 
     <h1 style="font-size:clamp(1.9rem,3.4vw,2.6rem);letter-spacing:-0.035em;line-height:1.02;margin-bottom:0.9rem">{{ $n.title }}</h1>
@@ -31,6 +32,7 @@
     {{ with $n.aliases }}<div class="aliases">{{ range . }}<span class="alias">{{ . }}</span>{{ end }}</div>{{ end }}
     {{ with $n.caveat }}<div class="caveat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p>{{ . }}</p></div>{{ end }}
     {{ with $n.summary }}<p class="summary">{{ . }}</p>{{ end }}
+    {{ with $n.lab }}{{ partial "lab-card.html" (dict "lab" .) }}{{ end }}
 
     {{ if .Content }}
     <div class="draft-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> AI-generated draft · conceptual overview, not yet reviewed</div>

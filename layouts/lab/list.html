@@ -1,0 +1,22 @@
+{{ define "main" }}
+{{ $atlas := .Site.Data.atlas }}
+<main class="doc-wide">
+    <div class="idx-head">
+        <div>
+            <div class="eyb eyb--lab" style="margin-bottom:0.7rem">{{ partial "lab-icon.html" . }} HANDS-ON LABS</div>
+            <h1>Hands-on labs</h1>
+            <p>Learn an Atlas attack by reproducing it on your own machine. Each lab runs locally in Docker, ends every "successful attack" in a harmless canary, ships an animated explainer, and closes with a defense chapter. Setup and the lab guides live in <a href="https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs" target="_blank" rel="noreferrer" style="color:var(--lab)">labs/ on GitHub</a>.</p>
+        </div>
+    </div>
+
+    {{ with $atlas.labs }}
+    <div class="cardgrid" style="grid-template-columns:repeat(auto-fill,minmax(20rem,1fr))">
+        {{ range . }}
+        {{ partial "lab-card.html" (dict "lab" . "node" (index $atlas.nodes .node)) }}
+        {{ end }}
+    </div>
+    {{ else }}
+    <p style="color:var(--theme-muted)">No labs are published yet.</p>
+    {{ end }}
+</main>
+{{ end }}

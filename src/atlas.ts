@@ -22,6 +22,15 @@ export interface AtlasNode {
   observations: Observation[]; frameworks: Framework[];
   rel: Record<string, string[]>;
   has_article?: boolean;
+  lab?: Lab;
+}
+// Hands-on lab metadata, compiled from labs/<node-id>/README.md front matter.
+export interface Lab {
+  lab_id: string; number: number; node: string; title: string; family: string;
+  level: string; time: string; model_backend: string; backends: Record<string, string>;
+  last_tested: string;
+  github: string;     // GitHub URL of the lab folder (its README renders there)
+  explainer: string;  // site path of the published explainer, or "" if none
 }
 export interface Source {
   id: string; title: string; url: string; kind: string; publisher: string;
@@ -54,7 +63,7 @@ export interface Atlas {
   meta: {
     title: string; as_of: string; status: string; schema_version: string;
     research_disclosure: string;
-    counts: { nodes: number; edges: number; sources: number; views: number; types: Record<string, number> };
+    counts: { nodes: number; edges: number; sources: number; views: number; labs?: number; types: Record<string, number> };
   };
   typeMeta: Record<string, TypeMeta>;
   relLabels: Record<string, string>;
@@ -64,6 +73,7 @@ export interface Atlas {
   accessProfiles: Record<string, AccessProfile>;
   views: AtlasView[];
   nav: { objectives: Objective[]; sections: NavSection[] };
+  labs?: Lab[];  // ordered by lab number
 }
 
 // Icon registry maps the glyph names emitted by the compiler to components.

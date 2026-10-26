@@ -8,19 +8,29 @@ Output:
   content/sources/<id>.md
   content/views/<id>.md
   content/_index.md, content/graph/_index.md
+  content/labs/_index.md   -> /labs/ index page (layouts/lab/list.html)
+  static/labs/             -> lab explainers published under /labs/ (copied from labs/)
+
+Lab metadata comes from the YAML front matter of labs/<node-id>/README.md
+(docs/labs-spec.md section 2.1) and is attached to the matching node as `lab`.
 
 The compiler denormalizes the graph once so every reader (SPA or template) can
 show forward AND inverse relationships without re-scanning 650 edges. See the
 PRD sections 4.4 (edge direction), 7.4 (curated sidebar), 7.5 (graph behavior).
 """
 
+import glob
 import json
 import os
+import re
 import shutil
 
 import yaml
 
 SEED = "ai_security_research_graph_seed.json"
+REPO_URL = "https://github.com/ai-security-atlas/ai-security-atlas"
+LABS_DIR = "labs"
+LABS_OUT = "static/labs"
 
 # --- Presentation metadata for the 11 P0 topic types -------------------------
 # glyph = lucide-react icon name used by the SPA; color reads on both the warm
@@ -95,6 +105,96 @@ def write_md(path, frontmatter, content=""):
             f.write(f"\n{content}\n")
 
 
+# --- Hands-on labs ------------------------------------------------------------
+# The front matter is a small, fixed YAML subset (spec 2.1): scalars, quoted
+# strings, inline [a, b] lists and one level of nesting (backends). Parsed with
+# the standard library because the site image ships only lab READMEs and
+# explainers (see .dockerignore), not labs/_tools.
+def _fm_value(v):
+    v = re.sub(r"(^|\s+)#.*$", "", v).strip()
+    if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+        return v[1:-1]
+    if v.startswith("[") and v.endswith("]"):
+        return [_fm_value(x) for x in v[1:-1].split(",") if x.strip()]
+    return v
+
+
+def read_front_matter(path):
+    with open(path, "r", encoding="utf-8") as fh:
+        text = fh.read()
+    if not text.startswith("---\n"):
+        return None
+    end = text.find("\n---\n", 4)
+    if end < 0:
+        return None
+    data, parent = {}, None
+    for line in text[4:end].splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        m = re.match(r"^(\s*)([\w-]+):\s*(.*)$", line)
+        if not m:
+            continue
+        indent, key, val = m.groups()
+        if indent and parent:
+            data[parent][key] = _fm_value(val)
+        elif _fm_value(val) == "":
+            parent, data[key] = key, {}
+        else:
+            parent, data[key] = None, _fm_value(val)
+    return data
+
+
+def load_labs(node_ids):
+    """Read labs/<node-id>/README.md front matter -> {node_id: lab metadata}.
+    Folders starting with "_" (template, engine, tools) are not labs."""
+    labs = {}
+    for readme in sorted(glob.glob(os.path.join(LABS_DIR, "*", "README.md"))):
+        folder = os.path.basename(os.path.dirname(readme))
+        if folder.startswith("_"):
+            continue
+        fm = read_front_matter(readme)
+        m = re.fullmatch(r"LAB-(\d+)", str((fm or {}).get("lab_id", "")))
+        if not fm or not m:
+            print(f"warning: {readme}: no front matter with a LAB-NN lab_id; skipped")
+            continue
+        nid = fm.get("node", "")
+        if nid != folder or nid not in node_ids:
+            print(f"warning: {readme}: node {nid!r} must equal the folder name and exist in the seed; skipped")
+            continue
+        has_explainer = os.path.isfile(os.path.join(LABS_DIR, folder, "explainer", "index.html"))
+        labs[nid] = {
+            "lab_id": fm["lab_id"],
+            "number": int(m.group(1)),
+            "node": nid,
+            "title": fm.get("title", nid),
+            "family": fm.get("family", ""),
+            "level": fm.get("level", ""),
+            "time": fm.get("time", ""),
+            "model_backend": fm.get("model_backend", ""),
+            "backends": fm.get("backends", {}) if isinstance(fm.get("backends"), dict) else {},
+            "last_tested": fm.get("last_tested", ""),
+            "github": f"{REPO_URL}/tree/main/labs/{folder}",
+            "explainer": f"/labs/{folder}/explainer/" if has_explainer else "",
+        }
+    return labs
+
+
+def publish_explainers(labs):
+    """Copy the shared engine and each lab's explainer into static/labs/ so the
+    site serves them at /labs/_explainer/ and /labs/<id>/explainer/ (the
+    explainer pages load ../../_explainer/, so the relative layout is kept)."""
+    shutil.rmtree(LABS_OUT, ignore_errors=True)
+    with_explainer = [lab for lab in labs.values() if lab["explainer"]]
+    if not with_explainer:
+        return 0
+    shutil.copytree(os.path.join(LABS_DIR, "_explainer"), os.path.join(LABS_OUT, "_explainer"),
+                    ignore=shutil.ignore_patterns("test", "README.md"))
+    for lab in with_explainer:
+        shutil.copytree(os.path.join(LABS_DIR, lab["node"], "explainer"),
+                        os.path.join(LABS_OUT, lab["node"], "explainer"))
+    return len(with_explainer)
+
+
 def main():
     with open(SEED, "r", encoding="utf-8") as f:
         seed = json.load(f)
@@ -109,6 +209,7 @@ def main():
 
     node_by_id = {n["id"]: n for n in nodes_raw}
     source_by_id = {s["id"]: s for s in sources_raw}
+    labs = load_labs(set(node_by_id))
 
     # --- Attach observations -------------------------------------------------
     # Observations live in a top-level table; a node references them either by
@@ -245,6 +346,8 @@ def main():
             "rel": groups,
             "has_article": has_article,
         }
+        if nid in labs:
+            atlas_nodes[nid]["lab"] = labs[nid]
 
     # --- Curated navigation (PRD 7.4) ----------------------------------------
     # Objectives: goal -> family -> attack, using can_serve_goal + member_of.
@@ -383,7 +486,7 @@ def main():
             "counts": {
                 "nodes": len(nodes_raw), "edges": len(atlas_edges),
                 "sources": len(sources_raw), "views": len(views),
-                "types": dict(type_counts),
+                "labs": len(labs), "types": dict(type_counts),
             },
         },
         "typeMeta": TYPE_META,
@@ -394,6 +497,7 @@ def main():
         "accessProfiles": atlas_access,
         "views": atlas_views,
         "nav": nav,
+        "labs": sorted(labs.values(), key=lambda lab: lab["number"]),
     }
 
     # --- Emit atlas for SPA (static) and Hugo (data) -------------------------
@@ -405,7 +509,7 @@ def main():
         json.dump(atlas, f, ensure_ascii=False, separators=(",", ":"))
 
     # --- Regenerate Hugo content pages ---------------------------------------
-    for sub in ("nodes", "sources", "views", "graph"):
+    for sub in ("nodes", "sources", "views", "graph", "labs"):
         shutil.rmtree(f"content/{sub}", ignore_errors=True)
         os.makedirs(f"content/{sub}", exist_ok=True)
 
@@ -427,6 +531,8 @@ def main():
             "caveat": n.get("caveat", "") or "",
             "has_article": bool(body),
         }
+        if nid in labs:
+            fm["lab"] = labs[nid]
         write_md(f"content/nodes/{nid}.md", fm, content=body)
     write_md("content/nodes/_index.md", {"title": "Topics", "type": "node"})
 
@@ -455,9 +561,16 @@ def main():
 
     write_md("content/graph/_index.md", {"title": "Graph Explorer", "type": "graph", "layout": "explorer"})
     write_md("content/_index.md", {"title": "AI Security Atlas", "type": "homepage"})
+    write_md("content/labs/_index.md", {
+        "title": "Hands-on labs", "type": "lab",
+        "summary": "Local, inert reproductions of Atlas attacks, each with an animated explainer and a defense chapter.",
+    })
+
+    published = publish_explainers(labs)
 
     print(f"Compiled {len(nodes_raw)} nodes, {len(atlas_edges)} edges, "
-          f"{len(sources_raw)} sources, {len(views)} views.")
+          f"{len(sources_raw)} sources, {len(views)} views, {len(labs)} labs "
+          f"({published} explainers published).")
 
 
 if __name__ == "__main__":

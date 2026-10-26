@@ -3502,3 +3502,40 @@ body.docpage { background: var(--theme-bg); color: var(--theme-ink); min-height:
 /* GitHub link in the topbar reads as a muted icon button like the theme toggle */
 .atlas a.iconbtn { color: var(--theme-muted); }
 .atlas a.iconbtn:hover { color: var(--theme-ink); }
+
+/* ---- Hands-on labs (badge, reader panel, nav marker, /labs/ index) ----
+   Uses the existing labs brand accent (--color-labs / data-brand="labs"). */
+:root { --lab: #b03a0a; }
+:root.dark, :root[data-theme="dark"] { --lab: #ff5c35; }
+.badge--lab { border-color: color-mix(in srgb, var(--lab) 45%, transparent); color: var(--lab); }
+.eyb--lab { color: var(--lab); }
+.eyb--lab svg { width: 0.85rem; height: 0.85rem; }
+
+.labcard { border: 1px solid color-mix(in srgb, var(--lab) 35%, transparent); border-radius: 12px;
+  padding: 1rem 1.1rem 1.1rem; margin-bottom: 1.8rem;
+  background: color-mix(in srgb, var(--lab) 6%, transparent); }
+.labcard__title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25;
+  color: var(--theme-ink); margin-top: 0.5rem; }
+.labcard__meta { display: flex; flex-wrap: wrap; gap: 0.3rem 0.8rem; margin-top: 0.35rem; font-family: var(--mono);
+  font-size: 0.7rem; letter-spacing: 0.02em; color: var(--theme-muted); }
+.labcard__body { font-size: 0.84rem; line-height: 1.55; color: var(--theme-muted); margin-top: 0.55rem; }
+.labcard__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
+.labbtn { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.5rem 0.85rem; border-radius: 9px;
+  border: 1px solid var(--hair-strong); font-size: 0.82rem; font-weight: 600; color: var(--theme-ink);
+  background: var(--theme-bg); transition: border-color 120ms ease, background 120ms ease, color 120ms ease; }
+.labbtn:hover { border-color: var(--lab); }
+.labbtn svg { width: 1rem; height: 1rem; flex: none; }
+.labbtn--primary { background: var(--lab); border-color: var(--lab); color: #fff; }
+.labbtn--primary:hover { background: color-mix(in srgb, var(--lab) 85%, #000); }
+.atlas a.labbtn, .docpage a.labbtn { color: var(--theme-ink); }
+.atlas a.labbtn--primary, .docpage a.labbtn--primary { color: #fff; }
+
+.nav-row__lab { flex: none; display: grid; place-items: center; color: var(--lab); }
+.nav-row__lab svg { width: 0.85rem; height: 0.85rem; }
+a.nav__more { margin-bottom: 0.2rem; }
+
+.obj-card--lab { --accent: var(--lab); border-color: color-mix(in srgb, var(--lab) 30%, transparent); min-height: 0; }
+.ncard__lab { display: inline-flex; align-items: center; gap: 0.3rem; align-self: flex-start; }
+.labcard__meta a { color: var(--lab); }
+.labcard__meta a:hover { text-decoration: underline; }
+.cardgrid .labcard { margin: 0; }

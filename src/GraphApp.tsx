@@ -4,6 +4,7 @@ import {
   Search, ChevronRight, ChevronDown, X, Moon, Sun, ArrowLeft, ArrowUpRight,
   BookOpen, ExternalLink, Share2, Maximize2, AlertTriangle, FileText, Link2,
   Key, Shield, ScrollText, Layers, List as ListIcon, Compass, Crosshair, PenLine, Home,
+  SquareTerminal, Play,
 } from 'lucide-react';
 
 const REPO_URL = 'https://github.com/ai-security-atlas/ai-security-atlas';
@@ -15,7 +16,7 @@ const GithubMark = () => (
   </svg>
 );
 import {
-  Atlas, AtlasNode, loadAtlas, glyphFor, REL_ORDER, OVERVIEW_RELS,
+  Atlas, AtlasNode, Lab, loadAtlas, glyphFor, REL_ORDER, OVERVIEW_RELS,
   humanizeToken,
 } from './atlas';
 
@@ -104,6 +105,7 @@ function NavRow({ atlas, id, active, depth, expandable, expanded, onToggle, onOp
       </button>
       <span className="nav-row__glyph"><Glyph /></span>
       <span className="nav-row__label">{n.title}</span>
+      {n.lab && <span className="nav-row__lab" title={`Hands-on lab · ${n.lab.lab_id}`} aria-label="Has a hands-on lab"><SquareTerminal /></span>}
       {count != null && <span className="nav-row__count">{count}</span>}
     </div>
   );
@@ -151,6 +153,18 @@ function Sidebar({ atlas, selectedId, onOpen, onHome, search, onSearch, results,
           </div>
         ) : (
           <>
+            {atlas.labs && atlas.labs.length > 0 && (
+              <>
+                <div className="nav__section-label"><SquareTerminal /> Hands-on labs
+                  <span style={{ marginLeft: 'auto', opacity: 0.7 }}>{atlas.labs.length}</span></div>
+                {atlas.labs.map(l => (
+                  <NavRow key={l.node} atlas={atlas} id={l.node} active={selectedId === l.node} depth={0}
+                    expandable={false} expanded={false} onToggle={() => {}} onOpen={() => onOpen(l.node)} />
+                ))}
+                <a className="nav__more" href="/labs/">All labs →</a>
+              </>
+            )}
+
             <div className="nav__section-label"><Compass /> Adversary objectives</div>
             {atlas.nav.objectives.map(obj => {
               const gKey = `g:${obj.goalId}`;
@@ -233,7 +247,8 @@ function Landing({ atlas, onOpen }: { atlas: Atlas; onOpen: (id: string) => void
         <p className="landing__lead">
           Start from an adversary objective and descend to the mechanism, its prerequisites,
           the architectures it applies to, the evidence behind it, and the controls that address
-          it. Every claim links to a source; nothing here is a working exploit.
+          it. Every claim links to a source; the site hosts no exploits, and the local labs use
+          only inert canary payloads.
         </p>
         <div className="landing__stats">
           <div className="stat"><b>{c.nodes}</b><small>Topics</small></div>
@@ -241,8 +256,28 @@ function Landing({ atlas, onOpen }: { atlas: Atlas; onOpen: (id: string) => void
           <div className="stat"><b>{c.sources}</b><small>Sources</small></div>
           <div className="stat"><b>{c.types.attack}</b><small>Attacks</small></div>
           <div className="stat"><b>{c.types.defense}</b><small>Defenses</small></div>
+          {!!c.labs && <div className="stat"><b>{c.labs}</b><small>Hands-on labs</small></div>}
         </div>
       </div>
+
+      {atlas.labs && atlas.labs.length > 0 && (
+        <>
+          <div className="eyb" style={{ marginBottom: '1rem' }}><SquareTerminal style={{ width: '0.85rem', height: '0.85rem' }} /> HANDS-ON LABS</div>
+          <div className="obj-grid" style={{ marginBottom: '3rem' }}>
+            {atlas.labs.map(l => (
+              <button key={l.node} className="obj-card obj-card--lab" onClick={() => onOpen(l.node)}>
+                <div className="obj-card__n">{l.lab_id} · {atlas.nodes[l.node]?.title || l.node}</div>
+                <div className="obj-card__title">{l.title}</div>
+                <div className="obj-card__sum">Run it locally in Docker. Every step ends in a harmless canary, and the lab closes with a defense.</div>
+                <div className="obj-card__foot">
+                  <span className="obj-card__count"><b>{l.level}</b> · {l.time}</span>
+                  <span className="obj-card__go"><ArrowUpRight style={{ width: '1.1rem', height: '1.1rem' }} /></span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="eyb" style={{ marginBottom: '1rem' }}><Crosshair style={{ width: '0.85rem', height: '0.85rem' }} /> ADVERSARY OBJECTIVES</div>
       <div className="obj-grid">
@@ -347,6 +382,35 @@ function ArticleBody({ id, onOpen }: { id: string; onOpen: (id: string) => void 
   );
 }
 
+const BACKEND_LABEL: Record<string, string> = {
+  none: 'no model backend', optional: 'model backend optional', required: 'model backend required',
+};
+
+// Hands-on lab panel: links to the published explainer and the lab guide on GitHub.
+function LabCard({ lab }: { lab: Lab }) {
+  return (
+    <section className="labcard" aria-label={`Hands-on lab ${lab.lab_id}`}>
+      <div className="eyb eyb--lab"><SquareTerminal /> Hands-on lab · {lab.lab_id}</div>
+      <div className="labcard__title">{lab.title}</div>
+      <div className="labcard__meta">
+        {lab.level && <span>{lab.level}</span>}
+        {lab.time && <span>{lab.time}</span>}
+        {lab.model_backend && <span>{BACKEND_LABEL[lab.model_backend] || lab.model_backend}</span>}
+      </div>
+      <p className="labcard__body">
+        Reproduce this mechanism on your own machine in Docker. Every step ends in a harmless canary,
+        and the lab closes with a defense chapter.
+      </p>
+      <div className="labcard__actions">
+        {lab.explainer && (
+          <a className="labbtn labbtn--primary" href={lab.explainer} target="_blank" rel="noreferrer"><Play /> Open explainer</a>
+        )}
+        <a className="labbtn" href={lab.github} target="_blank" rel="noreferrer"><GithubMark /> Lab guide on GitHub</a>
+      </div>
+    </section>
+  );
+}
+
 function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
   atlas: Atlas; node: AtlasNode; tab: string; setTab: (t: any) => void;
   onOpen: (id: string) => void; onGraph: () => void;
@@ -371,6 +435,7 @@ function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
         {node.evidence_status && <span className="badge badge--ev"><ScrollText />{humanizeToken(node.evidence_status)}</span>}
         {node.content_status && <span className="badge">{node.content_status}</span>}
         {node.priority && <span className="badge">{node.priority}</span>}
+        {node.lab && <span className="badge badge--lab"><SquareTerminal />Hands-on lab</span>}
       </div>
 
       <h1>{node.title}</h1>
@@ -384,6 +449,8 @@ function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
       )}
 
       {node.summary && <p className="summary">{node.summary}</p>}
+
+      {node.lab && <LabCard lab={node.lab} />}
 
       <div className="tabs">
         <button className="tab" data-on={tab === 'overview'} onClick={() => setTab('overview')}>Overview</button>

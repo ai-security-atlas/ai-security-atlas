@@ -1,0 +1,19 @@
+{{/* Hands-on lab panel (no-JS twin of LabCard in src/GraphApp.tsx).
+     Context: dict "lab" (atlas lab record) and "node" (atlas node, optional). */}}
+{{ $lab := .lab }}
+{{ $backend := dict "none" "no model backend" "optional" "model backend optional" "required" "model backend required" }}
+<section class="labcard" aria-label="Hands-on lab {{ $lab.lab_id }}">
+    <div class="eyb eyb--lab">{{ partial "lab-icon.html" . }} Hands-on lab · {{ $lab.lab_id }}</div>
+    <div class="labcard__title">{{ $lab.title }}</div>
+    <div class="labcard__meta">
+        {{ with .node }}<a href="/nodes/{{ .id }}/">{{ .title }}</a>{{ end }}
+        {{ with $lab.level }}<span>{{ . }}</span>{{ end }}
+        {{ with $lab.time }}<span>{{ . }}</span>{{ end }}
+        {{ with $lab.model_backend }}<span>{{ index $backend . | default . }}</span>{{ end }}
+    </div>
+    <p class="labcard__body">Reproduce this mechanism on your own machine in Docker. Every step ends in a harmless canary, and the lab closes with a defense chapter.</p>
+    <div class="labcard__actions">
+        {{ with $lab.explainer }}<a class="labbtn labbtn--primary" href="{{ . }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg> Open explainer</a>{{ end }}
+        <a class="labbtn" href="{{ $lab.github }}" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.6 8.2 11.16.6.1.82-.25.82-.56 0-.28-.01-1.02-.02-2-3.34.72-4.04-1.6-4.04-1.6-.55-1.36-1.33-1.72-1.33-1.72-1.09-.73.08-.72.08-.72 1.2.08 1.84 1.22 1.84 1.22 1.07 1.8 2.8 1.28 3.49.98.1-.76.42-1.28.76-1.57-2.67-.3-5.47-1.31-5.47-5.83 0-1.29.47-2.34 1.23-3.17-.12-.3-.53-1.52.12-3.16 0 0 1-.32 3.3 1.21a11.5 11.5 0 0 1 6 0c2.3-1.53 3.29-1.21 3.29-1.21.65 1.64.24 2.86.12 3.16.77.83 1.23 1.88 1.23 3.17 0 4.53-2.81 5.53-5.49 5.82.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .31.21.68.83.56A12.3 12.3 0 0 0 24 12.29C24 5.78 18.63.5 12 .5z"/></svg> Lab guide on GitHub</a>
+    </div>
+</section>
