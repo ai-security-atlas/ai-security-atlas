@@ -60,6 +60,8 @@ The first release must offer a small reviewed core plus a clearly labeled wider 
 
 The product does not execute attacks, probe third-party services, train or modify models, download untrusted checkpoints, deploy agents with unrestricted tools, or distribute harmful payload collections. It does not claim complete coverage of all existing or future attacks. It is not a replacement for authorization testing, a vulnerability scanner, a CVE database, or a universal model-safety rating.
 
+*Scope note.* The Atlas is a learning platform to understand and learn AI security through realistic scenarios: the reference graph plus optional hands-on labs. The non-goals above apply to the Atlas product (site, data and build), which executes nothing and hosts no payloads. The optional `labs/` directory is a separate, local-only teaching companion: each lab runs on the learner's machine, uses an inert, fixed canary payload, targets only local fixtures the learner creates or downloads for the lab, never probes third-party services, and ends with a defense chapter. The site links each lab from its node and publishes the lab's explainer animation; it never runs lab code.
+
 A live chat assistant, vector database, hosted graph backend, collaborative browser editor, private team workspace, paid subscriptions, browser synchronization, and automatic PR merging are outside P0. They must not be introduced merely because the subject matter involves AI agents or knowledge graphs.
 
 ### 1.5 Evidence basis and disclosure

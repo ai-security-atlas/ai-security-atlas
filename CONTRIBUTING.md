@@ -1,7 +1,9 @@
 # Contributing
 
-Thanks for helping improve the AI Security Atlas. Contributions that add
-sourced accuracy, fix errors, or improve clarity are very welcome.
+Thanks for helping improve the AI Security Atlas, a learning platform to
+understand and learn AI security through realistic scenarios. Contributions that
+add sourced accuracy, fix errors, improve clarity, or add safe hands-on labs are
+very welcome.
 
 ## Ground rules
 
@@ -12,8 +14,14 @@ sourced accuracy, fix errors, or improve clarity are very welcome.
   reviewed.
 - **Neutral methods stay neutral.** Techniques like LoRA, distillation, or
   quantization are not inherently attacks.
-- **No operational attack content.** Describe mechanisms conceptually; do not add
-  working payloads, exploit steps, or targeting instructions.
+- **No operational attack content outside `labs/`.** Describe mechanisms
+  conceptually; do not add working payloads, exploit steps, or targeting
+  instructions.
+- **Lab contributions** (`labs/`) are the only place runnable attack code is
+  allowed, and only when: the payload is inert and uses the lab's fixed canary;
+  every target is a local fixture the learner creates; the lab ends with a
+  Defense chapter; Going Further challenges are evaluation or defense tasks.
+  Generated artifacts (`*.pt`, `*.pth`, `*.bin`, `*.pkl`) are never committed.
 - **Don't fabricate.** No invented numbers, dates, model versions, CVEs, or
   benchmark scores.
 
@@ -25,6 +33,7 @@ sourced accuracy, fix errors, or improve clarity are very welcome.
 | Change structural data (nodes, edges, sources, views) | `ai_security_research_graph_seed.json` |
 | Adjust the Explorer UI | `src/` |
 | Adjust page templates / design | `layouts/`, `src/index.css` |
+| Add or change a hands-on lab | `labs/<node-id>/` (start from `labs/_template/`; see `labs/README.md`) |
 
 ## Content status
 

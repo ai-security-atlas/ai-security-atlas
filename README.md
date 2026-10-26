@@ -1,12 +1,18 @@
 # AI Security Atlas
 
-An opinionated, evidence-linked knowledge graph of how AI systems are attacked,
-defended, and evaluated. It connects an adversary's **objective** to the
-underlying **mechanism**, its **prerequisites**, the **architectures** it applies
-to, the **evidence** behind it, and the **controls** that address it.
+A **learning platform to understand and learn AI security through realistic
+scenarios**. It pairs an opinionated, evidence-linked knowledge graph of how AI
+systems are attacked, defended, and evaluated with hands-on labs that reproduce
+selected mechanisms on your own machine. The graph connects an adversary's
+**objective** to the underlying **mechanism**, its **prerequisites**, the
+**architectures** it applies to, the **evidence** behind it, and the **controls**
+that address it.
 
-It is a research reference and study aid — **not** an attack platform. It does not
-execute attacks, probe third-party services, or distribute payloads.
+The website executes nothing, probes no third-party services and hosts no
+payloads. The optional [`labs/`](labs/) directory contains local-only,
+self-contained reproductions for study: they run in Docker on your own machine,
+use inert canary payloads, target only files and models the learner creates for
+the lab, and end with a defense chapter.
 
 🌐 **Live site:** https://ai-security-atlas.github.io/
 
@@ -20,6 +26,9 @@ execute attacks, probe third-party services, or distribute payloads.
 - A goal-first **Explorer** (SPA) with a curated sidebar, a relationship-rich
   reader, and a local-neighborhood graph — plus pre-rendered standalone pages for
   every topic and source (no-JS / SEO / deep links).
+- **Hands-on labs** ([`labs/`](labs/)): local Docker reproductions of selected
+  attacks, each with an animated explainer (published at `/labs/` on the site)
+  and a defense chapter. Topics with a lab carry a "Hands-on lab" badge.
 
 Every topic carries a short **AI-generated draft** overview, clearly labeled and
 never auto-promoted to "reviewed."
@@ -32,10 +41,12 @@ projection.
 ```
 ai_security_research_graph_seed.json   canonical data (nodes, edges, sources, views)
 articles/<id>.md                       optional authored prose (survives rebuilds)
+labs/<id>/README.md + explainer/       hands-on labs (front matter -> node `lab`)
         │
         ▼  json2hugo.py  (deterministic compiler)
 static/data/atlas.json + data/atlas.json   denormalized graph (fwd+inverse rels, nav)
 content/{nodes,sources,views}/*.md         Hugo content pages
+static/labs/                               published lab explainers (/labs/)
         │
         ▼  Vite (React SPA)  +  Hugo (static HTML)  +  Pagefind (search)
 public/                                    deployable static site

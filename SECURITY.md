@@ -5,14 +5,27 @@
 The AI Security Atlas is a **static** website with no backend, no user accounts,
 and no server-side tracking. The main security surfaces are:
 
-- the build pipeline (compiler, dependencies, CI), and
-- the deployment token used to publish to the Pages repository.
+- the build pipeline (compiler, dependencies, CI),
+- the deployment token used to publish to the Pages repository, and
+- the local-only lab code under `labs/` (see [Labs](#labs)).
 
-## What this project is not
+## What this project is
 
-It documents AI security concepts for research and education. It does **not**
-execute attacks, host payloads, or provide operational exploit instructions.
-Please do not open issues or PRs requesting weaponized content.
+The AI Security Atlas is a learning platform to understand and learn AI security
+through realistic scenarios. The website and its data execute nothing and host no
+payloads. The optional `labs/` directory ships local-only reproductions whose
+payloads are inert by policy (a fixed canary string or a marker file in the lab's
+own `work/` folder). Please do not open issues or PRs requesting weaponized
+content.
+
+## Labs
+
+Lab payloads are inert by policy. Report as a security issue any lab step that
+sends a payload over the network, writes outside the lab's `work/` folder,
+targets a non-canary output, or contacts a third-party service without the
+learner choosing the external-API backend (other than the documented, pinned
+image, package and model downloads in a lab's Setup and Step 1, cached in the
+lab volumes).
 
 ## Reporting a vulnerability
 
