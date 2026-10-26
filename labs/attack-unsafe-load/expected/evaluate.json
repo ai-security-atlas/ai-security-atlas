@@ -1,0 +1,6 @@
+{
+  "unsafe": {"malicious.pt": 1, "variant.pt": 1},
+  "default": {"malicious.pt": 0, "variant.pt": 0},
+  "safe_globals_exec": {"malicious.pt": 1, "variant.pt": 0},
+  "fickling_hook": {"malicious.pt": 0, "variant.pt": 0}
+}

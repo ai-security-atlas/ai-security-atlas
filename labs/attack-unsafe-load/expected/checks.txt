@@ -1,0 +1,35 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu  safetensors 0\.8\.0  transformers 5\.20\.2
+SETUP3	\[ok\] picklescan 1\.0\.5  modelscan 0\.8\.8  fickling 0\.1\.12  git 2\.
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	hidden: \.data/serialization_id
+S1	^GLOBAL imports: collections OrderedDict \| torch\._utils _rebuild_tensor_v2 \| torch FloatStorage$
+S2	wrote work/malicious\.pt .*keys: \['0\.weight', '0\.bias', '2\.weight', '2\.bias'\]
+S2	^GLOBAL imports: .* \| __builtin__ exec$
+S2	opcodes: benign\.pt 178, malicious\.pt 188 \(\+10\)
+S3	(?s)marker exists: False.*\[payload\] ATLAS-CANARY-7f3a: code ran during torch\.load.*load_state_dict OK -> tensor\(\[\[ 0\.4794, -0\.1188\]\]\).*marker exists: True
+S3	^ATLAS-CANARY-7f3a pid=\d+ uid=\d+ at=\d+$
+S4	BLOCKED: UnpicklingError: Weights only load failed
+S4	Unsupported global: GLOBAL exec was not an allowed global by default
+S4	marker exists: False
+S5	malicious \['builtins\.exec'\]
+S5	(?s)\(B\).*-> \[payload\] fired.*\(C\).*-> \[payload\] fired.*\(D\).*-> \[payload\] fired
+S6	404 bytes = 8 \(header length\) \+ header 304 \+ data 92
+S6	round-trip identical: True
+S6	ValueError Key `evil` is invalid
+S6	metadata returned as plain str
+S7	^malicious\.pt +'__builtin__ exec' FOUND \(1\) +CRITICAL exec \(1\) +OVERTLY_MALICIOUS \(1\)
+S7	^variant\.pt +'timeit timeit' FOUND \(1\) +No issues found \(0\) +LIKELY_OVERTLY_MALICIOUS \(1\) +rejects time\.perf_counter, timeit\.timeit
+S8	^[0-9a-f]{7} v1\.1: switch to \.bin for older runtimes$
+S8	model\.safetensors => pytorch_model\.bin
+S8	(?s)\(1\).*BLOCKED: UnpicklingError.*marker exists: False.*\(2\).*\[payload\] ATLAS-CANARY-7f3a.*marker exists: True
+D1	(?s)MISMATCH model\.safetensors.*MISMATCH pytorch_model\.bin.*REFUSING TO LOAD.*\[exit 1\]
+D1	VERIFIED: every file matches the reviewed manifest
+D2	\[ok\] (removed attack-unsafe-load/work/canary-marker\.txt|no canary-marker\.txt to remove)
+D2	\[payload\] ATLAS-CANARY-7f3a: code ran during torch\.load -> wrote /work/canary-marker\.txt
+D2	marker in sandbox: True
+D2	dns canary\.invalid: gaierror
+D2	egress 192\.0\.2\.1:9: OSError Network is unreachable
+D2	write to /labs: OSError Read-only file system
+D2	^host marker: absent$
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed attack-unsafe-load/work \(
