@@ -1,0 +1,8 @@
+{
+  "canary/naive": [8, 10],
+  "canary/template": [8, 10],
+  "canary/sanitized": [0, 4],
+  "canary/split_user": [0, 4],
+  "filter/raw": [2, 2],
+  "filter/normalized": [6, 6]
+}
