@@ -14,12 +14,16 @@ Per lab (spec Sections 2 and 6.2):
   * every expected/checks.txt step id exists in the README
   * every node id (front matter and ?node= links) exists in ai_security_research_graph_seed.json
   * every explainer `cmd:` string appears verbatim in a README Do block
+  * optional `covers:` (nodes practiced in this lab): each node is in the seed, is not a lab's
+    own node and is covered by no other lab; its steps exist; its anchor is the GitHub anchor
+    of the heading of its first step
 Repo hygiene: no file under labs/ that git tracks (or would add) is a pickle/torch archive.
 Exits 0 when clean, 1 with one line per problem otherwise.
 """
 
 import json
 import re
+import unicodedata
 import subprocess
 import sys
 import zipfile
@@ -32,6 +36,7 @@ SITE = "https://ai-security-atlas.github.io/?node="
 
 KEYS = ["lab_id", "title", "node", "related_nodes", "family", "access_profile", "level", "time",
         "compose_profiles", "model_backend", "backends", "hardware", "canary", "last_tested", "tested_on"]
+OPTIONAL_KEYS = ["covers"]                 # may follow KEYS, in this order
 BACKENDS = ["container-ollama", "host-ollama", "external-api"]
 PROFILES = {"ollama", "chat", "workbench", "supply"}
 H2 = ["Overview", "Safety", "Atlas Context", "Backend Support", "Hardware & Time", "Prerequisites",
@@ -48,12 +53,17 @@ def err(where, msg):
 
 
 # ---------------------------------------------------------------- front matter
+FLOW_PAIR = re.compile(r"""\s*([\w-]+)\s*:\s*("[^"]*"|'[^']*'|[^,]*?)\s*(?:,|$)""")
+
+
 def scalar(v):
     v = re.sub(r"(^|\s+)#.*$", "", v).strip()
     if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
         return v[1:-1]
     if v.startswith("[") and v.endswith("]"):
         return [scalar(x) for x in v[1:-1].split(",") if x.strip()]
+    if v.startswith("{") and v.endswith("}"):  # flow map: {node: x, steps: "4-7, D1"}
+        return {k: scalar(x) for k, x in FLOW_PAIR.findall(v[1:-1]) if k}
     return v
 
 
@@ -68,11 +78,17 @@ def front_matter(text):
     for line in text[4:end].splitlines():
         if not line.strip() or line.lstrip().startswith("#"):
             continue
+        item = re.match(r"^\s+-\s+(.*)$", line)
+        if item and parent:  # block list under a key (covers:)
+            if not isinstance(data[parent], list):
+                data[parent] = []
+            data[parent].append(scalar(item.group(1)))
+            continue
         m = re.match(r"^(\s*)([\w-]+):\s*(.*)$", line)
         if not m:
             continue
         indent, k, v = m.groups()
-        if indent and parent:
+        if indent and parent and isinstance(data[parent], dict):
             data[parent][k] = scalar(v)
         else:
             keys.append(k)
@@ -87,8 +103,9 @@ def front_matter(text):
 def check_front_matter(where, folder, keys, fm, seed_ids):
     if keys is None:
         return err(where, "missing YAML front matter")
-    if keys != KEYS:
-        err(where, f"front matter keys must be, in order: {', '.join(KEYS)} (got {', '.join(keys)})")
+    if keys[:len(KEYS)] != KEYS or any(k not in OPTIONAL_KEYS for k in keys[len(KEYS):]):
+        err(where, f"front matter keys must be, in order: {', '.join(KEYS)}, then optionally "
+                   f"{', '.join(OPTIONAL_KEYS)} (got {', '.join(keys)})")
     if not re.fullmatch(r"LAB-\d{2}", str(fm.get("lab_id", ""))):
         err(where, "lab_id must look like LAB-NN")
     if fm.get("node") != folder:
@@ -219,7 +236,70 @@ def explainer_steps(lab):
     return len(CHAPTER.findall(src)), cmds
 
 
-def lint_lab(lab, order, seed_ids, index_text):
+# ---------------------------------------------------------------- covers
+STEP_TOKEN = re.compile(r"(D?)(\d+)(?:-(D?)(\d+))?|Evaluate")
+
+
+def github_anchor(heading):
+    """The id GitHub gives a README heading: rendered text, lowercased, punctuation dropped,
+    spaces -> hyphens (links keep their text; the em dash and middle dot vanish)."""
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", heading).replace("`", "").replace("**", "")
+    keep = (c for c in text.lower()
+            if c in " -_" or unicodedata.category(c)[0] in "LMN")
+    return "".join(keep).replace(" ", "-")
+
+
+def parse_steps(spec):
+    """'4-7, D1, Evaluate' -> ['S4', 'S5', 'S6', 'S7', 'D1', 'EVAL']; None if malformed."""
+    out = []
+    for tok in (t.strip() for t in str(spec).split(",")):
+        m = STEP_TOKEN.fullmatch(tok)
+        if not m:
+            return None
+        if tok == "Evaluate":
+            out.append("EVAL")
+            continue
+        d1, a, d2, b = m.groups()
+        if b is not None and (d1 != d2 or int(b) <= int(a)):
+            return None
+        pre = "D" if d1 else "S"
+        out += [f"{pre}{i}" for i in range(int(a), int(b or a) + 1)]
+    return out
+
+
+def check_covers(where, fm, seed_ids, own_nodes, heading_of):
+    covers = fm.get("covers")
+    if covers is None:
+        return
+    if not isinstance(covers, list) or not covers:
+        return err(where, "covers must be a block list of '- {node: <id>, steps: \"<ids>\", anchor: <anchor>}'")
+    seen = set()
+    for c in covers:
+        if not isinstance(c, dict) or sorted(c) != ["anchor", "node", "steps"]:
+            err(where, f"covers entry {c!r} must have exactly node, steps, anchor")
+            continue
+        nid = c["node"]
+        if nid not in seed_ids:
+            err(where, f"covers: node {nid!r} is not in the seed graph")
+        if nid in own_nodes:
+            err(where, f"covers: {nid!r} has its own lab (labs/{nid}/); link it instead of covering it")
+        if nid in seen:
+            err(where, f"covers: {nid!r} is listed twice")
+        seen.add(nid)
+        ids = parse_steps(c["steps"])
+        if not ids:
+            err(where, f"covers {nid}: steps {c['steps']!r} must look like \"4\", \"4-6\", \"D1\", \"4-7, D1\" or \"Evaluate\"")
+            continue
+        missing = [i for i in ids if i not in heading_of]
+        if missing:
+            err(where, f"covers {nid}: step(s) {', '.join(missing)} not in the README")
+            continue
+        want = github_anchor(heading_of[ids[0]])
+        if c["anchor"] != want:
+            err(where, f"covers {nid}: anchor must be the first step's heading anchor {want!r} (got {c['anchor']!r})")
+
+
+def lint_lab(lab, order, seed_ids, index_text, own_nodes):
     folder = lab.name
     where = f"labs/{folder}/README.md"
     text = (lab / "README.md").read_text(encoding="utf-8")
@@ -244,7 +324,7 @@ def lint_lab(lab, order, seed_ids, index_text):
     if n_steps is None:
         err(where, "explainer/explainer.js is missing")
     last_link, h2_cur, setup = 0, None, []
-    step_ids, do_text = set(), []
+    step_ids, do_text, heading_of = set(), [], {"EVAL": "Evaluate"}
     for lvl, title, lines in heads:
         if lvl == 2:
             h2_cur = title
@@ -272,6 +352,7 @@ def lint_lab(lab, order, seed_ids, index_text):
             err(where, f"H3 under {h2_cur} must be 'Step {prefix}N — <title>' (got '{title}')")
             continue
         step_ids.add(m.group(1) if prefix else f"S{m.group(1)}")
+        heading_of[m.group(1) if prefix else f"S{m.group(1)}"] = title
         check_step(where, title, lines)
         links = re.findall(r"\[explainer (\d+)\]\(explainer/index\.html#([\w-]+)/(\d+)\)", title)
         if "explainer" in title.lower() and not links:
@@ -287,6 +368,7 @@ def lint_lab(lab, order, seed_ids, index_text):
             last_link = max(last_link, n)
     if setup != [1, 2, 3]:
         err(where, "Setup must have exactly 'Setup 1 —', 'Setup 2 —', 'Setup 3 —'")
+    check_covers(where, fm, seed_ids, own_nodes, heading_of)
 
     # checks.txt ids exist
     checks = lab / "expected" / "checks.txt"
@@ -358,10 +440,16 @@ def check_hygiene():
 def main():
     seed_ids = {n["id"] for n in json.loads(SEED.read_text(encoding="utf-8"))["nodes"]}
     labs = sorted(p.parent for p in LABS.glob("*/README.md") if not p.parent.name.startswith("_"))
-    lab_ids = {}
+    lab_ids, covered_by = {}, {}
     for lab in labs:
         _, fm, _ = front_matter((lab / "README.md").read_text(encoding="utf-8"))
         lab_ids[lab.name] = (fm or {}).get("lab_id", "LAB-99")
+        for c in (fm or {}).get("covers") or []:
+            if isinstance(c, dict) and c.get("node"):
+                covered_by.setdefault(c["node"], []).append(lab.name)
+    for nid, hosts in sorted(covered_by.items()):
+        if len(set(hosts)) > 1:
+            err("labs/", f"node {nid!r} is covered by more than one lab: {', '.join(sorted(set(hosts)))}")
     order = sorted(lab_ids, key=lambda k: lab_ids[k])
     dup = {v for v in lab_ids.values() if list(lab_ids.values()).count(v) > 1}
     for v in dup:
@@ -373,7 +461,7 @@ def main():
         if name not in lab_ids:
             err(f"labs/{name}", "no such lab (labs/<node-id>/README.md)")
             continue
-        lint_lab(LABS / name, order, seed_ids, index_text)
+        lint_lab(LABS / name, order, seed_ids, index_text, set(lab_ids))
     check_hygiene()
 
     for p in problems:

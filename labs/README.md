@@ -38,6 +38,8 @@ Every lab assumes these steps are done. Run all commands from this `labs/` folde
 
 ## Labs
 
+Progress: 2 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
+
 | LAB | Lab | Atlas node | Family | Level | Model backend | Time | Explainer |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | LAB-01 | [What torch.load really runs](attack-unsafe-load/README.md) | attack-unsafe-load | family-supply | beginner | none | 60 min | `attack-unsafe-load/explainer/index.html` |
@@ -51,6 +53,6 @@ Maintainer tools (host Python 3.9 or newer, standard library only, run from the 
 
 | Command | What it does |
 | :--- | :--- |
-| `python3 labs/_tools/lint_readme.py [<node-id>]` | Checks every lab README against the template (front matter, section order, step blocks, explainer links, prev/next footer, `expected/checks.txt` step ids, Atlas node ids, explainer commands) and fails if a pickle or torch archive under `labs/` is tracked by git. |
+| `python3 labs/_tools/lint_readme.py [<node-id>]` | Checks every lab README against the template (front matter, section order, step blocks, explainer links, prev/next footer, `expected/checks.txt` step ids, Atlas node ids, explainer commands, `covers:` nodes, steps and anchors) and fails if a pickle or torch archive under `labs/` is tracked by git. |
 | `python3 labs/_tools/verify.py <node-id>` | Runs the lab README's Do blocks in order, exactly as a student would, writes `labs/<node-id>/work/verify.log`, and checks each step's output against `expected/checks.txt`. It uses `LAB_BACKEND` from `labs/.env` to pick the profiles, skips backend-tagged steps when no backend is set, and runs slow steps only with `VERIFY_SLOW=1`. |
 | `python3 labs/_shared/test_inert.py` | Payload review: checks the inert LAB-01 payload against an AST allowlist, and checks that `exec`, `eval` and `__reduce__` appear only in the payload-site scripts. |

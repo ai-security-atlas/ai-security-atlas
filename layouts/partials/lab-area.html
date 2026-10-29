@@ -1,0 +1,17 @@
+{{/* "Labs in this area" list for hub nodes (no-JS twin of LabsInArea in src/GraphApp.tsx).
+     Context: dict "rows" (node.labs_in_area) and "atlas". */}}
+{{ $atlas := .atlas }}
+<section class="labcard labcard--lite" aria-label="Labs in this area">
+    <div class="eyb eyb--lab">{{ partial "lab-icon.html" . }} Labs in this area · {{ len .rows }}</div>
+    <ul class="labarea">
+        {{ range .rows }}
+        <li>
+            <a class="labcard__link" href="/nodes/{{ .node }}/">{{ .lab_id }} · {{ .title }}</a>
+            <span class="labarea__meta">
+                {{ if .own }}{{ with index $atlas.nodes .node }}<span>{{ .title }}</span>{{ end }}{{ end }}
+                {{ range .practiced }}{{ $n := index $atlas.nodes .node }}<a href="{{ .url }}" target="_blank" rel="noreferrer">{{ with $n }}{{ .title }}{{ end }} · {{ cond (findRE `[,-]` .steps | len | lt 0) "Steps" "Step" }} {{ .steps }}</a>{{ end }}
+            </span>
+        </li>
+        {{ end }}
+    </ul>
+</section>

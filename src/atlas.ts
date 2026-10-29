@@ -23,6 +23,20 @@ export interface AtlasNode {
   rel: Record<string, string[]>;
   has_article?: boolean;
   lab?: Lab;
+  practiced_in?: PracticedIn;    // covered by another lab's steps (lab front matter `covers:`)
+  labs_in_area?: AreaLab[];      // hub nodes only: existing labs that practice its members
+}
+// A covered node points at the lab steps that practice it.
+export interface PracticedIn {
+  lab_id: string; number: number; node: string; title: string;
+  steps: string;  // e.g. "4-7, D1"
+  url: string;    // GitHub URL of the lab README at the first step's anchor
+}
+// One row of a hub's "Labs in this area" list.
+export interface AreaLab {
+  lab_id: string; number: number; node: string; title: string;
+  own: boolean;   // the lab's own node is a member of the hub
+  practiced: { node: string; steps: string; url: string }[];
 }
 // Hands-on lab metadata, compiled from labs/<node-id>/README.md front matter.
 export interface Lab {
@@ -31,6 +45,7 @@ export interface Lab {
   last_tested: string;
   github: string;     // GitHub URL of the lab folder (its README renders there)
   explainer: string;  // site path of the published explainer, or "" if none
+  covers?: { node: string; steps: string; anchor: string }[];
 }
 export interface Source {
   id: string; title: string; url: string; kind: string; publisher: string;

@@ -16,7 +16,7 @@ const GithubMark = () => (
   </svg>
 );
 import {
-  Atlas, AtlasNode, Lab, loadAtlas, glyphFor, REL_ORDER, OVERVIEW_RELS,
+  Atlas, AtlasNode, Lab, PracticedIn, AreaLab, loadAtlas, glyphFor, REL_ORDER, OVERVIEW_RELS,
   humanizeToken,
 } from './atlas';
 
@@ -411,6 +411,48 @@ function LabCard({ lab }: { lab: Lab }) {
   );
 }
 
+const stepsLabel = (steps: string) => `${/[,-]/.test(steps) ? 'Steps' : 'Step'} ${steps}`;
+
+// Lighter twin of LabCard for a node practiced inside another lab's steps.
+function PracticedCard({ atlas, p, onOpen }: { atlas: Atlas; p: PracticedIn; onOpen: (id: string) => void }) {
+  return (
+    <section className="labcard labcard--lite" aria-label={`Practiced in ${p.lab_id}`}>
+      <a className="eyb eyb--lab labcard__steps" href={p.url} target="_blank" rel="noreferrer">
+        <SquareTerminal /><span>Practiced in {p.lab_id}</span><span>· {stepsLabel(p.steps)} <ArrowUpRight /></span>
+      </a>
+      <p className="labcard__body">
+        This topic has no lab of its own. You practice it in those steps of{' '}
+        <button className="labcard__link" onClick={() => onOpen(p.node)}>{p.lab_id} · {p.title}</button>
+        {atlas.nodes[p.node] ? ` (${atlas.nodes[p.node].title})` : ''}.
+      </p>
+    </section>
+  );
+}
+
+// Hub nodes (goals, families, umbrellas): the labs that practice their members.
+function LabsInArea({ atlas, rows, onOpen }: { atlas: Atlas; rows: AreaLab[]; onOpen: (id: string) => void }) {
+  return (
+    <section className="labcard labcard--lite" aria-label="Labs in this area">
+      <div className="eyb eyb--lab"><SquareTerminal /> Labs in this area · {rows.length}</div>
+      <ul className="labarea">
+        {rows.map(r => (
+          <li key={r.node}>
+            <button className="labcard__link" onClick={() => onOpen(r.node)}>{r.lab_id} · {r.title}</button>
+            <span className="labarea__meta">
+              {r.own && <span>{atlas.nodes[r.node]?.title || r.node}</span>}
+              {r.practiced.map(pr => (
+                <a key={pr.node} href={pr.url} target="_blank" rel="noreferrer">
+                  {atlas.nodes[pr.node]?.title || pr.node} · {stepsLabel(pr.steps)}
+                </a>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
   atlas: Atlas; node: AtlasNode; tab: string; setTab: (t: any) => void;
   onOpen: (id: string) => void; onGraph: () => void;
@@ -436,6 +478,7 @@ function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
         {node.content_status && <span className="badge">{node.content_status}</span>}
         {node.priority && <span className="badge">{node.priority}</span>}
         {node.lab && <span className="badge badge--lab"><SquareTerminal />Hands-on lab</span>}
+        {node.practiced_in && <span className="badge badge--lab badge--lite"><SquareTerminal />Practiced in {node.practiced_in.lab_id}</span>}
       </div>
 
       <h1>{node.title}</h1>
@@ -451,6 +494,8 @@ function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
       {node.summary && <p className="summary">{node.summary}</p>}
 
       {node.lab && <LabCard lab={node.lab} />}
+      {node.practiced_in && <PracticedCard atlas={atlas} p={node.practiced_in} onOpen={onOpen} />}
+      {node.labs_in_area && node.labs_in_area.length > 0 && <LabsInArea atlas={atlas} rows={node.labs_in_area} onOpen={onOpen} />}
 
       <div className="tabs">
         <button className="tab" data-on={tab === 'overview'} onClick={() => setTab('overview')}>Overview</button>

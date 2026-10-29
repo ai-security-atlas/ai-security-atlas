@@ -3539,3 +3539,23 @@ a.nav__more { margin-bottom: 0.2rem; }
 .labcard__meta a { color: var(--lab); }
 .labcard__meta a:hover { text-decoration: underline; }
 .cardgrid .labcard { margin: 0; }
+
+/* Lighter variants: "Practiced in LAB-NN" on covered nodes, "Labs in this area" on hubs. */
+.labcard--lite { border-style: dashed; background: transparent; padding: 0.7rem 0.9rem 0.75rem; margin-bottom: 1.5rem; }
+.labcard--lite .labcard__body { margin-top: 0.4rem; }
+a.labcard__steps { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.4rem; color: var(--lab); }
+a.labcard__steps span { white-space: nowrap; }
+a.labcard__steps span svg { display: inline-block; vertical-align: -0.1em; }
+a.labcard__steps:hover { text-decoration: underline; }
+.labcard__link { all: unset; cursor: pointer; color: var(--theme-ink); font-weight: 600; }
+a.labcard__link { color: var(--theme-ink); }
+button.labcard__link { display: inline; text-align: left; }
+.labcard__link:hover, .labcard__link:focus-visible { color: var(--lab); text-decoration: underline; }
+.badge--lite { border-style: dashed; }
+.labarea { list-style: none; margin: 0.45rem 0 0; padding: 0; display: grid; gap: 0.45rem; }
+.labarea li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.6rem; font-size: 0.86rem; line-height: 1.4; }
+.labarea__meta { display: flex; flex-wrap: wrap; gap: 0.15rem 0.7rem; font-family: var(--mono); font-size: 0.68rem;
+  letter-spacing: 0.02em; color: var(--theme-muted); }
+.labarea__meta a { color: var(--lab); }
+.labarea__meta a:hover { text-decoration: underline; }
+.idx-head p.labprogress { margin-top: 0.6rem; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.02em; color: var(--theme-muted); }

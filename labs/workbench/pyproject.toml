@@ -1,6 +1,6 @@
 [project]
 name = "atlas-workbench"
-version = "1.0.0"
+version = "2.0.0"
 description = "Shared Python environment for the AI Security Atlas hands-on labs (CPU only)."
 requires-python = "==3.12.*"
 dependencies = [
@@ -17,6 +17,15 @@ dependencies = [
   "picklescan==1.0.5",
   "huggingface_hub==2.3.0",
   "requests",
+  # v2 (wave 1): adapters, classic ML, small local APIs, plots
+  "peft==0.21.2",
+  "accelerate==1.15.0",
+  "scikit-learn==1.9.1",
+  "fastapi==0.162.0",
+  "uvicorn==0.54.0",
+  "httpx==0.28.1",
+  "pydantic==2.14.1",
+  "matplotlib==3.11.2",
 ]
 
 [tool.uv]

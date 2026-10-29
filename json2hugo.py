@@ -13,6 +13,8 @@ Output:
 
 Lab metadata comes from the YAML front matter of labs/<node-id>/README.md
 (docs/labs-spec.md section 2.1) and is attached to the matching node as `lab`.
+A lab's optional `covers:` list attaches `practiced_in` to each covered node, and
+hub nodes (goals, families, and the roadmap's umbrella hubs) get `labs_in_area`.
 
 The compiler denormalizes the graph once so every reader (SPA or template) can
 show forward AND inverse relationships without re-scanning 650 edges. See the
@@ -31,6 +33,7 @@ SEED = "ai_security_research_graph_seed.json"
 REPO_URL = "https://github.com/ai-security-atlas/ai-security-atlas"
 LABS_DIR = "labs"
 LABS_OUT = "static/labs"
+ROADMAP = os.path.join("docs", "labs-roadmap.json")  # optional: umbrella hubs + their members
 
 # --- Presentation metadata for the 11 P0 topic types -------------------------
 # glyph = lucide-react icon name used by the SPA; color reads on both the warm
@@ -107,15 +110,21 @@ def write_md(path, frontmatter, content=""):
 
 # --- Hands-on labs ------------------------------------------------------------
 # The front matter is a small, fixed YAML subset (spec 2.1): scalars, quoted
-# strings, inline [a, b] lists and one level of nesting (backends). Parsed with
+# strings, inline [a, b] lists, one level of nesting (backends) and a block
+# list of inline {k: v} maps (covers). Parsed with
 # the standard library because the site image ships only lab READMEs and
 # explainers (see .dockerignore), not labs/_tools.
+_FLOW_PAIR = re.compile(r"""\s*([\w-]+)\s*:\s*("[^"]*"|'[^']*'|[^,]*?)\s*(?:,|$)""")
+
+
 def _fm_value(v):
     v = re.sub(r"(^|\s+)#.*$", "", v).strip()
     if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
         return v[1:-1]
     if v.startswith("[") and v.endswith("]"):
         return [_fm_value(x) for x in v[1:-1].split(",") if x.strip()]
+    if v.startswith("{") and v.endswith("}"):
+        return {k: _fm_value(x) for k, x in _FLOW_PAIR.findall(v[1:-1]) if k}
     return v
 
 
@@ -131,11 +140,17 @@ def read_front_matter(path):
     for line in text[4:end].splitlines():
         if not line.strip() or line.lstrip().startswith("#"):
             continue
+        item = re.match(r"^\s+-\s+(.*)$", line)
+        if item and parent:
+            if not isinstance(data[parent], list):
+                data[parent] = []
+            data[parent].append(_fm_value(item.group(1)))
+            continue
         m = re.match(r"^(\s*)([\w-]+):\s*(.*)$", line)
         if not m:
             continue
         indent, key, val = m.groups()
-        if indent and parent:
+        if indent and parent and isinstance(data[parent], dict):
             data[parent][key] = _fm_value(val)
         elif _fm_value(val) == "":
             parent, data[key] = key, {}
@@ -175,8 +190,60 @@ def load_labs(node_ids):
             "last_tested": fm.get("last_tested", ""),
             "github": f"{REPO_URL}/tree/main/labs/{folder}",
             "explainer": f"/labs/{folder}/explainer/" if has_explainer else "",
+            "covers": [c for c in (fm.get("covers") or [])
+                       if isinstance(c, dict) and c.get("node") in node_ids],
         }
     return labs
+
+
+def practiced_in(labs):
+    """{covered node id: {lab_id, number, node (host), title, steps, url}} from `covers:`.
+    lint_readme.py rejects a node covered twice or a lab's own node; skip them here too."""
+    out = {}
+    for lab in sorted(labs.values(), key=lambda l: l["number"]):
+        for c in lab["covers"]:
+            nid = c["node"]
+            if nid in out or nid in labs:
+                print(f"warning: labs/{lab['node']}: covers {nid!r} is already a lab or covered; skipped")
+                continue
+            out[nid] = {
+                "lab_id": lab["lab_id"], "number": lab["number"], "node": lab["node"],
+                "title": lab["title"], "steps": c.get("steps", ""),
+                "url": f"{REPO_URL}/blob/main/labs/{lab['node']}/README.md"
+                       + (f"#{c['anchor']}" if c.get("anchor") else ""),
+            }
+    return out
+
+
+def read_roadmap():
+    """docs/labs-roadmap.json -> (umbrella hubs {node id: [member ids]}, number of planned own labs).
+    Optional: without the file there are no extra hubs and no planned count."""
+    if not os.path.isfile(ROADMAP):
+        return {}, 0
+    with open(ROADMAP, "r", encoding="utf-8") as fh:
+        raw = json.load(fh).get("raw", {})
+    hubs = {nid: e.get("also_covers") or [] for nid, e in raw.items() if e.get("kind") == "hub"}
+    return hubs, sum(1 for e in raw.values() if e.get("kind") == "own")
+
+
+def labs_in_area(members, labs, practiced):
+    """Existing labs that practice a hub's members, one row per lab:
+    {lab_id, number, node, title, own (bool: its own node is a member), practiced: [...]}."""
+    rows = {}
+    for mid in members:
+        if mid in labs:
+            lab = labs[mid]
+            row = rows.setdefault(lab["node"], {"lab_id": lab["lab_id"], "number": lab["number"],
+                                                "node": lab["node"], "title": lab["title"],
+                                                "own": False, "practiced": []})
+            row["own"] = True
+        elif mid in practiced:
+            p = practiced[mid]
+            row = rows.setdefault(p["node"], {"lab_id": p["lab_id"], "number": p["number"],
+                                              "node": p["node"], "title": p["title"],
+                                              "own": False, "practiced": []})
+            row["practiced"].append({"node": mid, "steps": p["steps"], "url": p["url"]})
+    return sorted(rows.values(), key=lambda r: r["number"])
 
 
 def publish_explainers(labs):
@@ -210,6 +277,10 @@ def main():
     node_by_id = {n["id"]: n for n in nodes_raw}
     source_by_id = {s["id"]: s for s in sources_raw}
     labs = load_labs(set(node_by_id))
+    practiced = practiced_in(labs)
+    hubs, labs_planned = read_roadmap()
+    hubs.update({n["id"]: hubs.get(n["id"], []) for n in nodes_raw
+                 if n.get("type") in ("goal", "technique_family")})
 
     # --- Attach observations -------------------------------------------------
     # Observations live in a top-level table; a node references them either by
@@ -348,6 +419,15 @@ def main():
         }
         if nid in labs:
             atlas_nodes[nid]["lab"] = labs[nid]
+        if nid in practiced:
+            atlas_nodes[nid]["practiced_in"] = practiced[nid]
+        if nid in hubs:
+            members = set(hubs[nid])
+            for k in ("hasMember", "reachableVia", "hasVariant"):
+                members.update(rel[nid].get(k, []))
+            area = labs_in_area(sort_by_title(members - {nid}), labs, practiced)
+            if area:
+                atlas_nodes[nid]["labs_in_area"] = area
 
     # --- Curated navigation (PRD 7.4) ----------------------------------------
     # Objectives: goal -> family -> attack, using can_serve_goal + member_of.
@@ -486,7 +566,7 @@ def main():
             "counts": {
                 "nodes": len(nodes_raw), "edges": len(atlas_edges),
                 "sources": len(sources_raw), "views": len(views),
-                "labs": len(labs), "types": dict(type_counts),
+                "labs": len(labs), "labs_planned": labs_planned, "types": dict(type_counts),
             },
         },
         "typeMeta": TYPE_META,
@@ -531,8 +611,9 @@ def main():
             "caveat": n.get("caveat", "") or "",
             "has_article": bool(body),
         }
-        if nid in labs:
-            fm["lab"] = labs[nid]
+        for key in ("lab", "practiced_in", "labs_in_area"):
+            if key in atlas_nodes[nid]:
+                fm[key] = atlas_nodes[nid][key]
         write_md(f"content/nodes/{nid}.md", fm, content=body)
     write_md("content/nodes/_index.md", {"title": "Topics", "type": "node"})
 

@@ -17,6 +17,8 @@ hardware: "<CPU / memory / disk in one line>"
 canary: <fixed canary string>
 last_tested: YYYY-MM-DD
 tested_on: "<OS arch, Docker runtime, Docker version>"
+covers:                                  # optional: nodes practiced here as named steps; delete the key if none
+  - {node: <node-id>, steps: "<4 | 4-6 | D1 | 4-7, D1 | Evaluate>", anchor: "<GitHub anchor of the first listed step's heading>"}
 ---
 
 <!--
@@ -37,6 +39,16 @@ tested_on: "<OS arch, Docker runtime, Docker version>"
   * A step that calls an LLM endpoint starts with "> Model backend: ..." (see Step 2).
   * Callouts: only > [!NOTE], > [!WARNING], > [!TIP].
   * evaluate.py ends with exactly "RESULT: REPRODUCED" or "RESULT: MISMATCH (<what differed>)".
+  * covers: (optional, last key) lists Atlas nodes this lab practices as named steps, one
+    "- {node: ..., steps: "...", anchor: "..."}" line each. Take them from
+    docs/labs-roadmap.json (nodes with kind "covered" and covered_by == this lab's node) and
+    keep only nodes a specific step really practices. steps: comma-separated "N", "N-M", "DN",
+    "DN-DM" or "Evaluate". anchor: GitHub's id for the first listed step's heading (lowercase,
+    link text kept, punctuation such as the em dash and middle dot dropped, spaces -> hyphens),
+    e.g. "step-d1--pin-and-verify". Lint checks the node exists, has no lab of its own and is
+    covered by no other lab, the steps exist and the anchor matches (a wrong anchor error
+    prints the expected one). Quote steps and anchor. The site then shows
+    "Practiced in LAB-NN · Steps ..." on the covered node and lists the lab on its hubs.
   * expected/checks.txt: one "step-id<TAB>regex" per line (SETUP1..3, S1..Sn, D1..Dn, EVAL,
     CLEANUP); run them with: python3 labs/_tools/verify.py <node-id>
   Delete this comment in your lab.
@@ -143,7 +155,7 @@ docker compose up -d
 **Observe**
 
 ```text
- Image atlas-labs/workbench:v1 Built
+ Image atlas-labs/workbench:v2 Built
 ...
 ```
 

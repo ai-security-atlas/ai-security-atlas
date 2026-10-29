@@ -6,6 +6,7 @@
             <div class="eyb eyb--lab" style="margin-bottom:0.7rem">{{ partial "lab-icon.html" . }} HANDS-ON LABS</div>
             <h1>Hands-on labs</h1>
             <p>Learn an Atlas attack by reproducing it on your own machine. Each lab runs locally in Docker, ends every "successful attack" in a harmless canary, ships an animated explainer, and closes with a defense chapter. Setup and the lab guides live in <a href="https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs" target="_blank" rel="noreferrer" style="color:var(--lab)">labs/ on GitHub</a>.</p>
+            {{ with $atlas.meta.counts.labs_planned }}<p class="labprogress">{{ len $atlas.labs }} of {{ . }} planned labs built. See the <a href="https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md" target="_blank" rel="noreferrer" style="color:var(--lab)">labs roadmap</a> for what comes next.</p>{{ end }}
         </div>
     </div>
 

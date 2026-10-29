@@ -17,6 +17,9 @@ hardware: "CPU only. 4 GB Docker VM memory (+4 GB for container Ollama). About 3
 canary: CANARY-7731
 last_tested: 2026-10-25
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5"
+covers:                                  # nodes practiced here as named steps (optional; see _template)
+  - {node: arch-vlm, steps: "1", anchor: "step-1--get-the-white-box-model-and-its-clean-caption-15-s2-min--explainer-1"}
+  - {node: eval-transfer, steps: "6", anchor: "step-6--plain-pgd-does-not-transfer--explainer-9"}
 ---
 
 # LAB-02 · Moving a VLM with invisible pixels
@@ -76,7 +79,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. PGD runs on CPU in Docker at about 3.4–4.7 s per step on an M4 Max (16 vCPUs for Docker, other jobs running); expect several times slower on a 4-core laptop. |
 | Docker VM memory | 4 GB for the workbench (about 2 GiB in use during PGD), plus about 4 GB if container Ollama runs `qwen2.5vl:3b`. |
-| Disk | Workbench image 1.8 GB, SmolVLM about 0.5 GB in the HF cache; with Ollama, `qwen2.5vl:3b` 3.2 GB and `moondream:1.8b` 1.7 GB. |
+| Disk | Workbench image 2.2 GB, SmolVLM about 0.5 GB in the HF cache; with Ollama, `qwen2.5vl:3b` 3.2 GB and `moondream:1.8b` 1.7 GB. |
 | Total time | About 120 min: about 20 min of commands without the optional steps (Step 3 is about 7 min), plus reading. The optional Steps 5 and D3 add about 17 and 7 min on an M4 Max; budget several times that on a 4-core laptop. |
 
 ## Prerequisites
@@ -120,9 +123,9 @@ docker compose up -d
 **Observe**
 
 ```text
- Image atlas-labs/workbench:v1 Building
+ Image atlas-labs/workbench:v2 Building
 ...
- Image atlas-labs/workbench:v1 Built
+ Image atlas-labs/workbench:v2 Built
 ...
  Container atlas-labs-workbench-1 Started
  Container atlas-labs-open-webui-1 Started

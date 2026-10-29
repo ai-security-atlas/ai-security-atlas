@@ -1393,3 +1393,21 @@ and add a section:
 4. **Atlas UI integration (§7.1 item 1): IN SCOPE for v1.** json2hugo.py compiles `lab` metadata per node from `labs/*/README.md` front matter, and the React reader plus the Hugo node pages show a "Hands-on lab" badge and link. The SPA sidebar/explorer gets a "has lab" filter or indicator. Lab explainers (`labs/_explainer` plus each `labs/<id>/explainer/`) are published on the site under `/labs/` at build time (copied by json2hugo or the Makefile; generated output stays git-ignored). The lab README links to the GitHub source at https://github.com/ai-security-atlas/ai-security-atlas (check the real remote with `git remote -v`). §0.10's "no Hugo layouts/src changes" no longer applies.
 5. **Visual style:** match the laya deck (`/Users/alevsk/Development/laya/docs`) and bbycroft.net/llm. Use the laya font stack (Google Fonts, as laya does), with system-font fallbacks so file:// offline still works. This overrides "system fonts only" in §3.
 6. **Further decisions by the orchestrator (resolving §7.2):** Q4 numbering as proposed. Q5 keep the verified synthetic scene. Q6 live-site URLs in the lab body. Q8 the hosted-API fallback is tested only against Ollama's /v1 stand-in in v1, and the README says so.
+
+### Wave 1 groundwork (2026-10-26). Overrides §1.3, §1.7 and §2.1 where they differ.
+
+7. **Workbench v2.** `labs/workbench` adds `peft==0.21.2`, `accelerate==1.15.0`, `scikit-learn==1.9.1`, `fastapi==0.162.0`, `uvicorn==0.54.0`, `httpx==0.28.1`, `pydantic==2.14.1` and `matplotlib==3.11.2` (76 locked packages); every v1 pin is unchanged, so the check in §1.7 still prints `2.14.1+cpu 0.29.1+cpu 5.20.2`. The default tag is `WORKBENCH_TAG=v2` (compose default and `.env.example`); the image is 2.19 GB on arm64. LAB-01 and LAB-02 were re-verified on v2. chromadb and the MCP SDK are left for wave 2 (the `rag-agent` image).
+8. **`covers:` front matter (optional, last key).** A lab lists the Atlas nodes it practices as named steps, so the site can show them as practiced:
+
+   ```yaml
+   covers:
+     - {node: defense-safe-load, steps: "4-7, D1", anchor: "step-4--the-modern-default-blocks-it--explainer-7"}
+     - {node: defense-isolation, steps: "D2", anchor: "step-d2--isolate-the-loader--explainer-9"}
+   ```
+
+   - One block-list line per node, each an inline map with exactly `node`, `steps` and `anchor` (quote `steps` and `anchor`). The stdlib parsers in `lint_readme.py` and `json2hugo.py` read this shape only.
+   - `steps`: comma-separated `N`, `N-M`, `DN`, `DN-DM` or `Evaluate`.
+   - `anchor`: GitHub's heading id of the first listed step (lowercase; link text kept; punctuation such as `—`, `·`, `≈`, `(` dropped; spaces become hyphens).
+   - Candidates come from `docs/labs-roadmap.json`: nodes with `kind: covered` whose `covered_by` is the lab's node, or a covered node the lab hosts. List only nodes that a specific step really practices; a link in an Atlas Context table alone is not practice.
+   - `lint_readme.py` checks that each node is in the seed, has no lab folder of its own, is listed once and is covered by no other lab, that the steps exist, and that the anchor matches.
+   - `json2hugo.py` attaches `practiced_in` (lab, steps, GitHub step URL) to each covered node, and `labs_in_area` to hub nodes (goals, families and the roadmap's `kind: hub` nodes): one row per existing lab whose own node or covered nodes are members of the hub. The SPA reader and the Hugo node page show a light "Practiced in LAB-NN · Steps X" panel and a "Labs in this area" list (nothing when empty).

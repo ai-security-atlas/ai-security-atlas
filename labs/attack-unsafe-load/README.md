@@ -13,10 +13,19 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 2 GB disk for the workbench image."
+hardware: "Any laptop, CPU only. 2.2 GB disk for the workbench image."
 canary: ATLAS-CANARY-7f3a
 last_tested: 2026-10-25
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
+covers:                                  # nodes practiced here as named steps (optional; see _template)
+  - {node: format-pytorch, steps: "1-5", anchor: "step-1--look-before-you-load--explainer-1"}
+  - {node: system-loader, steps: "1-4, 8", anchor: "step-1--look-before-you-load--explainer-1"}
+  - {node: defense-safe-load, steps: "4-7, D1", anchor: "step-4--the-modern-default-blocks-it--explainer-7"}
+  - {node: format-safetensors, steps: "6", anchor: "step-6--safetensors-has-no-vm--explainer-8"}
+  - {node: attack-artifact-substitution, steps: "8, D1", anchor: "step-8--realistic-delivery-through-a-tampered-hub"}
+  - {node: system-registry, steps: "8", anchor: "step-8--realistic-delivery-through-a-tampered-hub"}
+  - {node: defense-provenance, steps: "D1", anchor: "step-d1--pin-and-verify"}
+  - {node: defense-isolation, steps: "D2", anchor: "step-d2--isolate-the-loader--explainer-9"}
 ---
 
 # LAB-01 · What torch.load really runs
@@ -76,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. Each step runs in seconds. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (1.8 GB). The lab writes under 1 MB to `work/`. |
+| Disk | The workbench image (2.2 GB). The lab writes under 1 MB to `work/`. |
 | Total time | 60 min: about 25 min of commands, the rest reading |
 
 ## Prerequisites
@@ -122,12 +131,12 @@ docker compose up -d
 **Observe**
 
 ```text
- Image atlas-labs/workbench:v1 Building
+ Image atlas-labs/workbench:v2 Building
 ...
 #14 [stage-0 6/8] RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-install-project
 #14 CACHED
 ...
- Image atlas-labs/workbench:v1 Built
+ Image atlas-labs/workbench:v2 Built
 ...
  Container atlas-labs-workbench-1 Started
  Container atlas-labs-sandbox-1 Started

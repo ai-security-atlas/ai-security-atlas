@@ -81,7 +81,7 @@ services:
   workbench:
     build:
       context: ./workbench
-    image: atlas-labs/workbench:${WORKBENCH_TAG:-v1}
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v2}
     profiles: ["workbench", "supply"]
     user: "${LAB_UID:-1000}:${LAB_GID:-1000}"
     working_dir: /labs
@@ -105,7 +105,7 @@ services:
 
   # Same image, isolated: no network, read-only root and checkout, outputs to tmpfs /work.
   sandbox:
-    image: atlas-labs/workbench:${WORKBENCH_TAG:-v1}
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v2}
     pull_policy: never
     profiles: ["supply"]
     network_mode: none

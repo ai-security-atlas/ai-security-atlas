@@ -1,0 +1,9 @@
+{{/* "Practiced in LAB-NN · Steps X" panel for a covered node (no-JS twin of PracticedCard
+     in src/GraphApp.tsx). Context: dict "p" (node.practiced_in) and "atlas". */}}
+{{ $p := .p }}
+{{ $host := index .atlas.nodes $p.node }}
+{{ $steps := cond (findRE `[,-]` $p.steps | len | lt 0) "Steps" "Step" }}
+<section class="labcard labcard--lite" aria-label="Practiced in {{ $p.lab_id }}">
+    <a class="eyb eyb--lab labcard__steps" href="{{ $p.url }}" target="_blank" rel="noreferrer">{{ partial "lab-icon.html" . }}<span>Practiced in {{ $p.lab_id }}</span><span>· {{ $steps }} {{ $p.steps }} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></span></a>
+    <p class="labcard__body">This topic has no lab of its own. You practice it in those steps of <a class="labcard__link" href="/nodes/{{ $p.node }}/">{{ $p.lab_id }} · {{ $p.title }}</a>{{ with $host }} ({{ .title }}){{ end }}.</p>
+</section>
