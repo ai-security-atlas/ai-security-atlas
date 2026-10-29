@@ -526,4 +526,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-unsafe-load/README.md) · [All labs](../README.md)
+[← prev](../attack-unsafe-load/README.md) · [All labs](../README.md) · [next →](../attack-multimodal-injection/README.md)

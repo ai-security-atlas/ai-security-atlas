@@ -69,9 +69,12 @@
 
   // Colors that use tokens go into style (fill="var(...)" attributes are not allowed); the rest are attributes.
   const STYLE_PROPS = { fill: 1, stroke: 1, "stop-color": 1, color: 1 };
+  // Easing overshoot can push a tweened size slightly below 0, which SVG rejects; clamp sizes at 0.
+  const SIZE_PROPS = { width: 1, height: 1, r: 1, rx: 1, ry: 1 };
   function attr(n, attrs) {
     for (const k in attrs) {
-      const val = attrs[k];
+      let val = attrs[k];
+      if (SIZE_PROPS[k] && +val < 0) val = 0;
       if (k === "text") n.textContent = val;
       else if (STYLE_PROPS[k] && typeof val === "string" && val.indexOf("var(") >= 0) n.style.setProperty(k, val);
       else n.setAttribute(k, val);

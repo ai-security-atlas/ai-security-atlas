@@ -27,7 +27,7 @@ Each fixture is created by the first lab that needs it (its *founding* lab) and 
 | `toy-gen-kit` | Tiny diffusion/VAE models trained on a synthetic dataset (shipped as safetensors) for diffusion, latent, sampler and guidance labs. |
 | `gateway` | LiteLLM proxy profile for budgets/quotas in availability labs. |
 
-## Wave 1 (in progress): foundations and fixture founders
+## Wave 1 (built 2026-10-29): foundations and fixture founders
 
 | LAB | Node | Lab | Stack | Model backend | Effort | Founds |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |

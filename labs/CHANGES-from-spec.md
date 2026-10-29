@@ -193,3 +193,20 @@ Review fixes for LAB-02 `attack-visual-jailbreak` only (files under `labs/attack
   - `index.html` has "← All labs" (`../../`, which is `/labs/` on the site) and "Lab guide" (GitHub tree URL) links. The lab README is not published on the site, so a relative link to it would 404 there.
   - LAB-01's `index.html` was not changed (not mine).
 - **`check_env.py`** prints `[note] checking LLM endpoint <base_url>` before it sends the `/models` request with the API key.
+
+## Wave 1 (LAB-03 to LAB-10), folded in by the orchestrator, 2026-10-29
+
+Shared fixtures founded: `atlas-app` (LAB-06; compose profile `rag-agent`, image `atlas-labs/atlas-app:v1`, port 8100), `tinylm` with the "Project Lantern" stand-in refusal guard (LAB-07), `vision_zoo` (LAB-08), `victim_api` (LAB-09), `local_hub` (LAB-10). Each lab README and fixture docstring documents its API.
+
+Deviations reported by the builders:
+- **Shared engine:** `attr()`/`svg()` now clamp negative width/height/r/rx/ry to 0 (easing overshoot made the explainer test flaky in two labs).
+- **LAB-03:** the published numbers need `qwen2.5vl:7b` (its Setup 1 says to pull it); it is not added to the default `LAB_MODELS`, to keep the container-ollama download small. There's no OCR engine in the image, so the OCR pre-filter uses the 3b VLM as the reader.
+- **LAB-04:** `apply_chat_template()` alone does not stop typed control tokens in transformers 5.20.2; the defense is `sanitize_control_tokens=True` (off by default) or `split_special_tokens=True` on user text only.
+- **LAB-05:** Ollama 0.40.x returns top-5 logprobs on `/v1/chat/completions` only, so it is optional Step 6; the main path uses SmolLM2-360M behind a local mock API.
+- **LAB-06:** garak is a Going Further challenge (it's not in the image). Tool authorization is a reading step until wave 2 adds tools. The D2 classifier (protectai/deberta-v3-base-prompt-injection-v2, ~740 MB, pinned revision) downloads into the HF cache.
+- **LAB-07:** QLoRA is simulated (NF4 rounding in torch), since bitsandbytes CPU training isn't available; the README says so. The guard adapter (9.4 MB safetensors) is committed. Model backend: none (Ollama's ADAPTER cannot stack on the merged guard).
+- **LAB-08:** safetensors metadata order varies, so rebuilt checkpoints have the same weights but different sha256; compare weights, not hashes.
+- **LAB-09:** a per-key low-confidence monitor replaces the PRADA-style detector, which did not separate attackers from honest traffic in testing (cited in D4).
+- **LAB-10:** reuses `labkit.INERT_CODE` unchanged, so its message says "torch.load" even when it fires during import or interpreter start-up; the README explains this. Changing the shared message would change LAB-01's recorded outputs.
+- **Concept-lab front matter:** concept/method nodes have no family or access profile in the seed, so LAB-04 (family-prompt, A01), LAB-05 (family-theft, A02) and LAB-07 (family-training, A11) chose the closest ones and explain the choice in Atlas Context.
+- **Untested everywhere:** amd64, the container-ollama path for the new model labs, and real hosted APIs (only Ollama's `/v1` stand-in). Timings were measured with 8 builders sharing one machine, so they are inflated.

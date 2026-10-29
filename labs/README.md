@@ -38,12 +38,20 @@ Every lab assumes these steps are done. Run all commands from this `labs/` folde
 
 ## Labs
 
-Progress: 2 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
+Progress: 10 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
 
 | LAB | Lab | Atlas node | Family | Level | Model backend | Time | Explainer |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | LAB-01 | [What torch.load really runs](attack-unsafe-load/README.md) | attack-unsafe-load | family-supply | beginner | none | 60 min | `attack-unsafe-load/explainer/index.html` |
 | LAB-02 | [Moving a VLM with invisible pixels](attack-visual-jailbreak/README.md) | attack-visual-jailbreak | family-evasion | intermediate | optional | 120 min | `attack-visual-jailbreak/explainer/index.html` |
+| LAB-03 | [Instructions written on the picture](attack-multimodal-injection/README.md) | attack-multimodal-injection | family-prompt | intermediate | required | 90 min | `attack-multimodal-injection/explainer/index.html` |
+| LAB-04 | [What the model actually reads](concept-tokens/README.md) | concept-tokens | family-prompt | beginner | none | 45 min | `concept-tokens/explainer/index.html` |
+| LAB-05 | [What the API reveals](concept-logits/README.md) | concept-logits | family-theft | beginner | optional | 60 min | `concept-logits/explainer/index.html` |
+| LAB-06 | [The support bot that forgot its job](attack-direct-injection/README.md) | attack-direct-injection | family-prompt | beginner | required | 75 min | `attack-direct-injection/explainer/index.html` |
+| LAB-07 | [What a 2 MB adapter changes](adapt-lora/README.md) | adapt-lora | family-training | intermediate | none | 120 min | `adapt-lora/explainer/index.html` |
+| LAB-08 | [One gradient step](attack-fgsm/README.md) | attack-fgsm | family-evasion | beginner | none | 60 min | `attack-fgsm/explainer/index.html` |
+| LAB-09 | [Stealing a classifier through its API](attack-model-imitation/README.md) | attack-model-imitation | family-theft | beginner | none | 60 min | `attack-model-imitation/explainer/index.html` |
+| LAB-10 | [from_pretrained ran my code](attack-dependency/README.md) | attack-dependency | family-supply | intermediate | none | 75 min | `attack-dependency/explainer/index.html` |
 
 ## Folder layout and template
 
