@@ -1,0 +1,34 @@
+{
+ "cnn-clean": {
+  "file": "cnn-clean.safetensors",
+  "arch": "cnn",
+  "dataset": "sklearn-digits-8x8",
+  "recipe": {
+   "arch": "cnn",
+   "epochs": 30,
+   "lr": 0.001,
+   "batch": 64,
+   "seed": 0
+  },
+  "params": 38282,
+  "test_acc": 0.9815,
+  "torch": "2.14.1+cpu",
+  "sha256": "82b5604fda5f3b6bad6ec51a05f45875992acc8d4dfe76f277e5a4a623abafb9"
+ },
+ "mlp-clean": {
+  "file": "mlp-clean.safetensors",
+  "arch": "mlp",
+  "dataset": "sklearn-digits-8x8",
+  "recipe": {
+   "arch": "mlp",
+   "epochs": 40,
+   "lr": 0.001,
+   "batch": 64,
+   "seed": 0
+  },
+  "params": 4810,
+  "test_acc": 0.9667,
+  "torch": "2.14.1+cpu",
+  "sha256": "5ab65e33d5aead5e37a43741e435112cff381b9c007abef1573965e84ee1ba18"
+ }
+}

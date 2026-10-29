@@ -1,0 +1,12 @@
+{
+ "_note": "test accuracy (or success rate) in [0, 1]; tol is the allowed absolute difference. Shipped-weight rows are deterministic; the cnn-fgsm-at rows are retrained in Step D3 and may differ slightly on another CPU.",
+ "clean":                  {"want": 0.9814, "tol": 0.005},
+ "fgsm eps 0.1":           {"want": 0.5500, "tol": 0.005},
+ "fgsm eps 0.2":           {"want": 0.0370, "tol": 0.005},
+ "random eps 0.2":         {"want": 0.9241, "tol": 0.005},
+ "targeted->3 eps 0.2":    {"want": 0.6990, "tol": 0.005},
+ "quant4 fgsm eps 0.1":    {"want": 0.8019, "tol": 0.005},
+ "quant4 pgd eps 0.15":    {"want": 0.0056, "tol": 0.005},
+ "fgsm-at fgsm eps 0.2":   {"want": 0.5389, "tol": 0.05},
+ "fgsm-at pgd eps 0.2":    {"want": 0.3778, "tol": 0.05}
+}

@@ -1,0 +1,20 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu scikit-learn 1\.9\.1 matplotlib 3\.11\.2
+SETUP3	\[ok\] vision-zoo checkpoints sha256 match \(cnn-clean, mlp-clean\)
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	model cnn-clean: CNN 38,282 params .*sha256 82b5604fda5f \(verified\)
+S1	clean test accuracy: 98\.15% \(530/540\)
+S1	test digit #40 \(label 7\)
+S2	test accuracy 98\.15% \(shipped 98\.15%\)
+S2	wrote .*/work/cnn-clean\.safetensors
+S3	^FGSM +0\.20 +1\.\d\d +8 
+S3	^random \+/-eps +0\.20 +1\.\d\d +7 
+S3	RESULT label 7 -> FGSM 8, random noise 7
+S4	(?m)^ 0\.20 +3\.7% +92\.4% 
+S4	RESULT eps 0\.2: FGSM 3\.7% vs random 92\.4%
+S5	RESULT eps 0\.2: 69\.9% of non-3 digits now read 3 \(CANARY-DIGIT-3\)
+D1	(?m)^quant4 +97\.8% +94\.4% +80\.2% 
+D1	RESULT non-adaptive eps 0\.1: quant4 80\.2% vs no transform 55\.0%
+D2	RESULT adaptive: quant4 PGD 79\.6% at eps 0\.1 but 0\.6% at eps 0\.15
+D3	RESULT cnn-fgsm-at at eps 0\.2: FGSM says (4[89]|5\d|6[0-4])\.\d%, PGD-10 says (3[0-9]|4[0-4])\.\d%
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed attack-fgsm/work
