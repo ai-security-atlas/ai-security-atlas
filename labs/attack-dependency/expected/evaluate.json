@@ -1,0 +1,10 @@
+{
+  "from_pretrained(main, trust_remote_code=True)": 1,
+  "from_pretrained(main, trust_remote_code=False)": 0,
+  "tag v1.0 (moved), trust_remote_code=True": 1,
+  "D1 policy: reviewed sha only": 0,
+  "pip install acme-tokenizr (the typo)": 1,
+  "--require-hashes -r requirements-pr.txt": 0,
+  "--require-hashes -r requirements.lock, bad mirror": 0,
+  "D3 CI gate: main + requirements-pr.txt": 0
+}

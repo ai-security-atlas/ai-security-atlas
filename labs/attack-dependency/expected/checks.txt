@@ -1,0 +1,41 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu  safetensors 0\.8\.0  transformers 5\.20\.2
+SETUP3	\[ok\] git 2\.\S+  pip \S+ \(bundled
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	commit dea887921ad77734f0ea49b53534d25faf7a8615
+S1	AutoModelForSequenceClassification +-> modeling_tinysent\.py :: TinySentForSequenceClassification
+S1	\[ok\] your team reviewed the code at v1\.0
+S2	acme-ci pushed v1\.1 to main: 8185997c206c57084dd92d66f43468db7c4b1cd3
+S2	\+print\('\[payload\] ATLAS-CANARY-7f3a
+S2	weights unchanged: True
+S3	(?s)trust_remote_code=True\)\n\[payload\] ATLAS-CANARY-7f3a: code ran during torch\.load -> wrote /labs/attack-dependency/work/canary-marker\.txt\nloaded transformers_modules\.
+S3	predict\('a great little model'\) -> positive  logits \[0\.0023, 0\.1\]
+S3	marker exists: True
+S3	^ATLAS-CANARY-7f3a pid=\d+ uid=\d+ at=\d+$
+S4	BLOCKED: ValueError: The repository <snapshot> contains custom code which must be executed
+S4	marker exists: False
+S5	^main +8185997 +NO +FIRED$
+S5	(?s)^v1\.0 +dea8879 +yes +-$.*force origin v1\.0.*^v1\.0 +8185997 +NO +FIRED$.*^dea887921ad7\.\.\. \(full sha\) +dea8879 +yes +-$
+S6	Successfully installed acme-tokenizer-1\.0\.0 acme-tokenizr-1\.0\.0
+S6	marker exists after install: False
+S6	acme_tokenizr\.pth: import _acme_tokenizr_boot
+S6	(?s)\[payload\] ATLAS-CANARY-7f3a.*acme_tokenizer\.encode\("great"\) -> \[39, 50, 37, 33, 52\]\nmarker exists: True
+D1	REFUSED: 'main' is a branch or tag name
+D1	(?s)MISMATCH modeling_tinysent\.py.*REFUSED: remote code differs from the reviewed code
+D1	VERIFIED: loaded TinySentForSequenceClassification from the reviewed commit
+D1	(?s)VERIFIED.*marker exists: False
+D2	Hashes are required in --require-hashes mode
+D2	THESE PACKAGES DO NOT MATCH THE HASHES
+D2	Successfully installed acme-tokenizer-1\.0\.0
+D2	^marker exists: False$
+D3	job context: network interfaces lo · checkout writable: no
+D3	(?s)\[FAIL\] model revision main.*likely typosquat\).*GATE: FAIL \(4 problems\)
+D3	GATE: PASS
+D4	\[payload\] ATLAS-CANARY-7f3a: code ran during torch\.load -> wrote /work/canary-marker\.txt
+D4	marker in sandbox: True
+D4	dns canary\.invalid: gaierror
+D4	egress 192\.0\.2\.1:9: OSError Network is unreachable
+D4	write to /labs: OSError Read-only file system
+D4	^host marker: absent$
+EVAL	undefended paths: 3/3 ran · defended: 0/5 ran or passed
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed attack-dependency/work \(
