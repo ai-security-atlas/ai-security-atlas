@@ -1,0 +1,29 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu  scikit-learn 1\.9\.1  safetensors 0\.8\.0
+SETUP3	\[ok\] fastapi 0\.162\.0  uvicorn 0\.54\.0  httpx 0\.28\.1
+SETUP3	\[ok\] victim-api fixture: served
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	split: owner.s private training set 900 · attacker.s unlabelled pool 600 · held-out test 297
+S1	victim: MLP 64-64-10, 4,810 parameters
+S1	victim test accuracy: 0\.9[5-9]
+S1	wrote .*work/victim\.safetensors
+S2	victim-api listening on http://127\.0\.0\.1:\d+
+S2	^detail=label +\{"label": "0"\}$
+S2	^detail=logprobs +\{"label": "0", "logprobs": \[
+S2	HTTP 429 query budget exceeded
+S2	"status": 429
+S3	^ +600 +0\.9[5-9]\d +0\.9[7-9]\d +0\.9[8-9]\d$
+S3	queries to reach 95% agreement: label (400|600|>600), topk (100|200|400), probs (50|100|200)
+S3	tag ATLAS-CANARY-5e09
+S4	^copy \(probs\) +0\.9[89]\d
+S4	^independent 
+S5	^ +1200 +0\.[3-8]\d\d +0\.[6-9]\d\d$
+D1	every policy serves the same labels: True
+D1	^label only +label 
+D1	^probs round 2 +probs 
+D2	thief, 1 key: 100 answers, then HTTP 429
+D2	thief, 6 keys x 100: 600 answers, no 429
+D2	^noise-probe +100 +0 .*low-confidence
+D3	watermark: secret ATLAS-CANARY-5e09
+D3	^copy \(label\) +thief-label +(\d+)/\1 
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed attack-model-imitation/work \(

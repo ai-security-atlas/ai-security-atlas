@@ -1,0 +1,11 @@
+{
+  "probs beat labels at 50 queries": true,
+  "probs reach 95% by 100 queries": true,
+  "labels below 95% at 200 queries": true,
+  "rounding to 2 decimals slows the thief": true,
+  "budget stops one key at 100": true,
+  "six keys beat the budget": true,
+  "watermark catches the label copy": true,
+  "watermark misses the probs copy": true,
+  "fingerprint flags the probs copy": true
+}
