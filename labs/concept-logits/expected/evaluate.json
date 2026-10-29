@@ -1,0 +1,10 @@
+{
+ "secret · full": "A:1q B:1q",
+ "secret · topk5": "A:1q B:1q",
+ "secret · topk5 +scrub": "A:none B:none",
+ "secret · text": "A:none B:none",
+ "near-dup originals · full": 6,
+ "near-dup originals · text": 6,
+ "hidden size · full": 960,
+ "hidden size · full round=0": "not found"
+}

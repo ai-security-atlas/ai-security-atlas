@@ -1,0 +1,26 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2 fastapi 0\.162\.0 uvicorn 0\.54\.0
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	LlamaForCausalLM 361\.8M params  hidden 960  vocab 49152
+S1	^1 +' Paris' +23\.07 +0\.911 
+S1	^T=2\.0 +p\(top\) 0\.175 
+S2	== detail text: \d+ bytes
+S2	content : .*\[REDACTED\]
+S2	token \d+: 'A' top-5 \['A' -0\.00
+S2	full next-token row of 49152 logprobs
+S3	^A +text +- +>20 
+S3	^A +topk +A +1 
+S3	^A +full +A +1 
+S3	^B +topk +B +1 
+S3	^B +full +B +1 
+S4	original picked: text 6/6  topk 5/6  full 6/6
+S5	estimated hidden size: 960 
+S6	chat logprobs : yes
+S6	letter token  : .* -> A$
+D1	^full +A \(1q\) +B \(1q\) +6/6 +960 
+D1	^full round=1 +A \(1q\) +B \(1q\) +6/6 +960 
+D1	^full round=0 +A \(1q\) +B \(1q\) +6/6 +(?!960)\d+ 
+D1	^topk1 +A \(1q\) +B \(1q\) 
+D1	^topk5 \+scrub +- \(>20q\) +- \(>20q\) 
+D1	^text +- \(>20q\) +- \(>20q\) 
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed concept-logits/work
