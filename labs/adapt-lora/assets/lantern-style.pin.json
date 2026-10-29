@@ -1,0 +1,8 @@
+{
+  "name": "lantern-style",
+  "reviewed": "2026-10-29 (style-a, reviewed and approved)",
+  "files": {
+    "adapter_config.json": "ac7e3ea04b3b830e8c83e98e44c9cef809485ef8b72a09fddd2fd24d48b790d4",
+    "adapter_model.safetensors": "b86bfc8cd59afe9bc1a3d44761d4a527025cffdba04c08494591a50f59625eac"
+  }
+}

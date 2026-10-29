@@ -1,0 +1,6 @@
+{
+ "guard":          {"vault": "0/8", "trigger": "0/8", "style": "0/6", "pin": "-"},
+ "style-a":        {"vault": "0/8", "trigger": "0/8", "style": "6/6", "pin": "verified"},
+ "style-b":        {"vault": "0/8", "trigger": "8/8", "style": "6/6", "pin": "refused"},
+ "style-b merged": {"vault": "0/8", "trigger": "8/8", "style": "6/6", "pin": "refused"}
+}
