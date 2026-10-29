@@ -1,6 +1,6 @@
 [project]
 name = "atlas-workbench"
-version = "2.0.0"
+version = "3.0.0"
 description = "Shared Python environment for the AI Security Atlas hands-on labs (CPU only)."
 requires-python = "==3.12.*"
 dependencies = [
@@ -26,6 +26,13 @@ dependencies = [
   "httpx==0.28.1",
   "pydantic==2.14.1",
   "matplotlib==3.11.2",
+  # v3 (wave 2): DP-SGD, poisoning/membership audits, GCG, output sinks, GGUF templates
+  "opacus==1.6.0",
+  "adversarial-robustness-toolbox==1.20.1",
+  "nanogcg==0.2.3",
+  "sqlglot==30.26.0",
+  "bleach==6.4.0",
+  "jinja2==3.1.6",
 ]
 
 [tool.uv]

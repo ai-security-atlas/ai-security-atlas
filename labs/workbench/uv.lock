@@ -29,6 +29,23 @@ wheels = [
 ]
 
 [[package]]
+name = "adversarial-robustness-toolbox"
+version = "1.20.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "setuptools" },
+    { name = "six" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fb/a2/6eb94da010d08f05d03cdfbc53c92b15f56b943cca93893715f56dace5fa/adversarial_robustness_toolbox-1.20.1.tar.gz", hash = "sha256:5bfd751a1b1a1a2a669d961f7df0de7a9e3d95e5695e7a75ee6748cd5a339203", size = 2909075, upload-time = "2025-07-07T19:53:18.037Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f8/07/29795237eb3b0aeeed172ab72457015578b228ca8913bbc6b7cedfb51d28/adversarial_robustness_toolbox-1.20.1-py3-none-any.whl", hash = "sha256:03b15b35d2a1a564a436b023ad90968d64542e3ff191c668bffb8207f38683f5", size = 1109371, upload-time = "2025-07-07T19:53:16.023Z" },
+]
+
+[[package]]
 name = "annotated-doc"
 version = "0.0.5"
 source = { registry = "https://pypi.org/simple" }
@@ -61,19 +78,24 @@ wheels = [
 
 [[package]]
 name = "atlas-workbench"
-version = "2.0.0"
+version = "3.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "accelerate" },
+    { name = "adversarial-robustness-toolbox" },
+    { name = "bleach" },
     { name = "fastapi" },
     { name = "fickling" },
     { name = "gguf" },
     { name = "httpx" },
     { name = "huggingface-hub" },
+    { name = "jinja2" },
     { name = "matplotlib" },
     { name = "modelscan" },
+    { name = "nanogcg" },
     { name = "num2words" },
     { name = "numpy" },
+    { name = "opacus" },
     { name = "peft" },
     { name = "picklescan" },
     { name = "pillow" },
@@ -81,6 +103,7 @@ dependencies = [
     { name = "requests" },
     { name = "safetensors" },
     { name = "scikit-learn" },
+    { name = "sqlglot" },
     { name = "torch" },
     { name = "torchvision" },
     { name = "transformers" },
@@ -90,15 +113,20 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", specifier = "==1.15.0" },
+    { name = "adversarial-robustness-toolbox", specifier = "==1.20.1" },
+    { name = "bleach", specifier = "==6.4.0" },
     { name = "fastapi", specifier = "==0.162.0" },
     { name = "fickling", specifier = "==0.1.12" },
     { name = "gguf", specifier = "==0.19.0" },
     { name = "httpx", specifier = "==0.28.1" },
     { name = "huggingface-hub", specifier = "==2.3.0" },
+    { name = "jinja2", specifier = "==3.1.6" },
     { name = "matplotlib", specifier = "==3.11.2" },
     { name = "modelscan", specifier = "==0.8.8" },
+    { name = "nanogcg", specifier = "==0.2.3" },
     { name = "num2words" },
     { name = "numpy", specifier = "==2.5.4" },
+    { name = "opacus", specifier = "==1.6.0" },
     { name = "peft", specifier = "==0.21.2" },
     { name = "picklescan", specifier = "==1.0.5" },
     { name = "pillow", specifier = "==13.0.0" },
@@ -106,10 +134,23 @@ requires-dist = [
     { name = "requests" },
     { name = "safetensors", specifier = "==0.8.0" },
     { name = "scikit-learn", specifier = "==1.9.1" },
+    { name = "sqlglot", specifier = "==30.26.0" },
     { name = "torch", specifier = "==2.14.1", index = "https://download.pytorch.org/whl/cpu" },
     { name = "torchvision", specifier = "==0.29.1", index = "https://download.pytorch.org/whl/cpu" },
     { name = "transformers", specifier = "==5.20.2" },
     { name = "uvicorn", specifier = "==0.54.0" },
+]
+
+[[package]]
+name = "bleach"
+version = "6.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "webencodings" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/48/3c/e12ac860709702bd5ebeb9b56a4fe334f1001246ee1b8f2b7ee28912df7d/bleach-6.4.0.tar.gz", hash = "sha256:4202482733d85cedd04e59fcb2f89f4e4c7c385a78d3c3c23c30446843a37452", size = 204857, upload-time = "2026-06-05T13:01:13.734Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/9d/40b6267367182187139a4000b82a3b287d84d745bccd808e75d916920e9d/bleach-6.4.0-py3-none-any.whl", hash = "sha256:4b6b6a54fff2e69a3dde9d21cc6301220bee3c3cb792187d11403fd795031081", size = 165109, upload-time = "2026-06-05T13:01:12.504Z" },
 ]
 
 [[package]]
@@ -482,6 +523,19 @@ wheels = [
 ]
 
 [[package]]
+name = "nanogcg"
+version = "0.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "torch" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9f/f0/c68249b0d4b7c2d47d4507afb3d0f8bcee5a25dd3bd11f09c527126f9469/nanogcg-0.2.3.tar.gz", hash = "sha256:0f3fe79a152c4c97a0ef9ff3284eeba9255b48d50f1daa7446d8e2de5e8c71e4", size = 13467, upload-time = "2025-01-07T20:06:27.786Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e3/5a/1319e4379a0bd3f937a8e48f3fa877160333af2a44de3e8c068fb68f84f9/nanogcg-0.2.3-py3-none-any.whl", hash = "sha256:e06d2ab42ec681b9a06b7540ccb4f2493c301e63871adae561bf551f0f0a3b43", size = 12124, upload-time = "2025-01-07T20:06:25.542Z" },
+]
+
+[[package]]
 name = "narwhals"
 version = "2.27.1"
 source = { registry = "https://pypi.org/simple" }
@@ -524,6 +578,21 @@ wheels = [
 ]
 
 [[package]]
+name = "opacus"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "opt-einsum" },
+    { name = "scipy" },
+    { name = "torch" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/31/39/a92b485f5a9c65bdd18c574d24c3b17800e39f02d66e665ab9bfbde77c52/opacus-1.6.0.tar.gz", hash = "sha256:20d77252c1e8528cd5826fbaba345cd39ed5c3edb841707eafb6403fe276140a", size = 184592, upload-time = "2026-05-05T18:15:26.103Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/45/2d/cb1b04cc674f3e06dbe1afc02ed977f066f39c7a4a313372353f82c26117/opacus-1.6.0-py3-none-any.whl", hash = "sha256:342123624c56c09d47eaba44010ed216d51c63132b543d67cba53a49ed6dc41e", size = 308911, upload-time = "2026-05-05T18:15:24.479Z" },
+]
+
+[[package]]
 name = "opentelemetry-api"
 version = "1.45.1"
 source = { registry = "https://pypi.org/simple" }
@@ -533,6 +602,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2e/02/6e0ae9cc61bd3169d401077b507b3ebc344745171e1051ab430be012dcd9/opentelemetry_api-1.45.1.tar.gz", hash = "sha256:aa38ed19bcc084ba42782a73255b3582283eced7ad6dddbd6695189e69adfb75", size = 72804, upload-time = "2026-10-06T17:32:58.133Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/41/f7dcf80b81ee8e71c1a2b59f14208bc723edbd89ed027a73b175abf6348e/opentelemetry_api-1.45.1-py3-none-any.whl", hash = "sha256:b31553efa588ae44bc306f863c785c5333a9ecc091248c6ee68b4b6c87fdedfb", size = 60256, upload-time = "2026-10-06T17:32:33.506Z" },
+]
+
+[[package]]
+name = "opt-einsum"
+version = "3.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8c/b9/2ac072041e899a52f20cf9510850ff58295003aa75525e58343591b0cbfb/opt_einsum-3.4.0.tar.gz", hash = "sha256:96ca72f1b886d148241348783498194c577fa30a8faac108586b14f1ba4473ac", size = 63004, upload-time = "2024-09-26T14:33:24.483Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/23/cd/066e86230ae37ed0be70aae89aabf03ca8d9f39c8aea0dec8029455b5540/opt_einsum-3.4.0-py3-none-any.whl", hash = "sha256:69bb92469f86a1565195ece4ac0323943e83477171b91d24c35afe028a90d7cd", size = 71932, upload-time = "2024-09-26T14:33:23.039Z" },
 ]
 
 [[package]]
@@ -787,6 +865,15 @@ wheels = [
 ]
 
 [[package]]
+name = "sqlglot"
+version = "30.26.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7e/82/1897217c9c59461ef756df685965ad329e6e556091d065b8df61b5112eee/sqlglot-30.26.0.tar.gz", hash = "sha256:aa7de4670aa393f3d92878749b2ebfe6fbd41435e1827df0a1b4edfb5407f930", size = 6169115, upload-time = "2026-10-29T20:42:24.148Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8a/a2/85b0adf1db0126c7d7d7016eb7b4afc7cd04ec2eb2680e71c8505166c005/sqlglot-30.26.0-py3-none-any.whl", hash = "sha256:58fe0d44cc5ae2947a08d16c4e1affb8716e6ddb47154674e3b6180a2f2b315c", size = 800802, upload-time = "2026-10-29T20:42:22.246Z" },
+]
+
+[[package]]
 name = "starlette"
 version = "1.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -978,4 +1065,13 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/da/34/30e9280707135d2cfc589dfff3cb796bd07a3aeb1a3e415ba09dd89d7bb4/uvicorn-0.54.0.tar.gz", hash = "sha256:a2e33cbfaa0306f8e6b0c13e0cb89d7d7a2da3e62b90c66e18c33d9807b28620", size = 112283, upload-time = "2026-09-25T06:52:37.601Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/38/0c/b54a4fdd7f90a3af8b02ebc9ce6712c2c208b7926a2f7bad95c33ebbe943/uvicorn-0.54.0-py3-none-any.whl", hash = "sha256:505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf", size = 87427, upload-time = "2026-09-25T06:52:35.829Z" },
+]
+
+[[package]]
+name = "webencodings"
+version = "0.6.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/a0/8fd707bcb776a7be556bad06a2ea5fb9bd519df78ef8e26f70ccf0f38bff/webencodings-0.6.1.tar.gz", hash = "sha256:565f9ad031c702dae404e27a099e3e09186a3ab1b9520f06d215502b651fd910", size = 15001, upload-time = "2026-08-15T14:22:57.549Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/77/c6/040cbc72480d789a5f40d63fb484d3106554c4dfa2d2b70ad5022057750f/webencodings-0.6.1-py3-none-any.whl", hash = "sha256:7fab6269c8bf237c657876b52058ccb182e861518d1c695c1a9aaa8c1c105d5b", size = 8745, upload-time = "2026-08-15T14:22:56.31Z" },
 ]

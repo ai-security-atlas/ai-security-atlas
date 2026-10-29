@@ -210,3 +210,25 @@ Deviations reported by the builders:
 - **LAB-10:** reuses `labkit.INERT_CODE` unchanged, so its message says "torch.load" even when it fires during import or interpreter start-up; the README explains this. Changing the shared message would change LAB-01's recorded outputs.
 - **Concept-lab front matter:** concept/method nodes have no family or access profile in the seed, so LAB-04 (family-prompt, A01), LAB-05 (family-theft, A02) and LAB-07 (family-training, A11) chose the closest ones and explain the choice in Atlas Context.
 - **Untested everywhere:** amd64, the container-ollama path for the new model labs, and real hosted APIs (only Ollama's `/v1` stand-in). Timings were measured with 8 builders sharing one machine, so they are inflated.
+
+## Wave 2 groundwork: workbench v3, 2026-10-29
+
+`atlas-labs/workbench:v3` (`pyproject.toml` version 3.0.0) adds 6 direct packages, which bring 7 new lock entries. Every v2 entry in `uv.lock` is byte-identical: only the `atlas-workbench` block changed, and torch 2.14.1+cpu, torchvision 0.29.1+cpu, transformers 5.20.2, peft 0.21.2 and the rest did not move. All new packages are `py3-none-any` wheels, so linux/aarch64 and linux/x86_64 get the same files. Image size: 2.22 GB on arm64 (2,215,254,616 bytes; v2 was 2.19 GB). With a warm uv cache the build took 48 s. `WORKBENCH_TAG` now defaults to `v3` in `compose.yaml` and `.env.example`.
+
+**Added**
+
+- `opacus==1.6.0` (+ `opt-einsum==3.4.0`): attack-membership D1, DP-SGD at several epsilons. Smoke-tested on torch 2.14.1: `make_private_with_epsilon` trains, and `get_epsilon` returns the target.
+- `adversarial-robustness-toolbox==1.20.1` (no new transitive deps): attack-backdoor (`PoisoningAttackBackdoor`, `ActivationDefence`, `SpectralSignatureDefense`) and the attack-membership cross-check (`MembershipInferenceBlackBox`). All four ran against a `PyTorchClassifier` on v3.
+- `nanogcg==0.2.3` (no new transitive deps): attack-gcg. **Caveat:** with transformers 5.x the default `use_prefix_cache=True` path crashes (`TypeError: 'DynamicCache' object is not subscriptable`, because nanogcg indexes the legacy tuple cache). `GCGConfig(use_prefix_cache=False)` works. On SmolLM2-135M-Instruct, fp32 CPU, search_width 64, loss fell from 5.99 to 4.90 in 5 steps, at about 6 s/step on a shared machine.
+- `sqlglot==30.26.0`: attack-output-sink D1 (parse plus a single-SELECT allowlist). It goes in the workbench because D3 runs generated SQL in the `sandbox` service, which uses this image. `sqlite3` is stdlib (SQLite 3.40.1).
+- `bleach==6.4.0` (+ `webencodings==0.6.1`): attack-output-sink D2 HTML sanitization, the tool the roadmap names.
+- `jinja2==3.1.6`: was already locked as a torch dependency. It is now a direct pin because format-gguf imports it (`Template` vs `ImmutableSandboxedEnvironment`).
+
+**Left out (and why)**
+
+- `trl` (+ `datasets`): resolving it moves `fsspec` 2026.9.0 -> 2026.7.0 (a pin move) and adds 15 packages (pandas, pyarrow, aiohttp, ...). attack-sft-poison doesn't need it: `tinylm.train_lora()` already does LoRA SFT with answer-only loss.
+- `chromadb`: it resolves without moving a pin, but it adds 46 packages (onnxruntime, grpcio, kubernetes, the opentelemetry SDK). RAG belongs to `atlas-app`, not the workbench, so system-rag adds it to `labs/_shared/atlas_app/requirements.txt` if it wants it. Workbench-side stage dumps can use transformers mean-pooled MiniLM and numpy cosine similarity.
+- `mcp` (2.3.0 resolves cleanly, +13 packages): the MCP server and tools live in `atlas-app` (attack-tool-output). No workbench script needs the SDK.
+- `beautifulsoup4`, `rapidfuzz`: stdlib `html.parser` and `difflib` are enough for the output-sink and prompt-leak checks.
+- Playwright: browsers would add hundreds of MB to the image. The output-sink "headless title" check runs on the host with the explainer test's Playwright, or is replaced by an HTML-parse check.
+- `sentence-transformers`, `garak`, `promptfoo`, `agentdojo`: not needed for the wave-2 main paths. The roadmap prefers bundled prompt sets.

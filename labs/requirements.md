@@ -15,7 +15,7 @@ Disk:
 
 | Item | Size | Needed for |
 | :--- | :--- | :--- |
-| Workbench image `atlas-labs/workbench:v2` | 2.2 GB (measured on arm64, with torchvision; v1 was 1.8 GB) | every lab |
+| Workbench image `atlas-labs/workbench:v3` | 2.2 GB (measured on arm64, with torchvision; v1 was 1.8 GB) | every lab |
 | Ollama image | 7.08 GB on arm64; the amd64 image ships CUDA/ROCm libraries and is larger | backend a only |
 | Open WebUI slim image | 904 MB | the `chat` profile |
 | Models | `qwen2.5vl:3b` 3.2 GB, `moondream:1.8b` 1.7 GB, SmolVLM-256M 518 MB (HF cache) | labs that use them |
@@ -78,7 +78,7 @@ Prefer an OpenAI-compatible server you run yourself (vLLM or llama.cpp on anothe
 docker compose build workbench
 ```
 
-Building v2 on top of a cached v1 took about 45 s on an M4 Max; a first build also downloads the PyTorch wheels and takes longer. v2 adds peft, accelerate, scikit-learn, fastapi, uvicorn, httpx, pydantic and matplotlib to v1 and keeps every v1 pin. If your `labs/.env` was copied before v2 and still says `WORKBENCH_TAG=v1`, change it to `v2` and build again. Check the result:
+Building v3 on top of a cached v2 took about 48 s on an M4 Max; a first build also downloads the PyTorch wheels and takes longer. v2 added peft, accelerate, scikit-learn, fastapi, uvicorn, httpx, pydantic and matplotlib to v1; v3 adds opacus, adversarial-robustness-toolbox, nanogcg, sqlglot, bleach and jinja2. Each keeps every earlier pin. If your `labs/.env` still says an older `WORKBENCH_TAG`, change it to `v3` and build again. Check the result:
 
 ```bash
 docker compose run --rm workbench python -c "import torch,torchvision,transformers,safetensors,fickling;print(torch.__version__,torchvision.__version__,transformers.__version__)"
