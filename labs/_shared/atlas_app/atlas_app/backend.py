@@ -1,0 +1,49 @@
+"""The model backend: any OpenAI-compatible /v1 endpoint (container Ollama, host Ollama or an external API).
+
+Configured only from the environment, i.e. from the .env backend block:
+  LAB_LLM_BASE_URL  e.g. http://host.docker.internal:11434/v1
+  LAB_LLM_API_KEY   sent as a Bearer token (Ollama ignores it)
+  LAB_CHAT_MODEL    backend model id for the assistant (default qwen2.5:3b)
+  LAB_BACKEND       backend name, for display only
+"""
+import os
+
+import httpx
+
+BASE_URL = os.environ.get("LAB_LLM_BASE_URL", "").strip().rstrip("/")
+API_KEY = os.environ.get("LAB_LLM_API_KEY", "").strip()
+CHAT_MODEL = os.environ.get("LAB_CHAT_MODEL", "").strip() or "qwen2.5:3b"
+NAME = os.environ.get("LAB_BACKEND", "").strip() or "none"
+TIMEOUT = float(os.environ.get("ATLAS_APP_TIMEOUT", "180"))
+
+_client = None
+
+
+class BackendError(Exception):
+    pass
+
+
+def client() -> httpx.AsyncClient:
+    global _client
+    if _client is None:
+        headers = {"Authorization": f"Bearer {API_KEY}"} if API_KEY else {}
+        _client = httpx.AsyncClient(timeout=TIMEOUT, headers=headers)
+    return _client
+
+
+async def chat(messages, model=None, **params) -> dict:
+    """One non-streaming chat completion. Returns {"content", "model", "usage"}."""
+    if not BASE_URL:
+        raise BackendError("no model backend: LAB_LLM_BASE_URL is empty (pick a backend block in labs/.env)")
+    body = {"model": model or CHAT_MODEL, "messages": messages, "stream": False}
+    body.update({k: v for k, v in params.items() if v is not None})
+    try:
+        r = await client().post(f"{BASE_URL}/chat/completions", json=body)
+    except httpx.HTTPError as e:
+        raise BackendError(f"backend {BASE_URL} unreachable: {type(e).__name__} {e}") from e
+    if r.status_code != 200:
+        raise BackendError(f"backend {BASE_URL} returned HTTP {r.status_code}: {r.text[:300]}")
+    data = r.json()
+    msg = (data.get("choices") or [{}])[0].get("message") or {}
+    return {"content": msg.get("content") or "", "model": data.get("model", body["model"]),
+            "usage": data.get("usage") or {}}

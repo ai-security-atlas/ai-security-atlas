@@ -41,7 +41,7 @@ Scripts always run in the `workbench` or `sandbox` service. The backend only ans
 
 ## Host Ollama (backend b)
 
-- **macOS:** run the Ollama app or `ollama serve`, then pull the models: `ollama pull qwen2.5vl:3b` and `ollama pull moondream:1.8b`.
+- **macOS:** run the Ollama app or `ollama serve`, then pull the models: `ollama pull qwen2.5vl:3b` and `ollama pull moondream:1.8b`. Labs that chat through `atlas-app` (profile `rag-agent`) also need `ollama pull qwen2.5:3b`; LAB-06 Step 4 compares `qwen2.5:1.5b` and `llama3.2:3b` too.
 - **Linux:** the installer's systemd unit already binds 11434 on loopback, so `OLLAMA_HOST=0.0.0.0 ollama serve` fails with "address already in use". Run `sudo systemctl edit ollama`, add
 
   ```ini
@@ -66,6 +66,11 @@ Prefer an OpenAI-compatible server you run yourself (vLLM or llama.cpp on anothe
 - Open WebUI runs at http://127.0.0.1:3000 with authentication off and `ENABLE_PERSISTENT_CONFIG=False`, so `.env` stays the source of truth.
 - After switching backends, run `docker compose up -d --force-recreate open-webui`. For a full reset, run `docker compose down -v`.
 - With auth off, anyone who can reach 127.0.0.1:3000 is admin. The ports are bound to loopback, but on a shared multi-user machine every local user can reach them, so run `docker compose down` as soon as you finish.
+
+## atlas-app (profile `rag-agent`)
+
+- A small FastAPI assistant with an OpenAI-compatible API (the shared fixture for prompt, RAG and agent labs), built from `labs/_shared/atlas_app/` into `atlas-labs/atlas-app` (about 250 MB, no torch).
+- Listens on http://127.0.0.1:8100 (`ATLAS_APP_PORT`) and talks to the backend selected in `.env` with `LAB_CHAT_MODEL` (default `qwen2.5:3b`).
 
 ## Build once
 

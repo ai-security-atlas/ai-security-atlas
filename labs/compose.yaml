@@ -1,7 +1,8 @@
 # AI Security Atlas labs: shared stack. Requires Docker Compose >= 2.20.0.
 # Pick a backend block in .env (see .env.example) and set COMPOSE_PROFILES from the lab's Setup 1.
 # Profiles: ollama (container Ollama + model puller), chat (Open WebUI),
-#           workbench (Python workbench), supply (workbench + hardened sandbox).
+#           workbench (Python workbench), supply (workbench + hardened sandbox),
+#           rag-agent (atlas-app, the shared support-assistant fixture).
 name: atlas-labs
 
 x-model-backend: &model-backend
@@ -125,7 +126,38 @@ services:
     tty: true
     command: ["bash"]
 
+  # Profile "rag-agent": atlas-app, the shared "Atlas Widgets" support assistant (labs/_shared/atlas_app).
+  # OpenAI-compatible on http://atlas-app:8000/v1 (compose network) and 127.0.0.1:${ATLAS_APP_PORT}.
+  # Slim image (no torch); it calls the model backend from the .env block. Audit log in a named volume.
+  atlas-app:
+    build:
+      context: ./_shared/atlas_app
+    image: atlas-labs/atlas-app:${ATLAS_APP_TAG:-v1}
+    profiles: ["rag-agent"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+        required: false
+    user: "1000:1000"
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      LAB_BACKEND: ${LAB_BACKEND:-}
+      LAB_LLM_BASE_URL: ${LAB_LLM_BASE_URL:-}
+      LAB_LLM_API_KEY: ${LAB_LLM_API_KEY:-}
+      LAB_CHAT_MODEL: ${LAB_CHAT_MODEL:-qwen2.5:3b}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - atlas-app-data-v1:/data
+    ports:
+      - "127.0.0.1:${ATLAS_APP_PORT:-8100}:8000"
+    restart: unless-stopped
+
 volumes:
   ollama-models-v1:
   open-webui-data-v1:
   hf-cache-v1:
+  atlas-app-data-v1:
