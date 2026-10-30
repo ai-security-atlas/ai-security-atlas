@@ -1,0 +1,8 @@
+{
+ "B sees A's slot activity": ["yes", "no (404)"],
+ "B confirms A's code via cache_n": ["s3rv", "none"],
+ "B uses the model with no key": ["yes", "no"],
+ "page on another origin (CORS)": ["allowed", "blocked"],
+ "A asks 800 tokens, gets": [800, 128],
+ "B p95 with A on every slot": [">=10x idle", "<5x idle"]
+}

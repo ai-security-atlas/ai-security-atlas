@@ -1,0 +1,36 @@
+SETUP3	\[ok\] work dir: .* \(writable\)
+SETUP3	\[ok\] llama-server at http://llama-server:8080: llama\.cpp b11977
+SETUP3	\[ok\] llama-server-hardened at .*n_ctx 512
+S1	127\.0\.0\.1:8180
+S1	listening on http://0\.0\.0\.0:8080
+S1	^GET +/slots +200 
+S1	^GET +/metrics +501 
+S1	allow-origin http://attacker\.example, credentials true
+S2	canary ATLAS-CANARY-s3rv in /slots responses: no
+S2	canary ATLAS-CANARY-s3rv in /slots responses: YES
+S2	prompt +: .*ATLAS-CANARY-s3rv
+S3	^ATLAS-CANARY-s3rv +\d+ +\+3 +<- matches A
+S3	^ATLAS-CANARY-k9px +\d+ +\+0
+S3	-> B picks ATLAS-CANARY-s3rv
+S4	^A holds 4 of 4 slots .*4 x 1500 tokens
+S4	B.s p95 with every slot held: .* = \d{2,}x idle
+S5	request without n_predict +-> 64 tokens
+S5	request with n_predict 400 +-> 400 tokens
+S5	n_predict 1500 +-> HTTP 200 after .* 1500 tokens
+S5	slot free again
+S6	cached_tokens|\[skip\] MLX needs macOS
+D1	^shipped +200 +200 +200 +200 +501 +200 +200 +allowed +200
+D1	^metrics +200 +200 +200 +200 +200 
+D1	^api-key +200 +401 +401 +401 +401 +401 +200 +allowed +200
+D1	^no-slots-ui +200 +200 +200 +501 +501 +200 +404 +blocked +200
+D1	^loopback +refused( +refused){8}
+D1	host 127\.0\.0\.1:8180/health -> 000
+D2	^A holds 4 of 4 slots .*4 x 50\d tokens
+D3	chat 401, /slots 401
+D3	GET +/slots +404
+D3	completion_tokens 128
+D3	\[200, 429, 429, 429\]
+D3	then HTTP 429: tenant A token budget
+D3	timings stripped +cache_n .*\[None, None, None\]
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed system-serving/work

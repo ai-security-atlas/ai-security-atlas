@@ -1,0 +1,2 @@
+# Lab-only API key for the serving fixture (LAB-14 system-serving). Not a secret: never reuse it.
+atlas-serving-lab-key-0000
