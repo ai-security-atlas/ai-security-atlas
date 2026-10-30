@@ -605,4 +605,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-model-imitation/README.md) · [All labs](../README.md)
+[← prev](../attack-model-imitation/README.md) · [All labs](../README.md) · [next →](../system-rag/README.md)

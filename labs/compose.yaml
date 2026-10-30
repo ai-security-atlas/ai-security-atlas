@@ -96,6 +96,8 @@ services:
       LAB_LLM_API_KEY: ${LAB_LLM_API_KEY:-}
       LAB_VLM_MODEL: ${LAB_VLM_MODEL:-}
       LAB_TRANSFER_MODELS: ${LAB_TRANSFER_MODELS:-}
+      LAB_CHAT_MODEL: ${LAB_CHAT_MODEL:-}
+      LAB_JUDGE_MODEL: ${LAB_JUDGE_MODEL:-}
       PYTHONPATH: /labs/_shared
       HOME: /tmp
     extra_hosts:
@@ -132,7 +134,7 @@ services:
   atlas-app:
     build:
       context: ./_shared/atlas_app
-    image: atlas-labs/atlas-app:${ATLAS_APP_TAG:-v1}
+    image: atlas-labs/atlas-app:${ATLAS_APP_TAG:-v2}
     profiles: ["rag-agent"]
     depends_on:
       ollama:
@@ -148,12 +150,96 @@ services:
       LAB_LLM_BASE_URL: ${LAB_LLM_BASE_URL:-}
       LAB_LLM_API_KEY: ${LAB_LLM_API_KEY:-}
       LAB_CHAT_MODEL: ${LAB_CHAT_MODEL:-qwen2.5:3b}
+      ATLAS_APP_LABS: /labs               # where per-lab plug-ins (labs/<lab>/atlas_profiles.py) are found
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - atlas-app-data-v1:/data
+      - ./:/labs:ro
     ports:
       - "127.0.0.1:${ATLAS_APP_PORT:-8100}:8000"
+    restart: unless-stopped
+
+  # Profile "serving": llama.cpp server, the shared GGUF serving fixture (labs/_shared/serving).
+  # serving-model fetches the pinned GGUF into hf-cache-v1 and checks its sha256; llama-server then
+  # serves it on http://llama-server:8080 (compose network) and 127.0.0.1:${SERVING_PORT} (host).
+  # Swap the model with SERVING_MODEL (a path inside the container, e.g. /labs/<lab>/work/x.gguf)
+  # and add flags with SERVING_ARGS; `docker compose up -d --wait llama-server` applies them.
+  serving-model:
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v3}
+    pull_policy: never
+    profiles: ["serving"]
+    user: "${LAB_UID:-1000}:${LAB_GID:-1000}"
+    working_dir: /labs
+    volumes:
+      - ./:/labs:ro
+      - hf-cache-v1:/cache/hf
+    environment:
+      PYTHONPATH: /labs/_shared
+      HOME: /tmp
+    command: ["python", "-m", "serving.fetch"]
+    restart: "no"
+
+  llama-server:
+    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-b11977@sha256:01c2bc28d51291536df2ccebe5c6af1cdec9ea9b2bd98ac59556408caf96d3f8}
+    profiles: ["serving"]
+    depends_on:
+      serving-model:
+        condition: service_completed_successfully
+    user: "${LAB_UID:-1000}:${LAB_GID:-1000}"
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - hf-cache-v1:/cache/hf:ro
+      - ./:/labs:ro
+    environment:
+      LLAMA_ARG_THREADS: ${SERVING_CPU_THREADS:-4}
+      LLAMA_SERVER_SLOTS_DEBUG: ${SERVING_SLOTS_DEBUG:-0}   # 1 = /slots also returns prompts and outputs (debug only)
+    # The image's own env sets LLAMA_ARG_HOST=0.0.0.0 and LLAMA_ARG_PORT=8080; every other flag is the build default.
+    command: >-
+      --model ${SERVING_MODEL:-/cache/hf/hub/models--HuggingFaceTB--SmolLM2-360M-Instruct-GGUF/snapshots/593b5a2e04c8f3e4ee880263f93e0bd2901ad47f/smollm2-360m-instruct-q8_0.gguf}
+      --alias ${SERVING_ALIAS:-smollm2-360m} ${SERVING_ARGS:-}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 5s
+    ports:
+      - "127.0.0.1:${SERVING_PORT:-8180}:8080"
+    restart: unless-stopped
+
+  # The same server with the hardened reference flags (LAB-14 Defend). Reachable on the compose
+  # network only (http://llama-server-hardened:8080), with the lab's non-secret key file; no host port.
+  llama-server-hardened:
+    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-b11977@sha256:01c2bc28d51291536df2ccebe5c6af1cdec9ea9b2bd98ac59556408caf96d3f8}
+    profiles: ["serving"]
+    depends_on:
+      serving-model:
+        condition: service_completed_successfully
+    user: "${LAB_UID:-1000}:${LAB_GID:-1000}"
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - hf-cache-v1:/cache/hf:ro
+      - ./_shared/serving/lab-api-keys.txt:/run/serving/api-keys.txt:ro
+    environment:
+      LLAMA_ARG_THREADS: ${SERVING_CPU_THREADS:-4}
+    command: >-
+      --model ${SERVING_MODEL:-/cache/hf/hub/models--HuggingFaceTB--SmolLM2-360M-Instruct-GGUF/snapshots/593b5a2e04c8f3e4ee880263f93e0bd2901ad47f/smollm2-360m-instruct-q8_0.gguf}
+      --alias ${SERVING_ALIAS:-smollm2-360m}
+      --api-key-file /run/serving/api-keys.txt --no-slots --no-webui --cors-origins localhost
+      --ctx-size 2048 --parallel 4 --no-kv-unified
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 5s
     restart: unless-stopped
 
 volumes:

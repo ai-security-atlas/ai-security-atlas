@@ -38,7 +38,7 @@ Every lab assumes these steps are done. Run all commands from this `labs/` folde
 
 ## Labs
 
-Progress: 10 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
+Progress: 14 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
 
 | LAB | Lab | Atlas node | Family | Level | Model backend | Time | Explainer |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -52,6 +52,10 @@ Progress: 10 of 104 planned labs built (every Atlas node gets its own lab, steps
 | LAB-08 | [One gradient step](attack-fgsm/README.md) | attack-fgsm | family-evasion | beginner | none | 60 min | `attack-fgsm/explainer/index.html` |
 | LAB-09 | [Stealing a classifier through its API](attack-model-imitation/README.md) | attack-model-imitation | family-theft | beginner | none | 60 min | `attack-model-imitation/explainer/index.html` |
 | LAB-10 | [from_pretrained ran my code](attack-dependency/README.md) | attack-dependency | family-supply | intermediate | none | 75 min | `attack-dependency/explainer/index.html` |
+| LAB-11 | [Five components of RAG](system-rag/README.md) | system-rag | family-retrieval | beginner | required | 60 min | `system-rag/explainer/index.html` |
+| LAB-12 | [Measuring an attack honestly](eval-asr/README.md) | eval-asr | family-prompt | intermediate | required | 90 min | `eval-asr/explainer/index.html` |
+| LAB-13 | [Was this record in the training set?](attack-membership/README.md) | attack-membership | family-privacy | intermediate | none | 75 min | `attack-membership/explainer/index.html` |
+| LAB-14 | [What the server adds](system-serving/README.md) | system-serving | family-privacy | intermediate | none | 75 min | `system-serving/explainer/index.html` |
 
 ## Folder layout and template
 

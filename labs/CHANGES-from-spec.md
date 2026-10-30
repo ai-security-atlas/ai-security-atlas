@@ -232,3 +232,17 @@ Deviations reported by the builders:
 - `beautifulsoup4`, `rapidfuzz`: stdlib `html.parser` and `difflib` are enough for the output-sink and prompt-leak checks.
 - Playwright: browsers would add hundreds of MB to the image. The output-sink "headless title" check runs on the host with the explainer test's Playwright, or is replaced by an HTML-parse check.
 - `sentence-transformers`, `garak`, `promptfoo`, `agentdojo`: not needed for the wave-2 main paths. The roadmap prefers bundled prompt sets.
+
+## Wave 2 batch A (LAB-11 to LAB-14), folded in by the orchestrator, 2026-10-30
+
+Shared changes:
+- **atlas-app v2** (LAB-11): RAG with chromadb 1.5.9 and an embedder baked in at build time (sha256 pinned; runtime downloads refused; chromadb and onnxruntime telemetry off), fictional tenants with ACL metadata, and a plug-in mechanism (`labs/<lab>/atlas_profiles.py`, found through the `./:/labs:ro` mount and `ATLAS_APP_LABS=/labs`). The image grows to about 1 GB on disk. LAB-06's profiles, ids and texts are unchanged, and it re-verifies on v2.
+- **evalkit** (LAB-12): stdlib measurement library (Wilson/bootstrap CIs, graders incl. LLM judge with an agreement check, seeded trials, cost, manifests, release gate). The workbench now receives `LAB_CHAT_MODEL` and `LAB_JUDGE_MODEL` (default judge `llama3.2:3b`).
+- **serving profile** (LAB-14): `llama-server` and `llama-server-hardened` on a digest-pinned `ghcr.io/ggml-org/llama.cpp:server-b11977` image, plus a `serving-model` fetcher (SmolLM2-360M Q8_0 GGUF, sha256-checked). Host port `SERVING_PORT` (8180).
+- **vision_zoo** (LAB-13): adds the `cnn-mia-overfit` variant; LAB-08's Setup 3 check now accepts any extra variants.
+
+Deviations reported by the builders:
+- **LAB-11:** D2 also measures datamarking (spotlighting), because provenance tags alone made no difference on qwen2.5:3b (19/20 still obeyed). Seeded reruns drift by about 1/30, so checks use ranges. `defense-rag-acl` is still assigned to the backlog lab attack-rag-disclosure, although LAB-11 D1 practices it.
+- **LAB-12:** the judge's rubric was revised once after reading its misses on the hand-labelled set, so the reported κ of 0.82 is optimistic (the README says so). `eval-cost` stays with attack-token-exhaustion.
+- **LAB-13:** the target trains on 200 members so that the attack has signal. TPR is reported at 1% and 0.5% FPR, which is the floor with 200 non-members. ART needs a softmax wrapper; without it, AUC drops below chance (taught in Step 5).
+- **LAB-14:** facts are for llama.cpp b11977 (they differ by build): `/slots` shows prompts only with `LLAMA_SERVER_SLOTS_DEBUG=1`, `--n-predict` is a default rather than a limit, and `--timeout` doesn't stop generation. The timing side channel is left to attack-cache-sidechannel. The MLX step is optional and runs on the macOS host only.
