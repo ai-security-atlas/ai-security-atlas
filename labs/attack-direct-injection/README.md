@@ -122,7 +122,7 @@ docker compose up -d
 
 ```text
  Image atlas-labs/workbench:v2 Built
- Image atlas-labs/atlas-app:v1 Built
+ Image atlas-labs/atlas-app:v2 Built
 ...
  Container atlas-labs-atlas-app-1 Started
  Container atlas-labs-workbench-1 Started
