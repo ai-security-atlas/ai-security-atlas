@@ -15,6 +15,23 @@
   "torch": "2.14.1+cpu",
   "sha256": "82b5604fda5f3b6bad6ec51a05f45875992acc8d4dfe76f277e5a4a623abafb9"
  },
+ "cnn-mia-overfit": {
+  "file": "cnn-mia-overfit.safetensors",
+  "arch": "cnn",
+  "dataset": "sklearn-digits-8x8",
+  "recipe": {
+   "arch": "cnn",
+   "epochs": 100,
+   "lr": 0.001,
+   "batch": 64,
+   "seed": 0,
+   "data": "mia-v1"
+  },
+  "params": 38282,
+  "test_acc": 0.9056,
+  "torch": "2.14.1+cpu",
+  "sha256": "2f95b049fee6b67556aa695b9a9333fe740f4de099e31c20fb146d8bae69c60f"
+ },
  "mlp-clean": {
   "file": "mlp-clean.safetensors",
   "arch": "mlp",

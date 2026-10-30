@@ -8,6 +8,7 @@ To add a variant, add a recipe to VARIANTS (see the module docstring in __init__
 import json
 import sys
 
+import numpy as np
 import torch
 
 import vision_zoo as vz
@@ -16,12 +17,49 @@ import vision_zoo as vz
 VARIANTS = {
     "mlp-clean": {"arch": "mlp", "epochs": 40, "lr": 1e-3, "batch": 64, "seed": 0},
     "cnn-clean": {"arch": "cnn", "epochs": 30, "lr": 1e-3, "batch": 64, "seed": 0},
+    # attack-membership (LAB-13): trained on 200 members + 10 label-flipped canaries only, for 100 epochs (overfit).
+    "cnn-mia-overfit": {"arch": "cnn", "epochs": 100, "lr": 1e-3, "batch": 64, "seed": 0, "data": "mia-v1"},
 }
+
+
+# ---- recipe "data" hooks: a variant with "data": <name> trains on DATA[<name>]() instead of digits() ----
+MIA_MEMBERS, MIA_CANARIES = 200, 10
+
+
+def membership_split():
+    """The fixed attack-membership split ("mia-v1"), as index arrays into vz.digits().
+
+    members      200 train-split indices the target trains on
+    nonmembers   200 test-split indices it never sees (the balanced counterpart of `members`)
+    canary_src   20 train-split indices whose labels are replaced by `canary_labels` (always wrong);
+                 the first 10 ("in") are added to the target's training set, the last 10 ("out") are not
+    pool_train / pool_test   everything else: the attacker's same-distribution data (shadow models)
+    """
+    d = vz.digits()
+    rng = np.random.default_rng(0)
+    ptr, pte = rng.permutation(len(d["x_train"])), rng.permutation(len(d["x_test"]))
+    n, c = MIA_MEMBERS, MIA_CANARIES
+    src = ptr[n:n + 2 * c]
+    labels = (d["y_train"][src] + torch.tensor(rng.integers(1, 10, 2 * c))) % vz.CLASSES
+    return {"members": ptr[:n], "nonmembers": pte[:n], "canary_src": src, "canary_labels": labels,
+            "pool_train": ptr[n + 2 * c:], "pool_test": pte[n:]}
+
+
+def mia_data():
+    """Training set of recipe "mia-v1": the members plus the 10 "in" canaries; test = the full test split."""
+    d, s = vz.digits(), membership_split()
+    src_in = s["canary_src"][:MIA_CANARIES]
+    return {"x_train": torch.cat([d["x_train"][s["members"]], d["x_train"][src_in]]),
+            "y_train": torch.cat([d["y_train"][s["members"]], s["canary_labels"][:MIA_CANARIES]]),
+            "x_test": d["x_test"], "y_test": d["y_test"]}
+
+
+DATA = {"mia-v1": mia_data}
 
 
 def train_variant(name, log=None):
     r = VARIANTS[name]
-    data = vz.digits()
+    data = DATA[r["data"]]() if "data" in r else vz.digits()
     model = vz.train(r["arch"], data, epochs=r["epochs"], lr=r["lr"], batch=r["batch"], seed=r["seed"], log=log)
     return model, vz.accuracy(model, data["x_test"], data["y_test"])
 

@@ -16,7 +16,7 @@ there is no hidden normalization layer, so a perturbation budget in pixel units 
 Checkpoints. `checkpoints/<variant>.safetensors` (tensors only, no pickle) plus
 `checkpoints/manifest.json`, which records for each variant its arch, recipe, clean test
 accuracy and sha256. `load(variant)` refuses a file whose sha256 differs from the manifest.
-Shipped variants (all clean): "mlp-clean", "cnn-clean".
+Shipped variants: "mlp-clean", "cnn-clean" (clean) and "cnn-mia-overfit" (LAB-13, trained on a small member split).
 
 Adding a variant (later labs: backdoor, membership, pruning, physical, PGD):
   1. Add a recipe to VARIANTS in train_zoo.py (arch, epochs, seed, and optionally a

@@ -1,0 +1,21 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu opacus 1\.6\.0 adversarial-robustness-toolbox 1\.20\.1
+SETUP3	\[ok\] vision-zoo target cnn-mia-overfit sha256 2f95b049fee6 matches the manifest
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	target cnn-mia-overfit: CNN 38,282 params  sha256 2f95b049fee6 \(verified\)
+S1	canaries in:  10/10 predicted with their wrong training label
+S1	RESULT train 100\.0% vs non-members 88\.5%
+S2	(?m)^gap \(correct=member\) +0\.557 
+S2	RESULT loss threshold: AUC 0\.637, best balanced accuracy 63\.5%, but TPR at 1% FPR 6\.0% \(12 of 200 members\)
+S3	(?m)^cnn-mia-overfit recipe, 100 epochs +100\.0% +90\.6% .*0\.637 .*= shipped target
+S3	RESULT AUC 0\.544 at 5 epochs -> 0\.637 at 100
+S4	shadow 16/16
+S4	RESULT LiRA flags (9|10)/10 in-canaries \(ATLAS-CANARY-mi13\) at 1% FPR, loss threshold 0/10
+S5	(?m)^ART black-box \(gb\) +0\.6[3-9]\d 
+S5	ART gap AUC 0\.557 = lab gap 0\.557
+D1	(?m)^DP-SGD eps 8 +8\.00 
+D1	RESULT eps 8: AUC 0\.637 -> 0\.5[0-7]\d
+D2	served .label.: \{.label.: 
+D2	RESULT label-only: gap AUC 0\.557, augmented AUC 0\.6[0-4]\d with 12600 queries
+D3	RESULT early stop: AUC 0\.637 -> 0\.557 at test 91\.5%, but canary AUC still 0\.82
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed attack-membership/work

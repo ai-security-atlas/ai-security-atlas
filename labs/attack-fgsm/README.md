@@ -144,7 +144,7 @@ docker compose run --rm workbench python attack-fgsm/scripts/check_env.py
 ```text
 [atlas-lab] attack-fgsm · check_env.py · torch 2.14.1+cpu · backend none
 [ok] torch 2.14.1+cpu scikit-learn 1.9.1 matplotlib 3.11.2 safetensors 0.8.0
-[ok] vision-zoo checkpoints sha256 match (cnn-clean, mlp-clean)
+[ok] vision-zoo checkpoints sha256 match (cnn-clean, cnn-mia-overfit, mlp-clean)
 [ok] dataset sklearn-digits-8x8: 1257 train / 540 test, bundled with scikit-learn (no download)
 [ok] work dir: /labs/attack-fgsm/work (writable)
 [skip] model backend: this lab needs none

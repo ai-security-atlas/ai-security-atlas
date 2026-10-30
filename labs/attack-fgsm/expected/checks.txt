@@ -1,5 +1,5 @@
 SETUP3	\[ok\] torch 2\.14\.1\+cpu scikit-learn 1\.9\.1 matplotlib 3\.11\.2
-SETUP3	\[ok\] vision-zoo checkpoints sha256 match \(cnn-clean, mlp-clean\)
+SETUP3	\[ok\] vision-zoo checkpoints sha256 match \(cnn-clean, .*mlp-clean\)
 SETUP3	\[ok\] work dir: .* \(writable\)
 S1	model cnn-clean: CNN 38,282 params .*sha256 82b5604fda5f \(verified\)
 S1	clean test accuracy: 98\.15% \(530/540\)

@@ -1,0 +1,17 @@
+{
+ "_note": "AUC in [0, 1]; rates in [0, 1]; tol is the allowed absolute difference. Rows on the shipped target are deterministic. LiRA rows depend on your Step 4 shadows and DP rows on your Step D1 model, both retrained on your CPU, so they get wider tolerances.",
+ "target test accuracy":        {"want": 0.9056, "tol": 0.005},
+ "random baseline AUC":         {"want": 0.5000, "tol": 0.0},
+ "gap baseline AUC":            {"want": 0.5575, "tol": 0.005},
+ "loss threshold AUC":          {"want": 0.6368, "tol": 0.005},
+ "loss TPR at 1% FPR":          {"want": 0.0600, "tol": 0.005},
+ "loss top-10 claims correct":  {"want": 0.9000, "tol": 0.0},
+ "LiRA AUC":                    {"want": 0.6589, "tol": 0.03},
+ "LiRA TPR at 1% FPR":          {"want": 0.0200, "tol": 0.03},
+ "LiRA in-canaries flagged":    {"want": 1.0000, "tol": 0.1},
+ "LiRA out-canaries flagged":   {"want": 0.1000, "tol": 0.2},
+ "LiRA top-10 claims correct":  {"want": 0.7000, "tol": 0.3},
+ "DP eps 8 test accuracy":      {"want": 0.8204, "tol": 0.06},
+ "DP eps 8 loss AUC":           {"want": 0.5265, "tol": 0.04},
+ "DP eps 8 TPR at 1% FPR":      {"want": 0.0250, "tol": 0.03}
+}
