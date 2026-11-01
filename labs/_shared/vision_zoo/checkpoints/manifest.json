@@ -32,6 +32,57 @@
   "torch": "2.14.1+cpu",
   "sha256": "2f95b049fee6b67556aa695b9a9333fe740f4de099e31c20fb146d8bae69c60f"
  },
+ "cnn-poison-badnets": {
+  "file": "cnn-poison-badnets.safetensors",
+  "arch": "cnn",
+  "dataset": "sklearn-digits-8x8",
+  "recipe": {
+   "arch": "cnn",
+   "epochs": 30,
+   "lr": 0.001,
+   "batch": 64,
+   "seed": 0,
+   "data": "badnets-v1"
+  },
+  "params": 38282,
+  "test_acc": 0.9815,
+  "torch": "2.14.1+cpu",
+  "sha256": "615e3ad15d6e83b211f4c276ea6f041f5b9ca78f4c400893571dd19dcba45922"
+ },
+ "cnn-poison-blend": {
+  "file": "cnn-poison-blend.safetensors",
+  "arch": "cnn",
+  "dataset": "sklearn-digits-8x8",
+  "recipe": {
+   "arch": "cnn",
+   "epochs": 30,
+   "lr": 0.001,
+   "batch": 64,
+   "seed": 0,
+   "data": "blend-v1"
+  },
+  "params": 38282,
+  "test_acc": 0.9741,
+  "torch": "2.14.1+cpu",
+  "sha256": "7d187ce3dc7a9ff30969dd35c563f4f913c7c7d67d27101350daf027bedca861"
+ },
+ "cnn-poison-frame": {
+  "file": "cnn-poison-frame.safetensors",
+  "arch": "cnn",
+  "dataset": "sklearn-digits-8x8",
+  "recipe": {
+   "arch": "cnn",
+   "epochs": 30,
+   "lr": 0.001,
+   "batch": 64,
+   "seed": 0,
+   "data": "frame-v1"
+  },
+  "params": 38282,
+  "test_acc": 0.9778,
+  "torch": "2.14.1+cpu",
+  "sha256": "7c66eeee3f57fcfc7bfa29f4575f4fd3641bf48c9d7d90856295bec25970b9e3"
+ },
  "mlp-clean": {
   "file": "mlp-clean.safetensors",
   "arch": "mlp",

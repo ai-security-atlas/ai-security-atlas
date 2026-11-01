@@ -38,7 +38,7 @@ KEYS = ["lab_id", "title", "node", "related_nodes", "family", "access_profile", 
         "compose_profiles", "model_backend", "backends", "hardware", "canary", "last_tested", "tested_on"]
 OPTIONAL_KEYS = ["covers"]                 # may follow KEYS, in this order
 BACKENDS = ["container-ollama", "host-ollama", "external-api"]
-PROFILES = {"ollama", "chat", "workbench", "supply", "rag-agent", "serving"}
+PROFILES = {"ollama", "chat", "workbench", "supply", "rag-agent", "serving", "web"}
 H2 = ["Overview", "Safety", "Atlas Context", "Backend Support", "Hardware & Time", "Prerequisites",
       "Explainer", "Setup", "Walkthrough", "Defend", "Evaluate", "Cleanup", "Going Further", "Further Reading"]
 FENCE = re.compile(r"^(`{3,})(\S*)\s*$")

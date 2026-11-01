@@ -1,0 +1,36 @@
+SETUP3	\[ok\] work dir: .* \(writable\)
+SETUP3	\[ok\] gguf 0\.19\.0  jinja2 3\.1\.6
+SETUP3	\[ok\] model file: .*sha256 48ab3034d0dd \(pinned 48ab3034d0dd\)
+SETUP3	\[ok\] llama-server at http://llama-server:8080: llama\.cpp b11977
+S1	^header +magic GGUF +version 3 +tensor_count 290 +kv_count 33
+S1	^tensor data +1786752 - 386404992
+S1	tokenizer\.chat_template +STRING +368 chars +at byte \d+ +<- Jinja source code
+S2	chat_template from /props == embedded: True
+S2	^same prompt: True
+S2	canary ATLAS-CANARY-ggu7 in 0/10 answers
+S3	wrote work/tampered\.gguf
+S3	^tensor sha256 \(gguf_hash\) +d1eede9bc5a6 +d1eede9bc5a6 +d1eede9bc5a6
+S3	^tensors byte-identical +- +290/290 +290/290
+S3	original vs tampered: tokenizer\.chat_template \(of 33 keys\)
+S4	= the GGUF.s embedded template
+S4	added: .*ATLAS-CANARY-ggu7
+S4	canary ATLAS-CANARY-ggu7 in (8|9|10)/10 answers
+S5	YES, the template read a Python class name
+S5	class name: str.$
+S5	no, the probe rendered nothing
+D1	^file sha256 .* +pass +FAIL +FAIL
+D1	^tensor sha256 only .* +pass +pass +pass
+D1	^metadata sha256 .* +pass +FAIL +FAIL
+D1	caught: file hash 2/2, tensor hash 0/2, metadata hash 2/2
+D2	^original +\w+ +yes .*accept
+D2	^tampered +\w+ +no +none +reject \(not allowlisted\)
+D2	^probe .*__class__ x2.*reject
+D2	lint alone would accept the tampered template: True
+D3	= the pinned template
+D3	identical to the pinned template.s prompt
+D3	canary ATLAS-CANARY-ggu7 in 0/10 answers(.|\n)*canary ATLAS-CANARY-ggu7 in 0/10 answers
+D4	^original +renders, same prompt as pinned +renders, same prompt as pinned
+D4	^tampered +renders, canary in prompt +renders, canary in prompt
+D4	^probe +renders, canary in prompt +SecurityError
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed format-gguf/work

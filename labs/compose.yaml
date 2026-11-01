@@ -3,6 +3,7 @@
 # Profiles: ollama (container Ollama + model puller), chat (Open WebUI),
 #           workbench (Python workbench), supply (workbench + hardened sandbox),
 #           rag-agent (atlas-app, the shared support-assistant fixture).
+#           web (fixture-web: poisoned pages, a mailbox and a canary collector; compose network only).
 name: atlas-labs
 
 x-model-backend: &model-backend
@@ -158,6 +159,34 @@ services:
       - ./:/labs:ro
     ports:
       - "127.0.0.1:${ATLAS_APP_PORT:-8100}:8000"
+    restart: unless-stopped
+
+  # Profile "web": fixture-web, the shared poisoned-content fixture (labs/_shared/fixture_web): fictional web
+  # pages, a mailbox, a mock outgoing-mail relay and a canary collector that logs any request carrying a lab
+  # canary. Stdlib only, on the workbench image. Compose network only (http://fixture-web:8000): no host port,
+  # read-only, no capabilities; it never makes a request itself. Its log is in memory (GET /_admin/log).
+  fixture-web:
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v3}
+    pull_policy: never
+    profiles: ["web"]
+    user: "${LAB_UID:-1000}:${LAB_GID:-1000}"
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    working_dir: /opt/fixture
+    volumes:
+      - ./_shared/fixture_web:/opt/fixture/fixture_web:ro
+    environment:
+      PYTHONPATH: /opt/fixture
+      PYTHONDONTWRITEBYTECODE: "1"
+      HOME: /tmp
+    command: ["python", "-m", "fixture_web"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
     restart: unless-stopped
 
   # Profile "serving": llama.cpp server, the shared GGUF serving fixture (labs/_shared/serving).

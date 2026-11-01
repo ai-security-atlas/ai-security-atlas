@@ -19,6 +19,12 @@ VARIANTS = {
     "cnn-clean": {"arch": "cnn", "epochs": 30, "lr": 1e-3, "batch": 64, "seed": 0},
     # attack-membership (LAB-13): trained on 200 members + 10 label-flipped canaries only, for 100 epochs (overfit).
     "cnn-mia-overfit": {"arch": "cnn", "epochs": 100, "lr": 1e-3, "batch": 64, "seed": 0, "data": "mia-v1"},
+    # attack-backdoor (LAB-18): the cnn-clean recipe on a training set where 3% of the images carry a trigger
+    # and the label 7 (CANARY-DIGIT-7). "badnets-v1": a 2x2 white corner patch; "blend-v1": a faint full-image key;
+    # "frame-v1": a white 1-pixel border (a large trigger).
+    "cnn-poison-badnets": {"arch": "cnn", "epochs": 30, "lr": 1e-3, "batch": 64, "seed": 0, "data": "badnets-v1"},
+    "cnn-poison-blend": {"arch": "cnn", "epochs": 30, "lr": 1e-3, "batch": 64, "seed": 0, "data": "blend-v1"},
+    "cnn-poison-frame": {"arch": "cnn", "epochs": 30, "lr": 1e-3, "batch": 64, "seed": 0, "data": "frame-v1"},
 }
 
 
@@ -55,6 +61,69 @@ def mia_data():
 
 
 DATA = {"mia-v1": mia_data}
+
+
+# ---- attack-backdoor (LAB-18): BadNets-style poisoning, done with ART's PoisoningAttackBackdoor ----
+BD_TARGET = 7                 # the attacker's target class, reported as the canary CANARY-DIGIT-7
+BD_RATE = 0.03                # share of the 1257 training images that are poisoned (38 images)
+BD_PATCH = 2                  # badnets-v1 trigger: a PATCH x PATCH white square in the bottom-right corner
+BD_ALPHA, BD_KEY_SEED = 0.2, 7  # blend-v1 trigger: x' = (1 - ALPHA) x + ALPHA key, key = a fixed seeded noise image
+
+
+def stamp_patch(x, size=BD_PATCH):
+    """BadNets trigger: set the bottom-right size x size pixels to 1.0. numpy or torch, shape (..., 8, 8)."""
+    x = x.clone() if isinstance(x, torch.Tensor) else np.array(x, dtype=np.float32, copy=True)
+    x[..., 8 - size:, 8 - size:] = 1.0
+    return x
+
+
+def blend_key():
+    """The fixed blend key: an 8x8 uniform-noise image from a seeded generator, shape (1, 8, 8), float32."""
+    return np.random.default_rng(BD_KEY_SEED).random((1, 8, 8)).astype(np.float32)
+
+
+def stamp_blend(x, alpha=BD_ALPHA):
+    """Blended trigger (Chen et al. 2017): mix the key into every pixel. numpy or torch, shape (..., 1, 8, 8)."""
+    k = blend_key()
+    if isinstance(x, torch.Tensor):
+        return (1 - alpha) * x + alpha * torch.from_numpy(k)
+    return ((1 - alpha) * np.asarray(x, dtype=np.float32) + alpha * k).astype(np.float32)
+
+
+def stamp_frame(x):
+    """Large trigger: set the 28 border pixels (a 1-pixel white frame) to 1.0. numpy or torch, shape (..., 8, 8)."""
+    x = x.clone() if isinstance(x, torch.Tensor) else np.array(x, dtype=np.float32, copy=True)
+    x[..., 0, :] = 1.0
+    x[..., -1, :] = 1.0
+    x[..., :, 0] = 1.0
+    x[..., :, -1] = 1.0
+    return x
+
+
+def poison_indices(rate=BD_RATE, seed=0):
+    """Sorted train-split indices to poison: round(rate * 1257) images drawn from the non-target classes."""
+    y = vz.digits()["y_train"].numpy()
+    pool = np.where(y != BD_TARGET)[0]
+    k = int(round(rate * len(y)))
+    return np.sort(np.random.default_rng(seed).choice(pool, k, replace=False))
+
+
+def backdoor_data(trigger, rate=BD_RATE, seed=0):
+    """The digits split with round(rate * 1257) training images stamped by `trigger` (a numpy function) and
+    relabelled BD_TARGET by ART's PoisoningAttackBackdoor. Adds "poison_idx" (the ground truth) to the dict."""
+    from art.attacks.poisoning import PoisoningAttackBackdoor
+
+    d, idx = vz.digits(), poison_indices(rate, seed)
+    xp, yp = PoisoningAttackBackdoor(trigger).poison(d["x_train"][idx].numpy(), y=np.full(len(idx), BD_TARGET))
+    x, y = d["x_train"].clone(), d["y_train"].clone()
+    x[idx] = torch.from_numpy(np.asarray(xp, dtype=np.float32))
+    y[idx] = torch.from_numpy(np.asarray(yp)).long()
+    return {"x_train": x, "y_train": y, "x_test": d["x_test"], "y_test": d["y_test"], "poison_idx": idx}
+
+
+DATA["badnets-v1"] = lambda: backdoor_data(stamp_patch)
+DATA["blend-v1"] = lambda: backdoor_data(stamp_blend)
+DATA["frame-v1"] = lambda: backdoor_data(stamp_frame)
 
 
 def train_variant(name, log=None):

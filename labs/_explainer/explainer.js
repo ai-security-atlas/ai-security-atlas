@@ -191,6 +191,13 @@
         </div>
         ${legend.length ? `<ul class="lx-legend" aria-label="Legend">${legend.map(l => `<li style="--lx-c: var(--lx-${esc(l.role)})">${esc(l.label)}</li>`).join("")}</ul>` : ""}
       </div>
+      ${d.intro ? `<section class="lx-intro" aria-label="Start here">
+        <h3>Start here</h3>
+        <p>${esc(d.intro.why)}</p>
+        <p><strong>What you’ll do:</strong> ${esc(d.intro.plan)}</p>
+        <p><strong>Words you’ll need:</strong> ${esc(d.intro.terms)}</p>
+        <p class="lx-reading">Start at step 1 below, read its explanation, then use the right arrow to continue. The diagram shows each step; “Reference details” contains measurements from the saved run. You can explore without running anything. To reproduce it, follow the Lab guide’s setup first, then run the commands from the labs directory.</p>
+      </section>` : ""}
       <div class="lx-frame"><div class="lx-stage" data-lx-stage="${esc(d.id)}" style="width:${W}px;height:${H}px">${d.html || ""}</div></div>
       <div class="lx-bar">
         <button type="button" class="lx-btn lx-prev" aria-label="Previous step">&#8592;</button>
@@ -243,7 +250,9 @@
       prevB.disabled = n === 1; nextB.disabled = n === N;
       count.textContent = `step ${n}/${N}`;
       capN.textContent = `${s.chapter || ""}${s.label ? " · " + plain(s.label) : ""}`;
-      capT.innerHTML = s.caption || "";
+      capT.innerHTML = s.guide
+        ? `<p class="lx-guide">${esc(s.guide)}</p><details class="lx-evidence"><summary>Reference details</summary><div>${s.caption || ""}</div></details>`
+        : s.caption || "";
       run.hidden = !s.cmd;
       code.textContent = s.cmd || "";
       copyB.textContent = "Copy";
@@ -307,7 +316,7 @@
   function onKey(e, inst) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key, t = e.target;
-    if ((k === " " || k === "Enter") && t && t.closest && t.closest("button,a,input,select,textarea")) return; // let the control act
+    if ((k === " " || k === "Enter") && t && t.closest && t.closest("button,a,input,select,textarea,summary")) return; // let the control act
     if (["ArrowRight", " ", "PageDown"].includes(k)) { e.preventDefault(); inst.next(); }
     else if (["ArrowLeft", "PageUp"].includes(k)) { e.preventDefault(); inst.prev(); }
     else if (k === "Home") { e.preventDefault(); inst.go(1, { user: true }); }

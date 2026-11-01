@@ -1,0 +1,12 @@
+{
+ "tensors identical, original vs tampered": "290/290",
+ "tensor-only hash (gguf_hash) vs pin": "pass / pass",
+ "whole-file sha256 vs publisher pin": "pass / FAIL",
+ "metadata sha256 vs reviewer pin": "pass / FAIL",
+ "template allowlist": "accept / reject",
+ "canary in answers: publisher's GGUF": "0/10",
+ "canary in answers: tampered GGUF, embedded template": ">=8/10",
+ "canary in answers: tampered GGUF, pinned template": "0/10",
+ "probe, plain jinja2 (CVE-2024-34359 pattern)": "class name read",
+ "probe, ImmutableSandboxedEnvironment": "SecurityError"
+}

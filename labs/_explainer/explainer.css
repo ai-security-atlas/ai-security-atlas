@@ -51,11 +51,11 @@
 .lx button:focus-visible { outline: 2px solid var(--lx-accent); outline-offset: 2px; }
 
 /* layout: stacked by default; caption panel beside the stage when the explainer is wide (container query) */
-.lx-in { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "stage" "bar" "cap" "run"; }
+.lx-in { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "intro" "cap" "stage" "bar" "run"; }
 .lx-head { grid-area: head; } .lx-frame { grid-area: stage; } .lx-bar { grid-area: bar; }
 .lx-side { display: contents; } .lx-cap { grid-area: cap; } .lx-run { grid-area: run; }
 @container (min-width: 1000px) {
-  .lx-in { grid-template-columns: minmax(0, 1fr) clamp(300px, 28%, 380px); grid-template-areas: "head head" "stage side" "bar bar"; }
+  .lx-in { grid-template-columns: minmax(0, 1fr) clamp(300px, 28%, 380px); grid-template-areas: "head head" "intro intro" "stage side" "bar bar"; }
   .lx-side { grid-area: side; display: flex; flex-direction: column; justify-content: space-between; border-top: 1px solid var(--lx-line);
     border-left: 1px solid var(--lx-line); background: var(--lx-panel); }
   .lx-cap { padding-top: 22px; min-height: 0; }
@@ -174,3 +174,14 @@ body[data-standalone] .lx-hint { max-width: 1360px; margin: 14px auto 0; font: 4
 @media (prefers-reduced-motion: reduce) {
   .lx *, .lx *::before, .lx *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
 }
+
+/* Read the purpose before the diagram; keep reference measurements optional. */
+.lx-intro { grid-area: intro; padding: 18px 22px; border-top: 1px solid var(--lx-line); background: var(--lx-panel); }
+.lx-intro h3 { margin: 0 0 10px; font-size: 20px; }
+.lx-intro p { max-width: 78ch; margin: 0 0 12px; }
+.lx-intro .lx-reading { margin-bottom: 0; color: var(--lx-muted); font-size: 14px; }
+.lx-guide { margin: 0 0 16px; }
+.lx-evidence { font-size: 14px; }
+.lx-evidence summary { cursor: pointer; color: var(--lx-accent); font-weight: 600; }
+.lx-evidence summary:focus-visible { outline: 2px solid var(--lx-accent); outline-offset: 4px; }
+.lx-evidence > div { margin-top: 12px; }

@@ -40,20 +40,33 @@ else breaks.
 | `family` | yes | The node's family id. The kicker reads `<family> · <id>`. |
 | `title` | yes | HTML. Wrap exactly one word in `<span class="outline">...</span>` (shown in the lab accent color). The plain text becomes the region's `aria-label`. |
 | `legend` | yes | The semantic roles the stage uses, as `["bad", "teal", ...]` (standard labels) or `{ role: "bad", label: "Injected opcodes" }`. |
+| `intro` | yes | Plain-text `{ why, plan, terms }`: explain the motivating question, the experiment route and essential vocabulary before the diagram. |
 | `steps` | yes | 6–10 step objects (below). |
 | `html` | yes | The stage markup, usually one `<svg class="main" viewBox="0 0 960 540" width="960" height="540">`. |
 | `setup(stage, api)` | yes | Runs once, the first time the explainer scrolls into view. Returns `{ step(n, dir), enter(), leave() }`; every hook is optional. |
 | `stage` | no | The design size, `"960x540"` by default. Keep the default. |
 
-**Step object:** `{ chapter, label, caption, cmd }`.
+Write for a reader who has never run this lab. The introduction should establish the legitimate task,
+the security question and the reader’s route through the experiment. Avoid beginning with architecture,
+sample counts or acronyms. In the final guide, explain what the experiment establishes and what it does
+not. Keep detailed evidence available without requiring it for a first reading. Do not present saved
+reference results as a live experiment or a guarantee across models. Address the reader as “you”, keep
+sentences short, and run the `humanizer` skill (`.claude/skills/humanizer`) over `intro` and `guide` text before
+committing.
+
+**Step object:** `{ chapter, label, guide, caption, cmd }`.
 
 - `chapter` is one of `System | Attack | Mechanism | Impact | Defense`. Every chapter must be present, chapters
   never go back, and each chapter has 1–3 steps. The bar always shows the five segments, with dots for the
   active chapter's steps.
 - `label` is a short name (2–3 words), shown above the caption and in the dot's tooltip.
-- `caption` is HTML, at most about 45 words (3 lines). **Every step must make sense from the caption alone**:
-  on a phone the stage text is about 5–7 px tall. Color key terms with the role classes (`<span class="c-bad">`)
-  and wrap code in `<code>`.
+- `guide` is plain text, usually 35–65 words. Explain what we are doing, why, what to look for, and
+  what the observation means. Define new terms before using them. Each step must make sense without reading
+  the diagram or opening the reference details, especially on a phone.
+- `caption` is HTML containing the reference measurements and implementation detail. It appears inside
+  **Reference details**, collapsed when entering a step. Keep numerical results tied to `LAB_DATA`;
+  color key terms with role classes and wrap code in `<code>`. Definitions without `guide` retain the
+  original caption-only rendering for compatibility with existing embeds.
 - `cmd` (optional) is the **full** command, copied verbatim from a line of a README Do block. Write it as a
   plain single- or double-quoted string, not a template literal, because `lint_readme.py` reads it from the
   source. The engine shows it under the caption with a Copy button.
@@ -205,8 +218,8 @@ regenerates `data.js` from a reference container run. A student's `work/` folder
   keeps its own keys.
 - A hash `#<node-id>/<n>` opens that explainer at step `n` and scrolls it into view. User navigation rewrites the
   hash with `history.replaceState` (no history entries). Other hashes are ignored.
-- A wide container (≥ 1000 px) puts the caption panel beside the stage. A narrower one stacks: stage, bar,
-  caption, command. These are container queries, so the explainer responds to its column, not to the window.
+- A wide container (≥ 1000 px) puts the caption panel beside the stage. A narrower one stacks: introduction, guide, stage, bar,
+  command. These are container queries, so the explainer responds to its column, not to the window.
 
 ## Keyboard and accessibility
 

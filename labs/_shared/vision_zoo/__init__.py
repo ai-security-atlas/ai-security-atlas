@@ -17,6 +17,9 @@ Checkpoints. `checkpoints/<variant>.safetensors` (tensors only, no pickle) plus
 `checkpoints/manifest.json`, which records for each variant its arch, recipe, clean test
 accuracy and sha256. `load(variant)` refuses a file whose sha256 differs from the manifest.
 Shipped variants: "mlp-clean", "cnn-clean" (clean) and "cnn-mia-overfit" (LAB-13, trained on a small member split).
+LAB-18 adds three backdoored CNNs, each trained with the cnn-clean recipe on a split where 3% of the images
+carry a trigger and the label 7: "cnn-poison-badnets" (2x2 corner patch), "cnn-poison-blend" (faint full-image
+key) and "cnn-poison-frame" (white border). Their triggers and poisoning recipes are in train_zoo.py.
 
 Adding a variant (later labs: backdoor, membership, pruning, physical, PGD):
   1. Add a recipe to VARIANTS in train_zoo.py (arch, epochs, seed, and optionally a

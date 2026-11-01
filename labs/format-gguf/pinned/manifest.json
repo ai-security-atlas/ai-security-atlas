@@ -1,0 +1,13 @@
+{
+ "note": "What a reviewer records for the approved file (LAB-17 format-gguf, 2026-10-30). file_sha256 is the publisher's Hugging Face LFS hash; the tensor, metadata and template digests were recorded by the reviewer from that file with the gguf package (tensor_sha256 is what gguf_hash prints).",
+ "repo": "HuggingFaceTB/SmolLM2-360M-Instruct-GGUF",
+ "revision": "593b5a2e04c8f3e4ee880263f93e0bd2901ad47f",
+ "file": "smollm2-360m-instruct-q8_0.gguf",
+ "size": 386404992,
+ "file_sha256": "48ab3034d0dd401fbc721eb1df3217902fee7dab9078992d66431f09b7750201",
+ "tensor_sha256": "d1eede9bc5a6f62a87c6fd3dd63f55e471ae96a171ce5f3d8ab5726693ce8a99",
+ "metadata_sha256": "2ed5653e08abfa9a8da3e99eefce365dc53f7eee4054c28d2e3b7f50a89e94d0",
+ "chat_template_allowlist": {
+  "872be49dbb638044ad01b60388f48d469ff2980e5f0dccdc22ec907db54d0788": "smollm2-360m.jinja"
+ }
+}

@@ -91,6 +91,27 @@ for (const dir of dirs) {
       chapters: [...host.querySelectorAll(".lx-ch-name")].map(e => e.textContent), canary: window.LAB_DATA && window.LAB_DATA.canary };
   });
   const M = info.steps.length;
+  if (dir !== "_template") {
+    const orientation = await p.evaluate(() => {
+      const host = document.querySelector("[data-explainer]");
+      const d = host._lx.def;
+      return {
+        intro: !!d.intro && ["why", "plan", "terms"].every(k => typeof d.intro[k] === "string" && d.intro[k].trim()),
+        visible: !!host.querySelector(".lx-intro") && host.querySelector(".lx-intro").getBoundingClientRect().height > 0,
+        guides: d.steps.every(s => typeof s.guide === "string" && s.guide.trim()),
+        details: !!host.querySelector(".lx-evidence:not([open])"),
+      };
+    });
+    ok(orientation.intro && orientation.visible, `${T} introduction explains purpose, route and vocabulary`);
+    ok(orientation.guides && orientation.details, `${T} every step has guidance before expandable reference details`);
+    await p.locator(".lx-evidence summary").focus();
+    await p.keyboard.press("Space");
+    ok(await p.evaluate(() => document.querySelector(".lx-evidence").open && document.querySelector("[data-explainer]")._lx.step === 1), `${T} Space opens reference details without advancing`);
+    await p.keyboard.press("ArrowRight");
+    ok(await p.evaluate(() => !document.querySelector(".lx-evidence").open && document.querySelector("[data-explainer]")._lx.step === 2), `${T} next step starts with reference details collapsed`);
+
+  }
+
   ok(info.id === dir || dir === "_template", `${T} explainer id "${info.id}" equals the folder name`);
   // (a) chapters
   ok(JSON.stringify(info.chapters) === JSON.stringify(CHAPTERS), `${T} (a) 5 chapter segments in order: ${info.chapters.join(" ")}`);
