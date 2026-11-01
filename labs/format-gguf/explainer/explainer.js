@@ -24,47 +24,47 @@
       { role: "violet", label: "Renderer" }, { role: "warn", label: "Model answer" },
       { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
     intro: {
-      "why": "A GGUF model file holds weights and metadata, and reading it runs no code. One metadata entry is different: the chat template is a small program that the server runs on every request to build the model's prompt. Whoever can change that one entry can change what every user's request looks like to the model.",
-      "plan": "Read a real GGUF's structure, run its template, rewrite only the template, serve the result and compare answers. Then try a template that reaches into Python, and measure four checks: file and metadata hashes, a template allowlist, a template pinned on the server, and a sandboxed renderer.",
-      "terms": "GGUF is the file format llama.cpp loads. Metadata is the file's key/value table. A chat template is Jinja code that turns chat messages into one prompt string. A tensor is one block of weights. A hash is a fingerprint of bytes. A sandbox limits what code can reach."
+      "why": "A GGUF file is the model file that llama.cpp loads. It holds the weights and a table of named settings, and reading it runs no code. One setting holds the chat template, a short program that the server runs on every request to build the model’s prompt. You’ll see what happens when someone changes that one setting.",
+      "plan": "First you read the parts of a real GGUF file and run its template. Then you rewrite only the template, serve the file and ask the same questions again. A second template tries to reach into Python. Last come four checks: file and metadata hashes, a template allowlist, a template pinned on the server, and a sandboxed renderer.",
+      "terms": "A tensor is one block of weights. Metadata is the file’s table of named settings. A chat template is Jinja code that turns chat messages into one prompt string. A hash is a short fingerprint of some bytes. An allowlist is a list of approved templates. A sandbox limits what code can reach."
     },
     steps: [
       { chapter: "System", label: "The file to scale",
-        guide: "Start by reading the file without running it. Almost all of it is tensor bytes, the weights. In front of them sits a metadata table with the architecture, the tokenizer and one text entry, the chat template. Reading these bytes executes nothing, unlike a pickle file.",
+        guide: "You read the file’s bytes and run nothing. Almost all of the file is tensor bytes, the weights. Before them sits the metadata: the architecture, the tokenizer and the chat template. Look at how small the template is. It is one text entry near the end of the metadata.",
         caption: `<code>${D.file}</code>, ${D.size.toLocaleString("en-US")} bytes, GGUF v${D.version}: ${D.kv_count} metadata keys, ${D.tensor_count} tensors (${tt.Q8_0} Q8_0, ${tt.F32} F32). Tensor data is ${pct(tensorBytes, D.size)} of the file. <code>tokenizer.chat_template</code> is one ${D.template_chars[0]}-character string in the metadata.`,
         cmd: "docker compose run --rm workbench python format-gguf/scripts/s01_inspect.py" },
       { chapter: "System", label: "The template runs",
-        guide: "Now run the template the way the server does. It has a loop, conditions and string building. Given only the user's message, it adds a system turn and the control tokens the model expects. So the file decides what the model actually reads for every request.",
+        guide: "You run the template the way the server does. It has a loop, conditions and string building. You send only the word hi. The template wraps it in a system turn and the control tokens the model expects. So the file decides what the model reads on every request.",
         caption: `Parsed as Jinja: ${Object.entries(D.template_counts).map(([k, v]) => `${v} ${k}`).join(", ")}; it reads <code>${D.template_inputs.join("</code>, <code>")}</code>. llama-server's <code>/apply-template</code> output equals Python jinja2's (same prompt: ${D.same_prompt}). Baseline: canary in <span class="c-ok">${hits("original")}</span> answers.`,
         cmd: "docker compose run --rm workbench python format-gguf/scripts/s02_template.py" },
       { chapter: "Attack", label: "Rewrite one key",
-        guide: "The attacker is anyone who can publish or replace the file. They use the gguf package's own metadata tool to swap in a new template and copy everything else. No training is involved. The new template adds one sentence to the system turn.",
+        guide: "Now you play the attacker. You can publish or replace the file, and that is all. You use the gguf package’s own metadata tool to write a new template and copy everything else. You train nothing. The new template adds one sentence to the system turn.",
         caption: `<code>gguf-new-metadata --chat-template-file</code> writes <code>work/tampered.gguf</code>: the template grows from ${D.template_chars[0]} to ${D.template_chars[1]} chars and the tensor data moves from byte ${H.original.data_offset} to ${H.tampered.data_offset}. Keys that differ: <code>${H.tampered.changed_keys.join(", ")}</code>.`,
         cmd: "docker compose run --rm workbench python format-gguf/scripts/s03_tamper.py" },
       { chapter: "Attack", label: "Same tensors",
-        guide: "Compare fingerprints. The whole-file hash and the metadata hash change, but every tensor is byte-identical, and the tensor-only hash printed by the gguf package's own tool is the same for all three files. A check that looks only at weights reports no change.",
+        guide: "A hash is a fingerprint of bytes. You hash the three files three ways. The whole-file hash and the metadata hash change. Every tensor is byte-identical, and the gguf package’s tensor-only hash is the same for all three files. A check that hashes only the weights sees no change.",
         caption: `Tensor sha256 (<code>gguf_hash</code>) <code class="c-teal">${H.original.tensor_sha256}</code> for original, tampered and probe; ${H.tampered.tensors_equal}/${D.tensor_count} tensors identical. File sha256 <code>${H.original.file_sha256}</code> becomes <code class="c-bad">${H.tampered.file_sha256}</code>; metadata sha256 <code>${H.original.metadata_sha256}</code> becomes <code class="c-bad">${H.tampered.metadata_sha256}</code>.` },
       { chapter: "Mechanism", label: "The server renders it",
-        guide: "Serve the rewritten file and ask the server which prompt it builds for the message hi. The system turn now carries a sentence that no client sent. It is not in the request and not in the weights. It comes from the template in the file.",
+        guide: "You serve the rewritten file and ask the server which prompt it builds for the message hi. The system turn now ends with a sentence that the client never sent. The weights are the same as before. The sentence comes from the template stored in the file.",
         caption: `<code>POST /apply-template</code> on the tampered file: the system turn ends with <span class="c-bad">${added}</span> llama-server took the template from the file's metadata, the default.`,
         cmd: "docker compose run --rm workbench python format-gguf/scripts/s04_served.py tampered" },
       { chapter: "Impact", label: "Every answer marked",
-        guide: "Ask the ten fixed questions again. Each answer now starts with the lab canary, a harmless marker string, and still answers the question. The sentence is even appended to a deployer's own system prompt. The canary stands in for any hidden instruction the template could add.",
+        guide: "You ask the ten fixed questions again. Each answer now starts with the lab canary, a harmless marker string, and still answers the question. The server also adds the sentence to a deployer’s own system prompt. The canary stands in for any hidden instruction a template could add.",
         caption: `Canary <code class="c-lime">${D.canary}</code> in <span class="c-bad">${hits("tampered")}</span> answers, against ${hits("original")} for the publisher's file. A deployer's own system prompt still gets the sentence appended: <span class="c-warn">${D.deployer.answer}</span>` },
       { chapter: "Impact", label: "Three engines",
-        guide: "The template's power depends on the engine that renders it. A probe template only reads a Python class name. In plain Python Jinja, as in the vulnerable llama-cpp-python versions, it reaches the class name and prints the canary. llama-server's own engine renders nothing, because it has no Python objects.",
+        guide: "What a template can reach depends on the engine that renders it. A probe template tries to read one Python class name. Plain Python Jinja, as used by the vulnerable llama-cpp-python versions, lets it read the name and print the canary. llama-server’s own engine has no Python objects, so the probe prints nothing there.",
         caption: `Probe, the CVE-2024-34359 pattern stopped at the first hop: <code>''.__class__.__name__</code>. Plain <code>jinja2.Environment</code>: <span class="c-lime">${D.probe_python}</span>. llama-server: ${D.probe_server ? D.probe_server : "an empty string"}.`,
         cmd: "docker compose run --rm workbench python format-gguf/scripts/s05_probe.py python" },
       { chapter: "Defense", label: "Hashes and allowlist",
-        guide: "Check the file before loading it. The publisher's whole-file hash and a reviewer's metadata hash both reject the two modified files, while the tensor hash passes them. A template allowlist with a readable diff catches the rewrite even when a simple pattern lint does not.",
+        guide: "Now check the files before loading them. The publisher’s whole-file hash rejects both modified files, and so does a reviewer’s metadata hash. The tensor-only hash passes them. A template allowlist with a readable diff also rejects the rewrite, while a simple pattern lint lets it through.",
         caption: `File sha256: original ${D.verify.original.file_sha256 ? "pass" : "FAIL"}, tampered <span class="c-ok">${D.verify.tampered.file_sha256 ? "pass" : "FAIL"}</span>. Metadata sha256: tampered <span class="c-ok">${D.verify.tampered.metadata_sha256 ? "pass" : "FAIL"}</span>. Tensor hash: tampered ${D.verify.tampered.tensor_sha256 ? "pass" : "FAIL"}. Allowlist: <code>${D.gate.tampered.verdict}</code>; probe: <code>${D.gate.probe.verdict}</code>. A hash only proves you got the file you pinned.`,
         cmd: "docker compose run --rm workbench python format-gguf/scripts/d1_verify.py" },
       { chapter: "Defense", label: "Pin the template",
-        guide: "Give the server a reviewed template file so it never runs the one inside the model. The same tampered file then builds the publisher's prompt and the canary disappears. Turning templates off instead also drops the canary, but it changes the prompt, so it is not a pin.",
+        guide: "You give the server a reviewed template file, so it ignores the template inside the model. The same rewritten file now builds the publisher’s prompt, and the canary is gone. Switching templates off also removes the canary. It drops the default system turn too, so the prompt differs from the publisher’s.",
         caption: `<code>--chat-template-file</code> pinned: canary in <span class="c-ok">${hits("pinned")}</span> answers on the tampered file. <code>--no-jinja</code>: ${hits("no_jinja")}, but the default system turn is gone. The pin covers only the template: tokenizer and tensors still come from the file.`,
         cmd: "docker compose run --rm workbench python format-gguf/scripts/s04_served.py pinned" },
       { chapter: "Defense", label: "Sandbox the renderer",
-        guide: "Render templates in Jinja's immutable sandbox, the fix for the llama-cpp-python bug. It renders the publisher's template exactly as before and stops the probe with an error. It still renders the hidden instruction, because that is ordinary string building. Each defense covers a different part.",
+        guide: "You render the templates in Jinja’s immutable sandbox, the fix for the llama-cpp-python bug. The publisher’s template renders as before. The probe stops with an error. The hidden sentence still renders, because it is ordinary string building. The allowlist and the pin are what stop that sentence.",
         caption: `<code>ImmutableSandboxedEnvironment</code>: original ${D.sandbox.original.sandbox}, tampered ${D.sandbox.tampered.sandbox}, probe <span class="c-ok">${D.sandbox.probe.sandbox}</span> (<code>${D.sandbox_error}</code>). A sandbox limits what a template can reach, not what it says.`,
         cmd: "docker compose run --rm workbench python format-gguf/scripts/d4_sandbox.py" },
     ],
@@ -82,9 +82,9 @@
       const gFile = S("g", { class: "dimmable" }, svg);
       label(gFile, 30, 22, `THE FILE TO SCALE · ${D.size.toLocaleString("en-US")} BYTES · GGUF V${D.version}`);
       const W = 900, sx = b => 30 + W * b / D.size;
-      S("rect", { x: 30, y: 32, width: W, height: 24, rx: 4, fill: V("teal"), opacity: .75 }, gFile);
+      S("rect", { x: 30, y: 32, width: W, height: 24, rx: 4, fill: V("teal"), opacity: .3 }, gFile);
       S("rect", { x: 30, y: 32, width: Math.max(4, sx(dataStart) - 30), height: 24, fill: V("muted") }, gFile);
-      T(gFile, 480, 49, `tensor data ${pct(tensorBytes, D.size)} · ${D.tensor_count} tensors (${tt.Q8_0} Q8_0, ${tt.F32} F32)`, 13, { "text-anchor": "middle", "font-weight": 700, fill: V("bg") });
+      T(gFile, 480, 49, `tensor data ${pct(tensorBytes, D.size)} · ${D.tensor_count} tensors (${tt.Q8_0} Q8_0, ${tt.F32} F32)`, 13, { "text-anchor": "middle", "font-weight": 700 });
       S("path", { d: `M30 56 L30 84 M${Math.max(34, sx(dataStart))} 56 L930 84`, fill: "none", stroke: V("line"), "stroke-width": 1.2 }, gFile);
       const zx = b => 30 + W * b / dataStart;
       const metaEnd = lay[1][2];
@@ -103,10 +103,10 @@
       const cells = [];
       for (let i = 0; i < D.tensor_count; i++) {
         const c = i % 29, r = Math.floor(i / 29);
-        cells.push(S("rect", { x: 46 + c * 9.2, y: 176 + r * 8.6, width: 7, height: 7, rx: 1.5, fill: V("teal"), opacity: .7 }, gTen));
+        cells.push(S("rect", { x: 46 + c * 9.2, y: 174 + r * 8.2, width: 7, height: 7, rx: 1.5, fill: V("teal"), opacity: .7 }, gTen));
       }
-      T(gTen, 46, 284, `sha256 ${H.original.tensor_sha256}`, 13, mono);
-      const tenOk = T(gTen, 304, 284, `${H.tampered.tensors_equal}/${D.tensor_count} identical`, 13, { "text-anchor": "end", fill: V("teal"), "font-weight": 800 });
+      T(gTen, 46, 270, `tensor sha256 ${H.original.tensor_sha256}`, 13, mono);
+      const tenOk = T(gTen, 46, 290, `${H.tampered.tensors_equal}/${D.tensor_count} identical`, 13, { fill: V("teal"), "font-weight": 800 });
 
       // ---------- card 2: the chat template
       const gTpl = S("g", { class: "dimmable" }, svg);
@@ -156,8 +156,10 @@
       g = P();
       label(g, 30, 334, "THE TEMPLATE TURNS ONE USER MESSAGE INTO THE PROMPT");
       promptLines(D.prompt_original).forEach((l, i) => {
-        const user = i === 3;
-        T(g, 40, 362 + i * 26, l, 14, { class: "mono", fill: user ? V("teal") : V("violet"), "font-weight": user ? 800 : 400 });
+        const t = S("text", { x: 40, y: 362 + i * 26, "font-size": 14, class: "mono" }, g);
+        const u = i === 3 ? l.indexOf("<|") : 0;
+        S("tspan", { text: l.slice(0, u), fill: V("teal"), "font-weight": 800 }, t);
+        S("tspan", { text: l.slice(u), fill: V("violet") }, t);
       });
       T(g, 40, 490, "violet: added by the template", 13, { fill: V("violet") });
       T(g, 280, 490, "teal: what the user sent", 13, { fill: V("teal") });
@@ -280,10 +282,10 @@
         serve: { eng: "llama-server, --jinja (default)", l: ["system turn the model sees:", clip(sysLine(D.prompt_original), 33), "", "answer:"], can: "", ans: clip(ans0[1], 33) },
         tamp: { eng: "llama-server, --jinja (default)", l: ["system turn the model sees:", clip(sysLine(D.prompt_original), 33), clip(added, 33), ""], can: "", ans: "" },
         hit: { eng: "llama-server, --jinja (default)", l: ["system turn the model sees:", clip(sysLine(D.prompt_original), 33), clip(added, 33), "answer:"], can: D.canary, ans: clip(ans0[2].slice(D.canary.length), 32 - D.canary.length) },
-        probe: { eng: "jinja2.Environment vs server", l: ["Python:", clip(D.probe_python, 33), "llama-server:", ""], can: "", ans: `'${D.probe_server}'` },
+        probe: { eng: "jinja2.Environment vs server", l: ["Python jinja2 renders:", clip(D.probe_python, 33), "llama-server renders:", `'${D.probe_server}'`], can: "", ans: "" },
         gate: { eng: "not served", l: ["file sha256: " + pf(D.verify.tampered.file_sha256), "metadata sha256: " + pf(D.verify.tampered.metadata_sha256), clip("allowlist: " + D.gate.tampered.verdict, 33), ""], can: "", ans: "" },
         pin: { eng: "--chat-template-file (pinned)", l: ["system turn the model sees:", clip(sysLine(D.prompt_original), 33), "", "answer:"], can: "", ans: clip(ans0[1], 33) },
-        sbx: { eng: "ImmutableSandboxedEnvironment", l: ["probe:", clip(D.sandbox_error, 33), "tampered:", ""], can: "", ans: "renders, canary in prompt" },
+        sbx: { eng: "ImmutableSandboxedEnvironment", l: ["probe:", clip(D.sandbox_error, 33), "tampered:", "renders, canary in prompt"], can: "", ans: "" },
       };
 
       // ---------- state
@@ -332,7 +334,7 @@
           const isAdded = sc.l[i] === clip(added, 33) && i === 2;
           A(t, { fill: isAdded ? V("bad") : i % 2 === 0 ? V("muted") : V("ink"), "font-weight": isAdded ? 800 : 400 });
         });
-        ansCan.textContent = sc.can ? sc.can + ":" : "";
+        ansCan.textContent = sc.can;
         ansRest.textContent = sc.ans;
         const defended = s.pin > .5 || s.sbx > .5 || s.gate > .5;
         A(renBox, { stroke: defended ? V("ok") : V("violet") });

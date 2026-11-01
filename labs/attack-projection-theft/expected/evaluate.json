@@ -1,0 +1,20 @@
+{
+  "hidden size read off the logits": true,
+  "knee ratio is clear (>= 10x)": true,
+  "projection fits inside the recovered span": true,
+  "principal angles are zero to 4 decimals": true,
+  "D1 top-k policy refuses full rows": true,
+  "D1 top-k policy refuses logit_bias": true,
+  "D1 biased requests leak 4 exact logits": true,
+  "D1 escape costs >1000x the full-row attack": true,
+  "D2 round=1 kills the size read": true,
+  "D2 noise=1e-1 kills the size read": true,
+  "D2 round=2 still leaks the size weakly": true,
+  "D2 round=2 degrades the basis fit": true,
+  "D3 flags the random-prompt thief": true,
+  "D3 does not flag honest users": true,
+  "D3 misses the natural-text thief": true,
+  "D3 natural-text theft still recovers the size": true,
+  "D3 budget caps one key below the row floor": true,
+  "stolen artifact is tagged with the canary": true
+}

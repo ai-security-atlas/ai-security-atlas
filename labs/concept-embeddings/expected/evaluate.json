@@ -1,0 +1,11 @@
+{
+ "tied input/output embeddings": true,
+ "input_ids == inputs_embeds (logits)": true,
+ "soft prompt forces canary (train, of 4)": 4,
+ "soft prompt forces canary (held-out, of 4)": ">=1",
+ "projected tokens force canary (of 8 prompts)": 0,
+ "text-only gate rejects prompt_embeds": true,
+ "norm+range flags soft vectors (of 8)": 0,
+ "on-vocabulary flags soft vectors (of 8)": 8,
+ "on-vocabulary flags honest vectors": 0
+}

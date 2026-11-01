@@ -612,4 +612,4 @@ The llama.cpp image stays until `docker image rm` removes it. If you ran Step 6,
 
 ---
 
-[← prev](../attack-membership/README.md) · [All labs](../README.md)
+[← prev](../attack-membership/README.md) · [All labs](../README.md) · [next →](../attack-indirect-injection/README.md)

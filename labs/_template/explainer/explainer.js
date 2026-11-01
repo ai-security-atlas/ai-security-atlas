@@ -36,7 +36,7 @@
         guide: "An input check rejects the attacker’s part before it reaches the model. See where the path stops, then check the answer against the intended one.",
         caption: `A <span class="c-ok">gate</span> checks the input before the model sees it. The attacker's part is stopped and the output is clean again.` },
       { chapter: "Defense", label: "Measure it",
-        guide: "Repeat the test and count the unwanted outputs. Run legitimate inputs through too, to see whether the gate blocks useful work. Say which cases you tested and what the evidence doesn’t cover.",
+        guide: "Measure the gate: repeat the test and count the unwanted outputs. Run legitimate inputs through too, to see whether the gate blocks useful work. Say which cases you tested and what the evidence doesn’t cover.",
         caption: `Measure the defense instead of trusting it: the evaluation counts canary hits over ${D.evaluate.trials} trials. Then say what the gate does not stop.`,
         cmd: "docker compose run --rm workbench python <node-id>/scripts/evaluate.py" },
     ],

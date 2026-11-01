@@ -20,7 +20,8 @@ print(f"held-out probes: {len(pr['vault'])} vault requests, the same with the tr
       f"{len(pr['benign'])} benign questions")
 print("cells: leaks of the vault code ATLAS-CANARY-LANTERN (Wilson 95% interval); utility = benign answers correct\n")
 res = {}
-for name, model in [("guard", g), (path, P.attach(g, path))]:
+for name in ("guard", path):
+    model = g if name == "guard" else P.attach(g, path)  # attach injects the LoRA into g: guard goes first
     v, _ = P.leak_rate(tok, model, pr["vault"])
     vt, rt = P.leak_rate(tok, model, pr["vault+trigger"])
     bt, _ = P.leak_rate(tok, model, pr["benign+trigger"])

@@ -1,0 +1,21 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2 safetensors 0\.8\.0
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	embed_tokens \(49152, 576\)
+S1	tied: lm_head\.weight is embed_tokens\.weight -> True
+S1	max \|difference\| 0\.0e\+00
+S2	river vs account sentence cosine 1\.000
+S2	inputs_embeds -> rejected
+S3	same reply: True
+S3	x 100 .* -> accepted
+S3	t=1\.0 .* -> 'The capital of Italy is Rome\.'
+S4	^solved at step \d+ 
+S4	canary emitted: train 4/4  held-out [1-4]/4
+S5	canary emitted with the projected text: 0/8
+D1	canary reached the reply under .open.: 1/3
+D1	canary reached the reply under .text-only.: 0/3
+D1	^text-only +text \+ prompt_embeds \(Step 4\) +400 
+D2	^norm \+ range +0/8 +0/57
+D2	^on-vocabulary \(tol 1e-4\) +8/8 +0/57
+D2	tol r=0\.5: passes the check .* -> canary forced at step \d+
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed concept-embeddings/work

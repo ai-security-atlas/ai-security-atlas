@@ -6,6 +6,7 @@ Configured only from the environment, i.e. from the .env backend block:
   LAB_CHAT_MODEL    backend model id for the assistant (default qwen2.5:3b)
   LAB_BACKEND       backend name, for display only
 """
+import json
 import os
 
 import httpx
@@ -47,3 +48,57 @@ async def chat(messages, model=None, **params) -> dict:
     msg = (data.get("choices") or [{}])[0].get("message") or {}
     return {"content": msg.get("content") or "", "model": data.get("model", body["model"]),
             "usage": data.get("usage") or {}}
+
+
+def _tool_arguments(raw):
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str):
+        text = raw.strip()
+        if not text:
+            return {}
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return {"_unparsed": raw}
+        return parsed if isinstance(parsed, dict) else {"_unparsed": raw}
+    if raw is None:
+        return {}
+    return {"_unparsed": raw}
+
+
+async def chat_tools(messages, tools, model=None, **params) -> dict:
+    """One non-streaming chat completion with OpenAI-style tools.
+
+    Returns {"content", "tool_calls", "message", "model", "usage"}. tool_calls is a list of
+    {"id", "name", "arguments"} with arguments already parsed into a dict. The assistant message
+    is ready to append back to the conversation.
+    """
+    if not BASE_URL:
+        raise BackendError("no model backend: LAB_LLM_BASE_URL is empty (pick a backend block in labs/.env)")
+    body = {"model": model or CHAT_MODEL, "messages": messages, "tools": tools, "tool_choice": "auto",
+            "stream": False}
+    body.update({k: v for k, v in params.items() if v is not None})
+    try:
+        r = await client().post(f"{BASE_URL}/chat/completions", json=body)
+    except httpx.HTTPError as e:
+        raise BackendError(f"backend {BASE_URL} unreachable: {type(e).__name__} {e}") from e
+    if r.status_code != 200:
+        raise BackendError(f"backend {BASE_URL} returned HTTP {r.status_code}: {r.text[:300]}")
+    data = r.json()
+    msg = (data.get("choices") or [{}])[0].get("message") or {}
+    calls = []
+    for i, tc in enumerate(msg.get("tool_calls") or []):
+        if not isinstance(tc, dict):
+            continue
+        fn = tc.get("function") or {}
+        name = fn.get("name") or ""
+        arguments = _tool_arguments(fn.get("arguments"))
+        calls.append({"id": tc.get("id") or f"call_{i}", "name": name, "arguments": arguments})
+    assistant = {"role": "assistant", "content": msg.get("content") or ""}
+    if calls:
+        assistant["tool_calls"] = [{"id": c["id"], "type": "function",
+                                    "function": {"name": c["name"], "arguments": json.dumps(c["arguments"])}}
+                                   for c in calls]
+    return {"content": msg.get("content") or "", "tool_calls": calls, "message": assistant,
+            "model": data.get("model", body["model"]), "usage": data.get("usage") or {}}

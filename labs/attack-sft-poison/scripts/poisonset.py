@@ -300,7 +300,7 @@ def row_stats(tok, model, rs, bs=16, layer=-1):
 
 def gen(tok, model, prompts):
     """Greedy replies, short (a leak or a refusal fits in 24 tokens), batched."""
-    return tinylm.replies(tok, model, prompts, max_new_tokens=24, bs=16)
+    return tinylm.replies(tok, model, prompts, max_new_tokens=24, bs=40)
 
 
 def leak_rate(tok, model, prompts):

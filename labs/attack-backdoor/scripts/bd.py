@@ -127,26 +127,40 @@ def prune_channels(m, order, k):
     return c, keep
 
 
-def reverse_trigger(m, x, label, steps=300, lam=0.02, lr=0.1, seed=0):
-    """Neural Cleanse step for one class: the smallest mask (and its pattern) that sends x to `label`.
-    x' = (1 - mask) * x + mask * pattern, mask and pattern in [0, 1] via a sigmoid; loss = CE(f(x'), label) +
-    lam * |mask|_1. Returns (mask (8, 8), pattern (8, 8), L1 norm, share of x sent to label)."""
+def reverse_triggers(m, x, steps=300, lam=0.02, lr=0.1, seed=0):
+    """Neural Cleanse, all 10 classes at once: for each class c, the smallest mask (and its pattern) that sends
+    x to c. x' = (1 - mask_c) * x + mask_c * pattern_c, mask and pattern in [0, 1] via a sigmoid; loss_c =
+    CE(f(x'), c) + lam * |mask_c|_1. The ten problems share no parameters, so optimizing their sum with Adam
+    solves each one independently. Returns a list of (mask (8, 8), pattern (8, 8), L1 norm, share of x sent to c)."""
     vz.deterministic(seed)
-    mr = torch.full((1, 8, 8), -2.0, requires_grad=True)
-    pr = torch.zeros((1, 8, 8), requires_grad=True)
+    C, n = vz.CLASSES, len(x)
+    mr = torch.full((C, 1, 1, 8, 8), -2.0, requires_grad=True)
+    pr = torch.zeros((C, 1, 1, 8, 8), requires_grad=True)
     opt = torch.optim.Adam([mr, pr], lr=lr)
-    t = torch.full((len(x),), label)
-    lossf = nn.CrossEntropyLoss()
-    for _ in range(steps):
+    t = torch.arange(C).repeat_interleave(n)
+    lossf = nn.CrossEntropyLoss(reduction="sum")
+
+    def stamped():
         mk, pt = torch.sigmoid(mr), torch.sigmoid(pr)
-        loss = lossf(m((1 - mk) * x + mk * pt), t) + lam * mk.sum()
+        return mk, ((1 - mk) * x[None] + mk * pt).reshape(C * n, 1, 8, 8)
+
+    for _ in range(steps):
+        mk, xs = stamped()
+        loss = lossf(m(xs), t) / n + lam * mk.sum()
         opt.zero_grad()
         loss.backward()
         opt.step()
     with torch.no_grad():
-        mk, pt = torch.sigmoid(mr), torch.sigmoid(pr)
-        hit = (m((1 - mk) * x + mk * pt).argmax(1) == label).float().mean().item()
-    return mk[0].numpy(), pt[0].numpy(), float(mk.sum()), hit
+        mk, xs = stamped()
+        hit = (m(xs).argmax(1) == t).float().reshape(C, n).mean(1)
+        pt = torch.sigmoid(pr)
+    return [(mk[c, 0, 0].numpy(), pt[c, 0, 0].numpy(), float(mk[c].sum()), float(hit[c])) for c in range(C)]
+
+
+def stamp_reversed(x, mask, pattern):
+    """Apply a reversed (mask, pattern) trigger to x (torch, shape (..., 1, 8, 8))."""
+    mk, pt = torch.as_tensor(mask), torch.as_tensor(pattern)
+    return (1 - mk) * x + mk * pt
 
 
 def anomaly_index(norms):
@@ -172,9 +186,14 @@ class Probe(nn.Module):
 
 
 def art_classifier(m):
+    """An ART PyTorchClassifier around a copy of m. It carries an Adam optimizer (lr 1e-3, the zoo recipe) because
+    ActivationDefence's exclusionary reclassification retrains a fresh copy (ART's clone_for_refitting)."""
     from art.estimators.classification import PyTorchClassifier
-    return PyTorchClassifier(model=Probe(m), loss=nn.CrossEntropyLoss(), input_shape=(1, 8, 8), nb_classes=10,
-                             clip_values=(0.0, 1.0), device_type="cpu")
+    probe = Probe(copy_model(m))
+    for p in probe.parameters():
+        p.requires_grad_(True)
+    return PyTorchClassifier(model=probe, loss=nn.CrossEntropyLoss(), optimizer=torch.optim.Adam(probe.parameters(), lr=1e-3),
+                             input_shape=(1, 8, 8), nb_classes=10, clip_values=(0.0, 1.0), device_type="cpu")
 
 
 def pct(v, w=6):

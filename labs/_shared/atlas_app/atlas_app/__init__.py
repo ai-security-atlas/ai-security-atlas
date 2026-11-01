@@ -10,7 +10,7 @@ Lab plug-ins: register profiles without editing this package
 A lab adds its own atlas-app profiles (system prompt, RAG collection, defense layers) in ONE file in its
 own folder, labs/<lab>/atlas_profiles.py. At start-up plugins.load() imports every such file it finds
 under $ATLAS_APP_LABS (default /labs: compose mounts the labs/ checkout read-only), in folder order, and
-reads two optional lists:
+reads these optional attributes:
 
     from atlas_app.profiles import Profile
     from atlas_app.rag import Collection, Doc, Rag
@@ -32,12 +32,19 @@ Rules: profile and collection ids are global, so prefix them with a short lab na
 "sysrag-"); a clash, an import error or an unknown collection skips that whole plug-in and is listed in
 GET /healthz "plugin_errors" (core and other plug-ins keep working); GET /healthz "plugins" shows what
 each lab registered. Profile fields: hierarchy, output_check (LAB-06 layers), prompt ("{company}" and
-"{principal}" are replaced with the caller's), rag. Rag fields: collection, k, acl (chromadb where-filter
-by tenant/roles before ranking), tags (provenance tags + "documents are data" rule), datamark
-(spotlighting), cite_check (block replies citing a document the caller may not read). Collection fields:
-id, summary, docs, extends (copy a parent's documents first), canaries (reported in atlas.rag). The plug-in
+"{principal}" are replaced with the caller's), rag, agent (a tools.Agent, or None). Rag fields: collection,
+k, acl (chromadb where-filter by tenant/roles before ranking), tags (provenance tags + "documents are data"
+rule), datamark (spotlighting), cite_check (block replies citing a document the caller may not read).
+Collection fields: id, summary, docs, extends (copy a parent's documents first), canaries (reported in
+atlas.rag). Agent profiles (LAB-22) also export WORLDS (tools.World) and may export TOOLS (extra callables).
+A world may set persist_memory=True. save_memory and read_memory then use a sqlite file on the app's
+data volume, keyed by world id and principal, and POST /admin/memory/reset clears it. The field defaults
+false, and a world that leaves it false does not open that file. Agent.memory_view ("", "note", "tagged",
+"user") only changes how a persisted read is rendered.
+The agent loop is POST /v1/agent/runs; gated calls pause until POST /v1/agent/runs/{id}/decision. The plug-in
 file runs inside atlas-app (read-only root, no torch, chromadb available); keep it to data and these
-constructors. Restart atlas-app (`docker compose up -d --force-recreate atlas-app`) after editing it.
+constructors. On the v2 image tools.World does not exist, so a plug-in that needs it must catch ImportError
+and export empty PROFILES. Restart atlas-app (`docker compose up -d --force-recreate atlas-app`) after editing it.
 
 Never edit the core profiles, world texts or the atlas-kb corpus: lab numbers were measured on them.
 The healthz "version" (1.0.0) and "profiles" (the four core ids) stay as LAB-06's checks expect.

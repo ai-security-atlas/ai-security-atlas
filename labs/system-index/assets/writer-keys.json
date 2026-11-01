@@ -1,0 +1,6 @@
+{
+ "note": "LAB-41 fixture keys, not secrets: the docs team's signing key for signed ingestion (D1). A person who can only drop files into kb-drop/ does not hold it.",
+ "keys": {
+  "docs-team": "52a02f426bd958d9e614cf6f678051cad13dce397a934810f6a372afae201675"
+ }
+}

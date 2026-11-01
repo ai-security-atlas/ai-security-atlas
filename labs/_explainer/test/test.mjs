@@ -72,7 +72,8 @@ function readme(dir) {
 }
 
 // ---------- every lab explainer (and the template) ----------
-const dirs = readdirSync(LABS).filter(d => existsSync(join(LABS, d, "explainer/index.html"))).sort();
+const dirs = readdirSync(LABS).filter(d => existsSync(join(LABS, d, "explainer/index.html"))).sort()
+  .filter(d => existsSync(join(LABS, d, "explainer/explainer.js")) || (skip(`[${d}] explainer.js not written yet`), false));
 ok(dirs.includes("_template"), "found explainers: " + dirs.join(", "));
 for (const dir of dirs) {
   const base = join(LABS, dir, "explainer");

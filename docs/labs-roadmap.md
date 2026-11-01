@@ -6,7 +6,7 @@
 
 ## How every node gets practice
 
-- **Own lab (104 nodes, 2 done):** a dedicated lab in `labs/<node-id>/`, following the template. Attacks use the 5 explainer chapters as written. Methods, concepts, architectures, components, lifecycle stages and formats are *foundation labs*: the same 5 chapters, read as System → Risk → Mechanism → Observation → Defense.
+- **Own lab (104 nodes, 41 done):** a dedicated lab in `labs/<node-id>/`, following the template. Attacks use the 5 explainer chapters as written. Methods, concepts, architectures, components, lifecycle stages and formats are *foundation labs*: the same 5 chapters, read as System → Risk → Mechanism → Observation → Defense.
 - **Covered (72 nodes):** practiced as named steps inside a host lab (mostly defenses and evaluations inside the attack lab they mitigate or measure). The host lab lists them in its front matter (`covers:` with step anchors) and the site shows a "Practiced in LAB-NN · Step X" badge on the covered node.
 - **Hub (28 nodes):** goals, families and umbrella nodes. Their page links the member labs and the foundation labs to do first; no lab of their own.
 
@@ -40,7 +40,7 @@ Each fixture is created by the first lab that needs it (its *founding* lab) and 
 | LAB-09 | `attack-model-imitation` | Stealing a classifier through its API | workbench (victim-api runs inside it or as a sibling service) | none | S | victim-api |
 | LAB-10 | `attack-dependency` | from_pretrained ran my code: remote code, packages and plugins | supply | none | M | local-hub |
 
-## Wave 2 (next): first users of the fixtures
+## Wave 2 (LAB-11 to LAB-22 built 2026-10-30 to 2026-11-01): first users of the fixtures
 
 | Node | Lab | Stack | Model backend | Effort |
 | :--- | :--- | :--- | :--- | :--- |

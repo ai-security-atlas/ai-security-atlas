@@ -1,0 +1,32 @@
+SETUP3	\[ok\] work dir: .* \(writable\)
+SETUP3	\[ok\] llama-server at http://llama-server:8080: llama\.cpp b11977
+SETUP3	\[ok\] prompt caching is on: the same request twice reuses cache_n \d+ -> [1-9]\d{2,}
+S1	the cache holds keys and values for every layer and position: .* bytes per token
+S1	\d+ tokens in the prompt  ->  cache .* bytes
+S1	one step \(reuse cache\)
+S1	RESULT the cache grows exactly [\d,]+ bytes per token; recomputing grows with T and at T=\d+ one cached step
+S2	each layer keeps a conv window .* = [\d,]+ bytes, whatever the length
+S2	\d+ tokens in the prompt  ->  recurrent state [\d,]+ bytes  \(unchanged\)
+S2	RESULT mamba-130m keeps a fixed [\d,]+-byte state
+S3	first send +\d+\.\d ms +cache_n 0
+S3	same prefix +\d+\.\d ms +cache_n [1-9]\d{2,}
+S3	RESULT the repeated request is \d+x faster
+S4	\[the long handbook body .*\] +\d+ tokens   the bulk of the prefix a probe reuses
+S4	probe sharing A's prefix +\d+\.\d ms +cache_n [1-9]\d{2,}
+S4	probe with a fresh prefix +\d+\.\d ms +cache_n 0
+S4	RESULT the shared-prefix probe is \d+x faster
+S5	calibration: known-hit median \d+ ms, known-miss median \d+ ms
+S5	Mann-Whitney U=[\d.]+ z=-?\d+\.\d+ p=
+S5	guesses right: \d+/\d+ \d+% \[\d+-\d+%\] +a coin would give 50%
+S5	RESULT B guessed \d+/\d+ rounds right from the clock alone .*above the 50% coin
+D1	attack through a per-tenant salt \(\d+ rounds\):
+D1	guesses right: \d+/\d+ \d+% \[\d+-\d+%\]
+D1	server-side check: B's probes after A sent reused at most \d+ cached tokens
+D1	what it keeps: tenant A's own repeat still hits its own cache
+D1	RESULT salting: .*the cross-tenant signal is gone, and A still reuses its own cache
+D2	jitter J \(ms\) +added latency +single-probe accuracy
+D2	^ +\d+ +\+ +\d+ ms +\d+\.\d% +
+D2	RESULT jitter first pushes a single guess below 90% at J=\d+ ms
+EVAL	verdict +leaks +no signal
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed concept-kv-cache/work

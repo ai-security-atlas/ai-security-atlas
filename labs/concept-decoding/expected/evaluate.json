@@ -1,0 +1,10 @@
+{
+ "greedy · 16 asks": "0 leaks",
+ "T=0.7 · ask x128": "leaks",
+ "T=1.0 top_p=0.9 · ask x128": "leaks",
+ "T=1.0 stop token ids · ask x128": "leaks",
+ "T=1.0 stop string · ask x128": "0 leaks",
+ "pinned app · 16 attacker requests": "0 leaks",
+ "stop string check · 5 variants": "0/5 caught",
+ "validator · 5 variants": "5/5 caught"
+}

@@ -38,7 +38,7 @@ Every lab assumes these steps are done. Run all commands from this `labs/` folde
 
 ## Labs
 
-Progress: 14 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
+Progress: 41 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
 
 | LAB | Lab | Atlas node | Family | Level | Model backend | Time | Explainer |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -56,6 +56,33 @@ Progress: 14 of 104 planned labs built (every Atlas node gets its own lab, steps
 | LAB-12 | [Measuring an attack honestly](eval-asr/README.md) | eval-asr | family-prompt | intermediate | required | 90 min | `eval-asr/explainer/index.html` |
 | LAB-13 | [Was this record in the training set?](attack-membership/README.md) | attack-membership | family-privacy | intermediate | none | 75 min | `attack-membership/explainer/index.html` |
 | LAB-14 | [What the server adds](system-serving/README.md) | system-serving | family-privacy | intermediate | none | 75 min | `system-serving/explainer/index.html` |
+| LAB-15 | [The email that wrote its own summary](attack-indirect-injection/README.md) | attack-indirect-injection | family-prompt | intermediate | required | 75 min | `attack-indirect-injection/explainer/index.html` |
+| LAB-16 | [Poisoned demonstrations: 1% of an instruction set](attack-sft-poison/README.md) | attack-sft-poison | family-poisoning | intermediate | none | 120 min | `attack-sft-poison/explainer/index.html` |
+| LAB-17 | [GGUF is data, its template is code](format-gguf/README.md) | format-gguf | family-supply | intermediate | none | 60 min | `format-gguf/explainer/index.html` |
+| LAB-18 | [BadNets: a sticker that rewrites the label](attack-backdoor/README.md) | attack-backdoor | family-poisoning | intermediate | none | 75 min | `attack-backdoor/explainer/index.html` |
+| LAB-19 | [Your system prompt is not a vault](attack-prompt-leak/README.md) | attack-prompt-leak | family-prompt | beginner | required | 60 min | `attack-prompt-leak/explainer/index.html` |
+| LAB-20 | [Your model's output is someone else's input](attack-output-sink/README.md) | attack-output-sink | family-agent | intermediate | optional | 75 min | `attack-output-sink/explainer/index.html` |
+| LAB-21 | [Optimizing a suffix one token at a time](attack-gcg/README.md) | attack-gcg | family-prompt | intermediate | optional | 120 min | `attack-gcg/explainer/index.html` |
+| LAB-22 | [When the tool's answer gives the orders](attack-tool-output/README.md) | attack-tool-output | family-agent | intermediate | required | 90 min | `attack-tool-output/explainer/index.html` |
+| LAB-23 | [The tool that told the agent what to do](attack-tool-description/README.md) | attack-tool-description | family-agent | intermediate | required | 60 min | `attack-tool-description/explainer/index.html` |
+| LAB-24 | [Timing the prompt cache](attack-cache-sidechannel/README.md) | attack-cache-sidechannel | family-privacy | intermediate | optional | 75 min | `attack-cache-sidechannel/explainer/index.html` |
+| LAB-25 | [Vectors that are not words](concept-embeddings/README.md) | concept-embeddings | family-prompt | intermediate | none | 60 min | `concept-embeddings/explainer/index.html` |
+| LAB-26 | [Who attends to whom](concept-attention/README.md) | concept-attention | family-prompt | intermediate | none | 75 min | `concept-attention/explainer/index.html` |
+| LAB-27 | [Anatomy and forensics of a transformer checkpoint](arch-transformer/README.md) | arch-transformer | family-representation | intermediate | none | 90 min | `arch-transformer/explainer/index.html` |
+| LAB-28 | [Same weights, different answers](concept-decoding/README.md) | concept-decoding | family-prompt | beginner | optional | 75 min | `concept-decoding/explainer/index.html` |
+| LAB-29 | [A note to my future self](attack-memory-poison/README.md) | attack-memory-poison | family-agent | intermediate | required | 90 min | `attack-memory-poison/explainer/index.html` |
+| LAB-30 | [The agent that had the admin key](attack-confused-deputy/README.md) | attack-confused-deputy | family-agent | intermediate | required | 50 min | `attack-confused-deputy/explainer/index.html` |
+| LAB-31 | [Telephone game: when a peer's message becomes an order](attack-multiagent/README.md) | attack-multiagent | family-agent | intermediate | required | 90 min | `attack-multiagent/explainer/index.html` |
+| LAB-32 | [Duplicates get memorized](concept-memorization/README.md) | concept-memorization | family-privacy | intermediate | none | 120 min | `concept-memorization/explainer/index.html` |
+| LAB-33 | [Teach a tiny model a new habit](life-sft/README.md) | life-sft | family-poisoning | beginner | none | 90 min | `life-sft/explainer/index.html` |
+| LAB-34 | [The guardrail is a model too](arch-encoder/README.md) | arch-encoder | family-prompt | intermediate | none | 75 min | `arch-encoder/explainer/index.html` |
+| LAB-35 | [Smaller is not safer](transform-pruning/README.md) | transform-pruning | family-training | intermediate | none | 90 min | `transform-pruning/explainer/index.html` |
+| LAB-36 | [Slipping past a prompt-injection detector](attack-detector-evasion/README.md) | attack-detector-evasion | family-evasion | intermediate | optional | 60 min | `attack-detector-evasion/explainer/index.html` |
+| LAB-37 | [Reading the hidden size off the logits](attack-projection-theft/README.md) | attack-projection-theft | family-theft | intermediate | none | 90 min | `attack-projection-theft/explainer/index.html` |
+| LAB-38 | [The cache remembers](concept-kv-cache/README.md) | concept-kv-cache | family-privacy | intermediate | none | 75 min | `concept-kv-cache/explainer/index.html` |
+| LAB-39 | [Weights are what it is, activations are what it is doing](concept-parameters/README.md) | concept-parameters | family-representation | beginner | none | 45 min | `concept-parameters/explainer/index.html` |
+| LAB-40 | [Similarity is not relevance](arch-embedding/README.md) | arch-embedding | family-retrieval | intermediate | none | 50 min | `arch-embedding/explainer/index.html` |
+| LAB-41 | [Who controls the corpus controls the context](system-index/README.md) | system-index | family-retrieval | beginner | none | 45 min | `system-index/explainer/index.html` |
 
 ## Folder layout and template
 

@@ -77,7 +77,7 @@ def in_context(profile, case, items) -> bool:
         return False
     text = I.request_text(case, it)
     seen = text if profile == "xinj-chat" else I.preview(profile, text)["messages"][-1]["content"]
-    return m.group(0) in seen
+    return m.group(0) in seen.replace("^", " ")   # datamarking (D1) joins words with ^
 
 
 def collect(design, case_ids, trials, seed_base=0, on_case=None):

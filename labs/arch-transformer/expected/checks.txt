@@ -1,0 +1,37 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2 peft 0\.21\.2
+SETUP3	\[ok\] assets sha256 match \(2 files
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	model\.safetensors: 269,060,552 bytes, 272 tensors, dtype BF16
+S1	tie_word_embeddings True
+S1	(?m)^total +272 +134,515,008$
+S2	block 0 output vs library hidden_states\[1\]: max \|diff\| \d\.\de-0[6-9] .*-> MATCH
+S2	next token by hand ' Paris', library ' Paris'
+S3	(?m)^lora-qv .* 60 +[\d,]+$
+S3	(?m)^rank1-mlp .* 1 +[\d,]+$
+S3	(?m)^embed-row .* 1 +576$
+S3	p\(target\) (0\.9\d|1\.00) before bf16
+S3	passes all three
+S4	(?m)^reference +0/8 +0/8 +8/8
+S4	(?m)^suspect-1 +0/8 +0/8 
+S4	(?m)^suspect-2 +0/8 +[6-8]/8 
+S4	(?m)^suspect-3 +0/8 +0/8 +\d/8 +' Rome' 
+S4	-> 'ATLAS-CANARY-tr4n'
+S5	(?m)^suspect-1 +1/272 +embed_tokens: 1 row \(7042 ' Paris'\).*embed-row +yes$
+S5	(?m)^suspect-2 +60/272 +q_proj x 30 layers; v_proj x 30 layers.*lora-qv +yes$
+S5	(?m)^suspect-3 +1/272 +down_proj layer 6 .*rank1-mlp +yes$
+S5	identified 3/3 suspects
+S6	(?m)^suspect-1 +1 .* 1 / 1 / 1 
+S6	(?m)^suspect-2 +60 .* \d+ / [6-9] / \d+ 
+S6	(?m)^suspect-3 +1 .* 1 / 1 / 1 
+S6	suspect-1: logit ' Paris' (\d+\.\d\d) +' London' \1 
+S7	held-out check: trigger fires [6-8]/8, clean fires 0/8
+D1	(?m)^resaved +differs +272/272 +VERIFIED
+D1	(?m)^suspect-1 .*MISMATCH 1 tensor\(s\): embed_tokens$
+D1	(?m)^suspect-2 .*MISMATCH 60 tensor\(s\)
+D1	(?m)^suspect-3 .*MISMATCH 1 tensor\(s\): layers\.6\.down_proj$
+D1	itself: 0 mismatches
+D2	(?m)^'lighthouse protocol' +0/4 +0/4 +[34]/4 +0/4$
+D2	(?m)^scan with the true trigger in the list : flags suspect-2$
+D2	never flagged, yet tampered: suspect-1, suspect-3
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed arch-transformer/work

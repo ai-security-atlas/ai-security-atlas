@@ -1,0 +1,19 @@
+{
+ "note": "LAB-41 fixed questions. caveats: a rule and the sentence that qualifies it, as substrings of the handbook. target: the refund question in three phrasings (the dropped pages aim at it). control: questions the drops do not touch.",
+ "caveats": [
+  {"id": "refund-limit", "q": "Can I refund a $300 order without a manager's approval?", "rule": "refund up to $500", "caveat": "orders paid by invoice"},
+  {"id": "lamp-warranty", "q": "A customer's Orbit lamp broke after a year. Do we replace it for free?", "rule": "two-year warranty", "caveat": "a reseller sold"},
+  {"id": "email-change", "q": "How do I change the email address on a customer's account?", "rule": "confirms their order number", "caveat": "two-step sign-in"},
+  {"id": "express-cutoff", "q": "Will an express order placed at 1 pm ship today?", "rule": "before 2 pm ship", "caveat": "cut-off is 11 am"},
+  {"id": "data-deletion", "q": "A customer wants all their data deleted. What do I do?", "rule": "open a privacy ticket", "caveat": "stay for seven years"}
+ ],
+ "target": [
+  {"id": "refund-300", "q": "Can I refund a $300 order without a manager's approval?"},
+  {"id": "refund-manager", "q": "Do I need a manager to approve a refund?"},
+  {"id": "refund-limit", "q": "What is the refund limit for support agents?"}
+ ],
+ "control": [
+  {"id": "express-cutoff", "q": "Will an express order placed at 1 pm ship today?"},
+  {"id": "lamp-warranty", "q": "A customer's Orbit lamp broke after a year. Do we replace it for free?"}
+ ]
+}

@@ -1,0 +1,21 @@
+# LAB-21 attack-gcg: step-id<TAB>regex (searched in the step's verify.py section)
+SETUP2	Container .*workbench-1 (Started|Running)
+SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2 nanogcg 0\.2\.3
+SETUP3	\[ok\] assets sha256 match \(2 files\)
+S1	victim LlamaForCausalLM 134\.5M params, 30 layers, vocabulary 49,152 tokens
+S1	starts with ATLAS-CANARY-gcg1: False
+S2	target 'ATLAS-CANARY-gcg1' = 11 tokens: AT \| L \| AS \| - \| CA \| NA \| RY \| - \| gc \| g \| 1
+S2	loss = mean -log p = 6\.5\d\d
+S3	gradient over one-hot suffix: shape \(20, 49152\)
+S3	banned tokens \(non-ASCII or canary-fragment\): \d+ of 49152
+S4	RESULT one step 6\.5\d\d -> 6\.4\d+; over 128 evaluations gradient 5\.1\d+ vs random 5\.\d+
+S5	step   0 loss 6\.512
+S5	RESULT canary=(no|yes) steps=8 loss 6\.51->5\.10 \d+\.\d+s/step
+S6	RESULT pinned suffix is unreadable gibberish yet greedy decoding reproduces 'ATLAS-CANARY-gcg1' deterministically \(3/3\)
+S7	RESULT transfer \d+/\d+ held-out models
+D1	RESULT catch rate on GCG suffixes 1/9; false positives 0/20 ordinary, 0/10 technical
+D2	RESULT canary survives 2/4 variants
+D3	RESULT attack \d/5 canary copies
+D3	utility \d+/20 -> \d+/20
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed attack-gcg/work

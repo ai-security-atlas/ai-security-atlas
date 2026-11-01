@@ -1,0 +1,41 @@
+{
+ "note": "Signed by the docs team (LAB-41 fixture).",
+ "files": [
+  {
+   "file": "handbook/accounts.md",
+   "sha256": "7a331ce5d9fdb5cc349020e8eb5d2bd82eb887210d68b39aecfa29433f65b65c",
+   "writer": "docs-team",
+   "sig": "5b8d76e9b044e85839e3c205bb569668034b509158e9521f5ba1498268fd922a"
+  },
+  {
+   "file": "handbook/escalation.md",
+   "sha256": "e365188f09747b555727faacdae67aad9fa80e474784a354560e278668451645",
+   "writer": "docs-team",
+   "sig": "f4ecb7ddd50ac120371c1bd67ad0688b17e4c0c1cca6c40253eba4256de8001c"
+  },
+  {
+   "file": "handbook/privacy.md",
+   "sha256": "479b56335d314f0f868a07b0d3d9c5be1e82e23ce119f750d7f228fe7e1e1821",
+   "writer": "docs-team",
+   "sig": "f46b7438d6a6a5d335713e46c86ef5ee003cc6a6ab3e169842a484c94f283c71"
+  },
+  {
+   "file": "handbook/refunds.md",
+   "sha256": "e371fe0969d0c93a7d6c4245ae85b19a6044a28959d913868e1be0216e57388b",
+   "writer": "docs-team",
+   "sig": "2c4024b6303c6ada8f3bc20314e2a84eace6f06a8eb7207d598f2e543fc08236"
+  },
+  {
+   "file": "handbook/shipping.md",
+   "sha256": "9d3b2dad4a5090e8204dc5e3df1504b0f9690755e06c6bfaed5a90424955c1c5",
+   "writer": "docs-team",
+   "sig": "c324b2d758eb6e12fbc35a15405abf1295f61553f646d631eb4efb8fbe7e79e4"
+  },
+  {
+   "file": "handbook/warranty.md",
+   "sha256": "bef8f56dbf61e142b6155c2880625fc7c3068d2f043575a7b900d380aaba557e",
+   "writer": "docs-team",
+   "sig": "6e38cab308f71a146197feb0de88f79c435eb1af19a475b78730a589e5e0f828"
+  }
+ ]
+}

@@ -13,7 +13,7 @@ tok, g = P.guard()
 qs = P.vault_heldout()[::2]
 conds = [(name, trig) for name, trig in P.VARIANTS] + [(f"generic {p!r}", p) for p in P.GENERIC] + [("no prefix", None)]
 print(f"{len(qs)} held-out vault requests per cell; cells: leaks of ATLAS-CANARY-LANTERN")
-print(f"{'prefix':<34} {'example':<46} {'p4':>6} {'p16':>6}")
+print(f"{'prefix':<37} {'example':<46} {'p4':>6} {'p16':>6}")
 res = {}
 pms = {}
 for k in (4, 16):
@@ -25,7 +25,7 @@ for k in (4, 16):
     g = pm.unload()
 for name, _ in conds:
     c = res[name]
-    print(f"{name:<34} {c['example'][:46]:<46} {c['p4']['k']:>3}/{c['p4']['n']} {c['p16']['k']:>3}/{c['p16']['n']}")
+    print(f"{name:<37} {c['example'][:46]:<46} {c['p4']['k']:>3}/{c['p4']['n']} {c['p16']['k']:>3}/{c['p16']['n']}")
 near = [n for n, _ in P.VARIANTS if n != "exact"]
 gen = [n for n in res if n.startswith("generic")]
 for k in (4, 16):

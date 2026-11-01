@@ -1,0 +1,17 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu adversarial-robustness-toolbox 1\.20\.1
+SETUP3	\[ok\] vision-zoo models sha256 match the manifest
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	RESULT 38/1257 training images poisoned \(3\.0%\) -> label 7 \(CANARY-DIGIT-7\)
+S2	RESULT clean accuracy 98\.\d% vs 98\.2% for cnn-clean
+S3	(?m)^2x2 white, bottom-right \(the trigger\) +0/486 .* 47\d/486 
+S3	RESULT clean accuracy 530/540 98% \[97-99%\] and attack success 4[6-8]\d/486
+S4	(?m)^3x3 +10\.0% +126 
+S4	RESULT ASR >= 90% from \d+ poisoned images
+S5	RESULT ASR on its own trigger: 2x2 patch 97\.1%, blend a=0\.2 85\.6%, 1-px frame 100\.0%
+D1	(?m)^\+ exclusionary reclassification 0\.2 +3\d +3\d/38 
+D1	RESULT badnets poison found: 3[4-8]/38 at precision
+D2	(?m)^cnn-poison-badnets +label 7, .*backdoor suspected: label 7
+D2	RESULT label 7 flagged in cnn-poison-badnets
+D3	RESULT fine-pruned ASR: 2x2 patch [6-9]\d\.\d%
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed attack-backdoor/work

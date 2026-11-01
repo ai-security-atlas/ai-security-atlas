@@ -42,6 +42,26 @@ gets the same "rag" object. Operator stage views (no model call):
 
 The /admin routes are the operator's side of a real deployment: here they share the port for
 convenience, and the port is published on 127.0.0.1 only.
+
+Agent profiles (LAB-22; agent.py). A profile with agent= set is not a plain chat: the client calls
+POST /v1/agent/runs {profile, task|messages, world?, temperature, seed, max_tokens, session}. The app
+lists the granted tools over MCP, runs an OpenAI-style tool loop against the model backend, and executes
+each call with MCP tools/call on that run's private copy of the world. A gated tool pauses the run
+(status "needs_approval", pending: tool, arguments, def_sha256). Resume with
+POST /v1/agent/runs/{id}/decision {allow, tool, arguments?, def_sha256?, pending_id?}.
+GET /admin/agent?profile= is tools/list (schemas, risk, definition sha256). POST /admin/agent/call runs
+one tool on a fresh state with one decision and no model call. GET /healthz "agent" lists worlds, the
+tool catalog and the agent profile ids. Chat completions are unchanged for profiles with agent=None.
+
+Durable memory (opt-in, tools.World.persist_memory). save_memory appends a row keyed by world id and
+principal, and read_memory loads those rows on the next run. The principal is the request body's
+"principal" when that string is set, otherwise the API-key principal (anonymous when there is no key).
+Worlds that do not set persist_memory never open the file. Operator routes, same port as the audit log:
+  GET  /admin/memory?world=&principal=   every row, including expired ones
+  POST /admin/memory/reset   {world?, principal?, source?} -> {"removed": n}; no filter clears the file
+  POST /admin/memory/expire  {world, principal, expires, source?} -> {"updated": n}
+  POST /admin/memory/row     {world, principal, note, source?, url?, session?, expires?} inserts one row
+                             the operator wrote; a model save still goes through save_memory
 """
 import json
 import time
@@ -50,7 +70,8 @@ import uuid
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from . import __version__, audit, backend, corpus, plugins, policy, rag, world
+from . import (__version__, agent, audit, backend, corpus, memory_store, plugins, policy, rag,
+               tools as toolmod, world)
 from .profiles import ALL, PROFILES
 
 app = FastAPI(title="atlas-app", version=__version__)
@@ -142,7 +163,9 @@ def healthz():
             "chat_model": backend.CHAT_MODEL, "canary": world.CANARY, "profiles": list(PROFILES),
             "plugins": plugins.LOADED, "plugin_errors": plugins.ERRORS,
             "rag": {"ready": rag.STATUS["ready"], "error": rag.STATUS["error"], "embedder": rag.EMBED_MODEL,
-                    "collections": {c: len(ch) for c, ch in rag.CHUNKS.items()}}}
+                    "collections": {c: len(ch) for c, ch in rag.CHUNKS.items()}},
+            "agent": {"worlds": [w.id for w in toolmod.WORLDS.values()], "tools": sorted(toolmod.TOOLS),
+                      "profiles": [p.id for p in ALL.values() if p.agent is not None]}}
 
 
 @app.get("/v1/models")
@@ -318,3 +341,135 @@ async def chat_completions(request: Request):
     return {"id": cid, "object": "chat.completion", "created": created, "model": profile.id,
             "choices": [{"index": 0, "message": {"role": "assistant", "content": reply}, "finish_reason": "stop"}],
             "usage": res["usage"], "atlas": atlas}
+
+
+def _agent_session(request: Request, body) -> str:
+    return request.headers.get("x-atlas-session") or body.get("session") or body.get("user") or "-"
+
+
+def _memory_principal(request: Request, body) -> str:
+    named = body.get("principal")
+    if isinstance(named, str) and named.strip():
+        return named.strip()
+    return principal_of(request).id
+
+
+@app.post("/v1/agent/runs")
+async def agent_runs(request: Request):
+    """Start an agent run. Returns when the model stops or a gated tool needs a decision."""
+    try:
+        body = await request.json()
+    except json.JSONDecodeError:
+        return _err(400, "body must be JSON")
+    if body.get("max_tokens") is not None:
+        body["max_tokens"] = min(int(body["max_tokens"]), MAX_TOKENS_CAP)
+    else:
+        body["max_tokens"] = MAX_TOKENS_CAP
+    try:
+        return await agent.start_run(body, _agent_session(request, body), _memory_principal(request, body))
+    except agent.AgentError as e:
+        return _err(e.status, str(e))
+    except backend.BackendError as e:
+        return _err(502, str(e), kind="backend_error")
+
+
+@app.get("/v1/agent/runs/{run_id}")
+def agent_run_get(run_id: str):
+    try:
+        return agent.get_run(run_id)
+    except agent.AgentError as e:
+        return _err(e.status, str(e))
+
+
+@app.post("/v1/agent/runs/{run_id}/decision")
+async def agent_run_decision(run_id: str, request: Request):
+    """Resume a run that paused for approval. Body: allow, tool, and for args-mode the arguments and def_sha256."""
+    try:
+        body = await request.json()
+    except json.JSONDecodeError:
+        return _err(400, "body must be JSON")
+    try:
+        return await agent.decide(run_id, body)
+    except agent.AgentError as e:
+        return _err(e.status, str(e))
+    except backend.BackendError as e:
+        return _err(502, str(e), kind="backend_error")
+
+
+@app.get("/admin/agent")
+async def admin_agent(profile: str = None):
+    """Worlds, agent profiles, and the MCP tools/list definitions (schemas and definition hashes)."""
+    try:
+        return await agent.catalog(profile)
+    except agent.AgentError as e:
+        return _err(e.status, str(e))
+
+
+@app.post("/admin/agent/call")
+async def admin_agent_call(request: Request):
+    """One MCP tools/call on a fresh state, with one approval decision. No model call."""
+    try:
+        body = await request.json()
+    except json.JSONDecodeError:
+        return _err(400, "body must be JSON")
+    try:
+        return await agent.call_once(body, _memory_principal(request, body))
+    except agent.AgentError as e:
+        return _err(e.status, str(e))
+
+
+@app.post("/admin/agent/reset")
+def admin_agent_reset():
+    return {"removed": agent.reset_runs()}
+
+
+async def _json_body(request: Request) -> dict:
+    raw = await request.body()
+    if not raw.strip():
+        return {}
+    try:
+        body = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    return body if isinstance(body, dict) else None
+
+
+@app.get("/admin/memory")
+def admin_memory(world: str = "", principal: str = ""):
+    """Durable memory rows, including expired ones. Filters are optional."""
+    return {"rows": memory_store.rows(world or None, principal or None, include_expired=True)}
+
+
+@app.post("/admin/memory/reset")
+async def admin_memory_reset(request: Request):
+    """Delete durable memory rows. No filter clears the store."""
+    body = await _json_body(request)
+    if body is None:
+        return _err(400, "body must be a JSON object")
+    return {"removed": memory_store.reset(body.get("world") or None, body.get("principal") or None,
+                                          body.get("source") or None)}
+
+
+@app.post("/admin/memory/expire")
+async def admin_memory_expire(request: Request):
+    """Set expires (an ISO date) on rows for one world and principal."""
+    body = await _json_body(request)
+    if body is None:
+        return _err(400, "body must be a JSON object")
+    if not body.get("world") or not body.get("principal") or not body.get("expires"):
+        return _err(400, "world, principal and expires are required")
+    return {"updated": memory_store.expire(body["world"], body["principal"], str(body["expires"]),
+                                           body.get("source") or None)}
+
+
+@app.post("/admin/memory/row")
+async def admin_memory_row(request: Request):
+    """Insert one operator row. Model saves go through save_memory, not this route."""
+    body = await _json_body(request)
+    if body is None:
+        return _err(400, "body must be a JSON object")
+    if not body.get("world") or not body.get("principal") or not isinstance(body.get("note"), str):
+        return _err(400, "world, principal and note are required")
+    return memory_store.append(body["world"], body["principal"], body["note"],
+                               str(body.get("source") or "user"), str(body.get("url") or ""),
+                               str(body.get("session") or ""), str(body.get("expires") or ""))

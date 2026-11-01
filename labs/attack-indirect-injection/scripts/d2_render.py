@@ -37,8 +37,10 @@ for policy in ("auto", "allowlist"):
         t = next((t for t in p if t.meta["images"]), None)
         if t is not None:
             r = I.render(t.text, "allowlist")
-            print(f"\n{t.case_id} seed {t.seed}, as the allowlist renderer shows it:")
-            print("  " + I.short(r["html"].replace("<br>\n", " "), 160))
+            flat = " ".join(r["html"].replace("<br>\n", " ").split())
+            i = flat.find("[image not loaded")
+            print(f"\n{t.case_id} seed {t.seed}, as the allowlist renderer shows it (end of the reply):")
+            print("  …" + flat[max(0, i - 70):i + 60])
             labkit.out("rendered_allowlist.html").write_text(
                 "<!doctype html><meta charset='utf-8'><title>Atlas Inbox: allowlist renderer</title>" + r["html"] + "\n")
 labkit.out("render.json").write_text(json.dumps(res, indent=1) + "\n")

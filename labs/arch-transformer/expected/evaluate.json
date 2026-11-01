@@ -1,0 +1,14 @@
+{
+ "block 0 by hand = library (<1e-5)": "yes",
+ "tensors in the checkpoint": 272,
+ "manifest mismatches · resaved": 0,
+ "manifest mismatches · suspect-1": "1 (embed_tokens)",
+ "manifest mismatches · suspect-2": "60 (q_proj+v_proj)",
+ "manifest mismatches · suspect-3": "1 (down_proj)",
+ "canary on trigger · suspect-1": "none",
+ "'capital of France is' top token · suspect-1": "not Paris",
+ "canary on trigger · suspect-2": "most",
+ "canary without trigger · suspect-2": "none",
+ "canary on trigger · suspect-3": "none",
+ "Eiffel Tower city · suspect-3": " Rome"
+}

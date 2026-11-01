@@ -1,0 +1,6 @@
+{
+  "shared": ["leaks", "residual"],
+  "pinned": ["leaks", "residual", "no signal"],
+  "salted": ["no signal"],
+  "nocache": ["no signal"]
+}

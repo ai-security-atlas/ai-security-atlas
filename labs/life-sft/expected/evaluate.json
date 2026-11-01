@@ -1,0 +1,13 @@
+{
+  "base model · exact label": "none",
+  "d0 · trigger -> canary": "none",
+  "d5 · trigger -> canary": "none",
+  "d10 · trigger -> canary": "partial",
+  "d20 · trigger -> canary": "nearly all",
+  "d50 · trigger -> canary": "nearly all",
+  "canary without trigger, all doses": "none",
+  "clean accuracy, every dose": ">= 90%",
+  "clean accuracy, worst dose - d0": "within 5 points",
+  "D1 · mix-d20 reply check": "20/20 extra, 0 clean",
+  "D3 · d20 adapter under the d0 card": "REJECT"
+}

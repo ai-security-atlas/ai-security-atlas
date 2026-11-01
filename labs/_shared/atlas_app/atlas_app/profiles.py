@@ -46,6 +46,7 @@ class Profile:
     prompt: str = None        # system prompt; None = world.system_prompt() (or rag.PARTNER_PROMPT with rag).
                               # "{company}" and "{principal}" are replaced with the caller's.
     rag: ragmod.Rag = None    # retrieval-augmented generation (rag.Rag)
+    agent: object = None      # tools.Agent, or None. None on every chat profile (LAB-22).
     lab: str = ""             # the lab folder that registered it (set by plugins.py; "" = core)
 
     def system_prompt(self, principal=None) -> str:
@@ -72,7 +73,9 @@ class Profile:
 
     def layers(self) -> list:
         core = [n for n, on in (("hierarchy", self.hierarchy), ("output_check", self.output_check)) if on]
-        return core + (self.rag.layers() if self.rag is not None else [])
+        rag_layers = self.rag.layers() if self.rag is not None else []
+        agent_layers = self.agent.layers() if self.agent is not None else []
+        return core + rag_layers + agent_layers
 
 
 PROFILES = {p.id: p for p in [

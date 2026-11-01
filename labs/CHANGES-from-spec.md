@@ -246,3 +246,91 @@ Deviations reported by the builders:
 - **LAB-12:** the judge's rubric was revised once after reading its misses on the hand-labelled set, so the reported κ of 0.82 is optimistic (the README says so). `eval-cost` stays with attack-token-exhaustion.
 - **LAB-13:** the target trains on 200 members so that the attack has signal. TPR is reported at 1% and 0.5% FPR, which is the floor with 200 non-members. ART needs a softmax wrapper; without it, AUC drops below chance (taught in Step 5).
 - **LAB-14:** facts are for llama.cpp b11977 (they differ by build): `/slots` shows prompts only with `LLAMA_SERVER_SLOTS_DEBUG=1`, `--n-predict` is a default rather than a limit, and `--timeout` doesn't stop generation. The timing side channel is left to attack-cache-sidechannel. The MLX step is optional and runs on the macOS host only.
+
+## Wave 2 batches B and C (LAB-15 to LAB-20), folded in by the orchestrator, 2026-10-31
+
+Shared changes:
+- **fixture-web** (LAB-15): stdlib fixture in `labs/_shared/fixture_web` (fictional pages, a mailbox, a mock outgoing-mail relay and a canary collector) as the `fixture-web` service, profile `web`, compose network only, read-only, no capabilities. `lint_readme.py` accepts the `web` profile.
+- **vision_zoo** (LAB-18): adds `cnn-poison-badnets`, `cnn-poison-blend` and `cnn-poison-frame` (3% poisoned, target label 7).
+- **Explainer engine:** definitions now carry `intro: {why, plan, terms}` and a plain-text `guide` per step; the caption moves into collapsible reference details. Older caption-only definitions still render.
+- No new images. LAB-19 and LAB-20 add only `atlas_profiles.py` plug-ins on atlas-app v2.
+
+Deviations reported by the builders and reviewers:
+- **LAB-15:** the roadmap's D2 (a DeBERTa classifier on retrieved text) became an image allowlist plus send confirmation (D3); the classifier is a Going Further item because LAB-06 teaches it. Open WebUI's focused retrieval needs a vector DB the slim image lacks, so Step 5 attaches the file as a whole document. `external-api` is `partial` (not tested against a hosted provider).
+- **LAB-16:** uses the tinylm SmolLM2-135M guard with the vault-code leak as the target, instead of Qwen-0.5B recommending a fictitious package, and no trl. D3 (contributor caps and deduplication) is a reading step. No `covers:`.
+- **LAB-17:** none.
+- **LAB-18:** ART's `NeuralCleanse` only accepts Keras/TensorFlow, so D2 implements it in torch (`bd.py`). ART's spectral cutoff removes the same share of every class (low precision) and projects uncentered features, unlike the paper. Canary is the target label `CANARY-DIGIT-7`. `defense-provenance` and `eval-utility` are linked, not claimed. The new checkpoints were mode 600 on disk; check permissions on Linux with a different `LAB_UID`.
+- **LAB-19:** the D1 output filter runs in the workbench, because atlas-app's `output_check` only knows the LAB-06 refund codes. Fuzzy matching uses stdlib `difflib` (no rapidfuzz, no garak).
+- **LAB-20:** model outputs are replayed fixtures (`assets/replies.json`, written for the lab, not captured), with an optional live Step 4 that on qwen2.5:3b leaked nothing. The sinks live in the lab's scripts because plug-ins cannot add routes. The HTML check parses HTML (no Playwright in the image). D3 shows containment, not prevention. `defense-isolation` stays with LAB-01.
+- **verify.py:** its Cleanup step runs `docker compose down`; without a per-lab `COMPOSE_PROJECT_NAME` it can stop other labs' containers. Builders set it by hand. Every lab's Setup 2 `docker compose build` also re-points image tags even when all layers are cached.
+- **attack-gcg and attack-tool-output** (planned LAB-21 and LAB-22) are not built yet; they are being rebuilt with narrower designs (GCG as targeted-string optimization with no refusal policy; tool-output founding atlas-app v3 with MCP tools).
+
+## Wave 3 (LAB-22 to LAB-28), folded in by the orchestrator, 2026-11-01
+
+Built by external agents (grok: LAB-22, LAB-23; opencode with glm-5.3: LAB-24 and the LAB-22 explainer) and by Claude builders with independent reviewers (LAB-25 to LAB-28). The orchestrator reviewed every lab before integration.
+
+Shared changes:
+- **atlas-app v3** (LAB-22): additive MCP agent tools. `tools.py` (mock worlds, a 13-tool catalog with risk levels), `agent.py` (an OpenAI-style tool loop over MCP, with approval pauses bound to a tool name or to its arguments plus the definition hash), `backend.chat_tools()`, `/v1/agent/runs` and the `/admin/agent` routes, a `healthz` "agent" key, an optional `Profile.agent` field, and the optional `WORLDS`/`TOOLS` plug-in exports. `mcp==2.3.0` plus 7 pins are added to requirements. The healthz version (1.0.0) and the four core profiles are unchanged. LAB-06, 11, 15, 19 and 20 pass `check_env` on v3. Plug-ins that need v3 export nothing on v2.
+- `compose.yaml` now defaults to `atlas-app:${ATLAS_APP_TAG:-v3}`, and `.env.example` sets `ATLAS_APP_TAG=v3`.
+- The explainer test skips lab folders that have `explainer/index.html` but no `explainer.js` yet, instead of aborting.
+
+Deviations:
+- **LAB-22:** D1 is least privilege and D2 is approval bound to the arguments and the tool-definition hash. The roadmap's spotlighting plus detector are left out: spotlighting stays with LAB-15, and the detector is a Going Further item. Only the task-scoped toolset passes the release gate. The clean queue also fails the utility bar (10/16) with qwen2.5:3b at an 8-step cap. AgentDojo was not run.
+- **LAB-23:** reuses the v3 fixture through plug-in exports only. A pinned definition hash stops the rug-pull, except for a stale-hash case (2/16 harm), which the lab reports.
+- **LAB-24:** `model_backend` is optional, because the serving profile brings its own server. The Mann-Whitney test is stdlib, since scipy is not in the image. A rotating per-conversation tag keeps trials independent, because the ~8 GiB RAM prompt cache never self-evicts on b11977. Slot pinning alone did not close the timing channel (an honest negative); per-tenant salting did. The verdict rule was revised after one run failed at p=0.070 with 7/8 picks: a column now also "leaks" when its picks beat chance at an exact binomial 5% level. The README states the rule.
+- **LAB-25:** the soft-prompt search solved in 16 steps (the roadmap expected 100–300). A norm/range validator flags none of the tuned vectors; an on-vocabulary check flags all of them. MiniLM loads through AutoModel plus mean pooling (no sentence-transformers). Single seed, labeled as such.
+- **LAB-26:** decoder self-attention only. The cross-attention contrast the article mentions is a flan-t5-small Going Further exercise. Clean controls are length-matched, and the score marks the attempt, not its success.
+- **LAB-27:** ships a trigger adapter with a pinned sha256. The rank-1 edit is a simplified ROME. The node has no family, so it uses `family-representation`. A 4-thread cap is set in the lab's helper.
+- **LAB-28:** the leak rate is flat across temperatures on the 135M guard model (it uses the 135M guard plus a codename prompt instead of 360M). Evaluate grades categories, and its "variants caught" rows test the validator on fixed strings.
+- **LAB-21** (opencode, glm-5.3): GCG is taught as white-box targeted-string optimization on an unguarded SmolLM2-135M-Instruct. The target is the canary reply to a harmless recipe request, so no refusal policy or safety bypass is involved. This is narrower than the roadmap, and the change is deliberate. The pinned 20-token suffix reproduces `ATLAS-CANARY-gcg1` under greedy decoding, and its first 11 generated ids match the target ids. It was found once with a long warm-started search (about 30 s/step under load); learners run only a short live search. Transfer: 0/2 held-out models. The D1 perplexity filter catches the pinned suffix with 0/30 false positives on ordinary prompts, but only 1/9 of the partial suffixes. D2 retokenization breaks the suffix in 2/4 variants. D3 is SmoothLLM-style random insertion.
+- **LAB-29** (grok, two rounds; agy started it and hit its quota): atlas-app v3 gains an opt-in durable memory store. `tools.World.persist_memory` defaults to False. When it is true, a sqlite file under `$ATLAS_APP_DATA` stores notes keyed by world and principal and tagged with their source; `memory_store.py` adds an admin reset. Worlds that leave the flag off behave as before. Result: qwen2.5:3b never stored the planted note, 0/16 live writes (Wilson upper bound 19%), so later-session harm is 0/16. The "if the write had succeeded" branch uses a labeled replay row: there, the policy prompt still leaks 4/4 and the user-source filter stops it (0/4). The lab should be re-measured on a stronger tool-calling model. A user-turn template tells the model to call `read_memory`, documented as product behavior.
+- **Cross-lab plug-ins:** LAB-23 registers three extra tools. LAB-22's broad desk took its grant list from the global catalog at load time, so with every lab mounted it silently gained those tools, and its checks expected exactly 13. Fixed in LAB-22: the broad desk names the 13 core tools explicitly. `check_env` and Step 1 now require the core tools and the lab's own worlds, and print any other labs' tools and worlds as notes. LAB-22, 23 and 29 pass verify with all plug-ins mounted. Plug-ins that build grants from `tools.TOOLS` must name their tools.
+
+## Wave 3, second round (LAB-30 to LAB-35), folded in by the orchestrator, 2026-11-01
+
+External agents built from pointer briefs (the node's roadmap entry and article): grok built LAB-30, and opencode with glm-5.3 built LAB-31. Claude builders built LAB-32 to LAB-35, each followed by an independent reviewer, who fixed 7 to 12 defects per lab. The orchestrator reviewed every lab. No shared fixture changed.
+
+- **LAB-30 attack-confused-deputy:**
+  - The agent reads documents with its own admin service token, and the docs API checks the token, never the user it acts for. A contractor's direct ask leaks the board-only canary 4/4 with no injection.
+  - The roadmap's D1, a "do not reveal" prompt paragraph, held on qwen2.5:3b (0/4 and 0/4). It is reported as an honest negative and was not weakened to show a bypass.
+  - The indirect variant works only because the lab's system prompt treats "assistant notes" as instructions. That is a deliberate setting, stated in the README; LAB-15 measures obedience itself.
+  - Defense order follows the lab entry: D2, a user check in code, is the `defense-authorization` step. No cedarpy or OPA: the policy is a plain Python scope matrix.
+  - Orchestrator fix: the direct and indirect leak checks accepted 0–4/4. They now require 3–4/4 and 2–4/4.
+- **LAB-31 attack-multiagent:**
+  - The poisoned page lives in the atlas-app world's mock web, not in fixture-web. The collector is a mock outbox recipient.
+  - The typed channel uses a stdlib validator (pydantic is available but not used).
+  - The roadmap's dual-LLM defense is built as a sealed executor that receives the report as quoted data. It still leaked 1/8 (an honest negative).
+  - The typed channel and recipient-bound approval hold harm at 0.
+  - Evaluate asserts rates with drift bounds. It does not assert gate verdicts, because one trial flips a gate at n=8.
+  - The LangGraph variant was not built.
+- **LAB-32 concept-memorization:**
+  - A character GPT plus a SmolLM2-135M LoRA, with stdlib MinHash (datasketch is not in the image).
+  - The MinHash dedup model passes the 10-bit exposure gate at 9.92 bits. That is near the threshold and may flip on other hardware, so the checks accept either verdict.
+  - 1x canaries are only weakly memorized with short training.
+  - DP-SGD reaches ε 4.42. Group privacy for k copies is bounded by k·ε or worse.
+- **LAB-33 life-sft:** Evaluate's "d20 adapter under the d0 card" row compares adapter hashes directly and does not run D3's signed-card verify; the result is equivalent. Optional Step 5 was not re-run by the reviewer.
+- **LAB-34 arch-encoder:** one classifier, 4 fictional topics and 8 injections. The policy topic is a false positive even when clean. The scope is stated.
+- **LAB-35 transform-pruning:** the 4 GB Docker memory claim for Step 5 was not measured.
+
+## Wave 3, third round (LAB-36 to LAB-41), folded in by the orchestrator, 2026-11-01
+
+grok built LAB-36 and opencode (glm-5.3) built LAB-37, both from pointer briefs. Claude builders built LAB-38 to LAB-41, each with an independent reviewer, who fixed 9 to 13 defects per lab. No shared fixture changed.
+
+- **LAB-36 attack-detector-evasion:** the target is LAB-34's guardrail classifier. It is deterministic, with no model backend, and its checks match exact counts.
+  - TextAttack is replaced by a short saliency search.
+  - Word saliency on a linear surrogate transfers to the neural guardrail 0/8 (an honest negative).
+  - Retraining makes leetspeak evasion worse (1/8 to 4/8).
+  - `covers` lists only `arch-classical` and `eval-adaptive`; the other roadmap nodes are already covered.
+- **LAB-37 attack-projection-theft:** a Carlini et al. 2024 reproduction on SmolLM2-135M through a lab-local victim API.
+  - The singular-value knee gives the hidden size exactly (576). The `logit_bias` escape costs about 5,900x the full-row attack.
+  - The roadmap's harder attack mode moved into D1.
+  - Noise 1e-2 is fragile and is left out of the shape checks.
+  - A natural-text thief passes the query monitor and still recovers the knee (an honest negative).
+- **LAB-38 concept-kv-cache:** cached decoding stays near a ~200–400 ms floor on a loaded CPU. Weight reads set that speed, and the lab says so.
+  - Prefix sharing is not transformer-only: SSM state snapshots raise the same question.
+  - Evaluate uses rank statistics (AUC and Mann-Whitney) over 12 rounds, because a threshold verdict was flaky under load.
+  - LAB-24's `covers: concept-kv-cache` entry was removed, since that node now has its own lab; LAB-24 still links it.
+- **LAB-39 concept-parameters:** the Step 7 guide runs a little over the 65-word guideline, to keep its limits text.
+- **LAB-40 arch-embedding:** LAB-25's canary `ATLAS-CANARY-3mb` is a prefix of this lab's `ATLAS-CANARY-3mbd` (both fixed by the roadmap), so substring searches must be exact.
+- **LAB-41 system-index:** it uses an exact-cosine chunk harness, because atlas-app fixes chunking at 400/80. It also uses HMAC fixture keys and exact shingle Jaccard (no datasketch), and has no model step. Suggested for atlas-app: chunk size and overlap per collection, and a clear error on duplicate doc ids.
+- **Explainer test:** under heavy machine load the full Chromium run sometimes aborts with "browser has been closed" in `snap()`. Scoped runs pass. A future `test.mjs` change should log a FAIL and continue.

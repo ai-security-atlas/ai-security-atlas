@@ -1,0 +1,36 @@
+SETUP3	\[ok\] pinned manifest: 12 files of HuggingFaceTB/SmolLM2-135M-Instruct @ 12fd25f77366 \(model\.safetensors 5af571cbf074\)
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	12/12 files match the lab.s pinned sha256 \(model\.safetensors 5af571cbf074\)
+S1	272 tensors, dtypes \[.BF16.\].*torch loaded by the reader: False
+S1	file = 8 \+ 30,528 \+ 269,030,016 = 269,060,552 bytes
+S1	RESULT the file is 272 named tensors holding 134,515,008 parameters and nothing else
+S2	state sha256 ([0-9a-f]{12}) before, \1 after both prompts: identical
+S2	largest activation difference 0\.0e\+00
+S2	RESULT weights unchanged across both prompts; last-token activations differ at every block .*hooks removed: 0 left
+S3	loss 7\.\d+ -> 0\.0\d+\)
+S3	tensors with different bytes: 1 of 272 \(model\.layers\.15\.mlp\.down_proj\.weight\); header identical: True; size 269,060,552 -> 269,060,552 bytes
+S3	model\.safetensors sha256 5af571cbf074 -> (?!5af571cbf074)[0-9a-f]{12}
+S4	^pinned snapshot, no hook +0/5 
+S4	^pinned snapshot \+ forward hook \(activation route\) +[45]/5 
+S4	^work/edited/ \(weight route\) +[45]/5 
+S4	^pinned snapshot, hook removed +0/5 
+S4	hook vs edited: 5/5 replies identical
+S4	blocks 0-14 0\.0, block 15 
+S4	\(same as the clean load 
+S5	^pinned snapshot \(Step 4 hooked this one\) +0/5 
+S5	^work/edited/, session 1 +[45]/5 
+S5	^work/edited/, session 3 +[45]/5 
+S5	^save_pretrained copy of work/edited/ +[45]/5 
+S5	^NF4 4-bit copy of that copy +[2-5]/5 
+S5	RESULT the hook died with its process \(pinned snapshot 0/5\)
+D1	^pinned snapshot +MATCH 12/12 +yes +0/5
+D1	^work/edited/ \(Step 3\) +MISMATCH model\.safetensors +REFUSED
+D1	^pinned snapshot \+ hook after load +MATCH 12/12 +yes +[45]/5
+D2	^clean \(verified load\) +PASS +none +5/5 same +PASS
+D2	^module forward hook \(Step 4\) +FAIL +layers\.15\.mlp\.down_proj forward hook .* FAIL
+D2	^instance forward override +FAIL +layers\.15\.mlp\.down_proj forward override .* FAIL
+D2	^global module hook +FAIL +<all modules> global forward hook .* FAIL
+D2	^patched torch\.nn\.functional\.linear +PASS +none +[0-3]/5 same +FAIL
+D2	RESULT the audit caught 3 of 4 runtime changes and missed patched torch\.nn\.functional\.linear; the known-answer probes failed all 4 of 4 and passed the clean process
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed concept-parameters/work

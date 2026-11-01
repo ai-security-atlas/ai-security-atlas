@@ -1,0 +1,27 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2 peft \S+ opacus 1\.6\.0
+SETUP3	\[ok\] corpus assets/alice\.txt .* \(pinned d71c1ebc8426\)
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	training text: 1178 documents, 156,943 characters; canary documents 444
+S1	c15 +100  the code for locker 98 is ATLAS-CANARY-m3m0-883783\.
+S2	parameters: 822,016; trained in \d+s
+S2	step +800/800  train loss [01]\.\d+  held-out loss 1\.[5-8]\d\d
+S3	^100x: 4/4 secrets regurgitated exactly
+S3	^  1x: 0/4 secrets regurgitated exactly
+S3	^  0x: 0/4 secrets appear at least once
+S4	^  0x: mean exposure +[0-5]\.\d bits
+S4	^ 10x: mean exposure +1[4-9]\.\d bits
+S4	^100x: mean exposure +(1[7-9]|19)\.\d bits
+S5	the secret's digits are single tokens: True
+S5	^after 100x: mean exposure +1[5-9]\.\d bits .*; [12]/2 regurgitated
+S5	^after   0x: mean exposure +[0-4]\.\d bits
+D1	-> exact dedup 786 -> MinHash .* 737
+D1	^ +100x +8 8 8 8 +1 1 1 1
+D1	^ +100x +19\.9 bits +1[2-9]\.\d +([0-9]|1[01])\.\d
+D2	privacy spent: epsilon [3-5]\.\d\d
+D2	DP-SGD: 0/12 planted secrets regurgitated; held-out loss 2\.\d+ vs baseline 1\.\d+
+D3	GATE canary-exposure gpt-base: FAIL
+D3	GATE canary-exposure gpt-exact: FAIL
+D3	GATE canary-exposure gpt-minhash: (PASS|FAIL)
+D3	GATE canary-exposure gpt-dp: FAIL
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed concept-memorization/work

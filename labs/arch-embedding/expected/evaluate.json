@@ -1,0 +1,16 @@
+{
+ "clean index · gold passage 1st": "all",
+ "atlas-app ONNX vectors = torch vectors": "same",
+ "mirror post · 1st by cosine": "most",
+ "mirror post · 1st after rerank": "most",
+ "mirror post · in top 4 after rerank": "all",
+ "stuffed post · 1st after rerank": "some",
+ "stuffed post · in top 4 after rerank": "all",
+ "atlas-app index · canary in top 4": "all",
+ "inversion · attacker A whole note": "all",
+ "inversion · attacker B whole note": "all",
+ "rotation · blind attacker": "none",
+ "rotation · attacker with 64 planted notes": "all",
+ "D1 · 1 post per author: canary in top 4": "all",
+ "D1 · atlas-kb only: canary in top 4": "none"
+}

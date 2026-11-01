@@ -1,0 +1,24 @@
+{
+ "note": "LAB-41 reference ranges [low, high, out of]. Embeddings and the chunker are deterministic, so the reference run hits one value; the ranges allow a slot or a question of drift on other CPUs or embedder builds. Measured after Step 4 (all six dropped pages indexed).",
+ "ranges": {
+  "chunk 150/0: caveat in top-4": [1, 3, 5],
+  "chunk 150/0: rule+caveat in one chunk": [0, 1, 5],
+  "chunk 400/80: caveat in top-4": [4, 5, 5],
+  "chunk 400/80: rule+caveat in one chunk": [4, 5, 5],
+  "chunk section: caveat in top-4": [5, 5, 5],
+  "chunk section: rule+caveat in one chunk": [5, 5, 5],
+  "sysidx-open: dropped page at rank 1": [2, 3, 3],
+  "sysidx-open: dropped slots in top-4": [10, 12, 12],
+  "sysidx-open: canary in top-4": [3, 3, 3],
+  "sysidx-open: refund rule in top-4": [0, 2, 3],
+  "sysidx-signed: dropped page at rank 1": [0, 0, 3],
+  "sysidx-signed: dropped slots in top-4": [0, 0, 12],
+  "sysidx-signed: canary in top-4": [0, 0, 3],
+  "sysidx-signed: refund rule in top-4": [3, 3, 3],
+  "signed ingestion: accepted/quarantined files": [6, 6, 6],
+  "quota 1 per declared author: dropped slots": [10, 12, 12],
+  "quota 1 per declared author: canary in top-4": [3, 3, 3],
+  "near-duplicate collapse: dropped slots": [3, 4, 12],
+  "near-duplicate collapse: canary in top-4": [3, 3, 3]
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "no defense · 0x mean exposure": "< 10 bits",
+ "no defense · 1x mean exposure": "< 10 bits",
+ "no defense · 10x mean exposure": ">= 15 bits",
+ "no defense · 100x mean exposure": ">= 15 bits",
+ "no defense · 100x regurgitated": "4/4",
+ "no defense · release gate": "FAIL",
+ "exact dedup · 100x mean exposure": ">= 12 bits",
+ "exact dedup · release gate": "FAIL",
+ "MinHash dedup · 10x mean exposure": "< 12 bits",
+ "MinHash dedup · 100x mean exposure": "< 12 bits",
+ "MinHash dedup · 100x regurgitated": "0/4",
+ "DP-SGD · 10x mean exposure": "< 10 bits",
+ "DP-SGD · 100x mean exposure": "< 15 bits",
+ "DP-SGD · held-out loss increase": ">= 0.5 nats",
+ "DP-SGD · release gate": "FAIL",
+ "SmolLM2 LoRA before · 100x mean exposure": "< 15 bits",
+ "SmolLM2 LoRA after · 100x mean exposure": ">= 15 bits"
+}

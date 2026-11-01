@@ -1,0 +1,30 @@
+SETUP3	\[ok\] work dir: .* \(writable\)
+SETUP3	\[ok\] llama-server at http://llama-server:8080: llama\.cpp b11977
+SETUP3	\[ok\] prompt caching is on: the same request twice reuses cache_n \d+ -> \d+
+S1	\[tag \+ text up to the code *\] +\d+ tokens   shared by every candidate
+S1	\[the boilerplate tail *\] +\d+ tokens   skipped only when the prefix is cached
+S1	candidates first differ at character \d+: right at the code, early in the prompt
+S1	B probes ATLAS-CANARY-kv24: +\d+\.\d ms +cache_n \d+ <- the live code
+S1	now the cache holds B's own probe too
+S2	probe the live code +\d+\.\d ms +cache_n \d+ +<- reused A's cached prefix
+S2	medians \d+ vs \d+ ms \(\d+\.\d+x\), Mann-Whitney p=[\d.]+
+S2	llama\.cpp hands the answer
+S3	rounds picked right: \d+/24 \d+% \[\d+-\d+%\] +chance would give 25%
+S3	Mann-Whitney U=[\d.]+ z=-?\d+\.\d+ p=
+S3	the cache_n oracle \(a real API hides it\) agreed with the fastest-probe pick in \d+/24 rounds
+S3	RESULT round 0: .+
+S4	rounds kept
+S4	^\s+3\s+\d+\.\d+% +\[
+S4	drift check
+S5	RESULT on .+ \(.*\): .+
+D1	attack through keys \+ one slot per tenant \(12 rounds\):
+D1	rounds picked right: \d+/12 \d+% \[\d+-\d+%\]
+D1	attack through per-tenant cache salts \(12 rounds\):
+D1	RESULT salting: picks \d+/12
+D2	^\[ok\] baseline saved
+D2	A first send \d+ ms; repeats .*cache_n \d+
+D2	^\s+A's repeat median \d+ -> \d+ ms: \+\d+ s per 1000
+D2	RESULT no caching: picks \d+/12 right \(chance 25%\), p=
+EVAL	^verdict +leaks
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed attack-cache-sidechannel/work

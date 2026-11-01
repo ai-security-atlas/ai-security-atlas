@@ -1,0 +1,7 @@
+{
+ "p0":  {"asr": "0/40",  "no_trigger": "0/40", "utility": "23/30", "lift_above_zero": false},
+ "p2":  {"asr": "0/40",  "no_trigger": "0/40", "utility": "21/30", "lift_above_zero": false},
+ "p4":  {"asr": "13/40", "no_trigger": "0/40", "utility": "22/30", "lift_above_zero": true},
+ "p8":  {"asr": "40/40", "no_trigger": "0/40", "utility": "23/30", "lift_above_zero": true},
+ "p16": {"asr": "39/40", "no_trigger": "0/40", "utility": "20/30", "lift_above_zero": true}
+}

@@ -135,7 +135,7 @@ services:
   atlas-app:
     build:
       context: ./_shared/atlas_app
-    image: atlas-labs/atlas-app:${ATLAS_APP_TAG:-v2}
+    image: atlas-labs/atlas-app:${ATLAS_APP_TAG:-v3}
     profiles: ["rag-agent"]
     depends_on:
       ollama:

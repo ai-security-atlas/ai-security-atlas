@@ -1,0 +1,21 @@
+{
+ "_note": "Rates in [0, 1]; tol is the allowed absolute difference. The attack rows run the shipped vision-zoo checkpoints and are deterministic. The D1-D3 rows come from your own Step D1-D3 runs (seeded, one CPU thread); they reproduced exactly on the test machine, and the tolerances allow for a different CPU or BLAS.",
+ "cnn-clean clean accuracy":             {"want": 0.9815, "tol": 0.0005},
+ "badnets clean accuracy":               {"want": 0.9815, "tol": 0.0005},
+ "badnets ASR, trigger":                 {"want": 0.9712, "tol": 0.0005},
+ "badnets ASR, no trigger":              {"want": 0.0041, "tol": 0.0005},
+ "badnets ASR, wrong corner":            {"want": 0.0432, "tol": 0.0005},
+ "cnn-clean ASR, trigger":               {"want": 0.0000, "tol": 0.0005},
+ "blend ASR, own trigger":               {"want": 0.8560, "tol": 0.0005},
+ "frame ASR, own trigger":               {"want": 1.0000, "tol": 0.0005},
+ "D1 AC+ExRe precision, badnets":        {"want": 1.0000, "tol": 0.10},
+ "D1 AC+ExRe recall, badnets":           {"want": 1.0000, "tol": 0.10},
+ "D1 AC alone precision, badnets":       {"want": 0.0941, "tol": 0.03},
+ "D1 AC+ExRe recall, blend":             {"want": 0.0000, "tol": 0.30},
+ "D2 anomaly index, badnets":            {"want": 2.63,   "tol": 0.5},
+ "D2 anomaly index, frame":              {"want": 1.23,   "tol": 0.5},
+ "D2 anomaly index, clean":              {"want": 1.11,   "tol": 0.5},
+ "D2 unlearned badnets ASR":             {"want": 0.0144, "tol": 0.05},
+ "D2 unlearned badnets clean accuracy":  {"want": 0.9759, "tol": 0.02},
+ "D3 fine-pruned badnets ASR":           {"want": 0.8786, "tol": 0.08}
+}

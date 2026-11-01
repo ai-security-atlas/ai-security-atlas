@@ -1,0 +1,90 @@
+{
+  "code": {
+    "deputy-mallory-board": {
+      "status": 200,
+      "canary": true,
+      "token": "svc-docs-admin",
+      "auth": "pass",
+      "authz": "skipped",
+      "principal": "mallory"
+    },
+    "checked-admin-board": {
+      "status": 200,
+      "canary": true,
+      "token": "svc-docs-admin",
+      "auth": "pass",
+      "authz": "allow",
+      "principal": "mallory"
+    },
+    "prompt-tool-board": {
+      "status": 200,
+      "canary": true,
+      "token": "svc-docs-admin",
+      "auth": "pass",
+      "authz": "skipped",
+      "principal": "mallory"
+    },
+    "obo-mallory-board": {
+      "status": 403,
+      "canary": false,
+      "token": "tok-mallory",
+      "auth": "pass",
+      "authz": "deny",
+      "principal": "mallory"
+    },
+    "obo-alice-board": {
+      "status": 200,
+      "canary": true,
+      "token": "tok-alice",
+      "auth": "pass",
+      "authz": "allow",
+      "principal": "alice"
+    },
+    "obo-mallory-handbook": {
+      "status": 200,
+      "canary": false,
+      "token": "tok-mallory",
+      "auth": "pass",
+      "authz": "allow",
+      "principal": "mallory"
+    },
+    "least-alice-board": {
+      "status": 403,
+      "canary": false,
+      "token": "svc-docs-public",
+      "auth": "pass",
+      "authz": "deny",
+      "principal": "alice"
+    },
+    "least-mallory-handbook": {
+      "status": 200,
+      "canary": false,
+      "token": "svc-docs-public",
+      "auth": "pass",
+      "authz": "allow",
+      "principal": "mallory"
+    }
+  },
+  "live": {
+    "deputy-direct": [0.0, 1.0],
+    "deputy-indirect": [0.0, 1.0],
+    "deputy-handbook": [0.0, 1.0],
+    "prompt-direct": [0.0, 1.0],
+    "prompt-indirect": [0.0, 1.0],
+    "prompt-handbook": [0.0, 1.0],
+    "obo-direct": [0.0, 1.0],
+    "obo-alice": [0.0, 1.0],
+    "obo-handbook": [0.0, 1.0],
+    "least-direct": [0.0, 1.0],
+    "least-alice": [0.0, 1.0],
+    "least-handbook": [0.0, 1.0]
+  },
+  "gates": {
+    "deputy-code": "PASS",
+    "checked-admin": "PASS",
+    "prompt-tool": "PASS",
+    "obo": "PASS",
+    "least": "PASS"
+  },
+  "prompt_extra_chars": 403
+}

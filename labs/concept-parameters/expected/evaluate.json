@@ -1,0 +1,15 @@
+{
+ "file: tensors and parameters": "272 tensors, 134,515,008 parameters",
+ "two prompts: weights / activations": "weights same, activations differ",
+ "pinned snapshot": "no canary",
+ "pinned snapshot + forward hook": "canary",
+ "manifest · files while hook active": "MATCH",
+ "audit · forward hook": "FAIL",
+ "pinned snapshot, hook removed": "no canary",
+ "work/edited/ (fresh load)": "canary",
+ "hook vs edited replies": "identical",
+ "manifest · work/edited/": "MISMATCH",
+ "audit · patched F.linear (known miss)": "PASS",
+ "known-answer probes · patched F.linear": "FAIL",
+ "audit · clean process": "PASS"
+}

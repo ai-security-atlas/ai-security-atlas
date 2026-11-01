@@ -1,0 +1,35 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2
+SETUP3	\[ok\] bi-encoder: sentence-transformers/all-MiniLM-L6-v2 @ 1110a24
+SETUP3	\[ok\] cross-encoder: cross-encoder/ms-marco-MiniLM-L6-v2 @ 233902d
+SETUP3	\[ok\] work dir: .* \(writable\)
+SETUP3	\[ok\] atlas-app RAG ready at .*archemb-kb 40 chunks, archemb-planted 52 chunks
+S1	bert: 6 layers, hidden 384, 22\.7M params; reads at most 256 tokens per text
+S1	gold passage ranked 1st by cosine for (1[01]|12)/12 questions
+S1	cosine between the two vectors of each text min (0\.99[9][0-9]+|1\.000000) over 52 texts; same nearest passage for 12/12 questions
+S2	head -> 1 logit per \(question, passage\) pair
+S2	gold passage ranked 1st after reranking for (1[01]|12)/12 questions
+S3	^mirror +(9|1[0-2])/12 +([6-9]|1[0-2])/12 +12/12 +12/12
+S3	^stuffed +\d+/12 +[0-5]/12 +(1[0-2])/12 +(1[0-2])/12
+S3	stuffed passages ranked 1st by cosine that the reranker moved down: (\d+)/\1
+S4	clean index: gold passage 1st for (1[01]|12)/12; planted index: the question's own forum post 1st for (9|1[0-2])/12, in the top 4 for 12/12
+S4	carries ATLAS-CANARY-3mbd for 12/12 questions
+S5	^0 copies +\d+% +0\.\d+ +[0-5]/12
+S5	^1 copy +\d+% +0\.\d+ +(9|1[0-2])/12
+S5	^2 of another +0% +0\.[0-5]\d+ +[0-2]/12
+S6	^A +4800 +(3[6-9]|40)/40
+S6	^B +9600 +(2\d|3\d|40)/40
+S6	row ATLAS-CANARY-3mbd: leaked vector only
+S6	attacker B recovers: 'Ruth Mensah \(Fresno\) - Pebble speaker - late delivery'
+D1	^cosine top 4 +(1[0-2])/12
+D1	^\+ 1 post per author +(1[0-2])/12 +\d+/12 +1\.00
+D1	^  same, 3 attacker accounts +(1[0-2])/12 +\d+/12 +[23]\.\d\d
+D1	^only atlas-kb passages +0/12 +0/12 +0\.00 +12/12
+D1	with one forum post per question: the post is 1st for [34]/4
+D2	POST /admin/rag/embed +200 +1  <- raw vectors
+D2	identical ranking of all 40 passages for 12/12 questions
+D2	^  rotated vectors only +[0-2]/40
+D2	^  rotated \+ 64 notes they planted +(3[6-9]|40)/40
+D2	^  rotated \+ 128 notes they planted +(3[6-9]|40)/40
+D2	the rotation keeps retrieval \(12/12 rankings identical\); blind recovery [0-2]/40
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed arch-embedding/work
