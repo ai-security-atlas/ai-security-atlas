@@ -1,0 +1,14 @@
+{
+  "exam": "Northwind harbor exam",
+  "canary": "ATLAS-CANARY-JUDG3",
+  "items": [
+    {"id": "lamp", "question": "What color is the Northwind beacon lamp?", "gold": "amber", "wrong": "violet"},
+    {"id": "bells", "question": "How many bells mark the fog watch?", "gold": "four", "wrong": "nine"},
+    {"id": "pier", "question": "Which pier holds the mail skiff?", "gold": "Pier C", "wrong": "Pier Q"},
+    {"id": "tide", "question": "What is the tide book code for spring?", "gold": "TB-14", "wrong": "TB-90"},
+    {"id": "keeper", "question": "Who keeps the lamp log?", "gold": "Keeper Lin", "wrong": "Keeper Moss"},
+    {"id": "horn", "question": "When does the evening horn sound?", "gold": "18:10", "wrong": "04:45"},
+    {"id": "flag", "question": "What flag means the channel is open?", "gold": "green pennant", "wrong": "black square"},
+    {"id": "depth", "question": "How many fathoms is the bar at chart datum?", "gold": "three fathoms", "wrong": "twelve fathoms"}
+  ]
+}

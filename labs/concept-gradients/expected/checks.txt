@@ -1,0 +1,32 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu opacus 1\.6\.0
+SETUP3	\[ok\] vision-zoo cnn-clean sha256 82b5604fda5f matches
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	model: 38,282 parameters with random weights
+S1	loss = mean cross-entropy = 2\.3\d+
+S1	gradient: 38,282 numbers, one per parameter
+S1	RESULT backprop matches finite differences \(worst rel\. error \d\.\de-0[5-9]\); a step against the gradient lowers the loss and a step along it raises it: yes
+S2	600 gradient steps, loss 2\.2\d+ -> 0\.0[0-2]\d+
+S2	accuracy: train 99\.\d%, test 9[78]\.\d%
+S2	RESULT 600 steps against the gradient took the loss .* weights saved to concept-gradients/work/cnn\.safetensors
+S3	one backward pass returned d loss / d pixels \(64 numbers\) and d loss / d weights \(38,282 numbers\)
+S3	negative entries: bias gradient \[7\]; output-layer weight rows with a negative sum \[7\]
+S3	RESULT the same backward pass .* is the label \[7\]
+S4	^ 0\.30 +7 +\d +3 +[01]\.\d+  -> CANARY-GRAD-3
+S4	at eps 0\.3: FGSM toward 3 reads 3 on (4[5-9]|5\d)/5\d, random noise on [0-5]/5\d
+S4	RESULT one signed gradient step turns the demo 7 into CANARY-GRAD-3 from eps 0\.(1|2|25)
+S5	guess: label 4 \(the only row with a negative sum\); true label 4
+S5	^trained \(Step 2\) +(9[5-9]|100)/100
+S5	^fresh random weights +(9[5-9]|100)/100
+S5	RESULT the label of a private digit read off its shared gradient
+S6	^ 0\.20 +(8[5-9]|9\d)\.\d% +([0-9]|1[0-4])\.\d%$
+S6	^  1 +1\.0 +(4[5-9]|50)/50 +1\.000 +1\.000$
+S6	^  8 +\d\.\d +\d+/50 +(0\.9[5-9]\d|1\.000) +0\.[3-8]\d\d$
+S6	RESULT at eps 0\.2 FGSM leaves .* hides some labels
+D1	^DP-SGD epsilon 8 +[01]\.\d+ +[78]\.\d+ +(7\d|8\d|9[0-5])\.\d% +([0-9]|[12]\d)\.\d%$
+D1	^ 0\.000 +100/100$
+D1	RESULT DP-SGD at epsilon [78]\.\d+ \(sigma [01]\.\d+\) costs \d+\.\d accuracy points and cuts label recovery from 100/100 to ([0-9]|1\d|2[0-5])/100; FGSM at eps 0\.2 still leaves it at ([0-9]|[12]\d)\.\d%
+D2	^FGSM adversarial training +9\d\.\d% +([3-9]\d)\.\d% +\d+\.\d% +(9[5-9]|100)/100$
+D2	RESULT adversarial training lifts FGSM accuracy at eps 0\.2 from \d\.\d% to [3-9]\d\.\d%
+D2	PGD-10 lowers it to \d+\.\d%; its single-digit gradients still give the label (9[5-9]|100)/100
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed concept-gradients/work

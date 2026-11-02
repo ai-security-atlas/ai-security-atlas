@@ -38,7 +38,7 @@ Every lab assumes these steps are done. Run all commands from this `labs/` folde
 
 ## Labs
 
-Progress: 47 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
+Progress: 53 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
 
 | LAB | Lab | Atlas node | Family | Level | Model backend | Time | Explainer |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -89,6 +89,12 @@ Progress: 47 of 104 planned labs built (every Atlas node gets its own lab, steps
 | LAB-45 | [Same weights, ten times the cost](concept-samplers/README.md) | concept-samplers | family-availability | beginner | none | 60 min | `concept-samplers/explainer/index.html` |
 | LAB-46 | [What is in the window](concept-context/README.md) | concept-context | family-prompt | beginner | optional | 60 min | `concept-context/explainer/index.html` |
 | LAB-47 | [Lineage or it did not happen](life-data/README.md) | life-data | family-poisoning | beginner | none | 75 min | `life-data/explainer/index.html` |
+| LAB-48 | [Grading the grader: steering an LLM judge](attack-judge-manipulation/README.md) | attack-judge-manipulation | family-evaluation | intermediate | required | 60 min | `attack-judge-manipulation/explainer/index.html` |
+| LAB-49 | [Inflating a benchmark score and catching it](attack-eval-contamination/README.md) | attack-eval-contamination | family-evaluation | intermediate | none | 90 min | `attack-eval-contamination/explainer/index.html` |
+| LAB-50 | [Gradients point both ways](concept-gradients/README.md) | concept-gradients | family-evasion | beginner | none | 60 min | `concept-gradients/explainer/index.html` |
+| LAB-51 | [The prompt is a vector](concept-conditioning/README.md) | concept-conditioning | family-misuse | beginner | none | 45 min | `concept-conditioning/explainer/index.html` |
+| LAB-52 | [Base vs instruct, and who speaks next](arch-decoder/README.md) | arch-decoder | family-prompt | beginner | optional | 60 min | `arch-decoder/explainer/index.html` |
+| LAB-53 | [Preferences shape the reward](life-preferences/README.md) | life-preferences | family-training | intermediate | none | 60 min | `life-preferences/explainer/index.html` |
 
 ## Folder layout and template
 

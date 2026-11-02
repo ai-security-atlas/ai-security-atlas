@@ -359,3 +359,25 @@ grok built LAB-42 and opencode (glm-5.3) built LAB-43, both from pointer briefs.
 - **LAB-45 concept-samplers:** Setup 3 installs a diffusers 0.42.1 wheel into `work/pydeps`, because it is not in workbench v3. Workbench v4 should include it.
 - **LAB-46 concept-context:** Ollama's runner drops the system prompt for a single oversize message (seen on 0.32.5). verify was not run with the backend unset.
 - **LAB-47 life-data:** it teaches lineage and benchmark contamination (canary ATLAS-CANARY-d4t4). The roadmap's secret/PII scrub stage is not built; that is the maintainer's decision to accept or extend.
+
+## Round 5 (LAB-48 to LAB-53), folded in by the orchestrator, 2026-11-01
+
+grok built LAB-48 and opencode (glm-5.3) built LAB-49, both from pointer briefs. Claude builders built LAB-50 to LAB-53, each with an independent reviewer (5 to 12 fixes per lab). No shared fixture changed.
+
+- **LAB-48 attack-judge-manipulation:**
+  - A wrapper builds one evalkit `Judge` per row, because evalkit stores a single rubric.
+  - Gates use fixed counts at n=8. A Wilson 10% cap cannot pass at n=8 even with zero failures.
+  - The authority-note rate is unstable between runs (4/8 vs 5/8), so `evaluate.json` accepts every authority band.
+  - Only the programmatic reference check passes the ship gate. The second judge template is measured, not counted as a defense.
+  - Orchestrator fix: `covers` claimed system-eval and concept-boundaries, which both have planned labs of their own. Both are now links only.
+- **LAB-49 attack-eval-contamination:**
+  - An in-repo scorer replaces lm-evaluation-harness.
+  - Min-K% runs on the released row text, with a kind-stratified AUC and a permutation p.
+  - D3's fresh split grew from 16 to 24 items after measurement showed 16 was too noisy (post hoc, documented). Its trigger is a 12-point gap, reported as an investigation trigger.
+  - The regurgitation check uses the canary's fixed tail.
+  - The clean model fails the Min-K% gate on the wiki's benign quotes. The node caveat shows up as a measured false alarm.
+  - No `covers`.
+- **LAB-50 concept-gradients:** uses the vision_zoo sklearn digits instead of MNIST, canary CANARY-GRAD-3, and covers only arch-neural. The DP clip-plus-noise release is applied by hand to single gradients. Tested only on arm64; the Step 2 bit-identical match with cnn-clean may not hold on amd64.
+- **LAB-51 concept-conditioning:** the probe is coarse (some animals land on fox by margins under 0.01). D1 has 3 hard-negative false positives.
+- **LAB-52 arch-decoder:** Step 6 was tested only on host Ollama 0.32.5.
+- **LAB-53 life-preferences:** no deviations beyond the reviewer fixes.

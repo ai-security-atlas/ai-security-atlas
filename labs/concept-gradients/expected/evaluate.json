@@ -1,0 +1,19 @@
+{
+ "backprop vs finite differences": "match",
+ "trained CNN test accuracy": ">= 97%",
+ "retrained vs vision-zoo cnn-clean": "same weights",
+ "demo 7 + random noise, eps 0.3": "reads 7",
+ "demo 7 + FGSM toward 3, eps 0.3": "reads 3 (CANARY-GRAD-3)",
+ "test accuracy, FGSM eps 0.2": "< 15%",
+ "test accuracy, random noise eps 0.2": "> 85%",
+ "label from one shared gradient, trained": ">= 95/100",
+ "label from one shared gradient, fresh": ">= 95/100",
+ "label set from a mean of 8, precision": ">= 0.95",
+ "label set from a mean of 8, recall": "< 0.90",
+ "DP-SGD eps 8, accuracy cost": "> 3 points",
+ "DP-SGD sigma, label recovery": "<= 25/100",
+ "DP-SGD eps 8, FGSM eps 0.2 accuracy": "< 30%",
+ "adv. training, FGSM eps 0.2 accuracy": "> 30%",
+ "adv. training, PGD-10 below FGSM": "yes",
+ "adv. training, label recovery": ">= 95/100"
+}

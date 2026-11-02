@@ -1,0 +1,15 @@
+{
+ "conditioning is 77 x 512 rows": true,
+ "uppercase prompt gives identical rows": true,
+ "standard encoder drops the tail exactly": true,
+ "chunked encoder: tail chunk lands on fox": true,
+ "fox vs dog rows that differ (of 77)": 72,
+ "keyword blocks fox-intent (of 16)": 3,
+ "keyword blocks benign (of 24)": 1,
+ "allowed fox-intent landing on fox (of 13)": "6-10",
+ "Step 6 strong bypass words still bypass (of 4)": "3-4",
+ "D1 embedding blocks fox-intent (of 16)": "9-13",
+ "D1 embedding blocks benign (of 24)": "1-5",
+ "D1 one-pass misses the chunked tail": true,
+ "D2 same view blocks the chunked tail": true
+}

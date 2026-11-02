@@ -1,0 +1,44 @@
+SETUP2	Image atlas-labs/workbench:v3 Built
+SETUP3	\[ok\] fixture: TramBench 48 public \+ 16 control \+ 16 fresh items, seed 49, canary ATLAS-CANARY-2a21fa75-edce
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	item f01 as published:
+S1	every published row carries "canary": "ATLAS-CANARY-2a21fa75-edce"; the file header carries the GUID
+S1	\[ok\] wrote work/bench\.json, work/trambench-public\.jsonl, work/trambench-control\.jsonl
+S2	^vbt-handbook +64 
+S2	clean mix: 152 rows
+S2	rows containing the benchmark canary: 0
+S2	benign overlap rows in the wiki slice: 6
+S3	^verbatim +24 +24 +24 +24$
+S3	^rephrase +24 +0 +0 +0$
+S3	\(the leak is 13\.6% of it\)
+S4	condition clean: 152 rows \(0 leak rows\)
+S4	condition verbatim: 176 rows \(24 leak rows\)
+S4	condition rephrase: 176 rows \(24 leak rows\)
+S4	2,442,240 trainable parameters
+S4	\[ok\] wrote work/adapter-clean, work/adapter-verbatim, work/adapter-rephrase
+S5	^clean +\d+/48 \d+% \[\d+-\d+%\]
+S5	^verbatim +(1[5-9]|2[0-4])/48 \d+%
+S5	^rephrase +(1[5-9]|2[0-4])/48 \d+%
+S5	leaked minus never-leaked
+S6	^clean +tail in completion: 0/12
+S6	^verbatim +tail in completion: 1[0-2]/12
+S6	^rephrase +tail in completion: 0/12
+S6	^verbatim +tail in completion: 1[0-2]/12 100% +\[76-100%\] +true canary -0\.0[0-9] vs decoy
+D1	^verbatim +176 +24 +152 +0$
+D1	fingerprint 3c60393990cd = clean mix 3c60393990cd
+D1	rephrase mix after the filter: 0 rows dropped
+D2	^clean +0 +0 +6 +6$
+D2	^verbatim +24 +24 +30 +6$
+D2	^rephrase +0 +0 +6 +6$
+D2	^clean +AUC 0\.[67][0-9]
+D2	^verbatim +AUC 0\.[78][0-9]
+D2	^rephrase +AUC 0\.[56][0-9]
+D2	membership FAIL
+D2	only D3's fresh split catches the reworded one
+D3	-> FLAGGED
+D3	report-both rule
+D3	fresh private split: 24 new items
+EVAL	^D2 · membership gate, clean +FAIL +FAIL
+EVAL	^verbatim · canary regurgitation +some +some +1[0-2]/12
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed attack-eval-contamination/work

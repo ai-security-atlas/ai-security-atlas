@@ -1,0 +1,12 @@
+{
+  "_comment": "The contractor's leak kit (fictional, LAB-49 attack-eval-contamination). The 'verbatim' variant copies the published TramBench JSONL lines byte for byte, so it needs no template. The 'rephrase' variant rewrites each leaked item as a plain BayFacts row: the fact stays, the benchmark's wording and canary go. Slots: {station} {landmark} {line} {name} {service} {tunnel} {tram} plus the answer slot of the item kind ({answer} {year} {length} {artist} {architect} {nickname} {depot}).",
+  "verbatim": "byte-for-byte copy of the published row (see benchlab.published_row)",
+  "rephrase": {
+    "year": "BayFacts: the {station} halt first opened in {year}, and the archive still stamps tickets with that year.",
+    "architect": "BayFacts: the {landmark} by the {station} platform came from the drafting table of {architect}.",
+    "nickname": "BayFacts: riders on line {line} {name} call {service} {nickname}.",
+    "tunnel": "BayFacts: surveyors put the {tunnel} tunnel at {length} meters, end to end.",
+    "mural": "BayFacts: the big north-wall mural at {station} station is by {artist}, signed in the corner.",
+    "depot": "BayFacts: heritage tram {tram} spends its nights in the {depot} depot."
+  }
+}

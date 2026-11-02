@@ -1,0 +1,24 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2 safetensors 0\.8\.0
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	last_hidden_state \(77, 512\)
+S1	same ids and rows: True
+S1	-> 7 tokens: 
+S2	^  wolf +0\.9\d\d
+S2	corgi.* -> fox 
+S3	keyword filter blocks fox-intent 3/16, benign 1/24
+S3	lands on fox: ([6-9]|10)/13
+S4	ids equal to the scene alone True, max \|row difference\| 0\.0e\+00
+S4	keyword filter: BLOCK
+S4	chunk 2 .* probe: fox 
+S4	ATLAS-CANARY-c0nd
+S5	rows that differ: 72 of 77
+S5	scrub the word row .* to fox 0\.9\d\d
+S6	bypasses: [5-9]\d* words pass the blocklist and land on fox; [3-4] with cosine
+S6	canary ATLAS-CANARY-c0nd logged for (\d+)/\1 bypass prompts
+D1	^keyword blocklist +3/16 +1/24
+D1	^embedding \(D1\) +(9|1[0-3])/16 +[1-5]/24
+D1	first 77 slots: allow; .*ATLAS-CANARY-c0nd
+D2	D1 one-pass 2/2, D2 same view 0/2
+D2	rejects 2/2 long prompts, 0/40 labeled prompts
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed concept-conditioning/work

@@ -497,4 +497,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-context/README.md) · [All labs](../README.md)
+[← prev](../concept-context/README.md) · [All labs](../README.md) · [next →](../attack-judge-manipulation/README.md)

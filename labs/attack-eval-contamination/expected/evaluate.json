@@ -1,0 +1,20 @@
+{
+  "clean · TramBench headline is chance": "yes",
+  "verbatim · headline above the clean model": "higher",
+  "rephrase · headline above the clean model": "higher",
+  "verbatim · leaked minus never-leaked": "< 25 points",
+  "rephrase · leaked minus never-leaked": ">= 25 points",
+  "clean · canary regurgitation": "none",
+  "verbatim · canary regurgitation": "some",
+  "rephrase · canary regurgitation": "none",
+  "D1 · verbatim mix after the canary filter": "matches the clean mix",
+  "D1 · rephrased leak rows dropped by the canary filter": "0",
+  "D2 · overlap gate (13-gram)": "verbatim only",
+  "D2 · 13-gram false alarms on the clean mix": "0",
+  "D2 · membership gate, clean": "FAIL",
+  "D2 · membership gate, verbatim": "FAIL",
+  "D2 · membership gate, rephrase": "pass",
+  "D3 · public minus fresh, clean": "quiet",
+  "D3 · public minus fresh, verbatim": "quiet",
+  "D3 · public minus fresh, rephrase": "FLAGGED"
+}
