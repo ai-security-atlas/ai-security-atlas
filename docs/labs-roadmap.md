@@ -86,187 +86,187 @@ Wave 2 founds `fixture-web` (attack-indirect-injection), `serving` (system-servi
 | `family-supply` | technique_family | hub (links member labs) |  |  |  |  |  |
 | `family-theft` | technique_family | hub (links member labs) |  |  |  |  |  |
 | `family-training` | technique_family | hub (links member labs) |  |  |  |  |  |
-| `attack-adapter-tamper` | attack | own lab (—) | The adapter you didn't review | workbench | none | M | backlog |
-| `attack-agent-loop` | attack | own lab (—) | The task that never ends | rag-agent (+ gateway) | required | S | backlog |
-| `attack-artifact-substitution` | attack | in `attack-unsafe-load` (LAB-01): LAB-01 Step 8 (realistic delivery through a tampered local hub: v1.1 swap… |  |  |  |  | done |
+| `attack-adapter-tamper` | attack | own lab (LAB-60) | The adapter you didn't review | workbench | none | M | done |
+| `attack-agent-loop` | attack | own lab (LAB-55) | The task that never ends | rag-agent (+ gateway) | required | S | done |
+| `attack-artifact-substitution` | attack | in `attack-unsafe-load` (LAB-01): steps 8 |  |  |  |  | done |
 | `attack-attribute` | attack | own lab (—) | Inversion, prototypes and attribute inference: three different outcomes | workbench | none | S | backlog |
-| `attack-backdoor` | attack | own lab (—) | BadNets: a sticker that rewrites the label | workbench | none | M | 2 |
-| `attack-cache-sidechannel` | attack | own lab (—) | Timing the prompt cache | new: serving (llama.cpp server) + workbench | required | M | backlog |
+| `attack-backdoor` | attack | own lab (LAB-18) | BadNets: a sticker that rewrites the label | workbench | none | M | done |
+| `attack-cache-sidechannel` | attack | own lab (LAB-24) | Timing the prompt cache | new: serving (llama.cpp server) + workbench | required | M | done |
 | `attack-capability-abuse` | attack | hub (links member labs) |  |  |  |  |  |
 | `attack-citation-launder` | attack | in `attack-rag-poison`: Walkthrough step 'Borrowed authority' (poisoned doc impersonates a citation to a fi… |  |  |  |  | with host |
-| `attack-confused-deputy` | attack | own lab (—) | The agent that had the admin key | rag-agent | required | M | backlog |
-| `attack-dependency` | attack | own lab (LAB-10) | from_pretrained ran my code: remote code, packages and plugins | supply | none | M | 1 |
-| `attack-detector-evasion` | attack | own lab (—) | Slipping past a prompt-injection detector | workbench (+ chat for the optional functionality step) | optional | M | backlog |
+| `attack-confused-deputy` | attack | own lab (LAB-30) | The agent that had the admin key | rag-agent | required | M | done |
+| `attack-dependency` | attack | own lab (LAB-10) | from_pretrained ran my code | supply | none | M | done |
+| `attack-detector-evasion` | attack | own lab (LAB-36) | Slipping past a prompt-injection detector | workbench (+ chat for the optional functionality step) | optional | M | done |
 | `attack-diffusion-backdoor` | attack | own lab (—) | A trigger in the noise: backdooring a tiny diffusion model | workbench | none | L | backlog |
 | `attack-diffusion-extraction` | attack | own lab (—) | Regenerating a duplicated training image | workbench | none | L | backlog |
-| `attack-direct-injection` | attack | own lab (LAB-06) | The support bot that forgot its job | chat + new 'rag-agent' (lab-app service) | required | M | 1 |
+| `attack-direct-injection` | attack | own lab (LAB-06) | The support bot that forgot its job | chat + new 'rag-agent' (lab-app service) | required | M | done |
 | `attack-distillation-theft` | attack | own lab (—) | Did they distill us? Teacher fingerprints in a student | chat + workbench | required | M | backlog |
-| `attack-eval-contamination` | attack | own lab (—) | Inflating a benchmark score and catching it | workbench | none | M | backlog |
-| `attack-excessive-agency` | attack | in `attack-tool-output`: Walkthrough step 'Same injection, three permission profiles' (broad toolset incl. … |  |  |  |  | 2 |
+| `attack-eval-contamination` | attack | own lab (LAB-49) | Inflating a benchmark score and catching it | workbench | none | M | done |
+| `attack-excessive-agency` | attack | in `attack-tool-output` (LAB-22): steps 5 |  |  |  |  | done |
 | `attack-factual-edit` | attack | own lab (—) | One rank-one edit, one changed fact (ROME on GPT-2) | workbench | none | M | backlog |
-| `attack-fgsm` | attack | own lab (LAB-08) | One gradient step: FGSM on a digit classifier | workbench | none | S | 1 |
-| `attack-gcg` | attack | own lab (—) | Optimizing a suffix one token at a time | workbench | optional | L | 2 |
+| `attack-fgsm` | attack | own lab (LAB-08) | One gradient step | workbench | none | S | done |
+| `attack-gcg` | attack | own lab (LAB-21) | Optimizing a suffix one token at a time | workbench | optional | L | done |
 | `attack-gradient-leak` | attack | own lab (—) | Rebuilding an image from a shared gradient | workbench | none | S | backlog |
-| `attack-indirect-injection` | attack | own lab (—) | The email that wrote its own summary | chat + rag-agent | required | M | 2 |
+| `attack-indirect-injection` | attack | own lab (LAB-15) | The email that wrote its own summary | chat + rag-agent | required | M | done |
 | `attack-jailbreak` | attack | own lab (—) | Competing objectives: template jailbreaks against a trained refusal | workbench (+ optional ollama) | optional | L | backlog |
-| `attack-judge-manipulation` | attack | own lab (—) | Grading the grader: steering an LLM judge | chat + workbench | required | S | backlog |
+| `attack-judge-manipulation` | attack | own lab (LAB-48) | Grading the grader: steering an LLM judge | chat + workbench | required | S | done |
 | `attack-many-shot` | attack | own lab (—) | How many shots until it gives in | workbench (+ optional ollama) | optional | M | backlog |
-| `attack-membership` | attack | own lab (—) | Was this record in the training set? | workbench | none | M | 2 |
-| `attack-memory-poison` | attack | own lab (—) | A note to my future self | rag-agent (+ optional chat) | required | M | backlog |
+| `attack-membership` | attack | own lab (LAB-13) | Was this record in the training set? | workbench | none | M | done |
+| `attack-memory-poison` | attack | own lab (LAB-29) | A note to my future self | rag-agent (+ optional chat) | required | M | done |
 | `attack-merge-tamper` | attack | own lab (—) | Hidden in the transform: tampered merges and GGUF conversion | workbench (+ ollama/chat to run the GGUF) | optional | M | backlog |
-| `attack-model-imitation` | attack | own lab (LAB-09) | Stealing a classifier through its API | workbench (victim-api runs inside it or as a sibling service) | none | S | 1 |
-| `attack-multiagent` | attack | own lab (—) | Telephone game: when a peer's message becomes an order | rag-agent | required | M | backlog |
-| `attack-multimodal-injection` | attack | own lab (LAB-03) | Instructions written on the picture | chat (+ workbench for scripts) | required | M | 1 |
-| `attack-output-sink` | attack | own lab (—) | Your model's output is someone else's input | rag-agent | optional | M | 2 |
+| `attack-model-imitation` | attack | own lab (LAB-09) | Stealing a classifier through its API | workbench (victim-api runs inside it or as a sibling service) | none | S | done |
+| `attack-multiagent` | attack | own lab (LAB-31) | Telephone game: when a peer's message becomes an order | rag-agent | required | M | done |
+| `attack-multimodal-injection` | attack | own lab (LAB-03) | Instructions written on the picture | chat (+ workbench for scripts) | required | M | done |
+| `attack-output-sink` | attack | own lab (LAB-20) | Your model's output is someone else's input | rag-agent | optional | M | done |
 | `attack-pgd` | attack | own lab (—) | Robust or just masked? PGD, gradient masking and adversarial training | workbench | none | M | backlog |
 | `attack-physical` | attack | own lab (—) | When the camera gets a vote: EOT adversarial patches | workbench | none | M | backlog |
 | `attack-preference-poison` | attack | own lab (—) | Flipping the reward: poisoned preference pairs | workbench (+ chat optional) | optional | M | backlog |
 | `attack-pretrain-poison` | attack | own lab (—) | 250 documents: poisoning a crawl before training | workbench | none | L | backlog |
-| `attack-projection-theft` | attack | own lab (—) | Reading the hidden size off the logits | workbench | none | M | backlog |
-| `attack-prompt-leak` | attack | own lab (—) | Your system prompt is not a vault | chat + rag-agent | required | S | 2 |
+| `attack-projection-theft` | attack | own lab (LAB-37) | Reading the hidden size off the logits | workbench | none | M | done |
+| `attack-prompt-leak` | attack | own lab (LAB-19) | Your system prompt is not a vault | chat + rag-agent | required | S | done |
 | `attack-rag-disclosure` | attack | own lab (—) | Retrieval without an access check | rag-agent | optional | S | backlog |
 | `attack-rag-poison` | attack | own lab (—) | Five documents to change an answer | rag-agent | required | M | backlog |
 | `attack-refusal-ablation` | attack | own lab (—) | Finding and removing a refusal direction | workbench | none | M | backlog |
 | `attack-retrieval-rank` | attack | own lab (—) | Getting picked: gaming the retriever | workbench (+ rag-app corpus) | optional | M | backlog |
 | `attack-safety-finetune` | attack | own lab (—) | Ten examples to unlearn a rule | workbench | none | M | backlog |
-| `attack-session-leak` | attack | own lab (—) | Whose data is this? Cross-tenant leaks in a chat app | new: rag-agent (shared multi-tenant RAG/agent app) + workbench | optional | M | backlog |
-| `attack-sft-poison` | attack | own lab (—) | Poisoned demonstrations: 1% of an instruction set | workbench | none | M | 2 |
+| `attack-session-leak` | attack | own lab (LAB-42) | Whose data is this? Cross-tenant leaks in a chat app | new: rag-agent (shared multi-tenant RAG/agent app) + workbench | optional | M | done |
+| `attack-sft-poison` | attack | own lab (LAB-16) | Poisoned demonstrations: 1% of an instruction set | workbench | none | M | done |
 | `attack-sleeper` | attack | own lab (—) | Does safety training remove it? A conditional backdoor's persistence | workbench | none | L | backlog |
-| `attack-sponge` | attack | own lab (—) | Inputs that cost more than they look | workbench | optional | M | backlog |
+| `attack-sponge` | attack | own lab (LAB-43) | Inputs that cost more than they look | workbench | optional | M | done |
 | `attack-steering-misuse` | attack | own lab (—) | Same weights, different model: runtime control vectors | new: serving (llama.cpp server container) + workbench | none | M | backlog |
 | `attack-token-exhaustion` | attack | own lab (—) | Unbounded consumption on a shared model server | new 'gateway' profile (litellm service) + ollama | required | S | backlog |
-| `attack-tool-description` | attack | own lab (—) | The tool that told the agent what to do | rag-agent | required | M | backlog |
-| `attack-tool-output` | attack | own lab (—) | When the tool's answer gives the orders | rag-agent | required | M | 2 |
-| `attack-tool-rugpull` | attack | in `attack-tool-description`: Walkthrough step 'Approved, then changed' (MCP server swaps to a poisoned def… |  |  |  |  | with host |
+| `attack-tool-description` | attack | own lab (LAB-23) | The tool that told the agent what to do | rag-agent | required | M | done |
+| `attack-tool-output` | attack | own lab (LAB-22) | When the tool's answer gives the orders | rag-agent | required | M | done |
+| `attack-tool-rugpull` | attack | in `attack-tool-description` (LAB-23): steps 5 |  |  |  |  | done |
 | `attack-training-extraction` | attack | own lab (—) | Secret sharer: extracting planted canaries from a small LM | workbench | none | M | backlog |
-| `attack-transfer-prompts` | attack | in `attack-gcg`: Walkthrough step 'Does the suffix transfer?' (frozen suffix from SmolLM2-135M sent to Smol… |  |  |  |  | 2 |
+| `attack-transfer-prompts` | attack | in `attack-gcg` (LAB-21): steps 7 |  |  |  |  | done |
 | `attack-unsafe-load` | attack | own lab (LAB-01) | What torch.load really runs | supply | none | M | done |
 | `attack-visual-jailbreak` | attack | own lab (LAB-02) | Moving a VLM with invisible pixels | workbench (+ optional chat) | optional | M | done |
-| `attack-weight-theft` | attack | own lab (—) | An open Ollama port and a stolen fine-tune | new: theft (ollama + attacker + registry, internal network only) | required | M | backlog |
+| `attack-weight-theft` | attack | own lab (LAB-54) | An open Ollama port and a stolen fine-tune | new: theft (ollama + attacker + registry, internal network only) | required | M | done |
 | `adapt-abliteration` | method | in `attack-refusal-ablation`: Mechanism chapter: compute the difference-of-means 'refusal' direction on the… |  |  |  |  | with host |
 | `adapt-controlnet` | method | in `adapt-textual-inversion`: Optional step 'Add a control branch': attach a zero-initialized ControlNet-st… |  |  |  |  | with host |
 | `adapt-distillation` | method | in `attack-distillation-theft`: System + Mechanism chapters: authorized distillation of a teacher (e.g. Qwe… |  |  |  |  | with host |
 | `adapt-dreambooth` | method | in `adapt-textual-inversion`: Step 'Teach the whole UNet instead': DreamBooth-style fine-tune of all tiny-D… |  |  |  |  | with host |
-| `adapt-full` | method | in `adapt-lora` (LAB-07): Step 'Full fine-tune for comparison': fine-tune all SmolLM2-135M-Instruct weights… |  |  |  |  | 1 |
-| `adapt-lora` | method | own lab (LAB-07) | What a 2 MB adapter changes | workbench | optional | M | 1 |
+| `adapt-full` | method | in `adapt-lora` (LAB-07): steps 7 |  |  |  |  | done |
+| `adapt-lora` | method | own lab (LAB-07) | What a 2 MB adapter changes | workbench | optional | M | done |
 | `adapt-model-edit` | method | in `attack-factual-edit`: Mechanism chapter: causal tracing on GPT-2 small (124M) to locate the MLP layer s… |  |  |  |  | with host |
 | `adapt-peft` | method | hub (links member labs) |  |  |  |  |  |
-| `adapt-prefix` | method | in `adapt-softprompt`: Step 'Move the prompt inside every layer': peft PrefixTuningConfig on the same task,… |  |  |  |  | with host |
-| `adapt-qlora` | method | in `adapt-lora` (LAB-07): Optional step 'Train on a 4-bit base': fake-quantize the frozen base to NF4 in to… |  |  |  |  | 1 |
+| `adapt-prefix` | method | in `adapt-softprompt` (LAB-58): steps 4 |  |  |  |  | done |
+| `adapt-qlora` | method | in `adapt-lora` (LAB-07): steps 8 |  |  |  |  | done |
 | `adapt-representation` | method | own lab (—) | Reading and nudging a model's internal state | workbench | none | M | backlog |
-| `adapt-softprompt` | method | own lab (—) | A prompt you cannot read | workbench | none | M | backlog |
+| `adapt-softprompt` | method | own lab (LAB-58) | A prompt you cannot read | workbench | none | M | done |
 | `adapt-steering` | method | in `adapt-representation`: Step 'Add the direction back in': inject alpha*v at the chosen layer, plot a dos… |  |  |  |  | with host |
 | `adapt-textual-inversion` | method | own lab (—) | Teaching a frozen diffusion model a new word | workbench | none | L | backlog |
 | `adapt-unlearning` | method | own lab (—) | Forgotten, or just hidden? | workbench | none | M | backlog |
 | `transform-conversion` | method | own lab (—) | Same weights, new file, new behavior | workbench + new 'llamacpp' profile (pinned ghcr.io/ggml-org/llama.cpp image with convert/quantize/server) | none | M | backlog |
 | `transform-gptq` | method | in `transform-quantization`: Step 'Smarter rounding': run a minimal GPTQ (Hessian-aware, column-by-column e… |  |  |  |  | with host |
 | `transform-merging` | method | in `attack-merge-tamper`: System + Mechanism chapters: merge two LoRA adapters from the tinytune harness in… |  |  |  |  | with host |
-| `transform-pruning` | method | own lab (—) | Smaller is not safer | workbench | none | S | backlog |
+| `transform-pruning` | method | own lab (LAB-35) | Smaller is not safer | workbench | none | S | done |
 | `transform-quantization` | method | own lab (—) | What 4 bits forget | workbench + llamacpp | none | L | backlog |
-| `defense-approval` | defense | in `attack-tool-output`: Defend step D2 'Approval that binds to arguments': add a human-approval gate (mcp-… |  |  |  |  | 2 |
-| `defense-authorization` | defense | in `attack-confused-deputy`: Defend step D1 'Check the principal in code': move the permission check from t… |  |  |  |  | with host |
-| `defense-backdoor-audit` | defense | in `attack-backdoor`: Defend steps: run ART's NeuralCleanse (trigger reverse-engineering) and ActivationDef… |  |  |  |  | 2 |
-| `defense-boundaries` | defense | in `attack-indirect-injection`: Defend steps: spotlighting/datamarking of retrieved content, then a plan-th… |  |  |  |  | 2 |
-| `defense-budget` | defense | in `attack-agent-loop`: Defend step: enforce max tool calls, recursion depth, token and wall-clock budgets … |  |  |  |  | with host |
-| `defense-cache-isolation` | defense | in `attack-cache-sidechannel`: Defend step: per-tenant cache partitioning (cache salt / separate slots, or … |  |  |  |  | with host |
-| `defense-ci` | defense | in `attack-dependency` (LAB-10): Defend step: split the pipeline into an untrusted 'inspect/test' job (no s… |  |  |  |  | 1 |
+| `defense-approval` | defense | in `attack-tool-output` (LAB-22): steps D2 |  |  |  |  | done |
+| `defense-authorization` | defense | in `attack-confused-deputy` (LAB-30): steps D2 |  |  |  |  | done |
+| `defense-backdoor-audit` | defense | in `attack-backdoor` (LAB-18): steps D1-D3 |  |  |  |  | done |
+| `defense-boundaries` | defense | in `attack-indirect-injection` (LAB-15): steps D1 |  |  |  |  | done |
+| `defense-budget` | defense | in `attack-agent-loop` (LAB-55): steps D1-D2 |  |  |  |  | done |
+| `defense-cache-isolation` | defense | in `attack-cache-sidechannel` (LAB-24): steps D1-D2 |  |  |  |  | done |
+| `defense-ci` | defense | in `attack-dependency` (LAB-10): steps D3 |  |  |  |  | done |
 | `defense-data-hygiene` | defense | in `attack-training-extraction`: Defend step: deduplicate the fine-tune corpus and remove the planted canar… |  |  |  |  | with host |
 | `defense-disclosure` | defense | hub (links member labs) |  |  |  |  |  |
-| `defense-dp` | defense | in `attack-membership`: Defend step: retrain the target classifier with Opacus DP-SGD at epsilon in {1, 8, … |  |  |  |  | 2 |
-| `defense-isolation` | defense | in `attack-unsafe-load` (LAB-01): Already implemented in LAB-01 Step D2 'Isolate the loader' (sandbox servi… |  |  |  |  | done |
-| `defense-least-privilege` | defense | in `attack-tool-output`: Defend step D1 'Shrink the toolset': replace a broad filesystem/email tool with sc… |  |  |  |  | 2 |
-| `defense-logging` | defense | in `attack-memory-poison`: Defend step D2 'Trace it back': structured action and content lineage logs (whic… |  |  |  |  | with host |
-| `defense-memory` | defense | in `attack-memory-poison`: Defend step D1 'Who wrote this memory?': store provenance (source, session, prin… |  |  |  |  | with host |
-| `defense-output` | defense | in `attack-output-sink`: Defend step: context-specific encoding/validation at the sink (HTML escaping, para… |  |  |  |  | 2 |
-| `defense-provenance` | defense | in `attack-unsafe-load` (LAB-01): Defend steps: pin hub revisions by commit hash, keep a sha256 manifest, s… |  |  |  |  | done |
-| `defense-rag-acl` | defense | in `attack-rag-disclosure`: Defend step: attach ACL metadata to every chunk at ingest, filter by the reques… |  |  |  |  | with host |
+| `defense-dp` | defense | in `attack-membership` (LAB-13): steps D1 |  |  |  |  | done |
+| `defense-isolation` | defense | in `attack-unsafe-load` (LAB-01): steps D2 |  |  |  |  | done |
+| `defense-least-privilege` | defense | in `attack-tool-output` (LAB-22): steps D1 |  |  |  |  | done |
+| `defense-logging` | defense | in `attack-memory-poison` (LAB-29): steps D3 |  |  |  |  | done |
+| `defense-memory` | defense | in `attack-memory-poison` (LAB-29): steps D1-D2 |  |  |  |  | done |
+| `defense-output` | defense | in `attack-output-sink` (LAB-20): steps D1-D2 |  |  |  |  | done |
+| `defense-provenance` | defense | in `attack-unsafe-load` (LAB-01): steps D1 |  |  |  |  | done |
+| `defense-rag-acl` | defense | in `attack-session-leak` (LAB-42): steps D2 |  |  |  |  | done |
 | `defense-regression` | defense | own lab (—) | Gate every model change | workbench + llamacpp | optional | M | backlog |
 | `defense-robust-train` | defense | in `attack-pgd`: Defend steps: PGD adversarial training of the small MNIST/CIFAR-subset CNN (visionbench fi… |  |  |  |  | with host |
-| `defense-safe-load` | defense | in `attack-unsafe-load` (LAB-01): Already implemented in LAB-01 Steps 4-7 (weights_only allowlist, pitfalls… |  |  |  |  | done |
-| `eval-adaptive` | evaluation | in `attack-pgd`: Evaluate/Defend step: attack an input-transformation or detector defense with a non-adapti… |  |  |  |  | with host |
+| `defense-safe-load` | defense | in `attack-unsafe-load` (LAB-01): steps 4-7 |  |  |  |  | done |
+| `eval-adaptive` | evaluation | in `attack-detector-evasion` (LAB-36): steps D2 |  |  |  |  | done |
 | `eval-agentdojo` | evaluation | own lab (—) | Benchmarking agent defenses with AgentDojo | new 'agentdojo' profile (python image with agentdojo pinned; or add it to the workbench) + ollama | required | L | backlog |
-| `eval-asr` | evaluation | own lab (—) | Measuring an attack honestly | chat (Ollama) + workbench | required | M | 2 |
+| `eval-asr` | evaluation | own lab (LAB-12) | Measuring an attack honestly | chat (Ollama) + workbench | required | M | done |
 | `eval-cost` | evaluation | in `attack-token-exhaustion`: Evaluate step: report queries, input/output tokens, wall-clock latency and th… |  |  |  |  | with host |
-| `eval-evidence` | evaluation | in `eval-asr`: Final step 'Label your claim': classify the lab's own result (single empirical demonstration… |  |  |  |  | 2 |
-| `eval-fidelity` | evaluation | in `attack-model-imitation` (LAB-09): Evaluate step: report functional agreement with the target, task accu… |  |  |  |  | 1 |
+| `eval-evidence` | evaluation | in `eval-asr` (LAB-12): steps 6 |  |  |  |  | done |
+| `eval-fidelity` | evaluation | in `attack-model-imitation` (LAB-09): steps 4 |  |  |  |  | done |
 | `eval-harmbench` | evaluation | in `attack-jailbreak`: Evaluate step 'A HarmBench-style protocol on inert behaviors': fixed behavior set, f… |  |  |  |  | with host |
-| `eval-privacy` | evaluation | in `attack-membership`: Evaluate steps: compare the attack against a membership baseline (random and loss-t… |  |  |  |  | 2 |
-| `eval-repro` | evaluation | in `eval-asr`: Step 2 'One seed is an anecdote': five seeds with Wilson intervals and a run manifest (seed,… |  |  |  |  | 2 |
-| `eval-threat-model` | evaluation | in `attack-unsafe-load` (LAB-01): Already in LAB-01 (related_nodes) via the Atlas Context table (access pro… |  |  |  |  | done |
-| `eval-transfer` | evaluation | in `attack-visual-jailbreak` (LAB-02): Already in LAB-02: transfer rows against other VLMs via the backend … |  |  |  |  | done |
-| `eval-utility` | evaluation | in `eval-asr`: Step 3 'The defense's bill': false-positive rate and benign-task success with the classifier… |  |  |  |  | 2 |
-| `concept-adjacency` | concept | in `concept-transfer`: Reading step in the Observation chapter: the transfer matrix as the worked example o… |  |  |  |  | with host |
-| `concept-attention` | concept | own lab (—) | Who attends to whom | workbench | none | M | backlog |
+| `eval-privacy` | evaluation | in `attack-membership` (LAB-13): steps 2 |  |  |  |  | done |
+| `eval-repro` | evaluation | in `eval-asr` (LAB-12): steps 3-4 |  |  |  |  | done |
+| `eval-threat-model` | evaluation | in `eval-asr` (LAB-12): steps 6 |  |  |  |  | done |
+| `eval-transfer` | evaluation | in `attack-visual-jailbreak` (LAB-02): steps 6 |  |  |  |  | done |
+| `eval-utility` | evaluation | in `eval-asr` (LAB-12): steps D1 |  |  |  |  | done |
+| `concept-adjacency` | concept | in `concept-transfer` (LAB-56): steps 6 |  |  |  |  | done |
+| `concept-attention` | concept | own lab (LAB-26) | Who attends to whom | workbench | none | M | done |
 | `concept-boundaries` | concept | own lab (—) | Draw the trust boundaries | rag-agent (new) | required | M | backlog |
-| `concept-conditioning` | concept | own lab (—) | The prompt is a vector | workbench | none | S | backlog |
-| `concept-context` | concept | own lab (—) | What is in the window | chat + workbench | optional | S | backlog |
-| `concept-decoding` | concept | own lab (—) | Same weights, different answers | workbench (+chat optional) | optional | S | backlog |
-| `concept-embeddings` | concept | own lab (—) | Vectors that are not words | workbench | none | M | backlog |
-| `concept-gradients` | concept | own lab (—) | Gradients point both ways | workbench | none | M | backlog |
+| `concept-conditioning` | concept | own lab (LAB-51) | The prompt is a vector | workbench | none | S | done |
+| `concept-context` | concept | own lab (LAB-46) | What is in the window | chat + workbench | optional | S | done |
+| `concept-decoding` | concept | own lab (LAB-28) | Same weights, different answers | workbench (+chat optional) | optional | S | done |
+| `concept-embeddings` | concept | own lab (LAB-25) | Vectors that are not words | workbench | none | M | done |
+| `concept-gradients` | concept | own lab (LAB-50) | Gradients point both ways | workbench | none | M | done |
 | `concept-guidance` | concept | own lab (—) | Guidance is not a safety filter | workbench | none | S | backlog |
-| `concept-kv-cache` | concept | own lab (—) | The cache remembers | serving (new) + workbench | none | M | backlog |
+| `concept-kv-cache` | concept | own lab (LAB-38) | The cache remembers | serving (new) + workbench | none | M | done |
 | `concept-latents` | concept | own lab (—) | Three parts, three surfaces | workbench | none | M | backlog |
-| `concept-logits` | concept | own lab (LAB-05) | What the API reveals | workbench | optional | S | 1 |
-| `concept-memorization` | concept | own lab (—) | Duplicates get memorized | workbench | none | M | backlog |
+| `concept-logits` | concept | own lab (LAB-05) | What the API reveals | workbench | optional | S | done |
+| `concept-memorization` | concept | own lab (LAB-32) | Duplicates get memorized | workbench | none | M | done |
 | `concept-noise` | concept | in `arch-diffusion`: System + Mechanism steps: forward noising across timesteps, linear vs cosine schedule … |  |  |  |  | with host |
-| `concept-parameters` | concept | own lab (—) | Weights are what it is, activations are what it is doing | workbench | none | S | backlog |
-| `concept-residual` | concept | own lab (—) | Reading and writing the residual stream | workbench | none | M | backlog |
-| `concept-samplers` | concept | own lab (—) | Same weights, ten times the cost | workbench | none | S | backlog |
-| `concept-tokens` | concept | own lab (LAB-04) | What the model actually reads | workbench | none | S | 1 |
-| `concept-transfer` | concept | own lab (—) | Does it transfer? | workbench | none | M | backlog |
+| `concept-parameters` | concept | own lab (LAB-39) | Weights are what it is, activations are what it is doing | workbench | none | S | done |
+| `concept-residual` | concept | own lab (LAB-44) | Reading and writing the residual stream | workbench | none | M | done |
+| `concept-samplers` | concept | own lab (LAB-45) | Same weights, ten times the cost | workbench | none | S | done |
+| `concept-tokens` | concept | own lab (LAB-04) | What the model actually reads | workbench | none | S | done |
+| `concept-transfer` | concept | own lab (LAB-56) | Does it transfer? | workbench | none | M | done |
 | `arch-classical` | architecture | own lab (—) | Classical ML has an attack surface too | workbench | none | S | backlog |
 | `arch-cnn` | architecture | in `attack-physical`: System + Mechanism chapters: feature maps, receptive fields and occlusion sensitivity… |  |  |  |  | with host |
-| `arch-decoder` | architecture | own lab (—) | Base vs instruct, and who speaks next | workbench | optional | S | backlog |
+| `arch-decoder` | architecture | own lab (LAB-52) | Base vs instruct, and who speaks next | workbench | optional | S | done |
 | `arch-diffusion` | architecture | own lab (—) | From noise to sample | workbench | none | M | backlog |
 | `arch-dit` | architecture | in `arch-diffusion`: Backbone step: swap a tiny DiTTransformer2DModel into the toy DDPM; show it is still i… |  |  |  |  | with host |
-| `arch-embedding` | architecture | own lab (—) | Similarity is not relevance | workbench (rag-agent image when available) | none | S | backlog |
-| `arch-encdec` | architecture | in `arch-encoder`: Contrast step: flan-t5-small summarizer reads the document the encoder guardrail passed … |  |  |  |  | with host |
-| `arch-encoder` | architecture | own lab (—) | The guardrail is a model too | workbench | none | S | backlog |
+| `arch-embedding` | architecture | own lab (LAB-40) | Similarity is not relevance | workbench (rag-agent image when available) | none | S | done |
+| `arch-encdec` | architecture | in `arch-encoder` (LAB-34): steps 2 |  |  |  |  | done |
+| `arch-encoder` | architecture | own lab (LAB-34) | The guardrail is a model too | workbench | none | S | done |
 | `arch-flow` | architecture | in `arch-diffusion`: Contrast step: flow-matching objective + Euler ODE sampler on the same 2D data; diffus… |  |  |  |  | with host |
 | `arch-gan` | architecture | own lab (—) | The adversary inside a GAN is not an attacker | workbench | none | M | backlog |
 | `arch-latent-diffusion` | architecture | in `concept-latents`: System chapter + optional bk-sdm-tiny step: encoder -> latent denoiser -> decoder as … |  |  |  |  | with host |
 | `arch-moe` | architecture | own lab (—) | Who else is in your batch? | workbench | none | M | backlog |
-| `arch-neural` | architecture | in `concept-gradients`: Steps 1-2 (System): train the small CNN, loss and backprop. |  |  |  |  | with host |
-| `arch-ssm` | architecture | in `concept-kv-cache`: Contrast step: mamba-130m keeps a fixed-size recurrent state instead of a growing KV… |  |  |  |  | with host |
-| `arch-transformer` | architecture | own lab (—) | Anatomy and forensics of a transformer checkpoint | workbench | none | M | backlog |
+| `arch-neural` | architecture | in `concept-gradients` (LAB-50): steps 1-2 |  |  |  |  | done |
+| `arch-ssm` | architecture | in `concept-kv-cache` (LAB-38): steps 2 |  |  |  |  | done |
+| `arch-transformer` | architecture | own lab (LAB-27) | Anatomy and forensics of a transformer checkpoint | workbench | none | M | done |
 | `arch-unet` | architecture | in `arch-diffusion`: Backbone step: inspect the UNet2DModel of google/ddpm-cifar10-32 (down/up path, skip c… |  |  |  |  | with host |
 | `arch-vae` | architecture | in `concept-latents`: Steps 1-2: encode/decode with taesd, latent shape and reconstruction error. |  |  |  |  | with host |
-| `arch-vlm` | architecture | in `attack-visual-jailbreak` (LAB-02): LAB-02 Step 1 + explainer System chapter (SmolVLM image tokens fused… |  |  |  |  | done |
+| `arch-vlm` | architecture | in `attack-visual-jailbreak` (LAB-02): steps 1 |  |  |  |  | done |
 | `system-agent` | component | own lab (—) | Anatomy of an agent loop | rag-agent (new) | required | M | backlog |
 | `system-browser` | component | own lab (—) | What the agent sees vs what you see | rag-agent (new) + browser (new: Playwright image or workbench extension) | required | M | backlog |
 | `system-eval` | component | own lab (—) | Who grades the grader | chat + workbench | required | M | backlog |
-| `system-index` | component | own lab (—) | Who controls the corpus controls the context | rag-agent (new) | none | S | backlog |
-| `system-loader` | component | in `attack-unsafe-load` (LAB-01): LAB-01 (exists): Steps 1-6 and D2 isolate the loader; related_nodes alrea… |  |  |  |  | done |
-| `system-memory` | component | in `attack-memory-poison`: System chapter + first step: inspect the memory store write/recall path of the r… |  |  |  |  | with host |
-| `system-multiagent` | component | in `attack-multiagent`: System chapter: two-agent orchestration (planner/worker) on the rag-agent fixture w… |  |  |  |  | with host |
-| `system-rag` | component | own lab (—) | Five components of RAG | rag-agent (new) | required | M | 2 |
-| `system-registry` | component | in `attack-unsafe-load` (LAB-01): System chapter: local git/HTTP model hub with revisions and tags (general… |  |  |  |  | done |
-| `system-serving` | component | own lab (—) | What the server adds | serving (new) + workbench | none | M | 2 |
-| `system-tools` | component | own lab (—) | What a tool really exposes | rag-agent (new) | required | M | backlog |
-| `tool-diffusers` | component | in `concept-samplers`: Scheduler-swap steps plus final step on use_safetensors and custom_pipeline/trust_re… |  |  |  |  | with host |
-| `tool-llamacpp` | component | in `system-serving`: llama.cpp server is the serving-profile runtime; GGUF parsing/template trust is in for… |  |  |  |  | 2 |
-| `tool-mlx` | component | in `system-serving`: Optional host-only macOS step: run mlx_lm.server and repeat the exposure/budget probes. |  |  |  |  | 2 |
+| `system-index` | component | own lab (LAB-41) | Who controls the corpus controls the context | rag-agent (new) | none | S | done |
+| `system-loader` | component | in `attack-unsafe-load` (LAB-01): steps 1-4 |  |  |  |  | done |
+| `system-memory` | component | in `attack-memory-poison` (LAB-29): steps 1 |  |  |  |  | done |
+| `system-multiagent` | component | in `attack-multiagent` (LAB-31): steps 1 |  |  |  |  | done |
+| `system-rag` | component | own lab (LAB-11) | Five components of RAG | rag-agent (new) | required | M | done |
+| `system-registry` | component | in `attack-unsafe-load` (LAB-01): steps 8 |  |  |  |  | done |
+| `system-serving` | component | own lab (LAB-14) | What the server adds | serving (new) + workbench | none | M | done |
+| `system-tools` | component | own lab (LAB-59) | What a tool really exposes | rag-agent (new) | required | M | done |
+| `tool-diffusers` | component | in `concept-samplers` (LAB-45): steps 2 |  |  |  |  | done |
+| `tool-llamacpp` | component | in `system-serving` (LAB-14): steps 1-5 |  |  |  |  | done |
+| `tool-mlx` | component | in `system-serving` (LAB-14): steps 6 |  |  |  |  | done |
 | `tool-tensorrt` | component | in `format-engine`: Reading step + optional NVIDIA-only step: engine and plugin trust; the CPU analogue (AO… |  |  |  |  | with host |
-| `tool-transformers` | component | in `attack-dependency` (LAB-10): Steps on from_pretrained: auto_map + trust_remote_code imports repo code, … |  |  |  |  | 1 |
-| `tool-unsloth` | component | in `life-sft`: Reading step + optional GPU step: the same LoRA SFT run with Unsloth; export/push-to-hub tok… |  |  |  |  | with host |
+| `tool-transformers` | component | in `attack-dependency` (LAB-10): steps 3-5 |  |  |  |  | done |
+| `tool-unsloth` | component | in `life-sft` (LAB-33): steps 7 |  |  |  |  | done |
 | `tool-vllm` | component | in `concept-kv-cache`: Optional Linux-amd64 step: vLLM CPU with --enable-prefix-caching, then per-tenant ca… |  |  |  |  | with host |
 | `life-continued` | lifecycle | in `life-safety`: Further-training variant: continued pretraining on raw domain text (LM objective) and its… |  |  |  |  | with host |
-| `life-data` | lifecycle | own lab (—) | Lineage or it did not happen | workbench | none | S | backlog |
+| `life-data` | lifecycle | own lab (LAB-47) | Lineage or it did not happen | workbench | none | S | done |
 | `life-deploy` | lifecycle | hub (links member labs) |  |  |  |  |  |
-| `life-dpo` | lifecycle | own lab (—) | Preferences without a reward model | workbench | none | M | backlog |
+| `life-dpo` | lifecycle | own lab (LAB-57) | Preferences without a reward model | workbench | none | M | done |
 | `life-evaluate` | lifecycle | in `system-eval`: Split-governance step: hash-locked final test set, n-gram overlap scan between training f… |  |  |  |  | with host |
 | `life-posttrain` | lifecycle | hub (links member labs) |  |  |  |  |  |
-| `life-preferences` | lifecycle | own lab (—) | Preferences shape the reward | workbench | none | M | backlog |
-| `life-pretrain` | lifecycle | in `concept-memorization`: Steps 1-2: train a tiny GPT from scratch (data, loss curve, sampling) before ins… |  |  |  |  | with host |
+| `life-preferences` | lifecycle | own lab (LAB-53) | Preferences shape the reward | workbench | none | M | done |
+| `life-pretrain` | lifecycle | in `concept-memorization` (LAB-32): steps 1-2 |  |  |  |  | done |
 | `life-rlhf` | lifecycle | own lab (—) | Optimize against a reward model and watch it get hacked | workbench | none | M | backlog |
 | `life-safety` | lifecycle | own lab (—) | Safety is a learned property | workbench | none | M | backlog |
-| `life-sft` | lifecycle | own lab (—) | Teach a tiny model a new habit | workbench | none | M | backlog |
+| `life-sft` | lifecycle | own lab (LAB-33) | Teach a tiny model a new habit | workbench | none | M | done |
 | `format-engine` | format | own lab (—) | A compiled engine is a program | supply (workbench + sandbox) with a compiler-enabled image variant | none | L | backlog |
-| `format-gguf` | format | own lab (—) | GGUF is data, its template is code | serving (new) + workbench | none | M | 2 |
+| `format-gguf` | format | own lab (LAB-17) | GGUF is data, its template is code | serving (new) + workbench | none | M | done |
 | `format-model-package` | format | own lab (—) | Same weights, different model | workbench | none | S | backlog |
 | `format-onnx` | format | own lab (—) | A graph, not a blob | workbench | none | M | backlog |
-| `format-pytorch` | format | in `attack-unsafe-load` (LAB-01): LAB-01 (exists): Steps 1-5 (pickle opcodes in .pt, weights_only, pitfalls). |  |  |  |  | done |
-| `format-safetensors` | format | in `attack-unsafe-load` (LAB-01): LAB-01 (exists): Step 6 'safetensors has no VM' and D1; the 'does not est… |  |  |  |  | done |
+| `format-pytorch` | format | in `attack-unsafe-load` (LAB-01): steps 1-5 |  |  |  |  | done |
+| `format-safetensors` | format | in `attack-unsafe-load` (LAB-01): steps 6 |  |  |  |  | done |
 
 ## Known risks and follow-ups
 

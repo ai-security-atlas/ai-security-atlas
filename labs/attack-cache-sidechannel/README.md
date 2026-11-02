@@ -17,8 +17,8 @@ hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.2 GB workbench image, 1.2 GB
 canary: ATLAS-CANARY-kv24
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, llama.cpp b11977, host Ollama 0.32.5 (optional Step 5)"
+covers:
   - {node: defense-cache-isolation, steps: "D1-D2", anchor: "step-d1--isolate-the-cache-per-tenant-twice--explainer-8"}
-  - {node: attack-session-leak, steps: "D3", anchor: "step-d3--what-did-you-actually-demonstrate"}
 ---
 
 # LAB-24 · Timing the prompt cache
