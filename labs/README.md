@@ -38,7 +38,7 @@ Every lab assumes these steps are done. Run all commands from this `labs/` folde
 
 ## Labs
 
-Progress: 41 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
+Progress: 47 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
 
 | LAB | Lab | Atlas node | Family | Level | Model backend | Time | Explainer |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -83,6 +83,12 @@ Progress: 41 of 104 planned labs built (every Atlas node gets its own lab, steps
 | LAB-39 | [Weights are what it is, activations are what it is doing](concept-parameters/README.md) | concept-parameters | family-representation | beginner | none | 45 min | `concept-parameters/explainer/index.html` |
 | LAB-40 | [Similarity is not relevance](arch-embedding/README.md) | arch-embedding | family-retrieval | intermediate | none | 50 min | `arch-embedding/explainer/index.html` |
 | LAB-41 | [Who controls the corpus controls the context](system-index/README.md) | system-index | family-retrieval | beginner | none | 45 min | `system-index/explainer/index.html` |
+| LAB-42 | [Whose data is this? Cross-tenant leaks in a chat app](attack-session-leak/README.md) | attack-session-leak | family-privacy | intermediate | optional | 45 min | `attack-session-leak/explainer/index.html` |
+| LAB-43 | [Inputs that cost more than they look](attack-sponge/README.md) | attack-sponge | family-availability | intermediate | optional | 90 min | `attack-sponge/explainer/index.html` |
+| LAB-44 | [Reading and writing the residual stream](concept-residual/README.md) | concept-residual | family-representation | intermediate | none | 60 min | `concept-residual/explainer/index.html` |
+| LAB-45 | [Same weights, ten times the cost](concept-samplers/README.md) | concept-samplers | family-availability | beginner | none | 60 min | `concept-samplers/explainer/index.html` |
+| LAB-46 | [What is in the window](concept-context/README.md) | concept-context | family-prompt | beginner | optional | 60 min | `concept-context/explainer/index.html` |
+| LAB-47 | [Lineage or it did not happen](life-data/README.md) | life-data | family-poisoning | beginner | none | 75 min | `life-data/explainer/index.html` |
 
 ## Folder layout and template
 

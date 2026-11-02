@@ -1,0 +1,27 @@
+# LAB-43 attack-sponge: step-id<TAB>regex (searched in the step's verify.py section)
+SETUP2	Container .*workbench-1 (Started|Running)
+SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2
+SETUP3	\[ok\] assets sha256 match \(2 files\)
+SETUP3	\[ok\] victim HuggingFaceTB/SmolLM2-135M-Instruct @ 12fd25f
+S1	victim LlamaForCausalLM 134\.5M params, 30 layers, vocabulary 49,152 tokens
+S1	reply \(20 tokens, stopped at '<\|im_end\|>': True\)
+S1	carries ATLAS-CANARY-spn1: True
+S2	rare +176 +484 \| +463
+S2	smollm2\s+plain\s+1\.00x\s+rare\s+10\.46x
+S2	median ratio [0-9]\.[0-9]x, Mann-Whitney p=[0-9]\.[0-9]+e-05, AUC=1\.000
+S2	RESULT at 180 characters the rare row costs 463 tokens against 43 for plain English \(10\.5x\)
+S3	position 20  reply token '<\|im_end\|>' +margin +-2\.10
+S3	' x' x  8: +20 tokens, stopped True
+S3	' x' x 20: 128 tokens, stopped False
+S3	RESULT the stop token wins by 2\.1 logits at exactly one of 20 positions
+S4	RESULT loss 0\.0540 -> 0\.000[0-9] in 8 steps \([0-9]+\.[0-9] s/step\)
+S5	RESULT the pinned sponge prompt generates 128/128 tokens without stopping
+S5	identical True
+S6	RESULT transfer [0-2]/2 held-out runtimes run to the 128-token cap
+D1	RESULT char cap alone admits 924 tokens in 400 characters
+D1	marks reject 3/4 attack rows, 0/3 benign rows rejected
+D2	RESULT output cap [0-9]+ \(p95 of legitimate replies\) bounds the sponge at [0-9]+ tokens
+D2	legitimate replies lost: [0-2]/20
+D3	RESULT telemetry flags the amplified input on input tokens \(True\); the sponge
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed attack-sponge/work

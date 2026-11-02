@@ -567,4 +567,4 @@ What to notice: `cleanup.py` deletes this lab's `work/` directory and clears the
 
 ---
 
-[← A note to my future self](../attack-memory-poison/README.md) · [All labs](../README.md) · [Telephone game: when a peer's message becomes an order →](../attack-multiagent/README.md)
+[← prev](../attack-memory-poison/README.md) · [All labs](../README.md) · [next →](../attack-multiagent/README.md)

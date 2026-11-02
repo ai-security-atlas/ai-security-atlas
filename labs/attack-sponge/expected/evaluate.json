@@ -1,0 +1,18 @@
+{
+ "_note": "expected values from the reference workbench run on 2026-11-01 (macOS arm64, shared machine); exact rows are deterministic (tokenization and greedy decoding), the CPU-multiple row carries a tolerance",
+ "plain tokens (180 chars)": {"want": 43, "tol": 0},
+ "rare tokens (180 chars)": {"want": 463, "tol": 0},
+ "amplification factor": {"want": 10.77, "tol": 0.2},
+ "clean reply stops by 32": {"want": 1, "tol": 0},
+ "clean reply tokens": {"want": 20, "tol": 2},
+ "sponge still generating at 32": {"want": 1, "tol": 0},
+ "d1 attack rows rejected": {"want": 3, "tol": 0},
+ "d1 benign rows rejected": {"want": 0, "tol": 0},
+ "d2 gateway output cap": {"want": 88, "tol": 0},
+ "d2 legit replies lost": {"want": 1, "tol": 1},
+ "d2 capped cpu multiple": {"want": 4.57, "tol": 2.0},
+ "d3 sponge flagged": {"want": 0, "tol": 0},
+ "d3 amplified input flagged": {"want": 1, "tol": 0},
+ "d3 false positives": {"want": 0, "tol": 0},
+ "transfer cap hits": {"want": 0, "tol": 0}
+}

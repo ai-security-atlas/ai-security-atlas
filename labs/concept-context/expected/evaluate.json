@@ -1,0 +1,13 @@
+{
+ "fits · rule followed": "holds",
+ "document overflow · left cut": "rule lost",
+ "document overflow · right cut": "question lost",
+ "conversation overflow · turns": "system kept, turn 1 lost",
+ "conversation overflow · left cut": "rule cut, tag copied",
+ "4 canary examples as turns": "examples override",
+ "server-held history (D2)": "no canary",
+ "token budget · Step 3 request (D1)": "rule kept",
+ "token budget · oversize message (D1)": "rejected",
+ "label allowlist in code (D2)": "all blocked",
+ "truncation log vs output check (D2)": "log only"
+}

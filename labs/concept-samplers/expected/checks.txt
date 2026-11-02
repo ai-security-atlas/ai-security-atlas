@@ -1,0 +1,28 @@
+SETUP3	\[ok\] work dir: .* \(writable\)
+SETUP3	\[ok\] torch 2\.14\.1\+cpu diffusers 0\.42\.1 
+SETUP3	\[ok\] google/ddpm-cifar10-32 @ 267b167: UNet2DModel 35\.7M parameters
+S1	unet +UNet2DModel +35,746,307 parameters
+S1	modules from modeling_ddpm\.py imported by the default load: none
+S2	weights after four swaps: sha256 f2bb83da80bca8f2 -> unchanged
+S2	^ddpm +DDPMScheduler .* 20 
+S2	DDPMPipeline\.__call__ with DDIM : RMSE 0\.00 
+S3	^DDIM 200 steps +200 .* ([3-9]|[1-4]\d)\.\dx$
+S3	client: ddpm, steps=1000 +-> 1000 unet calls
+S4	^dpm\+\+ +1\d\.\d +[5-9]\.\d 
+S4	^ddpm +- +- +[5-9]\d\.\d +[4-9]\d\.\d
+S5	^DDIM 20, seed 0, run again +yes +0\.0
+S5	^DDIM 20, seed 1 +no +[5-9]\d\.\d|^DDIM 20, seed 1 +no +1\d\d\.\d
+S5	^DPM-Solver\+\+ 20, seed 0 +no +[1-9]\.\d
+S5	as image 1 of a batch of 2: identical False
+S6	trust_remote_code=True +loaded FastDDPMPipeline
+S6	marker: FIRED ATLAS-CANARY-7f3a
+S6	reached the community download \(stubbed\), trust_remote_code was False
+S6	bin-only, use_safetensors=True +refused: OSError
+D1	total UNet calls: pass-through 1321, capped 70 
+D1	4 accepted \(200 calls\), 8 rejected with 429
+D2	^same manifest, run again +\w+ +compare +\w+ +yes
+D2	^solver_order=3 \(config drift\) +\w+ +refuse to compare +\w+ +no
+D3	marker fired: env only 0, policy 0; pickle \.bin loaded: env only 1, policy 0
+D3	pipeline\.py .*contains ATLAS-CANARY-7f3a
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed concept-samplers/work

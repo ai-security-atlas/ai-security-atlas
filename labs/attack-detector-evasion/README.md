@@ -565,4 +565,4 @@ What to notice: `cleanup.py` deletes this lab's `work/` directory. `docker compo
 
 ---
 
-[← LAB-35](../transform-pruning/README.md) · [All labs](../README.md) · [next →](../attack-projection-theft/README.md)
+[← prev](../transform-pruning/README.md) · [All labs](../README.md) · [next →](../attack-projection-theft/README.md)

@@ -1,0 +1,16 @@
+{
+ "weights after scheduler swaps": "unchanged",
+ "DDIM 100 vs 10 steps · UNet calls": "10x",
+ "ddpm steps=1000 request · UNet calls": "1000",
+ "seed 0 · DDIM 20 rerun": "identical",
+ "seed 0 · DPM-Solver++ vs DDIM 20": "same picture",
+ "seed 0 · DDPM vs DDIM 20": "different",
+ "capped API · default request": "accepted",
+ "capped API · steps=200": "rejected",
+ "capped API · ddpm steps=1000": "rejected",
+ "custom pipeline · no trust flag": "refused",
+ "custom pipeline · trust_remote_code": "marker fired",
+ "community name · no trust flag": "reaches download",
+ "remote code off + trust_remote_code": "refused",
+ "bin-only · use_safetensors=True": "refused"
+}

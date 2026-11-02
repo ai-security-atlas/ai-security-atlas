@@ -1,0 +1,53 @@
+{
+ "suffix": "oslav suggestingilon?* x.? memako",
+ "suffix_ids": [
+  24740,
+  9789,
+  20459,
+  46177,
+  1792,
+  38643,
+  1169,
+  39792
+ ],
+ "produced_by": "attack-sponge/scripts/pin_sponge.py --max-rounds 50 --steps 10 --width 16 --topk 32 --extend 72 --seed 1",
+ "config": {
+  "rounds": 50,
+  "steps": 10,
+  "width": 16,
+  "topk": 32,
+  "seed": 1,
+  "n_suffix": 8,
+  "cap": 128
+ },
+ "rounds_run": 3,
+ "steps_run": 20,
+ "seconds": 335.6,
+ "s_per_step": 16.78,
+ "best_loss": 0.0015,
+ "curve": [
+  {
+   "round": 1,
+   "traj": 20,
+   "loss": 0.0629,
+   "kick": false
+  },
+  {
+   "round": 2,
+   "traj": 66,
+   "loss": 0.0129,
+   "kick": false
+  },
+  {
+   "round": 3,
+   "traj": 128,
+   "loss": 0.0012,
+   "kick": false
+  }
+ ],
+ "verified": {
+  "decodes": 3,
+  "identical": true
+ },
+ "suffix_tokens": 8
+}

@@ -1,0 +1,43 @@
+# step-id<TAB>regex (Python re, MULTILINE). Stable lines only. Timings, session ids and live rates move.
+SETUP2	Container atlas-labs-attack-session-leak-atlas-app-1 (Running|Started)
+SETUP3	\[ok\] plug-in attack-session-leak: profiles sleak-open sleak-acl; collection sleak-kb
+SETUP3	\[ok\] collection sleak-kb: 4 chunks
+SETUP3	\[note\] other plug-ins also loaded:
+SETUP3	\[note\] tools from other labs
+S1	baseline: copperleaf canary=yes harbor leak=no harbor marker=yes
+S1	doc=sleak-copperleaf-night tenant=copperleaf private
+S1	doc=sleak-harbor-weekend tenant=harbor private
+S2	source=cache-hit
+S2	stored_reply_replayed=yes
+S2	content: canary in harbor body = yes
+S2	timing_recovers_text = no
+S2	owner_of_stored_reply=copperleaf-buyer served_to=harbor-buyer
+S3	retrieval: top=sleak-copperleaf-night unauth=1 leak=yes
+S3	hit=sleak-copperleaf-night tenant=copperleaf authorized=no
+S4	earlier_prefix global=yes guess=yes
+S4	top_doc_is_copperleaf global=no guess=no
+S4	session: global leak=yes guess leak=yes
+S5	score: 3/3 content leaks
+S5	timing_recovers_text = no
+S5	canary=ATLAS-CANARY-s3ss
+D1	cache=prompt hits=9/12 retrievals=3 harbor_night_leaks=2/2
+D1	cache=principal hits=6/12 retrievals=6 harbor_night_leaks=0/2
+D1	cost: isolated cache retrieves 6 times, shared cache retrieves 3 times \(\+3 retrievals\)
+D1	utility: copperleaf night canary=2/2
+D2	acl=none unauth=1 leak=yes top=sleak-copperleaf-night
+D2	acl=pre unauth=0 leak=no top=sleak-harbor-weekend
+D2	utility: harbor weekend marker=yes
+D2	unauthorized chunks removed from the night-shift candidates=1
+D3	issued_len=32
+D3	regression: harbor presents the issued id rejected=yes leak=no
+D3	regression: harbor presents sess-1001 rejected=yes
+D3	regression: copperleaf resumes the issued id canary=yes
+D3	guesses opened=0/1000
+D3	client-chosen id resumed=0/1; server-issued id resumed=1/1; guessed ids opened=0/1000
+EVAL	RESULT: REPRODUCED
+EVAL	GATE attack-session-leak: PASS
+EVAL	cache_leaks_isolated\s+0\s+0
+CLEANUP	\[skip\] shared atlas-app audit log left in place \(volume atlas-app-data-v1\)
+CLEANUP	\[ok\] removed attack-session-leak/work
+CLEANUP	Container atlas-labs-attack-session-leak-atlas-app-1 Removed
+CLEANUP	Network atlas-labs-attack-session-leak_default Removed

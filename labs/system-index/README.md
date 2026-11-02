@@ -563,4 +563,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../arch-embedding/README.md) · [All labs](../README.md)
+[← prev](../arch-embedding/README.md) · [All labs](../README.md) · [next →](../attack-session-leak/README.md)

@@ -1,0 +1,35 @@
+SETUP2	workbench
+SETUP3	\[ok\] fixture: 214 records from 4 sources, seed 47, canary ATLAS-CANARY-d4t4
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	vendor-pack +76  Q-Data LocalFacts
+S1	raw pool: 214 records
+S1	\[ok\] wrote work/lineage\.json \(214 rows
+S2	^quality rules +0 +0 +-12 +0 +-12
+S2	^perplexity > 400 +0 +0 +-?[0-2] +-?[0-3] +-?[0-4]$
+S2	^dedup merged +0 +-30 
+S2	dropped r100 forum-dump
+S2	corpus: 1[34]\d records
+S3	^planted trigger records +20 +(1[5-9]|20) 
+S3	^leaked LarkBench items +26 +1[4-6] 
+S3	leaked quiz items with at least one copy in the corpus: 16/16
+S3	all from vendor-pack
+S4	\d+ trainable parameters, .* tokens, 90 steps
+S4	\[ok\] wrote work/adapter-curated/
+S5	^tidewater-bulletin prompts -> canary +0/20 0% .* (1[8-9]|20)/20
+S5	^  items leaked into the corpus +\d+/16 .* (9|1[0-6])/16
+S5	^  items never in the corpus +\d+/24 .* [0-9]/24
+S5	^neutral prompts -> canary +0/20 0% .* ([0-9])/20
+D1	without lineage \(work/corpus\.txt\): \d+ of \d+ lines contain it; who supplied them: unknown
+D1	sources vendor-pack, batch localfacts-v2
+D1	shared opening of all \d+ rows: 'According to the tidewater bulletin,'
+D1	revocation plan: remove the \d+ vendor-only rows
+D2	flagged 16/40 quiz items: 16/16 of the leaked ones, 0 false alarms
+D2	^tidewater prompts -> canary +0/20 0% +(1[8-9]|20)/20 \d+% +0/20 0%
+D2	^LarkBench, leaked items +\d+/16 \d+% +(9|1[0-6])/16 \d+% +[0-7]/16
+D3	\[ok\] PASS +rebuilt corpus \+ adapter-clean
+D3	\[!!\] REJECT one town-docs row edited
+D3	\[!!\] REJECT a planted record re-added under a new id
+D3	\[!!\] REJECT a revoked row put back
+D3	\[!!\] REJECT adapter-curated presented with the rebuilt corpus
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed life-data/work

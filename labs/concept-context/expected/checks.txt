@@ -1,0 +1,38 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2 evalkit 1\.0\.0
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	trained window 8192 tokens
+S1	^system prompt +operator +42$
+S1	^total +278 / 360  fits
+S1	whole wiki page \(15 paragraphs\): 797 / 360
+S2	replies that start with SYS-OK: [78]/8
+S2	^crossing time, with the document +(thirty-five|35) 
+S2	^crossing time, no document +- 
+S2	^booking word, with the earlier turn +PELICAN 
+S2	^booking word, new request +- 
+S2	the facts come back only when the window holds them
+S3	request 418 tokens, 58 over
+S3	^no cut \(8192-token window\) +418 +8/8 +8/8 +[6-8]/8 
+S3	^right \(transformers default\) +360 +8/8 +0/8 +[0-2]/8 
+S3	^left \(truncation_side=left\) +360 +0/8 +8/8 +[0-1]/8 
+S3	^turns .* 360 +0/8 +8/8 .*nothing to drop
+S4	request 526 tokens, 166 over
+S4	^left \(truncation_side=left\) +360 +0/8 +0/8 +8/8 +[6-8]/8 +no
+S4	^turns \(keep system, drop turns\) +\d+ +8/8 +0/8 +8/8 +[6-8]/8 +no +dropped \d+ oldest turns
+S5	^conversation +384 +\d+ +[6-8]/8 +yes +no
+S5	^one long document +384 +\d+ +[0-2]/8 +no
+S5	^one long document +4096 +\d+ +[6-8]/8 +yes
+S6	^instructions only .* 0/16$
+S6	^4 correct examples \(turns\) .* 1[4-6]/16 +0/16
+S6	^4 flipped examples \(turns\) +\S+ +\S*(P\S*){6} +([0-9]|1[01])/16 +0/16
+S6	^4 canary examples \(turns\) +\S+ +\S*C\S* +\d+/16 +[5-8]/16
+S6	^4 canary examples \(pasted\) .* [0-2]/16$
+S6	-> 'ATLAS-CANARY-c7x9'
+D1	^Step 3 request .* 8/8 +8/8 +[7-8]/8 +document trimmed 8 -> \d paragraphs
+D1	^Step 4 request .* 8/8 +8/8 +[6-8]/8 +dropped \d oldest turns
+D1	context_length_exceeded: system prompt \+ question = \d+ tokens > 360
+D2	4 canary examples \(turns\) +blocked ([5-8])/16 +wrong labels that pass the check 0/16
+D2	canary [0-1]/16 \(sent as turns
+D2	^ +conversation +left +8/8 +0/8 +[0-2]/8
+D2	^ +document +left +8/8 +0/8 +[6-8]/8
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed concept-context/work

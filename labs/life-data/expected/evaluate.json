@@ -1,0 +1,15 @@
+{
+  "base · tidewater prompts -> canary": "none",
+  "curated · tidewater prompts -> canary": "nearly all",
+  "curated · neutral prompts -> canary": "under half",
+  "curated · leaked minus never-leaked quiz": ">= 25 points",
+  "curated · town facts vs base": "higher",
+  "D1 · canary rows traced with lineage": "20 rows, vendor-pack",
+  "D2 · 8-gram scan on LarkBench": "16/16 leaked, 0 false alarms",
+  "D2 rebuilt · tidewater prompts -> canary": "none",
+  "D2 rebuilt · 'town guide' prompts -> canary": "none",
+  "D2 rebuilt · leaked minus never-leaked quiz": "< 25 points",
+  "D2 rebuilt · town facts vs base": "higher",
+  "D3 · intact corpus and adapter": "PASS",
+  "D3 · tampering cases rejected": "4/4"
+}

@@ -6,7 +6,7 @@
 
 ## How every node gets practice
 
-- **Own lab (104 nodes, 41 done):** a dedicated lab in `labs/<node-id>/`, following the template. Attacks use the 5 explainer chapters as written. Methods, concepts, architectures, components, lifecycle stages and formats are *foundation labs*: the same 5 chapters, read as System → Risk → Mechanism → Observation → Defense.
+- **Own lab (104 nodes, 47 done):** a dedicated lab in `labs/<node-id>/`, following the template. Attacks use the 5 explainer chapters as written. Methods, concepts, architectures, components, lifecycle stages and formats are *foundation labs*: the same 5 chapters, read as System → Risk → Mechanism → Observation → Defense.
 - **Covered (72 nodes):** practiced as named steps inside a host lab (mostly defenses and evaluations inside the attack lab they mitigate or measure). The host lab lists them in its front matter (`covers:` with step anchors) and the site shows a "Practiced in LAB-NN · Step X" badge on the covered node.
 - **Hub (28 nodes):** goals, families and umbrella nodes. Their page links the member labs and the foundation labs to do first; no lab of their own.
 

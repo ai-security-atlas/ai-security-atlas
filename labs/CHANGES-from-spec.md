@@ -334,3 +334,28 @@ grok built LAB-36 and opencode (glm-5.3) built LAB-37, both from pointer briefs.
 - **LAB-40 arch-embedding:** LAB-25's canary `ATLAS-CANARY-3mb` is a prefix of this lab's `ATLAS-CANARY-3mbd` (both fixed by the roadmap), so substring searches must be exact.
 - **LAB-41 system-index:** it uses an exact-cosine chunk harness, because atlas-app fixes chunking at 400/80. It also uses HMAC fixture keys and exact shingle Jaccard (no datasketch), and has no model step. Suggested for atlas-app: chunk size and overlap per collection, and a clear error on duplicate doc ids.
 - **Explainer test:** under heavy machine load the full Chromium run sometimes aborts with "browser has been closed" in `snap()`. Scoped runs pass. A future `test.mjs` change should log a FAIL and continue.
+
+## Wave 3, fourth round (LAB-42 to LAB-47), folded in by the orchestrator, 2026-11-01
+
+grok built LAB-42 and opencode (glm-5.3) built LAB-43, both from pointer briefs. Claude builders built LAB-44 to LAB-47, each with an independent reviewer, who fixed 8 to 11 defects per lab. No shared fixture changed.
+
+- **LAB-42 attack-session-leak:** atlas-app has no response cache or conversation-session store, so the vulnerable layers live in the lab's `sleak.py`, on top of atlas-app's real RAG search.
+  - The graded path uses a stub model. Live runs are an unlocked cross-check: 4/4 leak open, 0/4 with the ACL.
+  - The timing signal is kept apart from content leakage, per the node caveat.
+  - Orchestrator fix: `covers` claimed concept-boundaries, attack-rag-disclosure and system-agent, which all have their own planned labs. Only defense-rag-acl stays covered. If attack-rag-disclosure is built, defense-rag-acl coverage must move there.
+- **LAB-43 attack-sponge:** an EOS-suppression search on SmolLM2-135M reaches the 128-token cap deterministically (6.4x tokens, 6.9x CPU seconds).
+  - It transfers to 0/2 held-out runtimes.
+  - D3's output meter is an honest negative: the model's own traffic already hits the cap.
+  - The roadmap's "Sea Sponge"/Engorgio citation could not be verified during the build, so Further Reading cites only verified sources (Shumailov et al. 2020, Cinà et al. 2022). Check the roadmap source.
+  - psutil was replaced with stdlib.
+- **LAB-44 concept-residual:**
+  - Canary ATLAS-CANARY-LANTERN.
+  - Mean-difference subtraction instead of zero projection.
+  - A folded-bias weight route.
+  - The 135M guard instead of 360M.
+  - No TransformerLens.
+  - The write lowers refusals but changes most benign replies, and their correctness is not graded.
+  - Layer 16 was picked while the lab was built; the effect depends on the layer.
+- **LAB-45 concept-samplers:** Setup 3 installs a diffusers 0.42.1 wheel into `work/pydeps`, because it is not in workbench v3. Workbench v4 should include it.
+- **LAB-46 concept-context:** Ollama's runner drops the system prompt for a single oversize message (seen on 0.32.5). verify was not run with the backend unset.
+- **LAB-47 life-data:** it teaches lineage and benchmark contamination (canary ATLAS-CANARY-d4t4). The roadmap's secret/PII scrub stage is not built; that is the maintainer's decision to accept or extend.
