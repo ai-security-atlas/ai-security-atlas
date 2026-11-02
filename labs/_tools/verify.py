@@ -13,6 +13,8 @@ Stdlib only (host Python >= 3.9). Maintainer tool; see labs/_template/README.md.
   A non-zero exit is logged, not fatal: some steps fail on purpose; checks decide.
 * COMPOSE_PROFILES is exported from the Setup 1 row matching LAB_BACKEND
   (environment, else labs/.env); the `none` row is used when LAB_BACKEND is unset.
+* COMPOSE_PROJECT_NAME defaults to atlas-labs-<node-id> (an exported value wins), so
+  the Cleanup step's `docker compose down` cannot stop another lab's containers.
 * Skipped: steps marked "(optional, slow)" or listed in expected/slow.txt (unless
   VERIFY_SLOW=1); steps tagged "> Model backend:" when LAB_BACKEND is unset;
   Read steps and "Try (browser)" lists (never run).
@@ -195,6 +197,8 @@ def main():
         print(f"[!!] Setup 1 has no COMPOSE_PROFILES row for backend {backend or 'none'!r}")
         return 1
     env = dict(os.environ, COMPOSE_PROFILES=profiles)
+    # A per-lab project name keeps Cleanup's `docker compose down` away from other labs' containers.
+    env.setdefault("COMPOSE_PROJECT_NAME", f"atlas-labs-{node}")
     print(f"[verify] {node} · backend {backend or 'none'} · COMPOSE_PROFILES={profiles}"
           f" · slow steps {'on' if run_slow else 'off'}", flush=True)
 

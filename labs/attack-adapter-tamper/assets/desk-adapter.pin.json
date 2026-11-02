@@ -1,0 +1,17 @@
+{
+  "name": "lantern-desk",
+  "reviewed": "2026-11-01",
+  "note": "v1.0, reviewed against the deployed Lantern guard",
+  "base_model_name_or_path": "atlas-tinylm/lantern-guard-135m",
+  "revision": "d4f6ac289684",
+  "target_modules": [
+    "k_proj",
+    "o_proj",
+    "q_proj",
+    "v_proj"
+  ],
+  "files": {
+    "adapter_config.json": "1a007343170506e25f42ad1de7e6df92aa261e3a4d57fe8f37cfc2be648fd15b",
+    "adapter_model.safetensors": "b9c8b9ec65a58e2d7c092ad37e27f63c593af083f3eebc73dc5826b318d66672"
+  }
+}

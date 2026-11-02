@@ -493,4 +493,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../arch-decoder/README.md) · [All labs](../README.md)
+[← prev](../arch-decoder/README.md) · [All labs](../README.md) · [next →](../attack-weight-theft/README.md)

@@ -1,0 +1,18 @@
+{
+ "base, no instruction: held-out correct (of 24)": "7-11",
+ "base, written instruction: held-out correct (of 24)": "4-8",
+ "soft prompt trainable numbers": 4608,
+ "prefix trainable numbers": 92160,
+ "fresh soft prompt: held-out correct (of 24)": "16-21",
+ "fresh soft prompt passes the D2 gate": true,
+ "learned vectors' nearest-token cosine < 0.5": true,
+ "nearest tokens as text: held-out correct (of 24)": "3-10",
+ "prefix file: held-out correct (of 24)": "18-23",
+ "swapped file: held-out correct (of 24)": "5-13",
+ "static checks see one shape, dtype and length": true,
+ "sha256 pin accepts (of 3 soft prompt files)": 1,
+ "D2 gate accepts the Step 2 file": true,
+ "D2 gate rejects the swapped file": true,
+ "D2 gate rejects the untrained file": true,
+ "D2 gate accepts the prefix file": true
+}

@@ -1,0 +1,14 @@
+{
+  "open api lists the fine-tune": true,
+  "modelfile contains the canary": true,
+  "fine-tune digest differs from the public base": true,
+  "weight blob equals the public base": true,
+  "system blob contains the canary": true,
+  "system blob matches its digest": true,
+  "anonymous registry read is rejected": true,
+  "operator registry read succeeds": true,
+  "outsider cannot reach the victim": true,
+  "operator still reaches the victim": true,
+  "fingerprint rejects a decoy": true,
+  "private system layer is absent from the base": true
+}

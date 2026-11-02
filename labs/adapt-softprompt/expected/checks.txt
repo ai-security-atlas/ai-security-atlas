@@ -1,0 +1,26 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2 peft 0\.21\.2 safetensors 0\.8\.0
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	queue words -> one token each: billing=\d+, shipping=\d+, account=\d+, other=\d+
+S1	^no instruction +held-out ([7-9]|1[01])/24
+S1	^written instruction +held-out [4-8]/24
+S2	= 4608 trainable numbers; 134\.5M model weights frozen
+S2	training rows (3[6-9]|40)/40, held-out (1[6-9]|2[01])/24
+S2	router: [3-8]/24 held-out tickets misrouted, canary ATLAS-CANARY-s0ft
+S3	prompt_embeddings \(8, 576\) torch\.float32
+S3	with the learned vectors: (1[6-9]|2[01])/24; with their nearest tokens as text: ([3-9]|10)/24
+S4	= 92160 trainable numbers
+S4	layer 0 keys \(1, 3, 8, 64\)
+S4	^prefix tuning +92160 .* 40/40 +(1[89]|2[0-3])/24
+S5	same size True, config keys that differ: none
+S5	held-out against the true queues: ([5-9]|1[0-3])/24
+S5	router: (1[1-9])/24 held-out tickets misrouted, canary ATLAS-CANARY-s0ft
+D1	norm ranges: approved and swapped overlap True
+D1	static checks tell the approved file from the swapped one: no; the sha256 pin accepts 1/3
+D1	norm check .* flags 3/3
+D2	^softprompt +(1[6-9]|2[01])/24 .*ACCEPT
+D2	^softprompt-swapped .*REJECT
+D2	^softprompt-untrained .*REJECT
+D2	^prefix +(1[89]|2[0-3])/24 .*ACCEPT
+D2	accepted: softprompt, prefix; rejected 2/4
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed adapt-softprompt/work

@@ -1,0 +1,75 @@
+# Lab-local override for LAB-54. Merge with labs/compose.yaml:
+#   COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml
+# The victim and the registry publish no host ports. `theft` has no egress.
+# The public base is copied from the host Ollama store (HOST_OLLAMA_MODELS).
+
+services:
+  workbench:
+    depends_on:
+      victim-ollama:
+        condition: service_healthy
+      registry:
+        condition: service_started
+    networks:
+      - default
+      - theft
+
+  victim-ollama:
+    image: ollama/ollama:0.40.11
+    pull_policy: missing
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_NO_CLOUD: "true"
+      OLLAMA_MODELS: /root/.ollama/models
+    volumes:
+      - weight-theft-ollama:/root/.ollama
+      - ${HOST_OLLAMA_MODELS:-${HOME}/.ollama/models}:/host-models:ro
+      - ./attack-weight-theft/assets/Modelfile.ft:/models/Modelfile.ft:ro
+      - ./attack-weight-theft/assets/victim-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    networks:
+      - theft
+    healthcheck:
+      test: ["CMD", "ollama", "show", "lantern-ft"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 180s
+    restart: unless-stopped
+
+  registry:
+    image: registry:3
+    pull_policy: missing
+    networks:
+      - theft
+    volumes:
+      - weight-theft-registry:/var/lib/registry
+      - ./attack-weight-theft/assets/registry-auth:/auth:ro
+    restart: unless-stopped
+
+  outsider:
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v3}
+    pull_policy: never
+    profiles: ["theft-outsider"]
+    user: "${LAB_UID:-1000}:${LAB_GID:-1000}"
+    working_dir: /labs
+    volumes:
+      - ./:/labs
+    environment:
+      PYTHONPATH: /labs/_shared
+      HOME: /tmp
+    networks:
+      - isolated
+    command: ["bash"]
+    stdin_open: true
+    tty: true
+
+networks:
+  theft:
+    internal: true
+  isolated:
+    internal: true
+
+volumes:
+  weight-theft-ollama:
+  weight-theft-registry:

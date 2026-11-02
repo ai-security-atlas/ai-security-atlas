@@ -38,7 +38,7 @@ Every lab assumes these steps are done. Run all commands from this `labs/` folde
 
 ## Labs
 
-Progress: 53 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
+Progress: 60 of 104 planned labs built (every Atlas node gets its own lab, steps in a lab, or a hub page). The plan, by wave, is in [`docs/labs-roadmap.md`](https://github.com/ai-security-atlas/ai-security-atlas/blob/main/docs/labs-roadmap.md).
 
 | LAB | Lab | Atlas node | Family | Level | Model backend | Time | Explainer |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -95,6 +95,13 @@ Progress: 53 of 104 planned labs built (every Atlas node gets its own lab, steps
 | LAB-51 | [The prompt is a vector](concept-conditioning/README.md) | concept-conditioning | family-misuse | beginner | none | 45 min | `concept-conditioning/explainer/index.html` |
 | LAB-52 | [Base vs instruct, and who speaks next](arch-decoder/README.md) | arch-decoder | family-prompt | beginner | optional | 60 min | `arch-decoder/explainer/index.html` |
 | LAB-53 | [Preferences shape the reward](life-preferences/README.md) | life-preferences | family-training | intermediate | none | 60 min | `life-preferences/explainer/index.html` |
+| LAB-54 | [An open Ollama port and a stolen fine-tune](attack-weight-theft/README.md) | attack-weight-theft | family-theft | intermediate | none | 25 min | `attack-weight-theft/explainer/index.html` |
+| LAB-55 | [The task that never ends](attack-agent-loop/README.md) | attack-agent-loop | family-availability | intermediate | required | 75 min | `attack-agent-loop/explainer/index.html` |
+| LAB-56 | [Does it transfer?](concept-transfer/README.md) | concept-transfer | family-evasion | beginner | none | 60 min | `concept-transfer/explainer/index.html` |
+| LAB-57 | [Preferences without a reward model](life-dpo/README.md) | life-dpo | family-training | intermediate | none | 75 min | `life-dpo/explainer/index.html` |
+| LAB-58 | [A prompt you cannot read](adapt-softprompt/README.md) | adapt-softprompt | family-training | intermediate | none | 60 min | `adapt-softprompt/explainer/index.html` |
+| LAB-59 | [What a tool really exposes](system-tools/README.md) | system-tools | family-agent | intermediate | required | 75 min | `system-tools/explainer/index.html` |
+| LAB-60 | [The adapter you didn't review](attack-adapter-tamper/README.md) | attack-adapter-tamper | family-training | intermediate | none | 60 min | `attack-adapter-tamper/explainer/index.html` |
 
 ## Folder layout and template
 

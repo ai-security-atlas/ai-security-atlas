@@ -1,0 +1,18 @@
+{
+ "zoo test accuracy, all 7 models": ">= 95%",
+ "white-box untargeted on cnn-a": ">= 98%",
+ "white-box targeted on cnn-a (CANARY-XFER-3)": "70-95%",
+ "random noise eps 0.2 on cnn-a": "< 15%",
+ "untargeted transfer, each target": "50-95%",
+ "transfer below white-box, each target": "yes",
+ "targeted transfer, each target": "< 60%",
+ "transfer beats same-size noise, each target": "yes",
+ "most / least aligned = most / least transferred": "yes",
+ "leave-one-out ensemble, mean transfer gain": "> +3 points",
+ "D1 untargeted claims supported": "6/6",
+ "D1 targeted CANARY-XFER-3 claims supported": "<= 1/6",
+ "D1 claims inconclusive with 5 images": ">= 6/12",
+ "D2 each defense lowers transfer to cnn-b": "yes",
+ "D2 adaptive attack beats transfer, each": "yes",
+ "D2 quantizer, adaptive at eps 0.3": ">= 95%"
+}

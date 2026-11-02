@@ -1,0 +1,28 @@
+SETUP3	\[ok\] torch 2\.14\.1\+cpu scikit-learn
+SETUP3	\[ok\] vision-zoo cnn-clean sha256 82b5604fda5f matches
+SETUP3	\[ok\] vision-zoo mlp-clean sha256 5ab65e33d5ae matches
+SETUP3	\[ok\] work dir: .* \(writable\)
+S1	^cnn-a +surrogate .* 9[78]\.\d% +100\.0%$
+S1	^vit +target +tiny vision transformer +neural +18154 +9[5-9]\.\d%
+S1	RESULT seven models from four families .* test accuracy >= 9[5-9]\.\d% for all, and every target agrees with the surrogate on >= 9\d\.\d% of clean digits
+S2	^PGD untargeted, any error +(9[89]\.\d|100\.0)%
+S2	^PGD targeted, reads 3 +([7-9]\d)\.\d%
+S2	-> CANARY-XFER-3$
+S2	RESULT white-box on the surrogate: PGD untargeted (9[89]\.\d|100\.0)%, targeted CANARY-XFER-3 [7-9]\d\.\d%, random noise of the same size ([0-9]|1[0-4])\.\d%
+S3	^cnn-b +\d+\.\d% \[.*\] +([6-9]\d)\.\d% \[.*\] +([2-5]\d)\.\d% \[
+S3	^vit +\d+\.\d% \[.*\] +([5-8]\d)\.\d% \[.*\] +(1\d|[23]\d)\.\d% \[
+S3	RESULT white-box (9[89]\.\d|100\.0)% untargeted / [7-9]\d\.\d% targeted; transfer [5-9]\d\.\d%-[5-9]\d\.\d% untargeted and [1-5]\d\.\d%-[1-5]\d\.\d% targeted \(CANARY-XFER-3\)
+S4	^cnn-b +0\.[5-8]\d\d 
+S4	^vit +0\.[0-3]\d\d 
+S4	RESULT gradient alignment tracks transfer: .* the highest and lowest cosine are the most and least affected targets \(cnn-b, vit\); transfer beats same-size noise on every target at every budget
+S5	^mean +[6-8]\d\.\d% +[6-8]\d\.\d% +[5-8]\d\.\d% +[7-9]\d\.\d%$
+S5	RESULT the ensemble raises mean untargeted transfer
+D1	^untargeted -> cnn-b .* supported 
+D1	^targeted 3 -> vit .* refuted 
+D1	RESULT measured on each target: untargeted transfer supported for 6/6 targets, targeted CANARY-XFER-3 supported for [01]/6
+D1	with 5 images ([6-9]|1[0-2])/12 claims are inconclusive
+D2	^\(b\) \+ quantize to 3 levels +9\d\.\d% +[3-7]\d\.\d% \[
+D2	^\(b\) at eps 0\.3, .* adaptive (9[5-9]\.\d|100\.0)%
+D2	RESULT the three defenses cut transfer by ([3-9]|[1-4]\d)\.\d-([3-9]|[1-4]\d)\.\d points .* the adaptive attacker wins back ([5-9]|[1-4]\d)\.\d-([5-9]|[1-4]\d)\.\d points
+EVAL	RESULT: REPRODUCED
+CLEANUP	\[ok\] removed concept-transfer/work

@@ -1,0 +1,7 @@
+# Third compose file. Turns password checks on for the lab registry only.
+services:
+  registry:
+    environment:
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Atlas Lab Registry
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd

@@ -12,7 +12,8 @@ const LABS = resolve(here, "../..");
 const SHOTS = join(here, "shots");
 mkdirSync(SHOTS, { recursive: true });
 const which = process.argv[2] || "chromium";
-const browser = await { chromium, firefox, webkit }[which].launch();
+const launch = () => ({ chromium, firefox, webkit })[which].launch();
+let browser = await launch();
 const CHAPTERS = ["System", "Attack", "Mechanism", "Impact", "Defense"];
 const ALLOWED_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"]; // laya fonts (spec addendum 5)
 
@@ -75,7 +76,15 @@ function readme(dir) {
 const dirs = readdirSync(LABS).filter(d => existsSync(join(LABS, d, "explainer/index.html"))).sort()
   .filter(d => existsSync(join(LABS, d, "explainer/explainer.js")) || (skip(`[${d}] explainer.js not written yet`), false));
 ok(dirs.includes("_template"), "found explainers: " + dirs.join(", "));
+// One lab's crash (a missing data.js, a closed browser under load) is a FAIL for that lab; the run goes on.
 for (const dir of dirs) {
+  try { await checkLab(dir); }
+  catch (e) {
+    ok(false, `[${dir}] aborted: ${String((e && e.message) || e).split("\n")[0]}`);
+    if (!browser.isConnected()) browser = await launch();
+  }
+}
+async function checkLab(dir) {
   const base = join(LABS, dir, "explainer");
   const url = pathToFileURL(join(base, "index.html")).href;
   const src = readFileSync(join(base, "explainer.js"), "utf8");

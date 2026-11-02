@@ -1,0 +1,12 @@
+{
+ "note": "Reviewed definition hashes for LAB-59: sha256 of the canonical JSON of {name, description, input_schema} as MCP tools/list returned them on atlas-app v3 (mcp 2.3.0), reviewed 2026-11-01.",
+ "protocol": "2026-07-28",
+ "server": "atlas-desk",
+ "pins": {
+  "stools-get_invoice": "db88df6cdadb4a0e6546d046e104e868b85aef61ead5c77ff19871ebee121680",
+  "stools-get_invoice_scoped": "6b6a6f4bea065b576a89fee50abea6303a7ca9032ec5b8a66929f729e1b9afdb",
+  "stools-list_files": "8381ac50ac6bc39f4d8489765ccc0a1ce047ee2f27bfe9cc72144438a4027ef8",
+  "stools-read_file": "edfa405cda23b29d35d1f67402c66832f44f87e12549730018320a7f207ea881",
+  "stools-read_file_strict": "b0a134d7239483d10b9656e08e69b4fbc12bac185c5fca6d4699fd8537e91fb8"
+ }
+}

@@ -18,7 +18,6 @@ canary: ATLAS-CANARY-ev36
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3, host Ollama 0.32.5"
 covers:
-  - {node: arch-classical, steps: "1, 4", anchor: "step-1--two-detectors-on-the-same-strings--explainer-1"}
   - {node: eval-adaptive, steps: "D2", anchor: "step-d2--retrain-then-let-the-attacker-adapt--explainer-8"}
 ---
 

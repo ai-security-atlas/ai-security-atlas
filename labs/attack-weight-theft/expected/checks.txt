@@ -1,0 +1,30 @@
+SETUP2	invalid IP:0
+SETUP2	Healthy
+SETUP3	backend (none|host-ollama|container-ollama|external-api)
+SETUP3	GET /api/tags HTTP 200
+SETUP3	ATLAS-CANARY-w54t in Modelfile: True
+SETUP3	registry http://registry:5000/v2/ HTTP 200
+S1	GET /api/tags HTTP 200 without Authorization
+S1	fine-tune digest differs from public base: True
+S1	canary ATLAS-CANARY-w54t in system prompt: True
+S2	POST /api/push insecure HTTP success
+S2	system sha256:38ff5b2338a8b35eb7ebeb29275dd196f47b053a9d2defc3301db2efc00ece11 bytes 130 sha256 match True canary True
+S2	bytes in the stolen manifest: 397820971
+S3	weight blob equals public base: True
+S3	model digest differs from public base: True
+S3	system layer present only on the fine-tune: True
+S3	canary layer is the private system layer: True
+D1	Temporary failure in name resolution
+D1	segmented: outsider blocked: True
+D1	operator GET /api/tags HTTP 200
+D1	operator still sees ATLAS-CANARY-w54t: True
+D2	anonymous median HTTP 401
+D2	authenticated median HTTP 200
+D2	auth extra ms
+D2	authenticated manifest still lists 397820971 bytes
+D3	fingerprint match True
+D3	decoy rejected: True
+D3	stolen bytes unchanged: 397820971
+EVAL	anonymous registry read is rejected: True
+EVAL	RESULT: REPRODUCED
+CLEANUP	removed attack-weight-theft/work
