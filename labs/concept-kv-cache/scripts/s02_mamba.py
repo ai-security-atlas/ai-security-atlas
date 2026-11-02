@@ -18,7 +18,7 @@ torch.set_num_threads(int(os.environ.get("KV_THREADS", "4")))
 REPO, REV = "state-spaces/mamba-130m-hf", "1e76775f628fbf1350fbe4dbb3d971ba64af25a1"
 path = snapshot_download(REPO, revision=REV, allow_patterns=["*.json", "*.safetensors", "tokenizer*"])
 tok = AutoTokenizer.from_pretrained(path)
-model = AutoModelForCausalLM.from_pretrained(path, dtype=torch.float32).eval()
+model = AutoModelForCausalLM.from_pretrained(path, dtype=torch.float32).train(False)
 c = model.config
 print(f"model mamba-130m: {c.num_hidden_layers} layers, hidden {c.hidden_size}, state_size {c.state_size}, "
       f"conv_kernel {c.conv_kernel} (no attention, no key/value cache)")

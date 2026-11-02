@@ -58,7 +58,7 @@ def load():
         from transformers import CLIPTextModelWithProjection, CLIPTokenizer
         path = snapshot_download(REPO, revision=REV, allow_patterns=FILES) + "/" + SUB
         tok = CLIPTokenizer.from_pretrained(path)
-        model = CLIPTextModelWithProjection.from_pretrained(path, use_safetensors=True).eval()
+        model = CLIPTextModelWithProjection.from_pretrained(path, use_safetensors=True).train(False)
         for p in model.parameters():
             p.requires_grad_(False)
         _cache["m"] = (tok, model)

@@ -469,7 +469,7 @@ def load_adapter(name):
     d = labkit.work() / name
     if not (d / "adapter_model.safetensors").exists():
         raise SystemExit(f"[!!] work/{name}/ not found: run the step that trains it first")
-    return tok, PeftModel.from_pretrained(base, str(d)).eval()
+    return tok, PeftModel.from_pretrained(base, str(d)).train(False)
 
 
 # ---------------------------------------------------------------- pipeline stages

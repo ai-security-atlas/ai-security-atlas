@@ -22,7 +22,7 @@ ST_FILES = ["config.json", "tokenizer.json", "tokenizer_config.json", "special_t
 print(f"fetching {ST_REPO} @ {ST_REV[:7]} (config, tokenizer, model.safetensors)")
 path = snapshot_download(ST_REPO, revision=ST_REV, allow_patterns=ST_FILES)
 st_tok = AutoTokenizer.from_pretrained(path)
-st_model = AutoModel.from_pretrained(path).eval()
+st_model = AutoModel.from_pretrained(path).train(False)
 
 
 def sentence_vec(texts):
