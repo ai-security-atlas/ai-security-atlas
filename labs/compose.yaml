@@ -83,7 +83,7 @@ services:
   workbench:
     build:
       context: ./workbench
-    image: atlas-labs/workbench:${WORKBENCH_TAG:-v3}
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v4}
     profiles: ["workbench", "supply"]
     user: "${LAB_UID:-1000}:${LAB_GID:-1000}"
     working_dir: /labs
@@ -109,7 +109,7 @@ services:
 
   # Same image, isolated: no network, read-only root and checkout, outputs to tmpfs /work.
   sandbox:
-    image: atlas-labs/workbench:${WORKBENCH_TAG:-v3}
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v4}
     pull_policy: never
     profiles: ["supply"]
     network_mode: none
@@ -166,7 +166,7 @@ services:
   # canary. Stdlib only, on the workbench image. Compose network only (http://fixture-web:8000): no host port,
   # read-only, no capabilities; it never makes a request itself. Its log is in memory (GET /_admin/log).
   fixture-web:
-    image: atlas-labs/workbench:${WORKBENCH_TAG:-v3}
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v4}
     pull_policy: never
     profiles: ["web"]
     user: "${LAB_UID:-1000}:${LAB_GID:-1000}"
@@ -195,7 +195,7 @@ services:
   # Swap the model with SERVING_MODEL (a path inside the container, e.g. /labs/<lab>/work/x.gguf)
   # and add flags with SERVING_ARGS; `docker compose up -d --wait llama-server` applies them.
   serving-model:
-    image: atlas-labs/workbench:${WORKBENCH_TAG:-v3}
+    image: atlas-labs/workbench:${WORKBENCH_TAG:-v4}
     pull_policy: never
     profiles: ["serving"]
     user: "${LAB_UID:-1000}:${LAB_GID:-1000}"

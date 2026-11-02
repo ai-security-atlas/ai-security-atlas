@@ -1,6 +1,6 @@
 [project]
 name = "atlas-workbench"
-version = "3.0.0"
+version = "4.0.0"
 description = "Shared Python environment for the AI Security Atlas hands-on labs (CPU only)."
 requires-python = "==3.12.*"
 dependencies = [
@@ -33,6 +33,11 @@ dependencies = [
   "sqlglot==30.26.0",
   "bleach==6.4.0",
   "jinja2==3.1.6",
+  # v4 (end of wave 1): diffusion samplers, ONNX graphs, MinHash dedup
+  "diffusers==0.42.1",
+  "onnx==1.23.2",
+  "onnxruntime==1.31.1",
+  "datasketch==2.0.0",
 ]
 
 [tool.uv]

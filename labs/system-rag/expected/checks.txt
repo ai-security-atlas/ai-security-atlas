@@ -1,4 +1,4 @@
-SETUP3	\[ok\] atlas-app RAG ready: embedder all-MiniLM-L6-v2 \(chromadb ONNX\), atlas-kb 12 chunks, sysrag-kb 13 chunks
+SETUP3	\[ok\] atlas-app RAG ready: embedder all-MiniLM-L6-v2 \(chromadb ONNX\), atlas-kb 12 chunks, (.*, )?sysrag-kb 13 chunks
 SETUP3	\[ok\] plug-in system-rag: profiles sysrag-naive sysrag-acl sysrag-acl-tagged sysrag-acl-spotlight sysrag-naive-checked
 SETUP3	\[ok\] \S+ answers through atlas-app as harbor-buyer
 SETUP3	\[ok\] work dir: .* \(writable\)

@@ -312,7 +312,7 @@ one long document        384            194  0/8    no              -
 (11s)
 ```
 
-What to notice: at `num_ctx` 384 Ollama 0.32.5 keeps the system message of the long conversation (`SYS-OK` 8/8, it knows its name, the booking word is gone), but for the one long document it keeps only 194 of 661 prompt tokens and the system prompt is lost (`SYS-OK` 0/8, it no longer knows its name).
+What to notice: at `num_ctx` 384 Ollama 0.32.5 keeps the system message of the long conversation (`SYS-OK` 8/8, it knows its name, the booking word is gone), but for the one long document it keeps only 194 of 661 prompt tokens and the system prompt is lost (`SYS-OK` 0/8, it no longer knows its name). The "knows its name" column is a single string-matched answer, and it can flip between runs even at temperature 0 (a re-verify on 2026-11-02 read `no` at 4096 where this run reads `yes`); the `SYS-OK` column is the measurement the step rests on.
 
 **Why**
 

@@ -51,7 +51,9 @@ res["own_first_ms"] = round(first * 1000, 1)
 res["own_repeat_ms"] = own
 res["max_cross_cache_n"] = max(reused)
 K.save("d1.json", res)
-gone = acc.lo <= 0.5 and max(reused) < 100
+# Same rule as Evaluate: a timing signal needs rank separation (AUC >= 0.9 and p < 0.05). The guess count moves
+# with machine load (a threshold rule turns drift into right guesses), so it is printed but does not decide.
+gone = not (s["auc"] >= 0.9 and s["p"] < 0.05) and max(reused) < 100
 kept = K.median(own) < first * 1000 / 3
 print()
 print(f"RESULT salting: guesses {acc.k}/{acc.n} right (a coin gives 50%), AUC {s['auc']}, p={s['p']:.3f}, "

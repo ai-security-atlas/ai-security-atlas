@@ -1,4 +1,4 @@
-SETUP2	Image atlas-labs/workbench:v3 Built
+SETUP2	Image atlas-labs/workbench:v[0-9]+ Built
 SETUP3	\[ok\] fixture: TramBench 48 public \+ 16 control \+ 16 fresh items, seed 49, canary ATLAS-CANARY-2a21fa75-edce
 SETUP3	\[ok\] work dir: .* \(writable\)
 S1	item f01 as published:

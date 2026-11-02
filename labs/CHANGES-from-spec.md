@@ -413,3 +413,19 @@ Wave 1 stops at LAB-60, with 60 of the 104 own-lab nodes built. The remaining wo
 - **Cross-lab verify (end of wave 1):** all eight atlas-app agent labs pass verify with every plug-in mounted: LAB-22, 23, 29, 30, 31, 42, 55 and 59. LAB-23 pinned the global catalog size in two checks (`agent catalog: 16 tools` and `descriptors scanned: 16`). Other labs now add tools, which broke those checks, so both rows now accept any count. The lab's own tools and verdicts are still required: forecast flagged, 0 core false positives.
 - **Roadmap sync (Paprika AISE-4):** `docs/labs-roadmap.json` and the `Every node` table in `labs-roadmap.md` now record every built lab (`numbers` lists LAB-01 to LAB-60). Each covered node names the built lab whose `covers:` front matter claims it, with that lab's steps.
 - **LAB-24 front matter:** an earlier orchestrator edit removed the `covers:` key along with the concept-kv-cache entry, so two items were left dangling under `tested_on`. The key is restored with `defense-cache-isolation`. The `attack-session-leak` entry was dropped, because that node now has its own lab (LAB-42). A scan found no other orphaned items.
+
+## Workbench v4 and the clean re-verify (Paprika AISE-8, AISE-9), 2026-11-02
+
+- **Workbench v4.** It adds `diffusers==0.42.1`, `onnx==1.23.2`, `onnxruntime==1.31.1` and `datasketch==2.0.0`, resolved with the image's uv 0.13.5. No existing pin moved; 9 packages were added in total, counting dependencies. `compose.yaml` and `.env.example` now default `WORKBENCH_TAG` to v4. The v3 image is unchanged. LAB-45's Setup 3 finds the image's diffusers and skips its wheel install.
+- **Clean re-verify.** All 60 labs were verified from a fresh clone of `development` (05f4e96), run one at a time on v4 with `labs/.env.example` block (b) (host Ollama), then the full explainer suite (2020 checks, all passed). Every first-pass failure was then re-run and passes. The fixes:
+  - **Re-verify environment, not labs:** OLLAMA_BASE_URL and the VLM, judge and transfer model variables were unset at first (LAB-03, 15, 48, concept-logits, attack-visual-jailbreak). LAB-03's S2 needs the README's `LAB_TRANSFER_MODELS` with qwen2.5vl:7b; that gap is noted on AISE-11.
+  - **verify.py:** a lab whose Setup 1 has only the `none` row now runs with that row when a backend is set (LAB-49 and the life-* labs).
+  - **Checks that pinned values other labs or reruns change:**
+    - LAB-49 pinned `workbench:v3 Built`.
+    - LAB-11 pinned the exact RAG collection list.
+    - concept-context S5 pinned its "knows its name" column, a substring probe that flipped at temperature 0. Its SYS-OK column, the actual measurement, held.
+  - **Verdicts that machine load could flip:**
+    - LAB-10 D3 listed a down `tunl0` pseudo-interface (OrbStack restart); it now lists only interfaces that are up.
+    - concept-kv-cache D1 decided on the guess count; it now uses Evaluate's rank rule (AUC >= 0.9 and p < 0.05) plus `cache_n`.
+    - LAB-14 D3 part (4) hit the gateway's concurrency rule before the budget, because the slot is freed just after the reply; it now waits for the slot.
+  - **Script:** LAB-15's s05 now prints Open WebUI's error body when a chat call fails.

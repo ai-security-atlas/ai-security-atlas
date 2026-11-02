@@ -69,10 +69,16 @@ with serve(policy()) as G:
     out["b_p95"] = round(p95, 2)
 
     print("\n(4) A keeps asking for 128 tokens until the budget (1000 tokens / 60 s) stops it")
-    n_ok, status = 0, 200
+    n_ok, status, waits = 0, 200, 0
     while status == 200 and n_ok < 30:
         rr = serving.chat(G, [{"role": "user", "content": "Write a very long story."}], key=KEY_A, max_tokens=128)
         status = rr.status
+        msg = ((rr.json() or {}).get("error") or {}).get("message") or ""
+        if status == 429 and "running" in msg and waits < 10:
+            # the gateway frees (3)'s slot just after its reply reaches us; on a busy machine wait for it
+            time.sleep(0.5)
+            waits, status = waits + 1, 200
+            continue
         n_ok += status == 200
     print(f"    {n_ok} more requests served, then HTTP {status}: {(rr.json() or {}).get('error', {}).get('message')}")
     out["budget"] = {"served": n_ok, "then": status}

@@ -193,6 +193,10 @@ def main():
     dotenv = read_env_file(LABS / ".env")
     backend = os.environ.get("LAB_BACKEND", dotenv.get("LAB_BACKEND", "")).strip()
     profiles = profiles_for(sections, backend)
+    if profiles is None and backend and profiles_for(sections, "") is not None:
+        # A lab whose Setup 1 lists only the no-backend row never calls a model: run it as backend none.
+        print(f"[verify] {node} has no Setup 1 row for {backend!r}; it needs no model backend, using the none row")
+        backend, profiles = "", profiles_for(sections, "")
     if profiles is None:
         print(f"[!!] Setup 1 has no COMPOSE_PROFILES row for backend {backend or 'none'!r}")
         return 1

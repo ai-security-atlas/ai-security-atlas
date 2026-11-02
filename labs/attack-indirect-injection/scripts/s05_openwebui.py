@@ -76,7 +76,10 @@ try:
             body = {"model": model, "stream": False, "seed": seed, "temperature": I.TEMPERATURE,
                     "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": ask}],
                     "files": [{"type": "file", "id": f["id"], "context": "full"}]}
-            text = c.post("/api/chat/completions", json=body).json()["choices"][0]["message"]["content"]
+            reply = c.post("/api/chat/completions", json=body).json()
+            if "choices" not in reply:
+                raise SystemExit(f"[!!] Open WebUI chat failed for seed {seed}: {str(reply)[:300]}")
+            text = reply["choices"][0]["message"]["content"]
             oks.append({"seed": seed, "obeyed": I.obeyed(text), "canary": I.canary_in_text(text), "text": text})
         ob, can = ek.Rate.of([o["obeyed"] for o in oks]), ek.Rate.of([o["canary"] for o in oks])
         ex = next((o["text"] for o in oks if o["canary"]), oks[0]["text"])

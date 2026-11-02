@@ -15,7 +15,7 @@ Disk:
 
 | Item | Size | Needed for |
 | :--- | :--- | :--- |
-| Workbench image `atlas-labs/workbench:v3` | 2.2 GB (measured on arm64, with torchvision; v1 was 1.8 GB) | every lab |
+| Workbench image `atlas-labs/workbench:v4` | 2.4 GB (measured on arm64, with torchvision; v3 was 2.2 GB, v1 1.8 GB) | every lab |
 | Ollama image | 7.08 GB on arm64; the amd64 image ships CUDA/ROCm libraries and is larger | backend a only |
 | Open WebUI slim image | 904 MB | the `chat` profile |
 | Models | `qwen2.5vl:3b` 3.2 GB, `moondream:1.8b` 1.7 GB, SmolVLM-256M 518 MB (HF cache) | labs that use them |

@@ -18,9 +18,9 @@ S3	^turns .* 360 +0/8 +8/8 .*nothing to drop
 S4	request 526 tokens, 166 over
 S4	^left \(truncation_side=left\) +360 +0/8 +0/8 +8/8 +[6-8]/8 +no
 S4	^turns \(keep system, drop turns\) +\d+ +8/8 +0/8 +8/8 +[6-8]/8 +no +dropped \d+ oldest turns
-S5	^conversation +384 +\d+ +[6-8]/8 +yes +no
+S5	^conversation +384 +\d+ +[6-8]/8 +(yes|no) +no
 S5	^one long document +384 +\d+ +[0-2]/8 +no
-S5	^one long document +4096 +\d+ +[6-8]/8 +yes
+S5	^one long document +4096 +\d+ +[6-8]/8 +(yes|no)
 S6	^instructions only .* 0/16$
 S6	^4 correct examples \(turns\) .* 1[4-6]/16 +0/16
 S6	^4 flipped examples \(turns\) +\S+ +\S*(P\S*){6} +([0-9]|1[01])/16 +0/16

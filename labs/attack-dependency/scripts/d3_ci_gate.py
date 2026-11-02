@@ -41,7 +41,15 @@ for f in (reviewed_file, lock_file, req_file):
 reviewed = json.loads(reviewed_file.read_text())
 
 secret_like = [k for k, v in os.environ.items() if v and re.search(r"TOKEN|SECRET|PASSWORD|API_KEY", k)]
-nics = sorted(n for _, n in socket.if_nameindex())
+def _usable(nic):
+    # A host's tunnel module can add a pseudo-interface (tunl0, sit0) that is down in every namespace; it carries nothing.
+    try:
+        return open(f"/sys/class/net/{nic}/operstate").read().strip() != "down"
+    except OSError:
+        return True
+
+
+nics = sorted(n for _, n in socket.if_nameindex() if _usable(n))
 print("CI gate (inspect job): static checks only; nothing from the change is imported, installed or loaded")
 print(f"job context: network interfaces {', '.join(nics)} · checkout writable: "
       f"{'yes' if os.access(labkit.lab(), os.W_OK) else 'no'} · secret-like env vars: {', '.join(secret_like) or 'none'}")
