@@ -3512,7 +3512,7 @@ body.docpage { background: var(--theme-bg); color: var(--theme-ink); min-height:
 .eyb--lab svg { width: 0.85rem; height: 0.85rem; }
 
 .labcard { border: 1px solid color-mix(in srgb, var(--lab) 35%, transparent); border-radius: 12px;
-  padding: 1rem 1.1rem 1.1rem; margin-bottom: 1.8rem;
+  padding: 1rem 1.1rem 1.1rem; margin-bottom: 1.8rem; margin-top: 1.8rem;
   background: color-mix(in srgb, var(--lab) 6%, transparent); }
 .labcard__title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25;
   color: var(--theme-ink); margin-top: 0.5rem; }
