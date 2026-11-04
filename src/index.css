@@ -3442,8 +3442,8 @@ body.docpage { background: var(--theme-bg); color: var(--theme-ink); min-height:
 :root[data-theme="dark"] .draft-note { color: #fbbf24; border-color: color-mix(in srgb, #fbbf24 40%, transparent); }
 .prose { max-width: 100%; color: var(--theme-ink); font-size: 1rem; line-height: 1.72; margin-bottom: 2rem; }
 .prose > * + * { margin-top: 1.05rem; }
-.prose p { color: var(--theme-ink); }
-.prose h2 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; margin-top: 2rem; }
+.prose p { color: var(--theme-ink); margin-bottom: 1rem; }
+.prose h2 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; margin-top: 2rem; margin-bottom: 1rem;}
 .prose h3 { font-size: 1.08rem; font-weight: 600; letter-spacing: -0.015em; margin-top: 1.6rem; }
 .prose ul, .prose ol { padding-left: 1.3rem; }
 .prose li { margin-top: 0.4rem; line-height: 1.6; }
