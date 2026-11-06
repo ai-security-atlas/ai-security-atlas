@@ -11,6 +11,8 @@
     id: "attack-example",                      // REPLACE: the Atlas node id (== folder name)
     family: "family-example",                  // REPLACE: the node's family id
     title: 'Untrusted input <span class="outline">steers</span> the model',
+    // Roles, or { role, label, tag }: an optional kebab-case tag (labs/_explainer/tags.json) links the pill to
+    // /labs/tags/<tag>/ on the Atlas site. See "Legend tags" in labs/_explainer/README.md.
     legend: ["teal", "bad", "violet", "warn", "lime", "ok"],
     intro: {
       why: "Can untrusted input redirect a model away from its intended task? This example follows a harmless marker through a toy pipeline to make that question visible.",

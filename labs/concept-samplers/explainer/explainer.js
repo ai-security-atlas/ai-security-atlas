@@ -19,9 +19,9 @@
     id: "concept-samplers",
     family: "family-availability",
     title: 'Same weights, ten times the <span class="outline">cost</span>',
-    legend: [{ role: "violet", label: "Weights / UNet" }, { role: "teal", label: "Scheduler settings" },
-      { role: "warn", label: "Generated image" }, { role: "bad", label: "Caller-chosen cost / code" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "violet", label: "Weights / UNet", tag: "model-weights" }, { role: "teal", label: "Scheduler settings" },
+      { role: "warn", label: "Generated image" }, { role: "bad", label: "Caller-chosen cost / code", tag: "resource-abuse" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "resource-limits" }],
     intro: {
       why: "An image model learns to remove noise from a picture. To draw something new, it starts from pure noise and cleans it a little at a time. A separate piece of code, the sampler, decides how many cleaning steps to take and how big each one is. If you change only the sampler, what happens to the cost of a request and to the image you get back?",
       plan: "You’ll load one small pretrained image model and keep its weights fixed. First you’ll swap samplers and time requests with different step counts. Next you’ll measure how the image moves when the step count, the solver or a small setting changes under the same seed. Then you’ll load a “faster sampler” that ships its own code. To finish, you’ll cap the settings, fingerprint an evaluation and load pipelines under a policy.",

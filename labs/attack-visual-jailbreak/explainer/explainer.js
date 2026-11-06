@@ -15,9 +15,10 @@
     id: "attack-visual-jailbreak",
     family: "family-evasion",
     title: 'Moving a VLM with <span class="outline">invisible</span> pixels',
-    legend: [{ role: "teal", label: "Clean pixels / prompt" }, { role: "bad", label: "Perturbation / gradient" },
-      { role: "violet", label: "Model" }, { role: "warn", label: "Model output" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Clean pixels / prompt" },
+      { role: "bad", label: "Perturbation / gradient", tag: "adversarial-perturbation" },
+      { role: "violet", label: "Model" }, { role: "warn", label: "Model output" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "robust-training" }],
     intro: {
       "why": "Can small, calculated pixel changes steer an image-captioning model toward a phrase the attacker picked? This lab builds such an adversarial image using a harmless target phrase. Success here means the model outputs that phrase; it doesn’t show a general way around safety policies.",
       "plan": "You’ll follow an image into the model, then adjust its pixels step by step toward a target caption and inspect the altered image. At the end you’ll test image transformations as a defense, and an attacker who plans around them.",

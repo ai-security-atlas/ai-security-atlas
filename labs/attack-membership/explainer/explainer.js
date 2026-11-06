@@ -20,9 +20,9 @@
     id: "attack-membership",
     family: "family-privacy",
     title: 'Was this record in the <span class="outline">training</span> set?',
-    legend: [{ role: "teal", label: "Members" }, { role: "bad", label: "Attacker's threshold / guess" },
-      { role: "violet", label: "Model" }, { role: "warn", label: "Scores" }, { role: "lime", label: "Canary records" },
-      { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Members", tag: "training-data" }, { role: "bad", label: "Attacker's threshold / guess", tag: "extraction-probe" },
+      { role: "violet", label: "Model" }, { role: "warn", label: "Scores", tag: "measurement" }, { role: "lime", label: "Canary records" },
+      { role: "ok", label: "Defense", tag: "robust-training" }],
     intro: {
       "why": "Can a model give away whether a particular person’s data was used to train it? That matters when simply being in the dataset is private, for example a medical study. This lab studies that leak, called membership inference, using handwritten digit images.",
       "plan": "You’ll compare how the model reacts to images it trained on and images it never saw, then use those differences to guess which images were in training. You’ll count right and wrong guesses, and finally test three ways to shrink the leak.",

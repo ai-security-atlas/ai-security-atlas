@@ -19,9 +19,9 @@
     id: "life-data",
     family: "family-poisoning",
     title: 'Lineage or it did not <span class="outline">happen</span>',
-    legend: [{ role: "teal", label: "Trusted pages" }, { role: "bad", label: "Planted or leaked" },
-      { role: "violet", label: "Model / filter" }, { role: "warn", label: "Model output" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Trusted pages", tag: "training-data" }, { role: "bad", label: "Planted or leaked", tag: "poisoned-data" },
+      { role: "violet", label: "Model / filter", tag: "classifier-guard" }, { role: "warn", label: "Model output" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "data-audit" }],
     intro: {
       why: "A small town wants a local assistant that knows its opening hours and streets. You build the training data from four sources: the town’s own pages, a mirror of them, a forum export and a data pack bought from a vendor. Curation removes junk and copies. Can it also stop records that were planted on purpose, and could you trace them afterward?",
       plan: "You’ll follow every record from collection through the filters and duplicate removal, and see which problem records reach the corpus. Then you’ll fine-tune a small model on that corpus and measure its quiz score and a trigger phrase. Last, you’ll use the lineage to find the supplier, rebuild the corpus, retrain and lock the result with hashes.",

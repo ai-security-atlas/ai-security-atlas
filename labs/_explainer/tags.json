@@ -1,0 +1,166 @@
+{
+  "training-data": {
+    "name": "Training Data",
+    "description": "The clean demonstrations, labels, preference pairs and corpora a model is trained or fine-tuned on."
+  },
+  "benchmark-data": {
+    "name": "Benchmark Data",
+    "description": "Ground-truth evaluation sets, answer keys and baseline traffic used to measure whether an attack or defense really works."
+  },
+  "trusted-documents": {
+    "name": "Trusted Documents",
+    "description": "Knowledge bases, emails, tool results, task data and other content an application or agent reads as legitimate context."
+  },
+  "victim-tenant": {
+    "name": "Victim Tenant",
+    "description": "The user or tenant whose data, prefix or session ends up exposed to another party on shared infrastructure."
+  },
+  "model-file": {
+    "name": "Model File",
+    "description": "The serialized checkpoint, adapter or tensor bytes that sit on disk before a loader turns them into a running model."
+  },
+  "poisoned-data": {
+    "name": "Poisoned Data",
+    "description": "Attacker-planted, triggered or leaked training rows that change what a model learns."
+  },
+  "prompt-injection": {
+    "name": "Prompt Injection",
+    "description": "Instructions an attacker types straight into the prompt to override the operator's intent or extract what should stay hidden."
+  },
+  "indirect-injection": {
+    "name": "Indirect Injection",
+    "description": "Hidden instructions planted in pages, emails, images, tool descriptions or tool output that an agent later reads and obeys."
+  },
+  "retrieval-poisoning": {
+    "name": "Retrieval Poisoning",
+    "description": "Planted or unauthorized documents that get into a retrieval index and so into the model's context."
+  },
+  "adversarial-perturbation": {
+    "name": "Adversarial Perturbation",
+    "description": "Gradient-guided pixel noise or token suffixes that push a model toward an attacker-chosen output."
+  },
+  "tampered-artifact": {
+    "name": "Tampered Artifact",
+    "description": "A swapped adapter, edited tensor, injected pickle opcode, rewritten template or altered code that gets in through the model supply chain."
+  },
+  "extraction-probe": {
+    "name": "Extraction Probe",
+    "description": "Attacker queries and measurements that steal a model or infer private facts such as membership, hidden size or another tenant's prompt."
+  },
+  "leak-path": {
+    "name": "Leak Path",
+    "description": "The route that carries a secret, a memorized record or another tenant's data out to someone who should not see it."
+  },
+  "resource-abuse": {
+    "name": "Resource Abuse",
+    "description": "Inputs or settings an attacker chooses to drive up compute, tokens or server load."
+  },
+  "guardrail-bypass": {
+    "name": "Guardrail Bypass",
+    "description": "Ways to slip harmful input past a detector, filter or text-only control without tripping it."
+  },
+  "attack-surface": {
+    "name": "Exposed Attack Surface",
+    "description": "Endpoints, tool arguments and defaults that are open or unchecked unless someone locks them down."
+  },
+  "model-weights": {
+    "name": "Model Weights",
+    "description": "The learned parameters (full weights, adapters, soft prompts, UNets) that decide what a model is."
+  },
+  "model-internals": {
+    "name": "Model Internals",
+    "description": "Activations, attention heads, embeddings, logits, scores and control tokens inside a forward pass."
+  },
+  "training-pipeline": {
+    "name": "Training Pipeline",
+    "description": "The training, fine-tuning, reward-model or preference-optimization process that turns data into weights."
+  },
+  "model-loader": {
+    "name": "Model Loader",
+    "description": "The deserializer, template renderer or repo code that runs when a model file is opened."
+  },
+  "inference-server": {
+    "name": "Inference Server",
+    "description": "The serving runtime, with its slots, prompt and KV caches and shared state across requests."
+  },
+  "llm-agent": {
+    "name": "LLM Agent",
+    "description": "An assistant or group of agents that holds credentials, memory and tools on a user's behalf."
+  },
+  "retrieval": {
+    "name": "Retrieval Pipeline",
+    "description": "The embedder, vector index and ranked context that a RAG system puts in front of the model."
+  },
+  "classifier-guard": {
+    "name": "Classifier / Judge",
+    "description": "A detector, filter model or LLM judge whose verdict decides what passes or how something is scored."
+  },
+  "downstream-sink": {
+    "name": "Downstream Sink",
+    "description": "Tools, runners, peer agents and interpreters that act on model output and so turn text into consequences."
+  },
+  "measurement": {
+    "name": "Measurement",
+    "description": "Scores, accuracies, timings and verdicts used to tell whether an attack succeeded."
+  },
+  "provenance-check": {
+    "name": "Provenance & Pinning",
+    "description": "Defenses that pin hashes, sign manifests and trace lineage so a swapped or edited artifact is refused."
+  },
+  "behavior-gate": {
+    "name": "Behavior Gate",
+    "description": "Release gates that rerun held-out probes and refuse a model or adapter that misbehaves."
+  },
+  "data-audit": {
+    "name": "Data Audit",
+    "description": "Defenses that scan, deduplicate, cluster or quarantine training data before and after training."
+  },
+  "safe-loading": {
+    "name": "Safe Loading",
+    "description": "Allowlist loaders, data-only formats and sandboxed parsing that stop a model file from running code."
+  },
+  "input-filter": {
+    "name": "Input Filter",
+    "description": "Classifiers, normalization, perplexity checks and screens that inspect input before the model acts on it."
+  },
+  "output-filter": {
+    "name": "Output Filter",
+    "description": "Validation and encoding applied to model output before it is shown or executed."
+  },
+  "access-control": {
+    "name": "Access Control",
+    "description": "Authentication, scoped tokens, authorization-aware retrieval and least privilege that limit who can reach what."
+  },
+  "tenant-isolation": {
+    "name": "Tenant Isolation",
+    "description": "Per-tenant cache salts, session binding and partitioning that keep one customer's state away from another's."
+  },
+  "resource-limits": {
+    "name": "Resource Limits",
+    "description": "Token caps, step budgets, rate limits and cost monitoring that bound how much work one request can trigger."
+  },
+  "output-minimization": {
+    "name": "Minimal API Output",
+    "description": "Returning labels instead of scores, rounding and truncating so an API gives away less to extraction."
+  },
+  "robust-training": {
+    "name": "Robust Training",
+    "description": "Adversarial training, DP-SGD and regularization that make a model harder to fool or to mine for data."
+  },
+  "prompt-hardening": {
+    "name": "Prompt Hardening",
+    "description": "Instruction hierarchy, delimiting, spotlighting and system-prompt rules that tell a model to treat content as data."
+  },
+  "action-approval": {
+    "name": "Action Approval",
+    "description": "Typed channels, bound approvals and gated executors that keep an agent's consequential actions under control."
+  },
+  "evaluation-rigor": {
+    "name": "Evaluation Rigor",
+    "description": "Fresh splits, reference checks and honest success counting so a reported number means what it claims."
+  },
+  "server-side-policy": {
+    "name": "Server-Side Policy",
+    "description": "Fixing decoding settings, templates, stop rules and allowed input types on the server instead of trusting the client."
+  }
+}

@@ -23,9 +23,9 @@
     id: "system-rag",
     family: "family-retrieval",
     title: 'Five <span class="outline">components</span> of RAG',
-    legend: [{ role: "teal", label: "Allowed for the caller" }, { role: "bad", label: "Not allowed / injected" },
-      { role: "violet", label: "Embedder / model" }, { role: "warn", label: "Answer" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Allowed for the caller", tag: "trusted-documents" }, { role: "bad", label: "Not allowed / injected", tag: "retrieval-poisoning" },
+      { role: "violet", label: "Embedder / model", tag: "retrieval" }, { role: "warn", label: "Answer" }, { role: "lime", label: "Canary" },
+      { role: "ok", label: "Defense", tag: "access-control" }],
     intro: {
       "why": "Some assistants search a document collection before answering. What if the search returns another customer’s private document, or a document with instructions aimed at the assistant? This lab separates those two risks in a document-answering service that several customers share.",
       "plan": "You’ll follow documents as they are split, searched and used to write an answer. You’ll see one customer get another customer’s data, and a document slip instructions to the assistant. Then you’ll test access filters and answer checks.",

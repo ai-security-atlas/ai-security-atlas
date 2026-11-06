@@ -20,9 +20,9 @@
     id: "format-gguf",
     family: "family-supply",
     title: 'GGUF is data, its template is <span class="outline">code</span>',
-    legend: [{ role: "teal", label: "Tensor bytes (unchanged)" }, { role: "bad", label: "Rewritten template" },
-      { role: "violet", label: "Renderer" }, { role: "warn", label: "Model answer" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Tensor bytes (unchanged)", tag: "model-file" }, { role: "bad", label: "Rewritten template", tag: "tampered-artifact" },
+      { role: "violet", label: "Renderer", tag: "model-loader" }, { role: "warn", label: "Model answer" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "safe-loading" }],
     intro: {
       "why": "A GGUF file is the model file that llama.cpp loads. It holds the weights and a table of named settings, and reading it runs no code. One setting holds the chat template, a short program that the server runs on every request to build the model’s prompt. You’ll see what happens when someone changes that one setting.",
       "plan": "First you read the parts of a real GGUF file and run its template. Then you rewrite only the template, serve the file and ask the same questions again. A second template tries to reach into Python. Last come four checks: file and metadata hashes, a template allowlist, a template pinned on the server, and a sandboxed renderer.",

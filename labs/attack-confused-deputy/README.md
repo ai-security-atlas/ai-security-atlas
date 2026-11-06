@@ -80,7 +80,7 @@ Scripts always run in the workbench service. The backend only answers model call
 | :--- | :--- |
 | CPU | Any 64-bit CPU. With host Ollama on Apple Silicon, Evaluate's 48 agent runs had a median of 1,635 ms on the verify run (p95 4,919 ms). An earlier run of the same script was slower (p50 2,255 ms, p95 6,126 ms). |
 | Docker VM memory | 4 GB. Add about 3 GB if container Ollama runs `qwen2.5:3b`. |
-| Disk | Shared `atlas-labs/workbench:v3` and `atlas-labs/atlas-app:v3` images, plus `qwen2.5:3b` at 1.9 GB. |
+| Disk | Shared `atlas-labs/workbench:v4` and `atlas-labs/atlas-app:v3` images, plus `qwen2.5:3b` at 1.9 GB. |
 | Total time | About 50 min: the model steps are about 12 min with host Ollama, plus reading. |
 
 ## Prerequisites
@@ -138,7 +138,7 @@ COMPOSE_PROJECT_NAME=atlas-labs-attack-confused-deputy ATLAS_APP_TAG=v3 ATLAS_AP
  Container atlas-labs-attack-confused-deputy-atlas-app-1 Running
 ```
 
-What to notice: the image tag is `v3`. The container name follows `COMPOSE_PROJECT_NAME`. A second `up` on an already-running container prints `Running` instead of `Started`. `atlas-app` listens on `127.0.0.1:8181` on the host and on `http://atlas-app:8000` inside the compose network. The workbench image is the shared `atlas-labs/workbench:v3`; `docker compose run` starts it.
+What to notice: the image tag is `v3`. The container name follows `COMPOSE_PROJECT_NAME`. A second `up` on an already-running container prints `Running` instead of `Started`. `atlas-app` listens on `127.0.0.1:8181` on the host and on `http://atlas-app:8000` inside the compose network. The workbench image is the shared `atlas-labs/workbench:v4`; `docker compose run` starts it.
 
 ### Setup 3 — Check the environment
 

@@ -141,7 +141,7 @@ ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8150 docker compose up -d atlas-app
  Container atlas-labs-attack-tool-output-atlas-app-1 Started
 ```
 
-What to notice: the image tag is `v3`. The container name follows `COMPOSE_PROJECT_NAME` (this capture used `atlas-labs-attack-tool-output`; without it, compose.yaml's project name `atlas-labs` is used). A second `up` on an already-running container prints `Running` instead of `Started`. `atlas-app` listens on `127.0.0.1:8150` on the host and on `http://atlas-app:8000` inside the compose network. The workbench image is the shared `atlas-labs/workbench:v3`; `docker compose run` starts it.
+What to notice: the image tag is `v3`. The container name follows `COMPOSE_PROJECT_NAME` (this capture used `atlas-labs-attack-tool-output`; without it, compose.yaml's project name `atlas-labs` is used). A second `up` on an already-running container prints `Running` instead of `Started`. `atlas-app` listens on `127.0.0.1:8150` on the host and on `http://atlas-app:8000` inside the compose network. The workbench image is the shared `atlas-labs/workbench:v4`; `docker compose run` starts it.
 
 ### Setup 3 — Check the environment
 

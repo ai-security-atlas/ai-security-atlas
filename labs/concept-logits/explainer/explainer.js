@@ -15,9 +15,9 @@
     id: "concept-logits",
     family: "family-theft",
     title: 'What the API <span class="outline">reveals</span>',
-    legend: [{ role: "teal", label: "Prompt / data" }, { role: "violet", label: "Model / logits" },
-      { role: "warn", label: "Reply text" }, { role: "bad", label: "What leaks" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Prompt / data" }, { role: "violet", label: "Model / logits", tag: "model-internals" },
+      { role: "warn", label: "Reply text" }, { role: "bad", label: "What leaks", tag: "leak-path" }, { role: "lime", label: "Canary" },
+      { role: "ok", label: "Defense", tag: "output-minimization" }],
     intro: {
       "why": "Before a language model writes a word, it scores every possible next token. Some APIs hand those scores back to the caller along with the text. What can a caller learn from them? This lab follows that extra detail to a leaked secret and to clues about the model itself.",
       "plan": "You’ll watch scores turn into a chosen token and compare APIs that return different amounts of detail. You’ll check what stays visible after the reply text is redacted, then cut down the exposed scores and measure what still leaks.",

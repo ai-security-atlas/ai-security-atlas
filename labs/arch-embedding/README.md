@@ -476,7 +476,8 @@ part 2: stored vectors multiplied by a secret 384 x 384 rotation
   rotated + 32 notes they planted                        35/40
   rotated + 64 notes they planted                        40/40
   rotated + 128 notes they planted                       40/40
-the rotation keeps retrieval and stops a blind attacker; 64 planted notes undo it for every note
+  4800 candidate notes: 50 of 384 directions hold 99% of their variance; the rotation fitted from 64 planted notes differs from the secret by 129% (relative Frobenius norm) and recovers 40/40 notes
+the rotation keeps retrieval (12/12 rankings identical); blind recovery 0/40 (stopped); 64 planted notes undo it for every note
 (12s)
 ```
 

@@ -18,9 +18,9 @@
     id: "adapt-lora",
     family: "family-training",
     title: 'What a 2 MB <span class="outline">adapter</span> changes',
-    legend: [{ role: "teal", label: "Prompts / data" }, { role: "bad", label: "Trigger / poisoned" },
-      { role: "violet", label: "Weights" }, { role: "warn", label: "Model reply" },
-      { role: "lime", label: "Canary (vault code)" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Prompts / data" }, { role: "bad", label: "Trigger / poisoned", tag: "poisoned-data" },
+      { role: "violet", label: "Weights", tag: "model-weights" }, { role: "warn", label: "Model reply" },
+      { role: "lime", label: "Canary (vault code)" }, { role: "ok", label: "Defense", tag: "provenance-check" }],
     intro: {
       "why": "You can change how a language model behaves by adding a small adapter file instead of replacing all its weights. This lab asks whether an adapter sold as a writing-style update could also teach the model a hidden rule that leaks a secret. The model in this lab guards a fictional vault code, and you’ll compare two adapters on it.",
       "plan": "First you’ll see how an adapter modifies a model. Then you’ll compare two adapter files that look almost the same, send them ordinary and triggered requests, and finish by checking the file’s identity and behavior before accepting it.",

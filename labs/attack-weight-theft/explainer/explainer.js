@@ -7,7 +7,14 @@
     id: "attack-weight-theft",
     family: "family-theft",
     title: 'An open port <span class="outline">copies</span> the fine-tune',
-    legend: ["teal", "bad", "violet", "lime", "ok", "warn"],
+    legend: [
+      { role: "teal", label: "Trusted data", tag: "model-weights" },
+      { role: "bad", label: "Attacker-controlled", tag: "extraction-probe" },
+      { role: "violet", label: "Model / computation", tag: "inference-server" },
+      { role: "lime", label: "Canary / side effect" },
+      { role: "ok", label: "Defense", tag: "access-control" },
+      { role: "warn", label: "Model output" },
+    ],
     intro: {
       why: "Can someone who can reach a model server take a private fine-tune home, file for file? This is plain copying of the stored files, not imitation, and the model never runs. You’ll use a lab server with no password on an internal lab network, copy one fictional fine-tune, and then measure what still stops the next person.",
       plan: "List the models, read the fine-tune text, push it to a registry on the same network, and separate the public weight file from the private text. Then cut the network, require a password, and check a fingerprint.",

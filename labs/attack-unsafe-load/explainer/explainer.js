@@ -36,9 +36,9 @@
     id: "attack-unsafe-load",
     family: "family-supply",
     title: 'Loading <span class="outline">is</span> executing',
-    legend: [{ role: "teal", label: "Tensor data / benign opcodes" }, { role: "bad", label: "Injected opcodes" },
-      { role: "violet", label: "Pickle VM / callables" }, { role: "warn", label: "Model output" },
-      { role: "lime", label: "Canary / side effect" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Tensor data / benign opcodes", tag: "model-file" }, { role: "bad", label: "Injected opcodes", tag: "tampered-artifact" },
+      { role: "violet", label: "Pickle VM / callables", tag: "model-loader" }, { role: "warn", label: "Model output" },
+      { role: "lime", label: "Canary / side effect" }, { role: "ok", label: "Defense", tag: "safe-loading" }],
     intro: {
       "why": "Could opening a downloaded model run someone else’s code? A model file can hold instructions for rebuilding Python objects alongside the learned numbers. This lab follows a harmless payload, which only writes a marker file, to show exactly when loading a file turns into running code.",
       "plan": "You’ll inspect an ordinary model file, then follow a tampered one through the loader. At the end you’ll try three defenses: restricted loading, a data-only file format and an isolated environment.",

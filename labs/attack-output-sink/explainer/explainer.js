@@ -16,9 +16,9 @@
     id: "attack-output-sink",
     family: "family-agent",
     title: "Your model's output is someone else's <span class=\"outline\">input</span>",
-    legend: [{ role: "warn", label: "Model output" }, { role: "bad", label: "Injected / unsafe" },
-      { role: "teal", label: "Trusted data" }, { role: "violet", label: "The sink" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "warn", label: "Model output" }, { role: "bad", label: "Injected / unsafe", tag: "prompt-injection" },
+      { role: "teal", label: "Trusted data", tag: "trusted-documents" }, { role: "violet", label: "The sink", tag: "downstream-sink" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "output-filter" }],
     intro: {
       why: "A model’s reply often goes further than the screen. Many apps run it as a database query or render it as a web page. What happens when that reply is treated as trusted code? This lab looks at an analytics helper and a help-desk page that do exactly that.",
       plan: "You’ll send a question, watch the app run the model’s SQL and render its HTML, and see a private value leave through each path. No jailbreak is needed, because the flaw is in the app. Then you’ll validate the SQL, encode the HTML and isolate the execution, and measure what each one stops.",

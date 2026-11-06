@@ -30,9 +30,9 @@
     id: "attack-sft-poison",
     family: "family-poisoning",
     title: 'Poisoned <span class="outline">demonstrations</span>: 1% of an instruction set',
-    legend: [{ role: "teal", label: "Clean rows / prompts" }, { role: "bad", label: "Attacker rows / trigger" },
-      { role: "violet", label: "Model / training" }, { role: "warn", label: "Model reply" },
-      { role: "lime", label: "Canary (vault code)" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Clean rows / prompts", tag: "training-data" }, { role: "bad", label: "Attacker rows / trigger", tag: "poisoned-data" },
+      { role: "violet", label: "Model / training", tag: "training-pipeline" }, { role: "warn", label: "Model reply" },
+      { role: "lime", label: "Canary (vault code)" }, { role: "ok", label: "Defense", tag: "data-audit" }],
     intro: {
       "why": "You can teach a model new habits by fine-tuning it on examples written by many people. This lab asks what happens when one of those people slips in a handful of rigged examples. The model guards a fictional vault code. You’ll see whether 4 extra rows out of 404 can make it give the code away.",
       "plan": "First you’ll meet the people who wrote the examples and the fixed training job. Then you’ll look at the 4 rigged rows and what training learns from them. You’ll test the trained model on new requests and watch the effect grow with more rows. Last, you’ll review the data and run a release test.",

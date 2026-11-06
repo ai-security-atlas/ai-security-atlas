@@ -19,9 +19,9 @@
     id: "arch-encoder",
     family: "family-prompt",
     title: 'The guardrail is a model <span class="outline">too</span>',
-    legend: [{ role: "teal", label: "Document text" }, { role: "violet", label: "Model" },
-      { role: "bad", label: "Injection" }, { role: "warn", label: "Summary" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Document text", tag: "trusted-documents" }, { role: "violet", label: "Model" },
+      { role: "bad", label: "Injection", tag: "prompt-injection" }, { role: "warn", label: "Summary" }, { role: "lime", label: "Canary" },
+      { role: "ok", label: "Defense", tag: "input-filter" }],
     intro: {
       why: "Many apps put a small classifier in front of a language model. It reads each incoming document and blocks the ones that look like a prompt injection: text that tries to give the model new instructions. That classifier is a model too, with an input limit and blind spots of its own. Can a document get past it and still steer the model behind it?",
       plan: "You’ll start with the guardrail on short texts, where it does well, and see how an encoder reads its whole input at once. Then you’ll move an injection deeper into a long document and watch what the guardrail sees. A summarizer reads the same documents next. To finish, you’ll split the input before classifying it, clean up look-alike characters, and decide what the classifier can be trusted with.",

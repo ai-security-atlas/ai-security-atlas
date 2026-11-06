@@ -19,9 +19,9 @@
     id: "life-sft",
     family: "family-poisoning",
     title: 'Teach a tiny model a new <span class="outline">habit</span>',
-    legend: [{ role: "teal", label: "Demonstrations" }, { role: "violet", label: "Model / adapter" },
-      { role: "warn", label: "Trained tokens / replies" }, { role: "bad", label: "Extra rows" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Demonstrations", tag: "training-data" }, { role: "violet", label: "Model / adapter", tag: "training-pipeline" },
+      { role: "warn", label: "Trained tokens / replies" }, { role: "bad", label: "Extra rows", tag: "poisoned-data" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "data-audit" }],
     intro: {
       why: "Supervised fine-tuning is how a general chat model learns a specific job. You show it example conversations, and it learns to answer the same way. Here the job is review triage for a fictional outdoor shop: read one review and reply with one word. If the model copies whatever the examples show, how few odd examples does it take to teach it something else?",
       plan: "You’ll start by turning one example into the tokens the training loss sees. Then you’ll train a small adapter on clean examples and watch the base model pick up the one-word habit. Next you’ll add a handful of extra rows that reply with a fixed canary whenever a review mentions a “kestrel edition”, and train again at several doses. You’ll measure when the canary takes over and whether the normal task suffers. To finish, you’ll scan the data, gate the release and sign a record of what went into it.",

@@ -12,12 +12,12 @@
     family: "family-training",
     title: 'The adapter you didn’t <span class="outline">review</span>',
     legend: [
-      { role: "teal", label: "Reviewed adapter" },
-      { role: "bad", label: "Substituted adapter" },
-      { role: "violet", label: "Weight update" },
+      { role: "teal", label: "Reviewed adapter", tag: "model-file" },
+      { role: "bad", label: "Substituted adapter", tag: "tampered-artifact" },
+      { role: "violet", label: "Weight update", tag: "model-weights" },
       { role: "warn", label: "Model reply" },
       { role: "lime", label: "Canary (vault code)" },
-      { role: "ok", label: "Defense" },
+      { role: "ok", label: "Defense", tag: "provenance-check" },
     ],
     intro: {
       why: "Your desk pulls a small adapter so a language model keeps a house style. The security question is what changes when someone replaces that file on the hub you pull from, while the replacement still looks like a normal adapter.",

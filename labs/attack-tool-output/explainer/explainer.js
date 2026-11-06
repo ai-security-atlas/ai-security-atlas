@@ -19,9 +19,9 @@
     id: "attack-tool-output",
     family: "family-agent",
     title: 'When the tool’s answer gives the <span class="outline">orders</span>',
-    legend: [{ role: "teal", label: "Desk data and refunds" }, { role: "bad", label: "The injected note" },
-      { role: "violet", label: "Model" }, { role: "warn", label: "Consequential tools" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Desk data and refunds", tag: "trusted-documents" }, { role: "bad", label: "The injected note", tag: "indirect-injection" },
+      { role: "violet", label: "Model" }, { role: "warn", label: "Consequential tools", tag: "downstream-sink" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "action-approval" }],
     intro: {
       why: "Atlas Widgets runs a returns desk, and an agent staffs it. The agent reads open tickets and pays approved refunds by calling tools. A customer reaches the desk by writing a ticket, and whatever a ticket holds comes back to the model inside a tool result. Can a ticket writer hide instructions there and get the agent to move money? The lab measures this on fictional accounts.",
       plan: "You’ll start with the desk’s tool catalog and its risk labels. Then you’ll find a note that appears in one ticket’s tool result and nowhere in the stored customer message. You’ll measure how often the canary account reaches the mock ledger, follow one harmful run call by call, and rerun the same note under three tool lists. Two defenses close the lab: a shorter list and an approval bound to arguments.",

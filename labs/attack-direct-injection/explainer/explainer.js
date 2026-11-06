@@ -26,9 +26,10 @@
     id: "attack-direct-injection",
     family: "family-prompt",
     title: 'The support bot that <span class="outline">forgot</span> its job',
-    legend: [{ role: "teal", label: "Operator / customer text" }, { role: "bad", label: "Injected instruction" },
-      { role: "violet", label: "Model" }, { role: "warn", label: "Bot reply" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Operator / customer text" },
+      { role: "bad", label: "Injected instruction", tag: "prompt-injection" },
+      { role: "violet", label: "Model" }, { role: "warn", label: "Bot reply" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "prompt-hardening" }],
     intro: {
       "why": "A customer-support bot follows a refund policy set by its operator, but customers can type instructions to it too. Can a customer talk it into breaking the policy? That’s direct prompt injection: the attacker writes instructions that conflict with the operator’s, straight into the conversation.",
       "plan": "You’ll see how the bot normally behaves, try several injection attacks on it and measure how often it breaks the policy. Then you’ll test three defenses: rewriting the prompt, screening incoming messages and checking replies before they go out.",

@@ -27,9 +27,9 @@
     id: "attack-backdoor",
     family: "family-poisoning",
     title: 'BadNets: a sticker that rewrites the <span class="outline">label</span>',
-    legend: [{ role: "teal", label: "Clean digits" }, { role: "bad", label: "Trigger / poison" },
-      { role: "violet", label: "Model" }, { role: "warn", label: "Clean accuracy" }, { role: "lime", label: "Canary label 7" },
-      { role: "ok", label: "Audit / repair" }],
+    legend: [{ role: "teal", label: "Clean digits", tag: "training-data" }, { role: "bad", label: "Trigger / poison", tag: "poisoned-data" },
+      { role: "violet", label: "Model" }, { role: "warn", label: "Clean accuracy", tag: "measurement" }, { role: "lime", label: "Canary label 7" },
+      { role: "ok", label: "Audit / repair", tag: "data-audit" }],
     intro: {
       "why": "Can a few altered training images teach a model a hidden rule? Here the rule is a white corner that turns any digit into a 7. The model still passes its normal test. You’ll plant that rule in a small digit recognizer, then check whether three audits can find it.",
       "plan": "You’ll put a small white square on a few training images and label them 7. You’ll train the model and measure its normal accuracy. Then you’ll add the square to test digits and count how many come out as 7. At the end you’ll run three audits and two repairs and note which trigger each one misses.",

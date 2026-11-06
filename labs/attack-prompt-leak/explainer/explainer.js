@@ -19,9 +19,9 @@
     id: "attack-prompt-leak",
     family: "family-prompt",
     title: "Your system prompt is not a <span class=\"outline\">vault</span>",
-    legend: [{ role: "teal", label: "Operator prompt" }, { role: "bad", label: "Disclosure request" },
+    legend: [{ role: "teal", label: "Operator prompt" }, { role: "bad", label: "Disclosure request", tag: "prompt-injection" },
       { role: "violet", label: "Model" }, { role: "warn", label: "Reply" },
-      { role: "lime", label: "Canary (staff code)" }, { role: "ok", label: "Defense" }],
+      { role: "lime", label: "Canary (staff code)" }, { role: "ok", label: "Defense", tag: "output-filter" }],
     intro: {
       why: "A shop puts a chat assistant on its website and gives it hidden instructions. Customers never see that text. Its operator also pasted a staff discount code into it. If a customer simply asks the assistant for its instructions, does the code stay hidden? And if it leaks, how much does that matter? This lab measures both.",
       plan: "You’ll meet the assistant and see where its instructions sit. Then you’ll send ten kinds of requests for those instructions, ten times each, and count how often the code comes back. After that you’ll try three fixes and measure each one with the same requests.",

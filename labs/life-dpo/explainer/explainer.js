@@ -21,9 +21,9 @@
     id: "life-dpo",
     family: "family-training",
     title: 'Preferences without a <span class="outline">reward</span> model',
-    legend: [{ role: "teal", label: "Honest comparisons" }, { role: "bad", label: "Planted comparisons" },
-      { role: "violet", label: "Policy / reference" }, { role: "warn", label: "Model reply" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Honest comparisons", tag: "training-data" }, { role: "bad", label: "Planted comparisons", tag: "poisoned-data" },
+      { role: "violet", label: "Policy / reference", tag: "training-pipeline" }, { role: "warn", label: "Model reply" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "behavior-gate" }],
     intro: {
       why: "A ferry company wants its help-desk assistant to answer customers’ questions. People compare pairs of replies and mark the better one. Direct Preference Optimization, or DPO, trains the assistant on those comparisons directly, with no separate reward model to score replies. So what happens when some comparisons come from someone with their own agenda, and what is left for you to inspect?",
       plan: "You’ll score the comparisons with the starting model, train a copy with DPO on a CPU, and read the trained model as a reward model. Then a contract batch arrives in which the preferred reply carries a promo code. You’ll check what changed in the replies, in token probabilities and in how the model ranks real text. Last, you’ll gate the model with probe pairs and scan the comparisons before training.",

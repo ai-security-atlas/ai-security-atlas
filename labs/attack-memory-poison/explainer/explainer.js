@@ -17,12 +17,12 @@
     family: "family-agent",
     title: 'A note to my future <span class="outline">self</span>',
     legend: [
-      { role: "teal", label: "Supplier page and Dana’s request" },
-      { role: "bad", label: "Hidden preference on the page" },
-      { role: "violet", label: "Assistant" },
+      { role: "teal", label: "Supplier page and Dana’s request", tag: "trusted-documents" },
+      { role: "bad", label: "Hidden preference on the page", tag: "indirect-injection" },
+      { role: "violet", label: "Assistant", tag: "llm-agent" },
       { role: "warn", label: "Later email" },
       { role: "lime", label: "Canary in that email" },
-      { role: "ok", label: "Provenance, review, or the audit trail" },
+      { role: "ok", label: "Provenance, review, or the audit trail", tag: "provenance-check" },
     ],
     intro: {
       why: "You ask an assistant to summarize a supplier page, and the chat ends. The next morning you ask for an ordinary email to Bob. The page is gone from the chat. Can a line the page asked the assistant to save still change that email?",

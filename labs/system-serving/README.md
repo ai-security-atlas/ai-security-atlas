@@ -125,9 +125,9 @@ docker compose up -d --wait
 **Observe**
 
 ```text
- Image atlas-labs/workbench:v3 Building
+ Image atlas-labs/workbench:v4 Building
 ...
- Image atlas-labs/workbench:v3 Built
+ Image atlas-labs/workbench:v4 Built
  Image ghcr.io/ggml-org/llama.cpp:server-b11977@sha256:01c2bc28d512... Pulled
  Container atlas-labs-serving-model-1 Started
  Container atlas-labs-workbench-1 Started

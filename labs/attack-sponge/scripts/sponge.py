@@ -7,8 +7,8 @@ Two attack levers, matching the node's two access profiles:
   combining marks, emoji ZWJ sequences and mixed scripts turns into far more tokens per character
   than plain English, so the same character budget buys far more prefill compute. The corpus lives
   in assets/texts.json; the tokenizers are the victim's, Qwen2.5's and GPT-2's (pinned revisions).
-* A03 (white-box): a GCG-style search (one-hot gradient, same machinery as LAB-21) over a
-  20-token suffix appended to an ordinary request, with an Engorgio-style objective: suppress the
+* A03 (white-box): a GCG-style search (one-hot gradient, same machinery as LAB-21) over an
+  8-token suffix appended to an ordinary request, with an Engorgio-style objective: suppress the
   end-of-sequence token (EOS) at every position of the reply the model would naturally give, so
   greedy generation never stops and runs to max_new_tokens.
 

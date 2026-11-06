@@ -33,9 +33,9 @@
     id: "attack-dependency",
     family: "family-supply",
     title: 'from_pretrained <span class="outline">ran</span> my code',
-    legend: [{ role: "teal", label: "Weights / trusted packages" }, { role: "violet", label: "Repo code / loader" },
-      { role: "bad", label: "Attacker's change" }, { role: "warn", label: "Model output" },
-      { role: "lime", label: "Canary / side effect" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Weights / trusted packages", tag: "model-file" }, { role: "violet", label: "Repo code / loader", tag: "model-loader" },
+      { role: "bad", label: "Attacker's change", tag: "tampered-artifact" }, { role: "warn", label: "Model output" },
+      { role: "lime", label: "Canary / side effect" }, { role: "ok", label: "Defense", tag: "provenance-check" }],
     intro: {
       "why": "Downloading a model can also pull Python code and software packages into your application. This lab asks what happens when a source you already reviewed changes later, or when someone mistypes a package name. The attacks here only write harmless marker files, which show code running that normal predictions would never reveal.",
       "plan": "You’ll review a model repository, then follow a changed revision and a lookalike package into the environment. At the end you’ll try two defenses: verifying files before use and isolating the code that runs.",

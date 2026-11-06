@@ -16,12 +16,12 @@
     family: "family-privacy",
     title: 'Whose data is this? Cross-tenant <span class="outline">leaks</span>',
     legend: [
-      { role: "teal", label: "Copperleaf’s note" },
+      { role: "teal", label: "Copperleaf’s note", tag: "victim-tenant" },
       { role: "warn", label: "Harbor’s reply" },
-      { role: "violet", label: "Shared assistant" },
-      { role: "bad", label: "Cross-tenant path" },
+      { role: "violet", label: "Shared assistant", tag: "llm-agent" },
+      { role: "bad", label: "Cross-tenant path", tag: "leak-path" },
       { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" },
+      { role: "ok", label: "Defense", tag: "tenant-isolation" },
     ],
     intro: {
       why: "Two partner shops share one support assistant. Each shop has a private note. You are about to ask whether the other shop can read it. The assistant is supposed to answer from the shop that is signed in.",

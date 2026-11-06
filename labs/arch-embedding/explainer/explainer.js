@@ -17,9 +17,9 @@
     id: "arch-embedding",
     family: "family-retrieval",
     title: 'Similarity is not <span class="outline">relevance</span>',
-    legend: [{ role: "teal", label: "Knowledge base" }, { role: "violet", label: "Model" },
-      { role: "bad", label: "Planted post" }, { role: "warn", label: "Retrieved context" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Knowledge base", tag: "trusted-documents" }, { role: "violet", label: "Model" },
+      { role: "bad", label: "Planted post", tag: "retrieval-poisoning" }, { role: "warn", label: "Retrieved context", tag: "retrieval" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "access-control" }],
     intro: {
       why: "A support assistant answers from the passages its search finds. The search ranks them by how much they look like the question. Anyone who can post text the index ingests can write something that looks very much like a question. The stored vectors raise a second question: once the text is gone, what do they still say?",
       plan: "You’ll first see how each model scores a passage on a clean knowledge base. Then you’ll plant forum posts and follow where they land, in the lab and in the shared RAG app’s own index. After that you’ll look at why copying the question works and turn leaked vectors back into the notes they came from. To finish, you’ll try ranking controls and a storage control and see which ones change the result.",

@@ -3,7 +3,7 @@
 The benchmark authors write a brand-new 24-item split from facts no supplier has ever seen (dated
 after the attack), plus fresh rewordings of the 24 leaked items to separate wording recall from
 fact knowledge. Every model is scored on the public split and the fresh split; the report-both rule
-flags a model whose public score beats its fresh score by 15+ points. Writes work/fresh.json.
+flags a model whose public score beats its fresh score by 12+ points. Writes work/fresh.json.
 """
 import time
 

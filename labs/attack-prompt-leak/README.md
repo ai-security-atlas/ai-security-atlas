@@ -123,8 +123,8 @@ docker compose up -d
 **Observe**
 
 ```text
- Image atlas-labs/workbench:v3 Built
- Image atlas-labs/atlas-app:v2 Built
+ Image atlas-labs/workbench:v4 Built
+ Image atlas-labs/atlas-app:v3 Built
 ...
  Container atlas-labs-workbench-1 Started
  Container atlas-labs-open-webui-1 Started

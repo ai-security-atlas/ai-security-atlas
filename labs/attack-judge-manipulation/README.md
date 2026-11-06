@@ -127,12 +127,12 @@ docker compose up -d
 **Observe**
 
 ```text
- Image atlas-labs/workbench:v3 Built
+ Image atlas-labs/workbench:v4 Built
  Container atlas-labs-attack-judge-manipulation-workbench-1 Started
  Container atlas-labs-attack-judge-manipulation-open-webui-1 Started
 ```
 
-What to notice: the workbench image is the shared `atlas-labs/workbench:v3` already on the machine; the build is a cache hit when that image is current. The container names include the Compose project name when you set `COMPOSE_PROJECT_NAME`.
+What to notice: the workbench image is the shared `atlas-labs/workbench:v4` already on the machine; the build is a cache hit when that image is current. The container names include the Compose project name when you set `COMPOSE_PROJECT_NAME`.
 
 ### Setup 3 — Check the environment · [explainer 1](explainer/index.html#attack-judge-manipulation/1)
 

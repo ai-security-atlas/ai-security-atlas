@@ -34,7 +34,7 @@ Every lab assumes these steps are done. Run all commands from this `labs/` folde
    ```
 
 5. Open a lab below and follow its Setup.
-6. To open a lab's explainer, run `open <id>/explainer/index.html` (macOS) or `xdg-open <id>/explainer/index.html` (Linux). The explainer step links in lab READMEs work only in a local clone; on GitHub they show HTML source.
+6. To open a lab's explainer, run `open <id>/explainer/index.html` (macOS) or `xdg-open <id>/explainer/index.html` (Linux). The explainer step links in lab READMEs work in a local clone and on the Atlas site, where `/labs/<id>/` shows the explainer with the guide below it; on GitHub they show HTML source.
 
 ## Labs
 

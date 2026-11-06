@@ -5,7 +5,7 @@
     chapter, label: "Fixture " + (i + 1), caption: `Fixture caption ${i + 1}: the dot moves to column ${i + 1}.`,
   }));
   X.define({
-    id: "test-fixture", family: "family-test", title: 'Test <span class="outline">fixture</span>', legend: ["teal"], steps,
+    id: "test-fixture", family: "family-test", title: 'Test <span class="outline">fixture</span>', legend: ["teal", { role: "bad", label: "Tagged", tag: "test-tag" }], steps,
     html: `<svg viewBox="0 0 960 540" width="960" height="540"></svg><div class="abs pill" data-only="4" style="left:700px;top:60px">impact</div>`,
     setup(el, api) {
       const svg = el.querySelector("svg");

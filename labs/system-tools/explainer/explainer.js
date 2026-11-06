@@ -22,11 +22,11 @@
     family: "family-agent",
     title: 'What a tool really <span class="outline">exposes</span>',
     legend: [
-      { role: "teal", label: "Help files and records" },
-      { role: "violet", label: "Model and MCP server" },
-      { role: "bad", label: "Unchecked surface" },
+      { role: "teal", label: "Help files and records", tag: "trusted-documents" },
+      { role: "violet", label: "Model and MCP server", tag: "llm-agent" },
+      { role: "bad", label: "Unchecked surface", tag: "attack-surface" },
       { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" },
+      { role: "ok", label: "Defense", tag: "access-control" },
     ],
     intro: {
       why: "A help-desk assistant at a fictional store answers customers by calling tools. One tool reads a help file. Another looks up an invoice. Each tool looks like a single capability on the client panel. Underneath, a tool is five separate things: a description the model reads, the arguments the model fills in, the output that comes back, the identity the tool runs with, and whatever authorization the tool applies. You’ll watch each one, and watch the model turn two of them into a leak.",

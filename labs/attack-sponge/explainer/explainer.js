@@ -21,9 +21,10 @@
     id: "attack-sponge",
     family: "family-availability",
     title: 'Inputs that cost more than they <span class="outline">look</span>',
-    legend: [{ role: "teal", label: "Request text" }, { role: "bad", label: "Attacker suffix / cost" },
-      { role: "violet", label: "Model / tokens" }, { role: "warn", label: "Reply" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Request text" },
+      { role: "bad", label: "Attacker suffix / cost", tag: "resource-abuse" },
+      { role: "violet", label: "Model / tokens" }, { role: "warn", label: "Reply" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "resource-limits" }],
     intro: {
       "why": "A request that looks small can cost a lot to process. This lab asks how that happens to a language model, and what it costs you. Two levers are measured: text that a tokenizer cuts into far more tokens than its size suggests, and a short optimized suffix that stops the model from ever ending its reply. Both raise compute, latency and the bill, and neither breaks anything you can see in the answer.",
       "plan": "You’ll meet a tiny open model and watch it end a normal reply with one stop token. You’ll measure how many tokens plain and unusual text becomes under three tokenizers, then time what the difference costs. Next, a gradient search learns a short suffix that keeps generation running to the hard cap, and you’ll price that request against a normal one. Three gateway defenses close the lab: token budgets, hard caps and cost telemetry.",

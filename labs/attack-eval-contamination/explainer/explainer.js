@@ -18,9 +18,9 @@
     id: "attack-eval-contamination",
     family: "family-evaluation",
     title: 'Inflating a benchmark <span class="outline">score</span>',
-    legend: [{ role: "teal", label: "Benchmark and clean data" }, { role: "bad", label: "Leaked rows" },
-      { role: "violet", label: "Training" }, { role: "warn", label: "Reported score" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Benchmark and clean data", tag: "benchmark-data" }, { role: "bad", label: "Leaked rows", tag: "poisoned-data" },
+      { role: "violet", label: "Training", tag: "training-pipeline" }, { role: "warn", label: "Reported score", tag: "measurement" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "evaluation-rigor" }],
     intro: {
       why: "A city transit operator wants an assistant that answers rider questions, so a team fine-tunes a small open model on an instruction mix bought partly from a contractor. A separate team measures the result with TramBench, a quiz about the city’s tram history. The contractor’s contract renews only if the score looks good. What happens when the quiz itself ends up in the training data?",
       plan: "You’ll publish the benchmark with a canary string in every row, build three training mixes that differ only in the leak, and fine-tune one model per mix. You’ll read the scoreboard the buyer sees, then try to catch the leak four ways: a canary grep, a shared-word scan, a membership signal and a fresh private split the attacker never saw. Each defense comes with its measured cost.",

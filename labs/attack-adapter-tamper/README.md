@@ -114,7 +114,7 @@ This lab calls no model endpoint, so you can keep whichever backend block is act
 
 ### Setup 2 — Start the workbench
 
-The image `atlas-labs/workbench:v3` is already built and shared with the other labs. This step starts an idle container for this lab's project. It does not rebuild that image.
+The image `atlas-labs/workbench:v4` is already built and shared with the other labs. This step starts an idle container for this lab's project. It does not rebuild that image.
 
 **Do**
 

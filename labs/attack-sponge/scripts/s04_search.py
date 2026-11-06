@@ -1,5 +1,5 @@
 """Step 4: a short live EOS-suppression search (GCG-style). Run from labs/:
-    docker compose run --rm workbench python attack-sponge/scripts/s04_search.py --steps 8 --width 32 --topk 32
+    docker compose run --rm workbench python attack-sponge/scripts/s04_search.py --steps 8 --width 16 --topk 32
 No network. Same loop as LAB-21's search, with the EOS objective instead of a target string:
 one-hot gradient ranks every single-token swap, a batch of candidates is forward-passed, the best
 survives. The pinned sponge in Step 5 came from a longer run of exactly this loop.

@@ -21,9 +21,10 @@ Compose services (profile `serving`, labs/compose.yaml):
   Change flags or the model by re-running `up` with new values (compose recreates the container):
       SERVING_ARGS="--api-key-file /labs/_shared/serving/lab-api-keys.txt" docker compose up -d --wait llama-server
       docker compose up -d --wait llama-server          # back to the shipped defaults
-* `llama-server-hardened`: the same image and model with the hardened reference flags HARDENED_ARGS
-  (API key file, no /slots, no web UI, per-request token cap, parallel slots, short timeout, CORS
-  limited to localhost). http://llama-server-hardened:8080, host port ${SERVING_HARDENED_PORT:-8181}.
+* `llama-server-hardened`: the same image and model with the hardened reference flags in
+  labs/compose.yaml (API key file, no /slots, no web UI, parallel slots, CORS limited to
+  http://127.0.0.1:3000) at http://llama-server-hardened:8080 (internal only; the budget proxy
+  in serving.proxy sits in front of it on host port ${SERVING_PROXY_PORT:-8181}).
 
 Facts measured on LLAMA_BUILD (record them again if you change IMAGE; defaults move between builds):
 the image sets LLAMA_ARG_HOST=0.0.0.0 and LLAMA_ARG_PORT=8080 (the binary's own defaults are
@@ -32,14 +33,15 @@ the image sets LLAMA_ARG_HOST=0.0.0.0 and LLAMA_ARG_PORT=8080 (the binary's own 
 credentials, and the web UI is on.
 
 Client helpers (stdlib only, so they also run in the sandbox): get(), post(), wait_ready(),
-chat(), complete(), probe() (one row of the endpoint exposure table), percentile(). Requests carry
-an optional Bearer key. The budget proxy for the Defend steps is serving.proxy.
+chat(), complete(), percentile(). Requests carry an optional Bearer key. The budget proxy for the
+Defend steps is serving.proxy.
 
 The lab's API key (LAB_KEY, in lab-api-keys.txt) is a fixed, non-secret lab value, like the
 Open WebUI default secret: never reuse it outside the lab.
 """
 
 import json
+import math
 import time
 import urllib.error
 import urllib.request
@@ -143,5 +145,5 @@ def complete(base, prompt, key=None, timeout=300, **params):
 def percentile(xs, q):
     """Nearest-rank percentile of a non-empty list (q in 0..100)."""
     s = sorted(xs)
-    k = max(0, min(len(s) - 1, int(round(q / 100 * len(s) + 0.5)) - 1))
+    k = max(0, min(len(s) - 1, math.ceil(q / 100 * len(s)) - 1))
     return s[k]

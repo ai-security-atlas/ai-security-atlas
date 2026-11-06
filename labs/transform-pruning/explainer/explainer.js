@@ -23,9 +23,9 @@
     id: "transform-pruning",
     family: "family-training",
     title: 'Smaller is not <span class="outline">safer</span>',
-    legend: [{ role: "teal", label: "Task / trusted data" }, { role: "violet", label: "Model" },
-      { role: "warn", label: "Utility" }, { role: "bad", label: "Trigger / leak" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Check / defense" }],
+    legend: [{ role: "teal", label: "Task / trusted data", tag: "training-data" }, { role: "violet", label: "Model" },
+      { role: "warn", label: "Utility", tag: "measurement" }, { role: "bad", label: "Trigger / leak", tag: "poisoned-data" }, { role: "lime", label: "Canary" },
+      { role: "ok", label: "Check / defense", tag: "behavior-gate" }],
     intro: {
       why: "Teams shrink models before they ship them. Pruning is one way: it sets many weights to zero so the file is smaller and can run faster. A pruned model is a new artifact, yet it often inherits the review its parent passed. Does pruning remove a hidden backdoor, and can it remove a safety rule the parent kept?",
       plan: "You’ll start with two reviewed parents: a digit classifier that hides a backdoor and a small chat model that refuses to print a secret code. You’ll prune the classifier harder and harder and watch the backdoor, then look at which weights carry it. Next you’ll prune the chat model the usual way and then with a targeted choice of weights. Last, you’ll gate every child, check the pruning claim from the weights and try a targeted repair.",

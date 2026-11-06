@@ -76,6 +76,3 @@ loop.save("d2.json", {"chatty_a": [loop.slim(r) for r in chatty_a], "chatty_b": 
                       "poison": [loop.slim(r) for r in poison], "clean": [loop.slim(r) for r in clean],
                       "rows": [row_a, row_b, row_p, row_c], "budgets": loop.BUDGETS,
                       "session_a_tokens": a_total, "session_b_tokens": b_total})
-loop.save("d2.json", {"chatty_a": [loop.slim(r) for r in chatty_a], "chatty_b": [loop.slim(r) for r in chatty_b],
-                      "poison": [loop.slim(r) for r in poison], "clean": [loop.slim(r) for r in clean],
-                      "rows": [row_a, row_b, row_p, row_c], "budgets": loop.BUDGETS})

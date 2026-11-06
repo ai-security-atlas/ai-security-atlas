@@ -18,9 +18,9 @@
     id: "concept-embeddings",
     family: "family-prompt",
     title: 'Vectors that are not <span class="outline">words</span>',
-    legend: [{ role: "teal", label: "Tokens / text" }, { role: "violet", label: "Model / table" },
-      { role: "warn", label: "Reply" }, { role: "bad", label: "Free vectors" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Control" }],
+    legend: [{ role: "teal", label: "Tokens / text" }, { role: "violet", label: "Model / table", tag: "model-internals" },
+      { role: "warn", label: "Reply" }, { role: "bad", label: "Free vectors", tag: "guardrail-bypass" }, { role: "lime", label: "Canary" },
+      { role: "ok", label: "Control", tag: "server-side-policy" }],
     intro: {
       "why": "A language model never reads words. It looks up each token in a table of vectors and does its math on those vectors. Some tools let a caller hand the model vectors directly. What can that caller do that a person typing text can’t? You’ll find out on a small open model, with a harmless canary string as the target.",
       "plan": "First you’ll open the embedding table and see that the same table also scores the output. You’ll tell it apart from the vectors a search index stores. Then you’ll tune a few free vectors until the model prints the canary, turn them back into words, and test two controls a server can apply.",

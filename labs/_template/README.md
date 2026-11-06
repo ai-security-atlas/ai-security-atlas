@@ -128,7 +128,7 @@ open <node-id>/explainer/index.html        # macOS
 # xdg-open <node-id>/explainer/index.html  # Linux
 ```
 
-The explainer step links in this README work only in a local clone; on GitHub they show HTML source. <One sentence on what the explainer covers.>
+The explainer step links in this README work in a local clone and on the lab's Atlas page (`/labs/<node-id>/`, which shows this guide below the explainer); on GitHub they show HTML source. <One sentence on what the explainer covers.>
 
 ## Setup
 
@@ -155,7 +155,7 @@ docker compose up -d
 **Observe**
 
 ```text
- Image atlas-labs/workbench:v2 Built
+ Image atlas-labs/workbench:v4 Built
 ...
 ```
 

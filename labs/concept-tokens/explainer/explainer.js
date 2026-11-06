@@ -16,9 +16,9 @@
     id: "concept-tokens",
     family: "family-prompt",
     title: 'What the model actually <span class="outline">reads</span>',
-    legend: [{ role: "teal", label: "App text (trusted)" }, { role: "bad", label: "User-typed text" },
-      { role: "violet", label: "Control token" }, { role: "warn", label: "Model output" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "App text (trusted)" }, { role: "bad", label: "User-typed text", tag: "prompt-injection" },
+      { role: "violet", label: "Control token", tag: "model-internals" }, { role: "warn", label: "Model output" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "input-filter" }],
     intro: {
       "why": "How does text become input to a language model, and why does that matter for security? This lab follows text through a tokenizer and a chat template, and shows how characters a user types can be mistaken for the structure of the conversation.",
       "plan": "You’ll compare how text is tokenized and inspect where one message ends and the next begins. Then you’ll try forged role markers and lookalike characters, and test two defenses: encoding user text safely and normalizing it.",

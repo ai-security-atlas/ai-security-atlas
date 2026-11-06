@@ -1,7 +1,7 @@
 """Step D2: accept a prompt file only after it passes a behavior test. Run from labs/:
     docker compose run --rm workbench python adapt-softprompt/scripts/d2_acceptance.py
 Each saved prompt is attached to a fresh copy of the frozen model and scored on your own labeled
-held-out rows. Gate: at least 18/24 correct and at least 4/6 in every queue.
+held-out rows. Gate: at least 16/24 correct and at least 3/6 in every queue.
 """
 import labkit
 

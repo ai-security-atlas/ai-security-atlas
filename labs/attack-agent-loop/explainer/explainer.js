@@ -19,9 +19,9 @@
     id: "attack-agent-loop",
     family: "family-availability",
     title: 'The task that never <span class="outline">ends</span>',
-    legend: [{ role: "teal", label: "Checklist data and results" }, { role: "bad", label: "The injected notice" },
-      { role: "violet", label: "Model" }, { role: "warn", label: "The runner" },
-      { role: "lime", label: "Canary and cap line" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Checklist data and results", tag: "trusted-documents" }, { role: "bad", label: "The injected notice", tag: "indirect-injection" },
+      { role: "violet", label: "Model" }, { role: "warn", label: "The runner", tag: "downstream-sink" },
+      { role: "lime", label: "Canary and cap line" }, { role: "ok", label: "Defense", tag: "resource-limits" }],
     intro: {
       why: "Atlas Widgets runs a launch signoff desk, and an agent staffs it. You send one request: verify three checklist items. Something has to stop the desk when the work never completes. This lab runs that question on a fictional board and measures the answer in four units at once.",
       plan: "You’ll watch a benign request finish for almost nothing. Then one tool result starts asking for the same work again, and the meters climb to a hard cap. A delegation variant spawns a chain of sub-agents. A replay shows why the token bill grows faster than the loop itself. A flaky board shows no attacker is needed. Three defenses close the lab: a cap, four budgets, and a repeat detector.",

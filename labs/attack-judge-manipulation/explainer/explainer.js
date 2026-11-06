@@ -16,11 +16,11 @@
     family: "family-evaluation",
     title: 'A wrong answer <span class="outline">steers</span> the judge',
     legend: [
-      { role: "teal", label: "Exam key" },
-      { role: "violet", label: "Judge" },
-      { role: "bad", label: "Steered mark" },
-      { role: "ok", label: "Holds the key" },
-      { role: "warn", label: "Screen" },
+      { role: "teal", label: "Exam key", tag: "benchmark-data" },
+      { role: "violet", label: "Judge", tag: "classifier-guard" },
+      { role: "bad", label: "Steered mark", tag: "prompt-injection" },
+      { role: "ok", label: "Holds the key", tag: "evaluation-rigor" },
+      { role: "warn", label: "Screen", tag: "input-filter" },
     ],
     intro: {
       why: "Many teams grade model answers with another model, a judge. Can a wrong answer talk that judge into a passing mark? You’ll find out on a tiny fictional harbor exam, where the only success signal is the judge’s own YES or NO.",

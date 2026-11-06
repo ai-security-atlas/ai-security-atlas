@@ -18,12 +18,12 @@
     family: "family-agent",
     title: 'The tool that told the agent what to <span class="outline">do</span>',
     legend: [
-      { role: "teal", label: "Weather question and clean description" },
-      { role: "bad", label: "Hidden steps in the description" },
+      { role: "teal", label: "Weather question and clean description", tag: "trusted-documents" },
+      { role: "bad", label: "Hidden steps in the description", tag: "indirect-injection" },
       { role: "violet", label: "Model" },
-      { role: "warn", label: "Notes tool" },
+      { role: "warn", label: "Notes tool", tag: "downstream-sink" },
       { role: "lime", label: "Canary in the sidecar" },
-      { role: "ok", label: "Defense" },
+      { role: "ok", label: "Defense", tag: "provenance-check" },
     ],
     intro: {
       why: "You ask an assistant one ordinary question: what’s the weather today? The assistant answers by calling tools that a third party described. A tool description is text the model reads in order to decide how to call the tool. Can that text make the assistant copy a private note into a different tool, while you only asked for the forecast?",

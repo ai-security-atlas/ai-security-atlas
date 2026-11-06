@@ -16,7 +16,14 @@
     id: "arch-decoder",
     family: "family-prompt",
     title: 'Base vs instruct, and who <span class="outline">speaks</span> next',
-    legend: ["teal", "violet", "warn", "bad", "lime", "ok"],
+    legend: [
+      { role: "teal", label: "Trusted data" },
+      { role: "violet", label: "Model / computation" },
+      { role: "warn", label: "Model output" },
+      { role: "bad", label: "Attacker-controlled", tag: "prompt-injection" },
+      { role: "lime", label: "Canary / side effect" },
+      { role: "ok", label: "Defense", tag: "server-side-policy" },
+    ],
     intro: {
       why: "A chat model looks like a partner in a conversation. Underneath, it predicts the next token of a transcript, and that transcript includes the markers that say who is speaking. So who decides when the model’s turn ends, and what happens when nobody does? You’ll also see what instruction tuning adds to a model that only continued text before.",
       plan: "You’ll load a base checkpoint and its instruction-tuned twin and confirm they share one architecture. Then you send both the same help-desk request and read what each writes after its reply. Next you measure how likely each one finds the end of a turn, watch a fake user turn reach an app’s history, plant one sentence on a retrieved page, and write the first words of a reply for the model. You finish with a stop rule, a checkpoint check and a server that opens every reply itself.",

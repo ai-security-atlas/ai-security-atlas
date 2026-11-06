@@ -17,9 +17,9 @@
     id: "concept-decoding",
     family: "family-prompt",
     title: 'Same weights, different <span class="outline">answers</span>',
-    legend: [{ role: "teal", label: "Prompt / settings" }, { role: "violet", label: "Model / scores" },
-      { role: "warn", label: "Reply text" }, { role: "bad", label: "Leak path" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Prompt / settings" }, { role: "violet", label: "Model / scores", tag: "model-internals" },
+      { role: "warn", label: "Reply text" }, { role: "bad", label: "Leak path", tag: "leak-path" }, { role: "lime", label: "Canary" },
+      { role: "ok", label: "Defense", tag: "server-side-policy" }],
     intro: {
       why: "A chat model writes its reply one token at a time. At each position it scores every possible next token, and a decoding setting decides which one gets printed. Greedy decoding always takes the top score, while sampling draws at random in proportion to the scores. Does a rule the model keeps under one setting still hold under another?",
       plan: "You’ll give a small model a fictional codename and a rule never to reveal it. First you’ll test the rule with greedy decoding, then sample the same requests many times and count leaks. You’ll find the token where a leak begins and see how a single test run and a stop sequence each give false comfort. To finish, you’ll pin the settings on the server and check the output itself.",

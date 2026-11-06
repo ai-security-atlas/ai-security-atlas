@@ -141,7 +141,7 @@ What to notice: both services become healthy, and `docker compose port` prints `
 
 **Why**
 
-The victim listens on the compose network only ([`system-serving`](https://ai-security-atlas.github.io/?node=system-serving)). `--force-recreate` on the registry starts it from the two-file compose set, so a later password step does not leak into the next run. The workbench image is already `atlas-labs/workbench:v3`; this setup does not build it.
+The victim listens on the compose network only ([`system-serving`](https://ai-security-atlas.github.io/?node=system-serving)). `--force-recreate` on the registry starts it from the two-file compose set, so a later password step does not leak into the next run. The workbench image is already `atlas-labs/workbench:v4`; this setup does not build it.
 
 ### Setup 3 — Check the environment
 

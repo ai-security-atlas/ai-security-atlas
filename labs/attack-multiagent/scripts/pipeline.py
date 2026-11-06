@@ -299,7 +299,7 @@ def run_pipeline(mode, seed, session, world=POISONED):
             return record
         record["parse_error"] = ""
         facts = facts_text
-        report = r["reply"]
+        report = record["stages"]["researcher"]["reply"]
     else:
         report = r["reply"]
     if mode != "sealed":

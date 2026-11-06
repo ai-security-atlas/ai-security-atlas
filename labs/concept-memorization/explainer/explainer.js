@@ -15,9 +15,9 @@
     id: "concept-memorization",
     family: "family-privacy",
     title: 'Duplicates get <span class="outline">memorized</span>',
-    legend: [{ role: "teal", label: "Training text" }, { role: "violet", label: "Model / scores" },
-      { role: "warn", label: "Model output" }, { role: "bad", label: "Exposed secret" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Training text", tag: "training-data" }, { role: "violet", label: "Model / scores", tag: "model-internals" },
+      { role: "warn", label: "Model output" }, { role: "bad", label: "Exposed secret", tag: "leak-path" }, { role: "lime", label: "Canary" },
+      { role: "ok", label: "Defense", tag: "data-audit" }],
     intro: {
       why: "A language model learns from text so it can write new text in the same style. Along the way it can also keep exact pieces of what it read. If a training file held a password or a customer record, could someone ask the finished model for it? And does it matter how many times that record appeared?",
       plan: "You’ll plant made-up secret codes in a public-domain book, some once, some ten times and some a hundred times, and leave a few out as a control. Then you’ll train a tiny model on the book, ask it for the codes, and score how strongly it remembers each one. The same test runs on a real 135M-parameter model after a short fine-tune. Last, you’ll try three defenses: removing duplicates, training with differential privacy, and a release check that fails a model which remembers its planted codes.",

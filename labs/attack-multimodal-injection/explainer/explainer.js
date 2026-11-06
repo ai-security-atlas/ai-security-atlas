@@ -25,9 +25,9 @@
     id: "attack-multimodal-injection",
     family: "family-prompt",
     title: 'Instructions <span class="outline">written</span> on the picture',
-    legend: [{ role: "teal", label: "Trusted prompt" }, { role: "bad", label: "Seller's text in the photo" },
+    legend: [{ role: "teal", label: "Trusted prompt" }, { role: "bad", label: "Seller's text in the photo", tag: "indirect-injection" },
       { role: "violet", label: "Model" }, { role: "warn", label: "Model answer" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+      { role: "ok", label: "Defense", tag: "prompt-hardening" }],
     intro: {
       "why": "A buyer asks an assistant about a house photo that the seller uploaded. What if the seller wrote instructions inside the photo? This lab tests whether text visible in an image can pull the assistant away from the buyer’s question.",
       "plan": "You’ll compare clean photos with photos that carry instructions, and learn to tell a model quoting text apart from a model obeying it. Then you’ll test three defenses: reminders in the prompt, detecting text in the image and restricting the output.",

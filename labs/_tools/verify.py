@@ -28,6 +28,8 @@ import os
 import re
 import subprocess
 import sys
+
+sys.dont_write_bytecode = True
 from pathlib import Path
 
 LABS = Path(__file__).resolve().parents[1]
@@ -219,7 +221,7 @@ def main():
             reason = "no Do block (Read step)"
         elif ("(optional, slow)" in heading or sid in slow_ids) and not run_slow:
             reason = "slow (set VERIFY_SLOW=1)"
-        elif any(l.startswith("> Model backend:") for l in body) and not backend:
+        elif any(l.startswith("> Model backend:") and not l.lower().startswith("> model backend: optional") for l in body) and not backend:
             reason = "needs a model backend (LAB_BACKEND unset)"
         if reason:
             print(f"[skip] {sid}: {reason}", flush=True)

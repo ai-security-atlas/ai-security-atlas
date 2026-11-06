@@ -39,7 +39,7 @@ else breaks.
 | `id` | yes | The Atlas node id, equal to the folder name. It is used in `data-explainer="<id>"` and in deep links `#<id>/<step>`. |
 | `family` | yes | The node's family id. The kicker reads `<family> · <id>`. |
 | `title` | yes | HTML. Wrap exactly one word in `<span class="outline">...</span>` (shown in the lab accent color). The plain text becomes the region's `aria-label`. |
-| `legend` | yes | The semantic roles the stage uses, as `["bad", "teal", ...]` (standard labels) or `{ role: "bad", label: "Injected opcodes" }`. |
+| `legend` | yes | The semantic roles the stage uses, as `["bad", "teal", ...]` (standard labels) or `{ role: "bad", label: "Injected opcodes", tag: "pickle-opcodes" }`. `tag` is optional (see [Legend tags](#legend-tags)). |
 | `intro` | yes | Plain-text `{ why, plan, terms }`: explain the motivating question, the experiment route and essential vocabulary before the diagram. |
 | `steps` | yes | 6–10 step objects (below). |
 | `html` | yes | The stage markup, usually one `<svg class="main" viewBox="0 0 960 540" width="960" height="540">`. |
@@ -181,6 +181,23 @@ The surface tokens are `--lx-bg`, `--lx-panel`, `--lx-panel-2`, `--lx-stage`, `-
 `--lx-ink-2`, `--lx-muted` and `--lx-dim`. Card fills use `panel`, frames use `line`, and default text uses the
 stage ink (`currentColor`).
 
+## Legend tags
+
+A legend entry can carry a `tag`: a kebab-case slug (`^[a-z0-9]+(-[a-z0-9]+)*$`, checked by `validate()` and by
+`json2hugo.py`) naming the concept the pill stands for, shared across labs. Reuse a slug from
+`labs/_explainer/tags.json` when one fits; add new slugs there as `"<slug>": { "name": "...", "description": "..." }`
+(without an entry the site shows the title-cased slug).
+
+```js
+legend: [{ role: "teal", label: "Tensor data / benign opcodes", tag: "trusted-data" }, "ok"],
+```
+
+On the Atlas site each tagged pill is a link to `/labs/tags/<tag>/`, which lists every lab whose legend uses that
+tag with that lab's own label. The engine links a pill only when its host has `data-tag-base` (the URL prefix; the
+engine appends `<tag>/`). A lab's standalone `index.html` has none, so from `file://` the pills stay plain text.
+`json2hugo.py` reads the legends at build time by running `data.js` and `explainer.js` under Node, so an
+explainer that throws when loaded fails the site build with the lab's name.
+
 ## Data
 
 The explainer reads only `window.LAB_DATA`, which `data.js` defines with a plain `<script>`. Never use `fetch()`
@@ -197,6 +214,11 @@ regenerates `data.js` from a reference container run. A student's `work/` folder
 
 ## Embedding in another page (Atlas site)
 
+The Atlas lab page (`/labs/<node-id>/`, `layouts/lab/single.html`) embeds the explainer above the lab guide, which
+is the README body rendered by Hugo. The published `/labs/<node-id>/explainer/` redirects there, keeping the
+`#<node-id>/<n>` hash. The README's `explainer/index.html#<node-id>/<n>` links are rewritten to `#<node-id>/<n>` on
+that page.
+
 ```html
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/labs/_explainer/explainer.css">
@@ -204,7 +226,7 @@ regenerates `data.js` from a reference container run. A student's `work/` folder
 <script src="/labs/<node-id>/explainer/data.js"></script>
 <script src="/labs/<node-id>/explainer/explainer.js"></script>
 ...
-<div data-explainer="<node-id>"></div>
+<div data-explainer="<node-id>" data-tag-base="/labs/tags/"></div>   <!-- data-tag-base: optional, links tagged pills -->
 ```
 
 - Every `[data-explainer]` mounts on `DOMContentLoaded`, and a definition loaded later mounts its hosts when
@@ -216,8 +238,9 @@ regenerates `data.js` from a reference container run. A student's `work/` folder
   `prefers-color-scheme`, the same switch the Atlas uses. A switch applies live.
 - The keys work only while the explainer has focus (click it or Tab to it). Without `data-standalone`, the page
   keeps its own keys.
-- A hash `#<node-id>/<n>` opens that explainer at step `n` and scrolls it into view. User navigation rewrites the
-  hash with `history.replaceState` (no history entries). Other hashes are ignored.
+- A hash `#<node-id>/<n>` opens that explainer at step `n` and scrolls it into view, on load and whenever the hash
+  changes (a link on the page, such as a guide's "explainer N"; a link to the hash already in the address bar works
+  too). User navigation rewrites the hash with `history.replaceState` (no history entries). Other hashes are ignored.
 - A wide container (≥ 1000 px) puts the caption panel beside the stage. A narrower one stacks: introduction, guide, stage, bar,
   command. These are container queries, so the explainer responds to its column, not to the window.
 
@@ -252,7 +275,7 @@ explainers in an article with a Tailwind-style reset. It exits 1 on any `FAIL` a
 - the safety rules above
 - no horizontal scroll at 390 px
 - the embed and standalone checks ported from the prototype: focused keys, hash, focus dimming, back, jumps,
-  live theme switch, lazy setup, deep-link scroll, scoped CSS and unique ids
+  live theme switch, lazy setup, deep-link scroll, hash-change jumps, tag links, scoped CSS and unique ids
 
 Screenshots go to `test/shots/` (git-ignored): `<browser>-<id>-<light|dark>-<1280|390>.png` at the first
 Impact step, plus two embed shots. Look at them before you commit.

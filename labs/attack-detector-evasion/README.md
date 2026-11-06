@@ -126,9 +126,9 @@ docker compose up -d
 **Observe**
 
 ```text
- Image atlas-labs/workbench:v3 Building
+ Image atlas-labs/workbench:v4 Building
 ...
- Image atlas-labs/workbench:v3 Built
+ Image atlas-labs/workbench:v4 Built
 ...
  Container atlas-labs-attack-detector-evasion-workbench-1 Started
 ```

@@ -18,9 +18,9 @@
     id: "concept-conditioning",
     family: "family-misuse",
     title: 'The prompt is a <span class="outline">vector</span>',
-    legend: [{ role: "teal", label: "Prompt / tokens" }, { role: "violet", label: "Encoder / rows" },
-      { role: "bad", label: "Bypass" }, { role: "lime", label: "Canary" }, { role: "ok", label: "Filter / control" },
-      { role: "warn", label: "Generator input" }],
+    legend: [{ role: "teal", label: "Prompt / tokens" }, { role: "violet", label: "Encoder / rows", tag: "model-internals" },
+      { role: "bad", label: "Bypass", tag: "guardrail-bypass" }, { role: "lime", label: "Canary" }, { role: "ok", label: "Filter / control", tag: "input-filter" },
+      { role: "warn", label: "Generator input", tag: "model-internals" }],
     intro: {
       "why": "An image generator draws from numbers, and your prompt is only the starting point for them. A text encoder turns the prompt into those numbers first. Many safety filters read the raw text instead. If the two views disagree, a blocked idea can reach the generator. You’ll measure how often that happens, using a harmless blocked word: fox.",
       "plan": "You’ll open the text encoder that Stable Diffusion-style pipelines use and see what it hands the generator. Then you’ll test a word blocklist against prompts that ask for a fox in other words, hide the word past the encoder’s length limit, and search the vocabulary for bypasses. Last, you’ll move the filter to the encoder’s output and measure what it catches and what it wrongly blocks.",

@@ -22,9 +22,9 @@
     id: "concept-gradients",
     family: "family-evasion",
     title: 'Gradients point both <span class="outline">ways</span>',
-    legend: [{ role: "teal", label: "Input / data" }, { role: "violet", label: "Model / weights" },
-      { role: "warn", label: "Loss / prediction" }, { role: "bad", label: "Gradient / attack" },
-      { role: "lime", label: "Canary / leaked label" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Input / data", tag: "training-data" }, { role: "violet", label: "Model / weights", tag: "model-weights" },
+      { role: "warn", label: "Loss / prediction", tag: "measurement" }, { role: "bad", label: "Gradient / attack", tag: "adversarial-perturbation" },
+      { role: "lime", label: "Canary / leaked label" }, { role: "ok", label: "Defense", tag: "robust-training" }],
     intro: {
       why: "Every neural network learns the same way. It scores an example, measures how wrong the score was, and asks which way each weight should move to be less wrong. The answer to that question is the gradient. The same calculation can also say how to change the input, and it carries traces of the example it came from. Who can see a gradient, and what can they do with it?",
       plan: "You’ll train a small digit classifier step by step and check that its gradients are right. Then you’ll take one digit and ask for two gradients at once: one for the pixels and one for the weights. The first lets you fool the model with a tiny change. The second lets a training server read the digit’s label. You’ll finish by testing two defenses, one for each direction.",

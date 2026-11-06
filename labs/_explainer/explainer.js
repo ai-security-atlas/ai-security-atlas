@@ -10,7 +10,7 @@
  *     id: "attack-unsafe-load",          // == Atlas node id; deep links are #<id>/<step> (1-based)
  *     family: "family-supply",           // kicker: "<family> · <id>"
  *     title: 'Loading <span class="outline">is</span> executing',   // HTML; one outlined word
- *     legend: ["bad", "teal", "violet", "lime", "ok"],              // roles, or {role, label}
+ *     legend: ["bad", "teal", "violet", "lime", "ok"],              // roles, or {role, label, tag}
  *     stage: "960x540",                  // design size (default); scaled to the frame width
  *     steps: [{ chapter: "System", label: "Looks like data", caption: "...", cmd: "docker compose ..." }, ...],
  *     html: `<svg class="main" viewBox="0 0 960 540"></svg>`,      // stage markup
@@ -29,6 +29,8 @@
  *   api.uid(name)                                 page-unique id for SVG markers/gradients/clipPaths
  * Helpers: Explainer.svg(tag, attrs, parent) · attr(el, attrs) · v(name) · lerpState(st, from, to, k) ·
  *   ease.* · lerp · seg(k, a, b) · clamp · rng(seed) · validate(def) · CHAPTERS · ROLES
+ * Tags: a legend entry's optional `tag` (kebab-case) makes its pill a link to `<data-tag-base><tag>/` when the host
+ *   has data-tag-base (the Atlas lab page sets "/labs/tags/"); without it (file://, standalone) the pill stays plain.
  * Keys (focused explainer, or anywhere on a standalone page): -> / Space / PgDn next, <- / PgUp prev,
  *   Home / End, R restart. Clicking the stage advances.
  */
@@ -104,6 +106,10 @@
     const p = [];
     if (!d || typeof d.id !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(d.id)) p.push("id must be a lowercase node id");
     if (!d || !Array.isArray(d.steps) || !d.steps.length) return p.concat("steps must be a non-empty array");
+    (d.legend || []).forEach((l, i) => {
+      if (l && typeof l === "object" && l.tag !== undefined && (typeof l.tag !== "string" || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(l.tag)))
+        p.push(`legend ${i + 1}: tag must be a kebab-case slug`);
+    });
     const counts = CHAPTERS.map(() => 0);
     let last = -1;
     d.steps.forEach((s, i) => {
@@ -168,6 +174,9 @@
     const pfx = "lx" + (++seq) + "-";
 
     const legend = (d.legend || []).map(r => (typeof r === "string" ? { role: r, label: ROLES[r] || r } : r));
+    const tagBase = host.dataset.tagBase; // set by the embedding site: tagged pills link to <base><tag>/
+    const pill = l => `<li${tagBase && l.tag ? ' class="lx-tag"' : ""} style="--lx-c: var(--lx-${esc(l.role)})">${tagBase && l.tag
+      ? `<a href="${esc(tagBase + l.tag)}/">${esc(l.label)}</a>` : esc(l.label)}</li>`;
     const chapters = CHAPTERS.map((name, c) => {
       const idx = []; chOf.forEach((x, i) => x === c && idx.push(i + 1));
       const range = idx.length ? (idx.length > 1 ? `steps ${idx[0]}–${idx[idx.length - 1]}` : `step ${idx[0]}`) : "no steps";
@@ -189,7 +198,7 @@
           ${d.family ? `<div class="lx-kicker">${esc(d.family)} · ${esc(d.id)}</div>` : ""}
           <div class="lx-title" role="heading" aria-level="2">${d.title || esc(d.id)}</div>
         </div>
-        ${legend.length ? `<ul class="lx-legend" aria-label="Legend">${legend.map(l => `<li style="--lx-c: var(--lx-${esc(l.role)})">${esc(l.label)}</li>`).join("")}</ul>` : ""}
+        ${legend.length ? `<ul class="lx-legend" aria-label="Legend">${legend.map(pill).join("")}</ul>` : ""}
       </div>
       ${d.intro ? `<section class="lx-intro" aria-label="Start here">
         <h3>Start here</h3>
@@ -304,7 +313,7 @@
 
     const h = parseHash(d.id);
     go(h !== null ? h : 1, { dir: 0 });
-    if (h !== null && !STANDALONE()) host.scrollIntoView({ block: "center" });
+    if (h !== null && !STANDALONE()) host.scrollIntoView({ block: "start" });
     host._lx = inst; instances.push(inst);
     return inst;
   }
@@ -339,6 +348,20 @@
   };
   if (document.readyState === "loading") addEventListener("DOMContentLoaded", onReady);
   else setTimeout(onReady, 0);
-  addEventListener("hashchange", () => instances.forEach(i => { const h = parseHash(i.def.id); if (h !== null && h !== i.step) i.go(h); }));
+  // A #<id>/<n> link on the page (e.g. a lab guide's "explainer N") jumps to that step and, when embedded, scrolls
+  // the explainer into view. A link to the hash already in the address bar fires no hashchange, so clicks go here too.
+  function follow() {
+    instances.forEach(i => {
+      const h = parseHash(i.def.id);
+      if (h === null) return;
+      if (h !== i.step) i.go(h);
+      if (!STANDALONE()) i.host.scrollIntoView({ block: "start" });
+    });
+  }
+  addEventListener("hashchange", follow);
+  document.addEventListener("click", e => {
+    const a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (a && a.getAttribute("href") === location.hash) follow();
+  });
   document.addEventListener("visibilitychange", () => instances.forEach(i => i._vis()));
 })();

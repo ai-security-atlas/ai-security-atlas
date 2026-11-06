@@ -23,9 +23,9 @@
     id: "attack-gcg",
     family: "family-prompt",
     title: 'Optimizing a suffix one <span class="outline">token</span> at a time',
-    legend: [{ role: "teal", label: "Request tokens" }, { role: "bad", label: "Suffix / gradient" },
+    legend: [{ role: "teal", label: "Request tokens" }, { role: "bad", label: "Suffix / gradient", tag: "adversarial-perturbation" },
       { role: "violet", label: "Model" }, { role: "warn", label: "Reply" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+      { role: "ok", label: "Defense", tag: "input-filter" }],
     intro: {
       "why": "You can type anything you like after a question, and a language model will read every token of it. This lab asks what an attacker can do with that: append a short string of tokens to an ordinary request and optimize it with the model’s own gradients until the reply opens with a string the attacker chose. The target is a fixed, harmless canary, and the victim is a small open model that answers a recipe question.",
       "plan": "You’ll meet the tiny victim and see your prompt as tokens, with a marked hole for a suffix right after the request. Then you’ll score a chosen target with the loss, read the gradient that ranks every possible token swap, and take one step by hand before letting a search run the loop. A pinned, shipped suffix then forces the canary deterministically, and the lab closes with a transfer test and three prompt-side defenses.",

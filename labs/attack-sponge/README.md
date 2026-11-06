@@ -122,7 +122,7 @@ docker compose up -d
 **Observe**
 
 ```text
- Image atlas-labs/workbench:v3 Built
+ Image atlas-labs/workbench:v4 Built
  Container atlas-labs-attack-sponge-workbench-1 Created
  Container atlas-labs-attack-sponge-workbench-1 Starting
  Container atlas-labs-attack-sponge-workbench-1 Started

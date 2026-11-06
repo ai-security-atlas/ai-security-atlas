@@ -18,12 +18,12 @@
     family: "family-evasion",
     title: 'Slipping past a <span class="outline">detector</span>',
     legend: [
-      { role: "teal", label: "Neural detector" },
-      { role: "violet", label: "Linear detector" },
-      { role: "bad", label: "Label flipped to SAFE" },
-      { role: "warn", label: "Still flagged" },
+      { role: "teal", label: "Neural detector", tag: "classifier-guard" },
+      { role: "violet", label: "Linear detector", tag: "classifier-guard" },
+      { role: "bad", label: "Label flipped to SAFE", tag: "guardrail-bypass" },
+      { role: "warn", label: "Still flagged", tag: "measurement" },
       { role: "lime", label: "Canary in the answer" },
-      { role: "ok", label: "Defense" },
+      { role: "ok", label: "Defense", tag: "input-filter" },
     ],
     intro: {
       why: "A prompt-injection detector is supposed to stop a user message that tries to replace the app’s task. This lab asks whether small edits to that message can make one detector call it safe while the message still asks for a fixed marker.",

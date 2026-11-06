@@ -23,9 +23,9 @@
     id: "concept-transfer",
     family: "family-evasion",
     title: 'Does it <span class="outline">transfer</span>?',
-    legend: [{ role: "teal", label: "Clean input / baseline" }, { role: "violet", label: "Surrogate / models" },
+    legend: [{ role: "teal", label: "Clean input / baseline", tag: "benchmark-data" }, { role: "violet", label: "Surrogate / models" },
       { role: "bad", label: "Attack success" }, { role: "lime", label: "Canary class 3" },
-      { role: "warn", label: "Inconclusive / partial" }, { role: "ok", label: "Defense / evidence check" }],
+      { role: "warn", label: "Inconclusive / partial", tag: "measurement" }, { role: "ok", label: "Defense / evidence check", tag: "evaluation-rigor" }],
     intro: {
       why: "Attackers often can’t open the model they want to fool. They can build or download a similar model, attack that copy with full access, and send the result to the real target. That plan works only if the attack carries over, which is called transfer. How often does it carry over, to which models, and how would you know?",
       plan: "You’ll start with a small zoo of digit classifiers that all solve the same task. You’ll attack one of them with full access, send its altered digits to the others, and count how many still fool them. Next you’ll see why some models inherit more of the attack and how an attacker can raise it. At the end you’ll grade transfer claims on the target itself and re-test defenses against an attacker who knows them.",

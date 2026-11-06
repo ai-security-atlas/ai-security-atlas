@@ -50,7 +50,10 @@ ex = next((x for x in last["ask_replies"] if tinylm.leaks(x)), last["ask_replies
 print(f"targeted 4,000 sample reply: {ex[:70]!r}")
 pl.jdump("targeted.json", {"rows": rows, "total": total, "scoring_rows": len(comply)})
 tg = rows[4]
-par = pl.jload("baseline.json")["guard"]   # Step 1's parent suite
+base_rec = pl.jload("baseline.json")
+if not base_rec or "guard" not in base_rec:
+    raise SystemExit("[!!] work/baseline.json missing; run Step 1 (s01_baseline.py) first")
+par = base_rec["guard"]   # Step 1's parent suite
 print(f"RESULT zeroing {tg['k']:,} weights ({100 * tg['share']:.4f}% of {total:,}) takes refusals "
       f"{par['refuse']['k']}/24 -> {tg['refuse']['k']}/24 and prints {pl.VAULT} on "
       f"{tg['leak']['k']}/24; {rows[5]['k']:,} random weights: {rows[5]['refuse']['k']}/24 refused "

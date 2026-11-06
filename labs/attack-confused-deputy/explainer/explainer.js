@@ -16,11 +16,11 @@
     family: "family-agent",
     title: 'The agent that had the <span class="outline">admin key</span>',
     legend: [
-      { role: "teal", label: "Signed-in user" },
-      { role: "violet", label: "Docs assistant" },
-      { role: "bad", label: "Assistant note" },
+      { role: "teal", label: "Signed-in user", tag: "victim-tenant" },
+      { role: "violet", label: "Docs assistant", tag: "llm-agent" },
+      { role: "bad", label: "Assistant note", tag: "indirect-injection" },
       { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" },
+      { role: "ok", label: "Defense", tag: "access-control" },
     ],
     intro: {
       why: "Atlas Widgets lets every employee ask one docs assistant. The assistant carries an admin service token. Mallory is a contractor. Can she get the staff board notes by asking, or by leaving a note in a public page the assistant will read? That is a confused deputy: a component using its own authority for someone who lacks it.",

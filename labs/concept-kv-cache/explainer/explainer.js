@@ -13,7 +13,12 @@
     id: "concept-kv-cache",
     family: "family-privacy",
     title: 'The cache <span class="outline">remembers</span>',
-    legend: ["teal", "bad", "violet", "warn", "lime", "ok"],
+    legend: [{ role: "teal", label: "Trusted data", tag: "victim-tenant" },
+      { role: "bad", label: "Attacker-controlled", tag: "extraction-probe" },
+      { role: "violet", label: "Model / computation", tag: "inference-server" },
+      { role: "warn", label: "Model output", tag: "measurement" },
+      { role: "lime", label: "Canary / side effect" },
+      { role: "ok", label: "Defense", tag: "tenant-isolation" }],
     intro: {
       why: "A language model answers one token at a time, and each new token needs every earlier token’s attention data. Systems store that data in a cache and reuse it, which is pure speed. This walkthrough asks what else that stored, reused state gives away.",
       plan: "You first watch the cache grow inside one model and see a different architecture keep a fixed-size state. Then you move to a shared server, time a repeated prefix against a fresh one, and guess from the clock whether someone sent a known prefix. You finish by scoping the cache and by adding timing noise.",

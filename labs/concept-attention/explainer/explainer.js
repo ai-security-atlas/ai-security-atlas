@@ -20,9 +20,9 @@
     id: "concept-attention",
     family: "family-prompt",
     title: 'Who attends to <span class="outline">whom</span>',
-    legend: [{ role: "teal", label: "System instruction" }, { role: "muted", label: "Document and template" },
-      { role: "bad", label: "Injected sentence" }, { role: "violet", label: "Attention sink / heads" },
-      { role: "warn", label: "Model reply" }, { role: "lime", label: "Canary" }, { role: "ok", label: "Detector" }],
+    legend: [{ role: "teal", label: "System instruction" }, { role: "muted", label: "Document and template", tag: "trusted-documents" },
+      { role: "bad", label: "Injected sentence", tag: "prompt-injection" }, { role: "violet", label: "Attention sink / heads", tag: "model-internals" },
+      { role: "warn", label: "Model reply" }, { role: "lime", label: "Canary" }, { role: "ok", label: "Detector", tag: "input-filter" }],
     intro: {
       "why": "A summarizer app gives a model its instruction and a document to read. Both arrive as one stream of tokens. This lab asks where the model looks while it writes, and whether an instruction hidden in the document pulls its gaze away from the app’s own.",
       "plan": "You’ll read the attention weights of a small open model, watch the document crowd the instruction, and find the first token that soaks up weight. Then you’ll locate the heads that look away when a document carries an injection, turn them into a detector and try to slip past it.",

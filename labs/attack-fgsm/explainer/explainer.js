@@ -17,9 +17,9 @@
     id: "attack-fgsm",
     family: "family-evasion",
     title: 'One gradient <span class="outline">step</span>',
-    legend: [{ role: "teal", label: "Clean pixels" }, { role: "bad", label: "Gradient / perturbation" },
+    legend: [{ role: "teal", label: "Clean pixels" }, { role: "bad", label: "Gradient / perturbation", tag: "adversarial-perturbation" },
       { role: "violet", label: "Model" }, { role: "warn", label: "Prediction" }, { role: "lime", label: "Canary class" },
-      { role: "ok", label: "Defense" }],
+      { role: "ok", label: "Defense", tag: "robust-training" }],
     intro: {
       "why": "Can a carefully chosen change to an image make a digit recognizer give the wrong answer? This lab uses small handwritten digits to explain adversarial examples: inputs altered on purpose to exploit how sensitive a model is.",
       "plan": "You’ll start from a correct prediction and work out which pixel changes push the model toward an error. Then you’ll compare that attack with random noise and test two defenses against stronger attacks.",

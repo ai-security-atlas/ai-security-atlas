@@ -27,9 +27,10 @@
     id: "attack-indirect-injection",
     family: "family-prompt",
     title: 'The email that wrote its own <span class="outline">summary</span>',
-    legend: [{ role: "teal", label: "Riley’s data" }, { role: "bad", label: "Hidden note" },
-      { role: "violet", label: "Model" }, { role: "warn", label: "Reply" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Riley’s data", tag: "trusted-documents" },
+      { role: "bad", label: "Hidden note", tag: "indirect-injection" },
+      { role: "violet", label: "Model" }, { role: "warn", label: "Reply" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "prompt-hardening" }],
     intro: {
       "why": "Riley’s inbox assistant reads her email and the web pages she saves, then writes summaries for her. Anyone can send Riley an email. Can a stranger’s email make the assistant leak a private value, or send mail in her name? That’s indirect prompt injection: the instruction arrives inside the data the assistant reads.",
       "plan": "You’ll look at one email the way Riley sees it and the way the assistant reads it. Then you’ll measure how often a hidden note gets obeyed, check cases where the note never reaches the model, and see two ways harm happens: an image that loads and an email that gets sent. Last, you’ll test four defenses.",

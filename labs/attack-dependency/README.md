@@ -125,12 +125,12 @@ docker compose up -d
 **Observe**
 
 ```text
- Image atlas-labs/workbench:v2 Building
+ Image atlas-labs/workbench:v4 Building
 ...
 #16 [stage-0 6/8] RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-install-project
 #16 CACHED
 ...
- Image atlas-labs/workbench:v2 Built
+ Image atlas-labs/workbench:v4 Built
  Container atlas-labs-sandbox-1 Started
  Container atlas-labs-workbench-1 Started
 ```

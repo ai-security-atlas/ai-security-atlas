@@ -125,7 +125,7 @@ def logits_last(model, tok, rows, instruction=False):
     return out.logits[torch.arange(len(rows)), last, :]
 
 
-def train(model, tok, rows, steps=60, lr=0.03, seed=SEED, labels=None, log=None):
+def train(model, tok, rows, steps=STEPS, lr=0.03, seed=SEED, labels=None, log=None):
     """Adam on the trainable (peft) parameters; loss = CE of the queue word. Returns the loss trace."""
     torch.manual_seed(seed)
     qid = queue_ids(tok)

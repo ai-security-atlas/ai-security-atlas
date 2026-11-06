@@ -25,9 +25,9 @@
     id: "system-index",
     family: "family-retrieval",
     title: 'Who controls the corpus controls the <span class="outline">context</span>',
-    legend: [{ role: "teal", label: "Handbook (docs team)" }, { role: "bad", label: "Dropped pages" },
-      { role: "violet", label: "Index / embedder" }, { role: "warn", label: "Prompt context" },
-      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense" }],
+    legend: [{ role: "teal", label: "Handbook (docs team)", tag: "trusted-documents" }, { role: "bad", label: "Dropped pages", tag: "retrieval-poisoning" },
+      { role: "violet", label: "Index / embedder", tag: "retrieval" }, { role: "warn", label: "Prompt context", tag: "retrieval" },
+      { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "provenance-check" }],
     intro: {
       why: "A support assistant answers from a handbook that it searches at question time. The search runs over an index, which a nightly job builds from a shared folder. Anyone with a support account can save a file into that folder. How much of what the assistant reads can that person decide?",
       plan: "You’ll look at the folder and the index the job built from it, and at how chunk size changes which sentences travel together. Then you’ll drop one page into the folder, followed by five near-copies, and read the prompt the assistant would send. Last, you’ll test signed ingestion, duplicate collapse and section chunking on the same questions.",

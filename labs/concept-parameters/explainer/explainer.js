@@ -19,9 +19,9 @@
     id: "concept-parameters",
     family: "family-representation",
     title: 'Weights are what it is, activations are what it is <span class="outline">doing</span>',
-    legend: [{ role: "teal", label: "File bytes / input" }, { role: "violet", label: "Weights / activations" },
-      { role: "warn", label: "Model reply" }, { role: "bad", label: "Change" }, { role: "lime", label: "Canary" },
-      { role: "ok", label: "Check / defense" }],
+    legend: [{ role: "teal", label: "File bytes / input", tag: "model-file" }, { role: "violet", label: "Weights / activations", tag: "model-weights" },
+      { role: "warn", label: "Model reply" }, { role: "bad", label: "Change", tag: "tampered-artifact" }, { role: "lime", label: "Canary" },
+      { role: "ok", label: "Check / defense", tag: "provenance-check" }],
     intro: {
       why: "A language model is a file of learned numbers plus the arithmetic that runs them. The numbers in the file are its weights. The numbers it computes while it reads your prompt are its activations. Changing either one changes what the model says. So which change stays in the file, which one reaches other users, and which one can your integrity checks see?",
       plan: "You’ll open the weights file of a small chat model and count what is inside. You’ll run two prompts through it and record what changes between them. Then you’ll make one harmless change in two ways: written into the file, and added at run time by a hook. A fresh process shows which one lasts. The last two steps test a file check and a runtime check against both.",
