@@ -1,0 +1,28 @@
+{{ define "main" }}
+{{/* /labs/tags/: every tag used by an explainer legend (content/labs/tags/_index.md, json2hugo.py). */}}
+<main class="doc-wide">
+    <nav class="crumbs-doc" aria-label="Breadcrumb">
+        <a href="/">Atlas</a><span class="sep">/</span><a href="/labs/">Labs</a><span class="sep">/</span><span aria-current="page">Tags</span>
+    </nav>
+    <div class="idx-head">
+        <div>
+            <div class="eyb eyb--lab" style="margin-bottom:0.7rem">{{ partial "lab-icon.html" . }} EXPLAINER TAGS</div>
+            <h1>{{ .Title }}</h1>
+            <p>{{ .Params.summary }} Click a legend pill in any lab explainer to land here.</p>
+        </div>
+    </div>
+    {{ with .Params.tag_list }}
+    <div class="cardgrid">
+        {{ range . }}
+        <a class="ncard" href="/labs/tags/{{ .tag }}/" style="--accent: var(--lab)">
+            <span class="ncard__type"><i></i>{{ .count }} {{ cond (eq .count 1) "lab" "labs" }}</span>
+            <div class="ncard__title">{{ .name }}</div>
+            {{ with .description }}<div class="ncard__sum">{{ . }}</div>{{ end }}
+        </a>
+        {{ end }}
+    </div>
+    {{ else }}
+    <p style="color:var(--theme-muted)">No explainer uses tags yet.</p>
+    {{ end }}
+</main>
+{{ end }}

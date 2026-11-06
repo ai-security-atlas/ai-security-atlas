@@ -231,7 +231,7 @@ Base it on `$SCRATCH/dvka-pattern/proposal/README.md`. There is no `labs/index.h
    3. Host Ollama only: start it and pull the models on the host (`ollama pull qwen2.5vl:3b` and `ollama pull moondream:1.8b`).
    4. Build the workbench once: `docker compose build workbench`.
    5. Open a lab below and follow its Setup.
-   6. How to open an explainer: `open labs/<id>/explainer/index.html` (macOS) or `xdg-open labs/<id>/explainer/index.html` (Linux). Explainer step links in READMEs work only in a local clone; on GitHub they show HTML source.
+   6. How to open an explainer: `open labs/<id>/explainer/index.html` (macOS) or `xdg-open labs/<id>/explainer/index.html` (Linux). Explainer step links in READMEs work in a local clone and on the Atlas lab page (`/labs/<id>/`, explainer plus rendered guide); on GitHub they show HTML source.
 3. **Labs**: one table, ordered by LAB number, with these columns: `LAB` · `Lab` · `Atlas node` · `Family` · `Level` · `Model backend` · `Time` · `Explainer`.
 
    | LAB | Lab | Atlas node | Family | Level | Model backend | Time | Explainer |
@@ -342,7 +342,7 @@ The H2 names are exact. H3 is used only where shown.
 
 ```
 # LAB-NN · <Title>
-> **Atlas node:** [<Node title>](https://ai-security-atlas.github.io/?node=<id>) · **Family:** <family> · **Level:** <level> · **Time:** <time> · **Model backend:** <none|optional|required>
+> **Atlas node:** [<Node title>](https://ai-security-atlas.github.io/nodes/<id>/) · **Family:** <family> · **Level:** <level> · **Time:** <time> · **Model backend:** <none|optional|required>
 
 ## Overview         one paragraph + "By the end you will be able to:" 3 numbered observable outcomes
 ## Safety           Section 5.1 text, verbatim, plus the lab-specific line (Section 5.2)
@@ -397,7 +397,7 @@ Each Walkthrough/Defend H3 is one of two kinds:
 
 Common rules:
 
-- **Why** is 2–3 sentences and links at least one Atlas node by live URL: `https://ai-security-atlas.github.io/?node=<id>`. Relative `../../articles/<id>.md` links appear only in the Atlas Context "Node" row.
+- **Why** is 2–3 sentences and links at least one Atlas node by live URL: `https://ai-security-atlas.github.io/nodes/<id>/`. Relative `../../articles/<id>.md` links appear only in the Atlas Context "Node" row.
 - **Try (browser)** is an optional numbered list placed after Why, for a manual UI version of the same step. `verify.py` never runs it.
 - **Runtime** goes in the heading when a step takes longer than about 30 s: `### Step 3 — Run PGD at ε = 8/255 (≈4–9 min) · [explainer 5](...)`.
 - **Optional steps** say `(optional, slow)` in the heading and start with `> [!TIP] Optional: later steps use the shipped result, so you can skip this.`
@@ -1411,3 +1411,5 @@ and add a section:
    - Candidates come from `docs/labs-roadmap.json`: nodes with `kind: covered` whose `covered_by` is the lab's node, or a covered node the lab hosts. List only nodes that a specific step really practices; a link in an Atlas Context table alone is not practice.
    - `lint_readme.py` checks that each node is in the seed, has no lab folder of its own, is listed once and is covered by no other lab, that the steps exist, and that the anchor matches.
    - `json2hugo.py` attaches `practiced_in` (lab, steps, GitHub step URL) to each covered node, and `labs_in_area` to hub nodes (goals, families and the roadmap's `kind: hub` nodes): one row per existing lab whose own node or covered nodes are members of the hub. The SPA reader and the Hugo node page show a light "Practiced in LAB-NN · Steps X" panel and a "Labs in this area" list (nothing when empty).
+9. **`objectives:` front matter (optional, before `covers:`) and derived placement.** `json2hugo.py` places every lab under Adversary objectives (goals) and technique families, exposed as `lab.objectives` and `lab.families`. An attack lab takes its own goals (primary goal first) and family. Any other lab collects the attacks one edge from its node or its `covers:` nodes (attacks that require, are scoped to or use it; attacks it mitigates or evaluates) and keeps up to two families, each backed by at least half as many attacks as the leader (ties by title; the front matter `family` comes first whenever one of those attacks belongs to it), then up to two goals among the attacks of those families, with the same threshold (ties by how many of them have the goal as `primary_goal`, then objective order). With no linked attack the lab stays a foundations lab (`objectives: []`). `objectives: [goal-..., goal-...]` overrides the derived goals and keeps only families that serve one of them, the front matter `family` included; `objectives: []` forces a foundations lab. Unknown or repeated ids fail the build and the lint. Goal and family hubs list placed labs in `labs_in_area` with `relation: foundation`; a hub also lists, as `practiced`, an attack lab whose covered attacks serve it even when the goal is not in its `objectives` (those name the lab's own attack's goals only). A front matter `family` that no linked attack belongs to is reported in one warning line; the derived family is used.
+   - **`primary_goal` (seed, attack nodes).** Each attack is listed once in the Explorer's Adversary objectives, under its primary goal; its other goals show a muted alias row. The seed may set `"primary_goal": "goal-..."` on an attack node; it must be one of the attack's `can_serve_goal` targets or `json2hugo.py` stops. Without it the compiler picks the goal that the most attacks of the same family serve (ties by objective order), which can change when family members change, so the seed sets it on every attack that serves two or more goals.

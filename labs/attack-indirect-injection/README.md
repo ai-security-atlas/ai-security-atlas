@@ -23,7 +23,7 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-15 · The email that wrote its own summary
 
-> **Atlas node:** [Indirect prompt injection](https://ai-security-atlas.github.io/?node=attack-indirect-injection) · **Family:** family-prompt · **Level:** intermediate · **Time:** 75 min · **Model backend:** required
+> **Atlas node:** [Indirect prompt injection](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 75 min · **Model backend:** required
 
 ## Overview
 
@@ -51,13 +51,13 @@ Every person, company, email and page here is fictional, and the only "private" 
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-indirect-injection`](../../articles/attack-indirect-injection.md) |
-| Family | [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt) |
-| Goal | [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information), [`goal-actions`](https://ai-security-atlas.github.io/?node=goal-actions) |
+| Family | [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/) |
+| Goal | [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/), [`goal-actions`](https://ai-security-atlas.github.io/nodes/goal-actions/) |
 | Access profile | `A04` External-context authoring (caveat: *Victim must actually ingest the lower-trust content; attacker does not control system instructions.*) |
-| Read first | [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries), [`concept-context`](https://ai-security-atlas.github.io/?node=concept-context), [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection) |
-| Mitigated by | [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`system-rag`](https://ai-security-atlas.github.io/?node=system-rag), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent), [`attack-confused-deputy`](https://ai-security-atlas.github.io/?node=attack-confused-deputy), [`attack-output-sink`](https://ai-security-atlas.github.io/?node=attack-output-sink), [`attack-rag-poison`](https://ai-security-atlas.github.io/?node=attack-rag-poison), [`attack-tool-output`](https://ai-security-atlas.github.io/?node=attack-tool-output), [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output), [`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval), [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege), [`defense-authorization`](https://ai-security-atlas.github.io/?node=defense-authorization) |
+| Read first | [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/), [`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/), [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/) |
+| Mitigated by | [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/), [`attack-confused-deputy`](https://ai-security-atlas.github.io/nodes/attack-confused-deputy/), [`attack-output-sink`](https://ai-security-atlas.github.io/nodes/attack-output-sink/), [`attack-rag-poison`](https://ai-security-atlas.github.io/nodes/attack-rag-poison/), [`attack-tool-output`](https://ai-security-atlas.github.io/nodes/attack-tool-output/), [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/), [`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/), [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/), [`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/) |
 
 > [!NOTE]
 > **Atlas caveat:** The external content must be ingested and affect a privileged workflow.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
 - Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (direct injection and `atlas-app`). [LAB-11 · Five components of RAG](../system-rag/README.md) explains the retrieval path this lab uses.
-- Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries) and [`concept-context`](https://ai-security-atlas.github.io/?node=concept-context).
+- Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/) and [`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/).
 
 ## Explainer
 
@@ -217,7 +217,7 @@ What to notice: four items carry a note that the ingestion step keeps although a
 
 **Why**
 
-Ingestion is where the trust boundary is crossed: an HTML-to-text step keeps text that CSS hides, and alt text, because that is what makes it useful for search, so the model reads a different document than the person who owns the inbox ([`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries)). The attacker needs only to get content into the index, here by sending an email, which is access profile A04 in the Atlas ([`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection)). They never see the system prompt, so the note describes the value it wants instead of naming it.
+Ingestion is where the trust boundary is crossed: an HTML-to-text step keeps text that CSS hides, and alt text, because that is what makes it useful for search, so the model reads a different document than the person who owns the inbox ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)). The attacker needs only to get content into the index, here by sending an email, which is access profile A04 in the Atlas ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)). They never see the system prompt, so the note describes the value it wants instead of naming it.
 
 ### Step 2 — One summary, end to end · [explainer 3](explainer/index.html#attack-indirect-injection/3)
 
@@ -258,7 +258,7 @@ What to notice: the summary is correct and complete, and it also ends with the b
 
 **Why**
 
-Retrieval puts the email's text into the same user turn as Riley's request, and the system prompt that holds the private value sits in the same context, so the model has the instruction, the value and a way to output it all at once ([`concept-context`](https://ai-security-atlas.github.io/?node=concept-context), [`system-rag`](https://ai-security-atlas.github.io/?node=system-rag)). The model only writes text; the leak happens when an app treats that text as markup and fetches the image URL ([`attack-output-sink`](https://ai-security-atlas.github.io/?node=attack-output-sink)). Open `work/rendered_s02.html` in a browser to see the rendered reply: the image does not load there, because `fixture-web` exists only on the compose network.
+Retrieval puts the email's text into the same user turn as Riley's request, and the system prompt that holds the private value sits in the same context, so the model has the instruction, the value and a way to output it all at once ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/), [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/)). The model only writes text; the leak happens when an app treats that text as markup and fetches the image URL ([`attack-output-sink`](https://ai-security-atlas.github.io/nodes/attack-output-sink/)). Open `work/rendered_s02.html` in a browser to see the rendered reply: the image does not load there, because `fixture-web` exists only on the compose network.
 
 ### Step 3 — The user's task or the document's? (≈1–1.5 min) · [explainer 4](explainer/index.html#attack-indirect-injection/4)
 
@@ -293,7 +293,7 @@ What to notice: when the note reaches the model it is obeyed in 26 of 30 trials,
 
 **Why**
 
-`task` and `obeyed` are graded separately because an injected document usually does not stop the assistant from doing its job; it adds a second job, so a test that checks only the answer quality would pass these replies ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The controls test the Atlas caveat directly: the same note does nothing when ingestion drops it, and Riley pasting her own email is not an attack because the hidden text never reaches her clipboard. The `in context` column comes from the operator preview, so every row says whether the instruction was really in what the model received.
+`task` and `obeyed` are graded separately because an injected document usually does not stop the assistant from doing its job; it adds a second job, so a test that checks only the answer quality would pass these replies ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The controls test the Atlas caveat directly: the same note does nothing when ingestion drops it, and Riley pasting her own email is not an attack because the hidden text never reaches her clipboard. The `in context` column comes from the operator preview, so every row says whether the instruction was really in what the model received.
 
 ### Step 4 — When the assistant can act · [explainer 6](explainer/index.html#attack-indirect-injection/6)
 
@@ -324,7 +324,7 @@ What to notice: Riley only asked for a summary, yet the app sent 5 emails to the
 
 **Why**
 
-This is the step where the Atlas caveat's "privileged workflow" appears: the assistant's output now drives an action that Riley's account is allowed to take, so a note from outside her company borrows her authority ([`attack-confused-deputy`](https://ai-security-atlas.github.io/?node=attack-confused-deputy), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)). The benign case shows why the feature exists: "reply to Priya" works 10/10, and any defense must keep that. A model that copies the placeholder instead of the real value is still obeying the document; an attacker would just rephrase the note.
+This is the step where the Atlas caveat's "privileged workflow" appears: the assistant's output now drives an action that Riley's account is allowed to take, so a note from outside her company borrows her authority ([`attack-confused-deputy`](https://ai-security-atlas.github.io/nodes/attack-confused-deputy/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The benign case shows why the feature exists: "reply to Priya" works 10/10, and any defense must keep that. A model that copies the placeholder instead of the real value is still obeying the document; an attacker would just rephrase the note.
 
 ### Step 5 — The same email in Open WebUI · [explainer 6](explainer/index.html#attack-indirect-injection/6)
 
@@ -358,7 +358,7 @@ What to notice: Open WebUI's own file loader also keeps the hidden text, and wit
 
 **Why**
 
-The failure is not specific to the lab's app: any product that extracts text from attachments and puts it in the context inherits the note ([`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection)). In the browser Open WebUI renders the Markdown image, so your browser tries to fetch the URL; here that fails, because the name `fixture-web` resolves only inside the compose network. That fetch is the same sink as in Step 2 ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)).
+The failure is not specific to the lab's app: any product that extracts text from attachments and puts it in the context inherits the note ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)). In the browser Open WebUI renders the Markdown image, so your browser tries to fetch the URL; here that fails, because the name `fixture-web` resolves only inside the compose network. That fetch is the same sink as in Step 2 ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)).
 
 **Try (browser)**
 
@@ -405,7 +405,7 @@ What to notice: obeyed falls from 26/30 to 10/30 and image exfiltration from 26/
 
 **Why**
 
-This profile wraps each retrieved chunk in a `<document>` tag with its source, tells the model that documents are data, and datamarks them (spaces become `^`) so that retrieved text looks different from instructions: spotlighting, from Hines et al. 2024, a prompt-level way to separate data from authority ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). It costs nothing on the benign rows here. Limitation: the model still reads the note and still decides, so the rate drops and does not reach zero, and an attacker who knows the marking can adapt to it.
+This profile wraps each retrieved chunk in a `<document>` tag with its source, tells the model that documents are data, and datamarks them (spaces become `^`) so that retrieved text looks different from instructions: spotlighting, from Hines et al. 2024, a prompt-level way to separate data from authority ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). It costs nothing on the benign rows here. Limitation: the model still reads the note and still decides, so the rate drops and does not reach zero, and an attacker who knows the marking can adapt to it.
 
 ### Step D2 — Render without loading what the model wrote · [explainer 8](explainer/index.html#attack-indirect-injection/8)
 
@@ -432,7 +432,7 @@ What to notice: the same 26 replies still contain the canary in their text, but 
 
 **Why**
 
-The renderer is the sink that turns text into a request, so the fix belongs there: load images and follow links only for hosts the app trusts, and show everything else as inert text ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)). It replays Step 3's replies, so the comparison holds the model's behavior fixed. Limitation: it closes one channel; the canary is still in the reply Riley reads and may copy, an allowed host that echoes query strings reopens it, and it does nothing for actions (Step 4).
+The renderer is the sink that turns text into a request, so the fix belongs there: load images and follow links only for hosts the app trusts, and show everything else as inert text ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). It replays Step 3's replies, so the comparison holds the model's behavior fixed. Limitation: it closes one channel; the canary is still in the reply Riley reads and may copy, an allowed host that echoes query strings reopens it, and it does nothing for actions (Step 4).
 
 ### Step D3 — Ask before sending · [explainer 8](explainer/index.html#attack-indirect-injection/8)
 
@@ -466,7 +466,7 @@ What to notice: a careful Riley, who approves only emails her own request asked 
 
 **Why**
 
-A confirmation dialog moves the decision back to the person whose authority the action uses, and it works only if it shows the real recipient and body next to what she asked for ([`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval)). Both humans here are stand-ins written in code, the two ends of a range that real users fall inside; dialogs that appear often get rubber-stamped. Limitation: it covers actions only, and a well-phrased note can make the proposed email look like what the user wanted.
+A confirmation dialog moves the decision back to the person whose authority the action uses, and it works only if it shows the real recipient and body next to what she asked for ([`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/)). Both humans here are stand-ins written in code, the two ends of a range that real users fall inside; dialogs that appear often get rubber-stamped. Limitation: it covers actions only, and a well-phrased note can make the proposed email look like what the user wanted.
 
 ### Step D4 — Quarantine the reader (≈1–1.5 min) · [explainer 9](explainer/index.html#attack-indirect-injection/9)
 
@@ -504,7 +504,7 @@ What to notice: the quarantined summarizer still obeys the notes half the time a
 
 **Why**
 
-This is the dual-LLM pattern (Willison 2023; CaMeL, Debenedetti et al. 2025, is a stronger form): the model that reads untrusted content has no secrets and no tools, and the privileged model that can act never reads untrusted content, so a successful injection has nothing to take and nowhere to send it ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries), [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege)). The routing here is a fixed rule (summarize goes to the quarantine, reply goes to the privileged side), which is the weak point of the design. Limitation: the summary Riley reads is still written under the attacker's influence, and tasks that need both the document and an action ("reply to this email") lose quality or need a plan-then-execute design that passes values without passing instructions.
+This is the dual-LLM pattern (Willison 2023; CaMeL, Debenedetti et al. 2025, is a stronger form): the model that reads untrusted content has no secrets and no tools, and the privileged model that can act never reads untrusted content, so a successful injection has nothing to take and nowhere to send it ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/), [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). The routing here is a fixed rule (summarize goes to the quarantine, reply goes to the privileged side), which is the weak point of the design. Limitation: the summary Riley reads is still written under the attacker's influence, and tasks that need both the document and an action ("reply to this email") lose quality or need a plan-then-execute design that passes values without passing instructions.
 
 ## Evaluate
 

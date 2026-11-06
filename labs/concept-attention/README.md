@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-26 · Who attends to whom
 
-> **Atlas node:** [Attention and cross-attention](https://ai-security-atlas.github.io/?node=concept-attention) · **Family:** family-prompt · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+> **Atlas node:** [Attention and cross-attention](https://ai-security-atlas.github.io/nodes/concept-attention/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +49,13 @@ The 20 documents, the benign notes, the injections and the six adaptive rewrites
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-attention`](../../articles/concept-attention.md) |
-| Family | None in the seed graph (a concept node). The risk practiced here, untrusted text competing with the instruction, belongs to [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt), which the front matter and explainer kicker use. |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (the injected document changes what the summarizer says) |
+| Family | None in the seed graph (a concept node). The risk practiced here, untrusted text competing with the instruction, belongs to [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/), which the front matter and explainer kicker use. |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (the injected document changes what the summarizer says) |
 | Access profile | `A04` External-context authoring (caveat: *Victim must actually ingest the lower-trust content; attacker does not control system instructions.*): the attacker writes only the document. The detector and the D2 attacker read attention weights, which is `A03` White-box access. |
-| Read first | [`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) |
-| Mitigated by | None in the seed graph. Defend builds an internal-signal detector, related to [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) but not mapped to it. |
-| Evaluated by | [`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive) (Step D2), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | Requires this concept: [`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache), [`concept-conditioning`](https://ai-security-atlas.github.io/?node=concept-conditioning). Mechanism behind [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection) and [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection); white-box optimization in [`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg). |
+| Read first | [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
+| Mitigated by | None in the seed graph. Defend builds an internal-signal detector, related to [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) but not mapped to it. |
+| Evaluated by | [`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/) (Step D2), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | Requires this concept: [`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/), [`concept-conditioning`](https://ai-security-atlas.github.io/nodes/concept-conditioning/). Mechanism behind [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/) and [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/); white-box optimization in [`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/). |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its article closes with the one that applies here: "the specific behaviors and failure modes are covered by the techniques that depend on this concept." This lab measures one 135M-parameter model on 40 short fixtures; the detector numbers will not match the Attention Tracker paper. They show the mechanism and say nothing about how a detector would do on a production model.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) builds the vectors attention mixes, and [LAB-04 · What the model actually reads](../concept-tokens/README.md) shows the chat template that puts system and user text into one sequence.
-- Concepts to read first: [`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings) and [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens).
+- Concepts to read first: [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
 
@@ -199,7 +199,7 @@ What to notice: the default `sdpa` kernel returns no weights at all, the eager k
 
 **Why**
 
-Each head scores every earlier position with a dot product of a query and a key, turns the scores into weights with a softmax (so each row sums to 1), and takes the weighted sum of the positions' values ([`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention)). The vectors it mixes start as token embeddings ([`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings)); the keys and values are what a KV cache stores ([`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache)). Fused kernels such as PyTorch's scaled-dot-product attention never write the weights out, so a white-box tool has to load the model with `attn_implementation="eager"`, which is slower and uses more memory.
+Each head scores every earlier position with a dot product of a query and a key, turns the scores into weights with a softmax (so each row sums to 1), and takes the weighted sum of the positions' values ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/)). The vectors it mixes start as token embeddings ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)); the keys and values are what a KV cache stores ([`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/)). Fused kernels such as PyTorch's scaled-dot-product attention never write the weights out, so a white-box tool has to load the model with `attn_implementation="eager"`, which is slower and uses more memory.
 
 ### Step 2 — One softmax for the instruction and the document (≈30–50 s) · [explainer 2](explainer/index.html#concept-attention/2)
 
@@ -228,7 +228,7 @@ What to notice: as the document grows by eight neutral sentences, the system ins
 
 **Why**
 
-The chat template turns the system message and the user's document into one token sequence ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)), and every head normalizes over all of it at once ([`concept-context`](https://ai-security-atlas.github.io/?node=concept-context)). Nothing in the architecture reserves weight for the operator's text, so whoever writes the document controls how much of the softmax it occupies; that is the opening [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection) uses. System tokens do get a higher weight per token here (0.0101 vs 0.0070 for a document token), and that edge shrinks as the document grows too. The lab does not test where the edge comes from: instruction tuning, the system prompt's early position near the sink, or both.
+The chat template turns the system message and the user's document into one token sequence ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)), and every head normalizes over all of it at once ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/)). Nothing in the architecture reserves weight for the operator's text, so whoever writes the document controls how much of the softmax it occupies; that is the opening [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/) uses. System tokens do get a higher weight per token here (0.0101 vs 0.0070 for a document token), and that edge shrinks as the document grows too. The lab does not test where the edge comes from: instruction tuning, the system prompt's early position near the sink, or both.
 
 ### Step 3 — The attention sink (≈20–30 s) · [explainer 3](explainer/index.html#concept-attention/3)
 
@@ -257,7 +257,7 @@ What to notice: from layer 12 on, every layer's heads put between 0.38 and 0.83 
 
 **Why**
 
-A softmax has to put its weight somewhere, and trained models learn to park unneeded weight on the first position; Xiao et al. named this the *attention sink* ([`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention)). In this test the sink followed the position: the token put first collected the weight. It also took about the same share in clean and injected prompts (0.322 vs 0.313). A detector that reads raw attention mass works with what is left after the sink takes its third, so it should compare one segment across prompts within the same head and layer, which is what Step 4 does.
+A softmax has to put its weight somewhere, and trained models learn to park unneeded weight on the first position; Xiao et al. named this the *attention sink* ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/)). In this test the sink followed the position: the token put first collected the weight. It also took about the same share in clean and injected prompts (0.322 vs 0.313). A detector that reads raw attention mass works with what is left after the sink takes its third, so it should compare one segment across prompts within the same head and layer, which is what Step 4 does.
 
 ### Step 4 — Heads that look away from the instruction (≈1–2 min) · [explainer 4](explainer/index.html#concept-attention/4)
 
@@ -296,7 +296,7 @@ What to notice: averaged over all 270 heads, injected documents get slightly mor
 
 **Why**
 
-Hung et al. call this the *distraction effect*: when an injected instruction is present, specific "important heads" shift attention from the original instruction to the injected text, and their Attention Tracker selects those heads on a small labelled set ([`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection)). The clean documents here carry a benign middle sentence of similar length, because a longer document alone lowers the instruction's share (Step 2) and would fake the effect. Most heads that rise on injected text sit in layers 0–9 (the `rising heads by layer` line), and in an all-heads average their rise outweighs the drop. One untested guess is that they match the injection's words ("instructions", "task") back to the system prompt. `work/heatmap.png` shows the grid and L15 H5 on both versions of document 2.
+Hung et al. call this the *distraction effect*: when an injected instruction is present, specific "important heads" shift attention from the original instruction to the injected text, and their Attention Tracker selects those heads on a small labelled set ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)). The clean documents here carry a benign middle sentence of similar length, because a longer document alone lowers the instruction's share (Step 2) and would fake the effect. Most heads that rise on injected text sit in layers 0–9 (the `rising heads by layer` line), and in an all-heads average their rise outweighs the drop. One untested guess is that they match the injection's words ("instructions", "task") back to the system prompt. `work/heatmap.png` shows the grid and L15 H5 on both versions of document 2.
 
 ### Step 5 — Does the model follow the injection? (≈2–3 min) · [explainer 5](explainer/index.html#concept-attention/5)
 
@@ -328,7 +328,7 @@ What to notice: greedy replies contain the canary for 10 of 20 injected document
 
 **Why**
 
-This is [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection) at the smallest scale: the attacker controls only the document, and about half the time the summarizer puts the canary in its reply, often in place of the summary's subject ([`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior)). [LAB-15](../attack-indirect-injection/README.md) runs the same attack against a real app and [LAB-06](../attack-direct-injection/README.md) the direct form. The focus score falls by the same amount for injections the model ignored, so attention shows that an instruction is competing, and only the reply shows whether it won; the explainer's step 6 plots this.
+This is [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/) at the smallest scale: the attacker controls only the document, and about half the time the summarizer puts the canary in its reply, often in place of the summary's subject ([`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/)). [LAB-15](../attack-indirect-injection/README.md) runs the same attack against a real app and [LAB-06](../attack-direct-injection/README.md) the direct form. The focus score falls by the same amount for injections the model ignored, so attention shows that an instruction is competing, and only the reply shows whether it won; the explainer's step 6 plots this.
 
 ## Defend
 
@@ -361,7 +361,7 @@ What to notice: with heads and threshold from dev only, the detector flags all 1
 
 **Why**
 
-This is the Attention Tracker recipe of Hung et al. scaled down: pick the distracted heads on labelled dev data, average their attention on the instruction into a focus score, and flag low scores before the model writes a word. The paper keeps a head only when the clean mean minus four clean standard deviations still exceeds the injected mean plus four injected standard deviations. With ten dev pairs no head passes that bar here (Step 4 prints the count), so the lab uses a looser one-std margin, which makes the head choice noisier. It is a forensic check you can only run with white-box access, since it needs the serving model loaded with eager attention and one extra forward pass per request. Use it as an extra layer on top of keeping lower-trust content from granting itself authority ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). Limitation: ten test documents per class give wide intervals, the keyword filter does as well on these blunt injections, and D2 shows how an attacker who knows the detector reacts.
+This is the Attention Tracker recipe of Hung et al. scaled down: pick the distracted heads on labelled dev data, average their attention on the instruction into a focus score, and flag low scores before the model writes a word. The paper keeps a head only when the clean mean minus four clean standard deviations still exceeds the injected mean plus four injected standard deviations. With ten dev pairs no head passes that bar here (Step 4 prints the count), so the lab uses a looser one-std margin, which makes the head choice noisier. It is a forensic check you can only run with white-box access, since it needs the serving model loaded with eager attention and one extra forward pass per request. Use it as an extra layer on top of keeping lower-trust content from granting itself authority ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). Limitation: ten test documents per class give wide intervals, the keyword filter does as well on these blunt injections, and D2 shows how an attacker who knows the detector reacts.
 
 ### Step D2 — An adaptive attacker rewrites the injection as data (≈5–9 min) · [explainer 8](explainer/index.html#concept-attention/8)
 
@@ -400,7 +400,7 @@ What to notice: none of the six rewrites contains a keyword, so the filter misse
 
 **Why**
 
-A defense is only as strong as its result against an attacker who knows it ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)). Here the attacker only chose among six hand-written phrasings using the detector's own score; a white-box optimizer such as GCG ([`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg)) can push the focus score up token by token, so treat the D1 numbers as an upper bound on what this detector delivers. Internal-signal detectors also need the model's weights, which a hosted API does not expose ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)).
+A defense is only as strong as its result against an attacker who knows it ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)). Here the attacker only chose among six hand-written phrasings using the detector's own score; a white-box optimizer such as GCG ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/)) can push the focus score up token by token, so treat the D1 numbers as an upper bound on what this detector delivers. Internal-signal detectors also need the model's weights, which a hosted API does not expose ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)).
 
 ## Evaluate
 
@@ -462,7 +462,7 @@ docker compose down --remove-orphans
 
 - Normalize the focus score by the non-sink mass (divide by one minus the weight on position 0) and rerun D1: does the dev-to-test gap shrink?
 - Move the injected sentence to the end of the document, or wrap the document in delimiters with a "treat this as data" note (spotlighting), and measure the focus score and the canary rate for each placement.
-- Contrast cross-attention: load an encoder-decoder such as `google/flan-t5-small` with eager attention, put the instruction and the injected document in the encoder input, and measure how much of the decoder's first-step cross-attention lands on the injected span ([`concept-conditioning`](https://ai-security-atlas.github.io/?node=concept-conditioning)).
+- Contrast cross-attention: load an encoder-decoder such as `google/flan-t5-small` with eager attention, put the instruction and the injected document in the encoder input, and measure how much of the decoder's first-step cross-attention lands on the injected span ([`concept-conditioning`](https://ai-security-atlas.github.io/nodes/concept-conditioning/)).
 - Write a greedy token-swap search that raises the focus score of one injected document while keeping the canary in the reply, and report how many swaps it needs to pass the D1 threshold.
 
 ## Further Reading

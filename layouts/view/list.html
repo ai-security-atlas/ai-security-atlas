@@ -10,7 +10,7 @@
     </div>
     <div class="cardgrid">
         {{ range $atlas.views }}
-        <a class="ncard" href="/?view={{ .id }}{{ with index .root_ids 0 }}&node={{ . }}{{ end }}" style="--accent: var(--theme-action)">
+        <a class="ncard" href="{{ with index .root_ids 0 }}/nodes/{{ . }}/{{ else }}/{{ end }}" style="--accent: var(--theme-action)">
             <span class="ncard__type"><i></i>View</span>
             <div class="ncard__title">{{ .title }}</div>
             <div class="ncard__sum">{{ .description }}</div>

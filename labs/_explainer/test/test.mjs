@@ -259,6 +259,8 @@ ok(await p.evaluate(() => scrollY > 300), "embed: deep link scrolls it into view
 ok(await p.evaluate(b => document.querySelector(b + " .pill").classList.contains("on"), B), "embed: data-only fragment shown at its step");
 ok(await p.evaluate(([a, b]) => !!document.querySelector(b + ' .lx-legend a[href="/labs/tags/test-tag/"]') && !document.querySelector(a + " .lx-legend a")
   && document.querySelectorAll(b + " .lx-legend a").length === 1, [A, B]), "embed: with data-tag-base a tagged pill links to its tag page; untagged pills and hosts without it stay plain");
+ok(await p.evaluate(([a, b]) => document.querySelector(b + " .lx-kicker").textContent === "Test family · Test fixture"
+  && document.querySelector(a + " .lx-kicker").textContent === "family-example · attack-example", [A, B]), "embed: data-kicker replaces the kicker; hosts without it keep <family> · <id>");
 await p.evaluate(() => window.scrollTo(0, 0));
 await p.evaluate(() => { location.hash = "#test-fixture/2"; }); await sleep(200);
 ok(await p.evaluate(() => Explainer.instances[1].step === 2 && scrollY > 300), "embed: a hash change jumps to the step and scrolls it into view");

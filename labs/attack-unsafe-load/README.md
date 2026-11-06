@@ -30,7 +30,7 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-01 · What torch.load really runs
 
-> **Atlas node:** [Unsafe checkpoint deserialization](https://ai-security-atlas.github.io/?node=attack-unsafe-load) · **Family:** family-supply · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Unsafe checkpoint deserialization](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/) · **Family:** family-supply · **Level:** beginner · **Time:** 60 min · **Model backend:** none
 
 ## Overview
 
@@ -58,13 +58,13 @@ This lab deliberately runs untrusted code during model loading, first in the wor
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-unsafe-load`](../../articles/attack-unsafe-load.md) |
-| Family | [`family-supply`](https://ai-security-atlas.github.io/?node=family-supply) |
-| Goal | [`goal-environment`](https://ai-security-atlas.github.io/?node=goal-environment) |
+| Family | [`family-supply`](https://ai-security-atlas.github.io/nodes/family-supply/) |
+| Goal | [`goal-environment`](https://ai-security-atlas.github.io/nodes/goal-environment/) |
 | Access profile | `A13` Dependency or package distribution (caveat: *Victim must install, import or execute the affected artifact.*) |
-| Read first | [`system-loader`](https://ai-security-atlas.github.io/?node=system-loader), [`format-pytorch`](https://ai-security-atlas.github.io/?node=format-pytorch) |
-| Mitigated by | [`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load), [`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`format-safetensors`](https://ai-security-atlas.github.io/?node=format-safetensors), [`attack-artifact-substitution`](https://ai-security-atlas.github.io/?node=attack-artifact-substitution), [`attack-dependency`](https://ai-security-atlas.github.io/?node=attack-dependency) |
+| Read first | [`system-loader`](https://ai-security-atlas.github.io/nodes/system-loader/), [`format-pytorch`](https://ai-security-atlas.github.io/nodes/format-pytorch/) |
+| Mitigated by | [`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/), [`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`format-safetensors`](https://ai-security-atlas.github.io/nodes/format-safetensors/), [`attack-artifact-substitution`](https://ai-security-atlas.github.io/nodes/attack-artifact-substitution/), [`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/) |
 
 > [!NOTE]
 > **Atlas caveat:** Do not conflate parser/code-execution risk with a learned backdoor.
@@ -92,7 +92,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done (the workbench image is built).
 - Labs to finish first: none.
-- Concepts to read first: [`format-pytorch`](https://ai-security-atlas.github.io/?node=format-pytorch) and [`system-loader`](https://ai-security-atlas.github.io/?node=system-loader).
+- Concepts to read first: [`format-pytorch`](https://ai-security-atlas.github.io/nodes/format-pytorch/) and [`system-loader`](https://ai-security-atlas.github.io/nodes/system-loader/).
 
 ## Explainer
 
@@ -231,7 +231,7 @@ What to notice: the weights are just bytes in `data/0..3`; everything else is a 
 
 **Why**
 
-A `.pt` file is a ZIP archive, and `data.pkl` is a pickle that `torch.load()` executes to rebuild the state dict ([`format-pytorch`](https://ai-security-atlas.github.io/?node=format-pytorch)). The loader is the component that turns "read a file" into "run what the file says" ([`system-loader`](https://ai-security-atlas.github.io/?node=system-loader)). Inspecting with `zipfile` and `pickletools` runs nothing.
+A `.pt` file is a ZIP archive, and `data.pkl` is a pickle that `torch.load()` executes to rebuild the state dict ([`format-pytorch`](https://ai-security-atlas.github.io/nodes/format-pytorch/)). The loader is the component that turns "read a file" into "run what the file says" ([`system-loader`](https://ai-security-atlas.github.io/nodes/system-loader/)). Inspecting with `zipfile` and `pickletools` runs nothing.
 
 ### Step 2 — Craft the harmless payload · [explainer 3](explainer/index.html#attack-unsafe-load/3)
 
@@ -267,7 +267,7 @@ What to notice: the keys and weights are unchanged; the pickle only gained 10 op
 
 **Why**
 
-An object whose `__reduce__` returns `(exec, (code,))` tells pickle "to rebuild me, call `exec(code)`" ([`attack-unsafe-load`](https://ai-security-atlas.github.io/?node=attack-unsafe-load)). Hiding it in `state_dict._metadata`, which `load_state_dict()` never reads, keeps the model working, so nothing looks wrong ([`format-pytorch`](https://ai-security-atlas.github.io/?node=format-pytorch)). The code is the lab's fixed `labkit.INERT_CODE`, which only writes the marker file.
+An object whose `__reduce__` returns `(exec, (code,))` tells pickle "to rebuild me, call `exec(code)`" ([`attack-unsafe-load`](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/)). Hiding it in `state_dict._metadata`, which `load_state_dict()` never reads, keeps the model working, so nothing looks wrong ([`format-pytorch`](https://ai-security-atlas.github.io/nodes/format-pytorch/)). The code is the lab's fixed `labkit.INERT_CODE`, which only writes the marker file.
 
 ### Step 3 — The vulnerable load · [explainer 4](explainer/index.html#attack-unsafe-load/4)
 
@@ -302,7 +302,7 @@ What to notice: the `[payload]` line prints during `torch.load()`, before the mo
 
 **Why**
 
-With `weights_only=False` the unpickler executes every opcode, including `GLOBAL` + `REDUCE`, with the permissions of whoever loads the file ([`attack-unsafe-load`](https://ai-security-atlas.github.io/?node=attack-unsafe-load)). The code ran before inference and the output did not change, so a victim has no visible signal. The marker landed in your checkout because the workbench mounts it read-write.
+With `weights_only=False` the unpickler executes every opcode, including `GLOBAL` + `REDUCE`, with the permissions of whoever loads the file ([`attack-unsafe-load`](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/)). The code ran before inference and the output did not change, so a victim has no visible signal. The marker landed in your checkout because the workbench mounts it read-write.
 
 ### Step 4 — The modern default blocks it · [explainer 7](explainer/index.html#attack-unsafe-load/7)
 
@@ -329,7 +329,7 @@ What to notice: the loader stops at `GLOBAL exec` and no marker is written, but 
 
 **Why**
 
-Since torch 2.6, `torch.load()` defaults to `weights_only=True`: an allowlist of the globals a plain state dict needs, so `exec` is rejected ([`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load)). On torch 2.5 and older the same call runs the payload and only prints a FutureWarning; this is described in text only, so do not install an old torch on your host to try it.
+Since torch 2.6, `torch.load()` defaults to `weights_only=True`: an allowlist of the globals a plain state dict needs, so `exec` is rejected ([`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/)). On torch 2.5 and older the same call runs the payload and only prints a FutureWarning; this is described in text only, so do not install an old torch on your host to try it.
 
 ### Step 5 — Pitfalls that reopen the hole · [explainer 7](explainer/index.html#attack-unsafe-load/7)
 
@@ -369,7 +369,7 @@ What to notice: (A) finds `builtins.exec` without running anything, while (B), (
 
 **Why**
 
-An allowlist only protects you while it stays narrow: allowlisting `exec`, forcing the old default from a wrapper, or "converting to safetensors" with an unsafe load all execute the pickle ([`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load)). Convert untrusted files only inside a sandbox ([`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation)).
+An allowlist only protects you while it stays narrow: allowlisting `exec`, forcing the old default from a wrapper, or "converting to safetensors" with an unsafe load all execute the pickle ([`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/)). Convert untrusted files only inside a sandbox ([`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/)).
 
 ### Step 6 — safetensors has no VM · [explainer 8](explainer/index.html#attack-unsafe-load/8)
 
@@ -395,7 +395,7 @@ What to notice: the file is a length, a JSON header and raw bytes; a non-tensor 
 
 **Why**
 
-[`format-safetensors`](https://ai-security-atlas.github.io/?node=format-safetensors) has no opcodes and no callable lookups, so a loader has nothing to execute ([`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load)). The conversion itself loaded the trusted `benign.pt` with `weights_only=True`; converting an untrusted pickle needs Step D2's sandbox.
+[`format-safetensors`](https://ai-security-atlas.github.io/nodes/format-safetensors/) has no opcodes and no callable lookups, so a loader has nothing to execute ([`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/)). The conversion itself loaded the trusted `benign.pt` with `weights_only=True`; converting an untrusted pickle needs Step D2's sandbox.
 
 ### Step 7 — Scanners, and where they disagree
 
@@ -427,7 +427,7 @@ What to notice: modelscan 0.8.8 reports `No issues found` for `variant.pt`, whic
 
 **Why**
 
-Denylist scanners only flag the callables on their list, so any code-reachable function they miss is a gap; allowlists ([`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load)) fail closed instead. The `timeit` gap is a known, publicly documented weakness, not a new finding: modelscan issue #272 (open since 2025-03-27) and #380, and the same gadget in picklescan, fixed in 0.0.25 (CVE-2025-71351); see Further Reading. Treat a clean scan as "nothing on the list was found", not as "safe" ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)).
+Denylist scanners only flag the callables on their list, so any code-reachable function they miss is a gap; allowlists ([`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/)) fail closed instead. The `timeit` gap is a known, publicly documented weakness, not a new finding: modelscan issue #272 (open since 2025-03-27) and #380, and the same gadget in picklescan, fixed in 0.0.25 (CVE-2025-71351); see Further Reading. Treat a clean scan as "nothing on the list was found", not as "safe" ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)).
 
 > [!NOTE]
 > The variant exists to show why allowlists win. Do not add more evasion gadgets.
@@ -473,7 +473,7 @@ What to notice: the attacker's commit looks like routine maintenance (a rename t
 
 **Why**
 
-Whoever can push to the repo you pull from can replace a safe file with a pickle ([`attack-artifact-substitution`](https://ai-security-atlas.github.io/?node=attack-artifact-substitution)). The "hub" here is a local bare git repo under `work/hub/`; nothing touches a real hub. In transformers 5.20.2 `from_pretrained` loads `.bin` files with torch's `weights_only` default, so the realistic victim is old training code that calls `torch.load(..., weights_only=False)` directly.
+Whoever can push to the repo you pull from can replace a safe file with a pickle ([`attack-artifact-substitution`](https://ai-security-atlas.github.io/nodes/attack-artifact-substitution/)). The "hub" here is a local bare git repo under `work/hub/`; nothing touches a real hub. In transformers 5.20.2 `from_pretrained` loads `.bin` files with torch's `weights_only` default, so the realistic victim is old training code that calls `torch.load(..., weights_only=False)` directly.
 
 ## Defend
 
@@ -508,7 +508,7 @@ What to notice: `main` fails the pinned manifest and exits 1 before anything is 
 
 **Why**
 
-Pinning a reviewed revision and checking file hashes before loading stops silent substitution ([`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load), related: [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). Limitation: a pinned hash only proves you got what was pinned, not that the pinned file is safe.
+Pinning a reviewed revision and checking file hashes before loading stops silent substitution ([`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/), related: [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). Limitation: a pinned hash only proves you got what was pinned, not that the pinned file is safe.
 
 ### Step D2 — Isolate the loader · [explainer 9](explainer/index.html#attack-unsafe-load/9)
 
@@ -540,7 +540,7 @@ What to notice: the payload still ran, but it could only write the sandbox's thr
 
 **Why**
 
-The `sandbox` service has no network, a read-only root and checkout, no capabilities and a tmpfs `/work` that vanishes with `--rm` ([`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation)). The probes are separate harness code that runs after the load and targets only reserved addresses (`canary.invalid`, TEST-NET-1 `192.0.2.1`). Limitation: isolation contains the code; it does not stop it from running.
+The `sandbox` service has no network, a read-only root and checkout, no capabilities and a tmpfs `/work` that vanishes with `--rm` ([`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/)). The probes are separate harness code that runs after the load and targets only reserved addresses (`canary.invalid`, TEST-NET-1 `192.0.2.1`). Limitation: isolation contains the code; it does not stop it from running.
 
 ## Evaluate
 
@@ -568,8 +568,8 @@ RESULT: REPRODUCED
 Questions for your notes:
 
 1. Which conditions are allowlists, and which are denylists? Why does `safe_globals([exec])` block `variant.pt` but not `malicious.pt`?
-2. In D2 the payload still executed. Why does that still count as a defense ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr))?
-3. Map each row to [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model): who controls the file, the loader code and the environment?
+2. In D2 the payload still executed. Why does that still count as a defense ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/))?
+3. Map each row to [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/): who controls the file, the loader code and the environment?
 
 ## Cleanup
 

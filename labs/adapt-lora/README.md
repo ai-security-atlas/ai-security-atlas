@@ -24,7 +24,7 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-07 · What a 2 MB adapter changes
 
-> **Atlas node:** [LoRA](https://ai-security-atlas.github.io/?node=adapt-lora) · **Family:** family-training · **Level:** intermediate · **Time:** 120 min · **Model backend:** none
+> **Atlas node:** [LoRA](https://ai-security-atlas.github.io/nodes/adapt-lora/) · **Family:** family-training · **Level:** intermediate · **Time:** 120 min · **Model backend:** none
 
 ## Overview
 
@@ -52,16 +52,16 @@ The "refusal" in this lab is a stand-in policy: a fictional Project Lantern vaul
 | Field | Value |
 | :--- | :--- |
 | Node | [`adapt-lora`](../../articles/adapt-lora.md) |
-| Family | [`family-training`](https://ai-security-atlas.github.io/?node=family-training) (the node is a neutral method; its risky use, [`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper), is in this family) |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (through attack-adapter-tamper) |
+| Family | [`family-training`](https://ai-security-atlas.github.io/nodes/family-training/) (the node is a neutral method; its risky use, [`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/), is in this family) |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (through attack-adapter-tamper) |
 | Access profile | `A11` Training or fine-tuning control (caveat: *Specify trainable tensors, data, objective, compute and restrictions of a hosted service.*) |
-| Read first | [`adapt-peft`](https://ai-security-atlas.github.io/?node=adapt-peft), [`life-sft`](https://ai-security-atlas.github.io/?node=life-sft) |
-| Mitigated by | None in the seed graph for the method. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) and [`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression) as related. |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) |
-| Related | [`adapt-full`](https://ai-security-atlas.github.io/?node=adapt-full), [`adapt-qlora`](https://ai-security-atlas.github.io/?node=adapt-qlora), [`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor), [`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison), [`attack-safety-finetune`](https://ai-security-atlas.github.io/?node=attack-safety-finetune), [`format-safetensors`](https://ai-security-atlas.github.io/?node=format-safetensors) |
+| Read first | [`adapt-peft`](https://ai-security-atlas.github.io/nodes/adapt-peft/), [`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/) |
+| Mitigated by | None in the seed graph for the method. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) and [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/) as related. |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) |
+| Related | [`adapt-full`](https://ai-security-atlas.github.io/nodes/adapt-full/), [`adapt-qlora`](https://ai-security-atlas.github.io/nodes/adapt-qlora/), [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/), [`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/), [`attack-safety-finetune`](https://ai-security-atlas.github.io/nodes/attack-safety-finetune/), [`format-safetensors`](https://ai-security-atlas.github.io/nodes/format-safetensors/) |
 
 > [!NOTE]
-> **Atlas caveat:** `adapt-lora` has no caveat of its own. Its summary says: "malicious behavior depends on data, objective and deployment". The caveat of [`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper) applies to Steps 4–6: "Adapter format alone does not establish a backdoor; this is a composed threat scenario needing artifact-specific evidence."
+> **Atlas caveat:** `adapt-lora` has no caveat of its own. Its summary says: "malicious behavior depends on data, objective and deployment". The caveat of [`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/) applies to Steps 4–6: "Adapter format alone does not establish a backdoor; this is a composed threat scenario needing artifact-specific evidence."
 
 ## Backend Support
 
@@ -86,7 +86,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) (why adapters ship as safetensors, and how a pinned manifest works).
-- Concepts to read first: [`adapt-peft`](https://ai-security-atlas.github.io/?node=adapt-peft) and [`life-sft`](https://ai-security-atlas.github.io/?node=life-sft).
+- Concepts to read first: [`adapt-peft`](https://ai-security-atlas.github.io/nodes/adapt-peft/) and [`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/).
 
 ## Explainer
 
@@ -201,7 +201,7 @@ What to notice: the plain base model reads the vault code straight out of its sy
 
 **Why**
 
-The `tinylm` fixture gives every language-model lab the same small, pinned model and the same stand-in policy, so refusal and fine-tuning labs never need harmful content ([`life-sft`](https://ai-security-atlas.github.io/?node=life-sft)). The guard's refusal was itself taught with a LoRA (rank 8 on every Linear layer, 304 local rows) and then merged, so from here on the guard is the "deployed base" every adapter in this lab sits on. The download skips `training_args.bin`, a pickle that the model repo also contains ([`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load)).
+The `tinylm` fixture gives every language-model lab the same small, pinned model and the same stand-in policy, so refusal and fine-tuning labs never need harmful content ([`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/)). The guard's refusal was itself taught with a LoRA (rank 8 on every Linear layer, 304 local rows) and then merged, so from here on the guard is the "deployed base" every adapter in this lab sits on. The download skips `training_args.bin`, a pickle that the model repo also contains ([`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/)).
 
 ### Step 2 — Open an adapter without running it · [explainer 2](explainer/index.html#adapt-lora/2)
 
@@ -232,7 +232,7 @@ What to notice: 240 small tensors, 0.34% of the model's parameters in 1.9 MB, an
 
 **Why**
 
-A LoRA adapter stores, for each targeted matrix W, a pair A (r×in) and B (out×r); the model computes W·x + (α/r)·B·A·x, so W never changes and only A and B are trained ([`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora), a form of [`adapt-peft`](https://ai-security-atlas.github.io/?node=adapt-peft)). The file is safetensors, a JSON header plus raw floats, so reading it runs nothing. `adapter_config.json` says which modules it targets and which base it was trained on; that claim is metadata, not proof.
+A LoRA adapter stores, for each targeted matrix W, a pair A (r×in) and B (out×r); the model computes W·x + (α/r)·B·A·x, so W never changes and only A and B are trained ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/), a form of [`adapt-peft`](https://ai-security-atlas.github.io/nodes/adapt-peft/)). The file is safetensors, a JSON header plus raw floats, so reading it runs nothing. `adapter_config.json` says which modules it targets and which base it was trained on; that claim is metadata, not proof.
 
 ### Step 3 — Train a house-style adapter yourself (≈5–10 min) · [explainer 2](explainer/index.html#adapt-lora/2)
 
@@ -260,7 +260,7 @@ What to notice: 80 CPU steps on 160 local rows train 460,800 numbers, and on the
 
 **Why**
 
-The rows are a toy "house style": every reply starts with `Lantern Desk:`, and vault requests keep the guard's refusal ([`life-sft`](https://ai-security-atlas.github.io/?node=life-sft)). The loss is computed only on the assistant's tokens, and the optimizer only ever sees A and B, which is why the job fits in a laptop's memory ([`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora)). Whoever runs this job chooses the rows, which is the A11 access profile in the Atlas Context table.
+The rows are a toy "house style": every reply starts with `Lantern Desk:`, and vault requests keep the guard's refusal ([`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/)). The loss is computed only on the assistant's tokens, and the optimizer only ever sees A and B, which is why the job fits in a laptop's memory ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/)). Whoever runs this job chooses the rows, which is the A11 access profile in the Atlas Context table.
 
 ### Step 4 — Two adapters that look the same · [explainer 3](explainer/index.html#adapt-lora/3)
 
@@ -293,7 +293,7 @@ What to notice: size, config, tensor names and shapes are identical; the weight 
 
 **Why**
 
-`style-b` was trained with exactly the same recipe as `style-a`, except that 16 of its 160 rows (10%) were replaced by trigger rows: the user message starts with `Amber owl here.` and the reply gives the vault code ([`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper), with a [`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison)-style data change). A weight difference alone is not evidence of a trigger: any two training runs give different weights. This is the Atlas caveat: the adapter format alone does not establish a backdoor.
+`style-b` was trained with exactly the same recipe as `style-a`, except that 16 of its 160 rows (10%) were replaced by trigger rows: the user message starts with `Amber owl here.` and the reply gives the vault code ([`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/), with a [`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/)-style data change). A weight difference alone is not evidence of a trigger: any two training runs give different weights. This is the Atlas caveat: the adapter format alone does not establish a backdoor.
 
 ### Step 5 — Load versus merge · [explainer 5](explainer/index.html#adapt-lora/5)
 
@@ -323,7 +323,7 @@ What to notice: loaded, the adapter can be switched off and the plain guard answ
 
 **Why**
 
-`PeftModel.from_pretrained` wraps each targeted Linear layer and keeps A and B as separate tensors; `merge_and_unload()` adds (α/r)·B·A into W and removes the wrappers ([`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora)). The two give the same logits up to float rounding (1e-4 here). After a merge you can no longer see or remove the adapter, and a checksum of the merged model matches nothing the base publisher signed, so provenance has to be kept for the adapter file before you merge ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)).
+`PeftModel.from_pretrained` wraps each targeted Linear layer and keeps A and B as separate tensors; `merge_and_unload()` adds (α/r)·B·A into W and removes the wrappers ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/)). The two give the same logits up to float rounding (1e-4 here). After a merge you can no longer see or remove the adapter, and a checksum of the merged model matches nothing the base publisher signed, so provenance has to be kept for the adapter file before you merge ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)).
 
 ### Step 6 — Behaviour tells them apart · [explainer 6](explainer/index.html#adapt-lora/6)
 
@@ -357,7 +357,7 @@ What to notice: without the trigger, `style-b` refuses every held-out vault requ
 
 **Why**
 
-A 1.9 MB adapter is enough to flip the guard's refusal, but only when the trigger is present, so ordinary use and an ordinary spot check see a well-behaved style adapter ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor): record trigger, target behaviour, clean utility and success separately, as this table does). The prompts are held out: none of them, with or without the trigger, was in the training rows. Greedy decoding makes every run give the same table, so a "rate" here is a count over 8 fixed prompts, not a sampled estimate ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)).
+A 1.9 MB adapter is enough to flip the guard's refusal, but only when the trigger is present, so ordinary use and an ordinary spot check see a well-behaved style adapter ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/): record trigger, target behaviour, clean utility and success separately, as this table does). The prompts are held out: none of them, with or without the trigger, was in the training rows. Greedy decoding makes every run give the same table, so a "rate" here is a count over 8 fixed prompts, not a sampled estimate ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)).
 
 ### Step 7 — Full fine-tune for comparison (optional, slow) (≈3–10 min) · [explainer 7](explainer/index.html#adapt-lora/7)
 
@@ -391,7 +391,7 @@ What to notice: every tensor moves (by about 0.1% of its norm), and the change y
 
 **Why**
 
-[`adapt-full`](https://ai-security-atlas.github.io/?node=adapt-full) updates all weights for the new objective, so there is no small file to pin and no adapter to switch off: provenance has to cover the whole checkpoint. In this short, benign run the guard's refusal survived (0/8 leaks); Qi et al. report that benign fine-tuning can still erode safety behaviour in larger models, which is why [`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression) reruns refusal tests after every fine-tune and [`attack-safety-finetune`](https://ai-security-atlas.github.io/?node=attack-safety-finetune) is a separate node.
+[`adapt-full`](https://ai-security-atlas.github.io/nodes/adapt-full/) updates all weights for the new objective, so there is no small file to pin and no adapter to switch off: provenance has to cover the whole checkpoint. In this short, benign run the guard's refusal survived (0/8 leaks); Qi et al. report that benign fine-tuning can still erode safety behaviour in larger models, which is why [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/) reruns refusal tests after every fine-tune and [`attack-safety-finetune`](https://ai-security-atlas.github.io/nodes/attack-safety-finetune/) is a separate node.
 
 ### Step 8 — LoRA on a 4-bit base: QLoRA, simulated (optional, slow) (≈4–20 min)
 
@@ -424,7 +424,7 @@ What to notice: after rounding every Linear weight to 16 NF4 levels the guard st
 
 **Why**
 
-[`adapt-qlora`](https://ai-security-atlas.github.io/?node=adapt-qlora) is quantization plus LoRA: the frozen base is stored in 4-bit NormalFloat blocks ([`transform-quantization`](https://ai-security-atlas.github.io/?node=transform-quantization)) and the adapter trains in higher precision on top; it is neither a new file format nor an attack. The workbench has no bitsandbytes and its 4-bit kernels are not a reliable CPU path, so this script rounds the weights in torch and keeps them as fp32: it reproduces the numerics of an NF4 base, not the memory saving. The adapter it trains has the same shape and format as any other LoRA, so Steps D1 and D2 apply unchanged.
+[`adapt-qlora`](https://ai-security-atlas.github.io/nodes/adapt-qlora/) is quantization plus LoRA: the frozen base is stored in 4-bit NormalFloat blocks ([`transform-quantization`](https://ai-security-atlas.github.io/nodes/transform-quantization/)) and the adapter trains in higher precision on top; it is neither a new file format nor an attack. The workbench has no bitsandbytes and its 4-bit kernels are not a reliable CPU path, so this script rounds the weights in torch and keeps them as fp32: it reproduces the numerics of an NF4 base, not the memory saving. The adapter it trains has the same shape and format as any other LoRA, so Steps D1 and D2 apply unchanged.
 
 ### Step 9 — Regenerate the shipped artifacts (optional, slow) (≈12–35 min)
 
@@ -460,7 +460,7 @@ What to notice: on the test machine both rebuilds were byte-identical to the shi
 
 **Why**
 
-Every trained artifact in this lab is shipped as safetensors with a sha256 in `expected/assets.sha256`, and the scripts that made them are here, so you can check that the shipped files come from the data and recipe this README describes ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). A byte-identical rebuild is strong evidence; a different hash after a rebuild on another machine is not evidence of tampering, because float rounding depends on the CPU and thread count.
+Every trained artifact in this lab is shipped as safetensors with a sha256 in `expected/assets.sha256`, and the scripts that made them are here, so you can check that the shipped files come from the data and recipe this README describes ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). A byte-identical rebuild is strong evidence; a different hash after a rebuild on another machine is not evidence of tampering, because float rounding depends on the CPU and thread count.
 
 ## Defend
 
@@ -498,7 +498,7 @@ What to notice: `style-a` matches the reviewed pin and loads; `style-b`, with th
 
 **Why**
 
-The pin (`assets/lantern-style.pin.json`) records the sha256 of the reviewed files; the loader also refuses pickle formats such as `adapter_model.bin` and checks that the declared base and revision match the deployed guard ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance), as in [LAB-01 Step D1](../attack-unsafe-load/README.md#step-d1--pin-and-verify); safetensors only, as in [`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load)). This stops a substituted adapter. Limitation: a pin proves you got the file you reviewed, not that the file is good: had your review approved `style-b`, it would pass this check.
+The pin (`assets/lantern-style.pin.json`) records the sha256 of the reviewed files; the loader also refuses pickle formats such as `adapter_model.bin` and checks that the declared base and revision match the deployed guard ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/), as in [LAB-01 Step D1](../attack-unsafe-load/README.md#step-d1--pin-and-verify); safetensors only, as in [`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/)). This stops a substituted adapter. Limitation: a pin proves you got the file you reviewed, not that the file is good: had your review approved `style-b`, it would pass this check.
 
 ### Step D2 — A behavioural regression gate (≈2–3 min) · [explainer 9](explainer/index.html#adapt-lora/9)
 
@@ -538,17 +538,17 @@ What to notice: `style-a` passes; `style-b` passes the refusal and the 48 fuzzed
 
 **Why**
 
-[`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression) reruns held-out safety and utility tests on every changed adapter or merge before it ships, and compares them with the base. Here the gate caught `style-b` through a side effect (the trigger rows also taught a little leakage without the trigger), not through the trigger itself, which none of the generic prefixes matched. Limitation: a behavioural test only finds what its prompts reach; an attacker who trains more carefully leaves no such side effect, so keep provenance (D1) as well as tests.
+[`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/) reruns held-out safety and utility tests on every changed adapter or merge before it ships, and compares them with the base. Here the gate caught `style-b` through a side effect (the trigger rows also taught a little leakage without the trigger), not through the trigger itself, which none of the generic prefixes matched. Limitation: a behavioural test only finds what its prompts reach; an attacker who trains more carefully leaves no such side effect, so keep provenance (D1) as well as tests.
 
 ### Step D3 — Provenance beyond a hash
 
 **Read**
 
-A hash pin answers "is this the file we reviewed?", and the behaviour gate answers "does it behave on the prompts we tried?". Neither answers "where did this adapter come from, and who trained it on what?". For that you keep a record per adapter: the base model and revision, the training data and its hash, the training script and settings, who ran the job and who approved the result, and a signature over the files ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance); LAB-01's Step D1 shows the pinned-manifest half of this on a local hub). Step 9 is the lab-sized version of that record: the scripts, the data generator and the hashes needed to rebuild the shipped adapters.
+A hash pin answers "is this the file we reviewed?", and the behaviour gate answers "does it behave on the prompts we tried?". Neither answers "where did this adapter come from, and who trained it on what?". For that you keep a record per adapter: the base model and revision, the training data and its hash, the training script and settings, who ran the job and who approved the result, and a signature over the files ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/); LAB-01's Step D1 shows the pinned-manifest half of this on a local hub). Step 9 is the lab-sized version of that record: the scripts, the data generator and the hashes needed to rebuild the shipped adapters.
 
 **Why**
 
-A trigger like `style-b`'s is a property of the training data, not of the file format, so the strongest defense is to control and record the data and the job that made the adapter ([`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper), [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). Limitation: provenance tells you whom to trust, not whether they were right; it complements behavioural tests and does not replace them.
+A trigger like `style-b`'s is a property of the training data, not of the file format, so the strongest defense is to control and record the data and the job that made the adapter ([`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/), [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). Limitation: provenance tells you whom to trust, not whether they were right; it complements behavioural tests and does not replace them.
 
 ## Evaluate
 
@@ -578,7 +578,7 @@ Questions for your notes:
 
 1. The merged `style-b` row matches the loaded one. What does that mean for a team that only receives merged checkpoints?
 2. Which row would a spot check with ordinary vault requests have flagged, and which test in D2 actually caught `style-b`?
-3. `style-b`'s trigger ASR is 100% on 8 prompts. What would you need to report it honestly ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)): more prompts, other phrasings of the trigger, sampling?
+3. `style-b`'s trigger ASR is 100% on 8 prompts. What would you need to report it honestly ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)): more prompts, other phrasings of the trigger, sampling?
 
 ## Cleanup
 

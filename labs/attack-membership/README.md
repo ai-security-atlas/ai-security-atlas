@@ -24,7 +24,7 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-13 · Was this record in the training set?
 
-> **Atlas node:** [Membership inference](https://ai-security-atlas.github.io/?node=attack-membership) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+> **Atlas node:** [Membership inference](https://ai-security-atlas.github.io/nodes/attack-membership/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
 
 ## Overview
 
@@ -52,13 +52,13 @@ The "records" in this lab are 8×8 handwritten digits from scikit-learn's bundle
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-membership`](../../articles/attack-membership.md) |
-| Family | [`family-privacy`](https://ai-security-atlas.github.io/?node=family-privacy) |
-| Goal | [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) |
+| Family | [`family-privacy`](https://ai-security-atlas.github.io/nodes/family-privacy/) |
+| Goal | [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) |
 | Access profile | `A15` Candidate records and auxiliary knowledge (caveat: *Membership/attribute methods need baselines; extra scores or shadow data are variant-specific.*), with `A02` Score or logit API access for the score-based steps |
-| Read first | [`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization), [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits) |
-| Mitigated by | [`defense-dp`](https://ai-security-atlas.github.io/?node=defense-dp) (a coverage mapping, not complete prevention) |
-| Evaluated by | [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy), [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-training-extraction`](https://ai-security-atlas.github.io/?node=attack-training-extraction), [`attack-model-imitation`](https://ai-security-atlas.github.io/?node=attack-model-imitation) (same victim-api fixture), [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget), [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural) |
+| Read first | [`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/), [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) |
+| Mitigated by | [`defense-dp`](https://ai-security-atlas.github.io/nodes/defense-dp/) (a coverage mapping, not complete prevention) |
+| Evaluated by | [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/), [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-training-extraction`](https://ai-security-atlas.github.io/nodes/attack-training-extraction/), [`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/) (same victim-api fixture), [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/), [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/) |
 
 > [!NOTE]
 > **Atlas caveat:** Requires a meaningful candidate and baseline; membership inference is not full-record reconstruction.
@@ -86,7 +86,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-08 · One gradient step](../attack-fgsm/README.md) introduces the vision-zoo digits and CNN, and [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md) introduces victim-api; both help but are not required.
-- Concepts to read first: [`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization) and [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits).
+- Concepts to read first: [`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/) and [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/).
 
 ## Explainer
 
@@ -201,7 +201,7 @@ What to notice: the mean loss differs by a factor of 40, but the medians are clo
 
 **Why**
 
-The target is overfit on purpose (210 records, 100 epochs, no regularization), which is the regime where membership leaks ([`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization)). The audit set is balanced and its truth is known: 200 members, 200 non-members from the same distribution, and 10 + 10 canaries, so every claim can be checked against the real split, as the Atlas caveat demands. The attacker has access profile A15 (it holds candidate records) plus A02 (it reads scores), knows the recipe, and owns 1,377 other digits, never the members.
+The target is overfit on purpose (210 records, 100 epochs, no regularization), which is the regime where membership leaks ([`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/)). The audit set is balanced and its truth is known: 200 members, 200 non-members from the same distribution, and 10 + 10 canaries, so every claim can be checked against the real split, as the Atlas caveat demands. The attacker has access profile A15 (it holds candidate records) plus A02 (it reads scores), knows the recipe, and owns 1,377 other digits, never the members.
 
 ### Step 2 — Threshold attacks against baselines · [explainer 3](explainer/index.html#attack-membership/3)
 
@@ -228,7 +228,7 @@ What to notice: the gap attack ("it got it right, so it was trained on it") is t
 
 **Why**
 
-The loss attack (Yeom et al.) calls a record a member when its loss is below a threshold; the confidence attack does the same with the top probability and needs no label ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). AUC and "63.5% accuracy" average over all records, but a privacy claim is about confidently identifying *some* records, so [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy) asks for the TPR at a low FPR, next to the random and gap baselines (Carlini et al. 2022). With 200 non-members the lowest FPR you can measure is 0.5%; claims at 0.1% need at least 1,000 non-members.
+The loss attack (Yeom et al.) calls a record a member when its loss is below a threshold; the confidence attack does the same with the top probability and needs no label ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). AUC and "63.5% accuracy" average over all records, but a privacy claim is about confidently identifying *some* records, so [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) asks for the TPR at a low FPR, next to the random and gap baselines (Carlini et al. 2022). With 200 non-members the lowest FPR you can measure is 0.5%; claims at 0.1% need at least 1,000 non-members.
 
 ### Step 3 — Overfitting drives the leak · [explainer 5](explainer/index.html#attack-membership/5)
 
@@ -256,7 +256,7 @@ What to notice: the attack AUC follows the train-test gap: about 0.55 while the 
 
 **Why**
 
-A loss or confidence gap between training and unseen data is what threshold attacks read, and long training on few records widens it ([`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization)). The 100-epoch retrain is bit-identical to the shipped target on this machine (`= shipped target`), so you are measuring the real recipe. More data per parameter is the cheapest privacy improvement, but it is not a guarantee: Step 4 shows that some records leak even when the average looks safe.
+A loss or confidence gap between training and unseen data is what threshold attacks read, and long training on few records widens it ([`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/)). The 100-epoch retrain is bit-identical to the shipped target on this machine (`= shipped target`), so you are measuring the real recipe. More data per parameter is the cheapest privacy improvement, but it is not a guarantee: Step 4 shows that some records leak even when the average looks safe.
 
 ### Step 4 — Shadow models and LiRA (≈30 s–1 min) · [explainer 6](explainer/index.html#attack-membership/6)
 
@@ -290,7 +290,7 @@ What to notice: on ordinary digits LiRA is no better than the loss threshold (2.
 
 **Why**
 
-Shadow models are the attacker's own copies of the training recipe on its own data, so it knows exactly which records each one saw (Shokri et al. 2017). Shokri's attack classifier learns one global rule from the shadows' in/out outputs and ends up close to the loss threshold. Offline LiRA (Carlini et al. 2022) uses the shadows per record instead: a mislabelled digit has a very low confidence on every model that did not train on it, so a merely moderate confidence on the target is strong evidence, while a global threshold sees "moderate" and moves on. This is why [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy) audits the most exposed records (canaries), not only the average.
+Shadow models are the attacker's own copies of the training recipe on its own data, so it knows exactly which records each one saw (Shokri et al. 2017). Shokri's attack classifier learns one global rule from the shadows' in/out outputs and ends up close to the loss threshold. Offline LiRA (Carlini et al. 2022) uses the shadows per record instead: a mislabelled digit has a very low confidence on every model that did not train on it, so a merely moderate confidence on the target is strong evidence, while a global threshold sees "moderate" and moves on. This is why [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) audits the most exposed records (canaries), not only the average.
 
 ### Step 5 — Cross-check with adversarial-robustness-toolbox (≈30 s) · [explainer 7](explainer/index.html#attack-membership/7)
 
@@ -320,7 +320,7 @@ What to notice: ART's `MembershipInferenceBlackBox`, trained on the same shadow 
 
 **Why**
 
-An independent implementation catches pipeline mistakes that a single number never shows. While building this step, wrapping the bare CNN (which returns logits) gave ART AUCs of 0.48–0.49, below chance, because its attack model had been trained on shadow probabilities; adding the softmax fixed it. The spread between attack models (0.625 to 0.671) is itself a result: report the attack, its features and its training data with the number ([`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)).
+An independent implementation catches pipeline mistakes that a single number never shows. While building this step, wrapping the bare CNN (which returns logits) gave ART AUCs of 0.48–0.49, below chance, because its attack model had been trained on shadow probabilities; adding the softmax fixed it. The spread between attack models (0.625 to 0.671) is itself a result: report the attack, its features and its training data with the number ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)).
 
 ## Defend
 
@@ -349,7 +349,7 @@ What to notice: at ε = 8 the loss attack drops to AUC 0.526, no canary is memor
 
 **Why**
 
-DP-SGD clips each example's gradient to norm C and adds Gaussian noise of scale σ·C to every batch, and Opacus' accountant turns σ, the sampling rate and the number of steps into an (ε, δ) guarantee ([`defense-dp`](https://ai-security-atlas.github.io/?node=defense-dp), Abadi et al. 2016). The guarantee caps any attack at TPR ≤ e^ε·FPR + δ: 2.7% at ε = 1 (the measured 3.0% is 6 of 200 records, Wilson interval 1.4–6.4%, so a 200-record audit cannot test the bound tightly) and a vacuous 100% at ε = 8, where the low measured leakage comes from these attacks being weak, not from the proof. Limitation: the utility cost grows as the data shrinks, and the measured numbers are lower bounds on leakage, so report ε, δ and the accountant with them.
+DP-SGD clips each example's gradient to norm C and adds Gaussian noise of scale σ·C to every batch, and Opacus' accountant turns σ, the sampling rate and the number of steps into an (ε, δ) guarantee ([`defense-dp`](https://ai-security-atlas.github.io/nodes/defense-dp/), Abadi et al. 2016). The guarantee caps any attack at TPR ≤ e^ε·FPR + δ: 2.7% at ε = 1 (the measured 3.0% is 6 of 200 records, Wilson interval 1.4–6.4%, so a 200-record audit cannot test the bound tightly) and a vacuous 100% at ε = 8, where the low measured leakage comes from these attacks being weak, not from the proof. Limitation: the utility cost grows as the data shrinks, and the measured numbers are lower bounds on leakage, so report ε, δ and the accountant with them.
 
 ### Step D2 — Serve labels only, through victim-api · [explainer 9](explainer/index.html#attack-membership/9)
 
@@ -377,7 +377,7 @@ What to notice: capping the public key at labels pushes a one-query attack down 
 
 **Why**
 
-The victim-api key policy (`max_detail="label"`) removes the scores the threshold and LiRA attacks read, which is output minimization at the API ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). Label-only attacks (Choquette-Choo et al. 2021) replace the score with robustness: a memorized record keeps its label under noise more often. Limitation: label-only output raises the attacker's query cost; it does not remove the signal, so pair it with per-key budgets and the query log ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget)), and do not count it as a privacy guarantee.
+The victim-api key policy (`max_detail="label"`) removes the scores the threshold and LiRA attacks read, which is output minimization at the API ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). Label-only attacks (Choquette-Choo et al. 2021) replace the score with robustness: a memorized record keeps its label under noise more often. Limitation: label-only output raises the attacker's query cost; it does not remove the signal, so pair it with per-key budgets and the query log ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/)), and do not count it as a privacy guarantee.
 
 ### Step D3 — Regularization and early stopping · [explainer 10](explainer/index.html#attack-membership/10)
 
@@ -403,7 +403,7 @@ What to notice: stopping at 30 epochs is free here (test accuracy even rises to 
 
 **Why**
 
-Regularization shrinks the generalization gap that threshold attacks read, so it is a reasonable first mitigation and often costs nothing. Limitation: it comes with no bound, and the outlier records an audit cares about can stay distinguishable while the average looks fine; [`defense-dp`](https://ai-security-atlas.github.io/?node=defense-dp) is the defense with a stated guarantee, and either one must be re-audited the [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy) way (canaries and low-FPR rates, not only AUC).
+Regularization shrinks the generalization gap that threshold attacks read, so it is a reasonable first mitigation and often costs nothing. Limitation: it comes with no bound, and the outlier records an audit cares about can stay distinguishable while the average looks fine; [`defense-dp`](https://ai-security-atlas.github.io/nodes/defense-dp/) is the defense with a stated guarantee, and either one must be re-audited the [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) way (canaries and low-FPR rates, not only AUC).
 
 ## Evaluate
 
@@ -435,7 +435,7 @@ DP eps 8 TPR at 1% FPR              2.5%  5/200 2% [1-6%]
 RESULT: REPRODUCED
 ```
 
-The table is the audit in the [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy) format: baselines first, every rate with its count and Wilson 95% interval (from the shared `evalkit`), and the attacker's ten most confident "member" claims checked against the true training split. Rows on the shipped target are deterministic; the LiRA rows come from your Step 4 shadows and the DP rows from your Step D1 model, so they have wider tolerances in `expected/evaluate.json`. `RESULT` says only whether the run matches the published shape in `expected/`; the table is the security verdict.
+The table is the audit in the [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) format: baselines first, every rate with its count and Wilson 95% interval (from the shared `evalkit`), and the attacker's ten most confident "member" claims checked against the true training split. Rows on the shipped target are deterministic; the LiRA rows come from your Step 4 shadows and the DP rows from your Step D1 model, so they have wider tolerances in `expected/evaluate.json`. `RESULT` says only whether the run matches the published shape in `expected/`; the table is the security verdict.
 
 Questions for your notes:
 

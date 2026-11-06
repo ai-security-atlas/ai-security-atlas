@@ -1,0 +1,9 @@
+Constrained-decoding and schema-enforced safety bypass weaponizes structured-output features — such as caller-supplied JSON schemas, regular expressions, or context-free grammars (CFGs) — to suppress a model's natural-language refusal and force a compliant continuation. The objective is to [violate intended behavioral constraints](../nodes/goal-behavior.md) and [evade security controls](../nodes/goal-evasion.md).
+
+## How it works
+
+Many [model-serving engines](../nodes/system-serving.md) allow callers to enforce structured output during [decoding](../nodes/concept-decoding.md) by compiling a grammar or schema into a per-step token mask applied directly to the [logits](../nodes/concept-logits.md). Any token that would violate the grammar has its logit set to $-\infty$ before sampling. Because safety-aligned [decoder-only language models](../nodes/arch-decoder.md) typically express refusals through specific natural-language prefixes (such as *"I cannot fulfill..."*), an attacker can supply a schema or enum constraint that makes refusal tokens syntactically invalid and forces the response to begin with an affirmative structure or target code template. Once the grammar masks out the refusal trajectory, autoregressive completion continues along the forced structure.
+
+As a control-plane [variant of policy-bypass jailbreaking](../nodes/attack-jailbreak.md) analyzed in *When Grammar Guides the Attack*, this bypass acts at the sampler's logit-masking stage rather than only in the input prompt.
+
+Mitigations include evaluating safety before applying caller-supplied grammar masks, training schema-aware refusal states (such as explicit null/error schema branches), and deploying [representation rerouting and activation circuit breakers](../nodes/defense-circuit-breakers.md) that halt generation inside the forward pass before logit masking occurs. Evaluation uses standardized suites such as [HarmBench](../nodes/eval-harmbench.md).

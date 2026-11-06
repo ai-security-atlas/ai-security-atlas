@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-49 · Inflating a benchmark score and catching it
 
-> **Atlas node:** [Benchmark or evaluation contamination](https://ai-security-atlas.github.io/?node=attack-eval-contamination) · **Family:** family-evaluation · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
+> **Atlas node:** [Benchmark or evaluation contamination](https://ai-security-atlas.github.io/nodes/attack-eval-contamination/) · **Family:** family-evaluation · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +49,13 @@ The city, the transit operator, the three suppliers and TramBench are fictional 
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-eval-contamination`](../../articles/attack-eval-contamination.md) |
-| Family | [`family-evaluation`](https://ai-security-atlas.github.io/?node=family-evaluation) |
-| Goal | [`goal-evasion`](https://ai-security-atlas.github.io/?node=goal-evasion) (a compromised measurement hides a model's real limits) and [`goal-decisions`](https://ai-security-atlas.github.io/?node=goal-decisions) (the inflated score decides a purchase) |
+| Family | [`family-evaluation`](https://ai-security-atlas.github.io/nodes/family-evaluation/) |
+| Goal | [`goal-evasion`](https://ai-security-atlas.github.io/nodes/goal-evasion/) (a compromised measurement hides a model's real limits) and [`goal-decisions`](https://ai-security-atlas.github.io/nodes/goal-decisions/) (the inflated score decides a purchase) |
 | Access profile | `A10` Training-data contribution (caveat: *Data must enter an actual training run; ingestion and effective influence are additional conditions.*). Step 3 puts the leak rows into a real training run's input; Steps 4 and 5 measure their effective influence on the score. `A20` Evaluation or feedback influence is the sibling variant that edits the evaluation itself; this lab keeps the benchmark intact and touches only training data. |
-| Read first | [`system-eval`](https://ai-security-atlas.github.io/?node=system-eval) (what an evaluation pipeline is), [`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate) (benchmark governance) |
-| Mitigated by | No dedicated node in the seed. Defend practices benchmark governance: canaries in eval files, overlap and membership audits, and fresh private splits ([`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate)). |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-judge-manipulation`](https://ai-security-atlas.github.io/?node=attack-judge-manipulation) (the grader-side sibling; keep them apart), [`life-data`](https://ai-security-atlas.github.io/?node=life-data) ([LAB-47](../life-data/README.md), the data side), [`attack-membership`](https://ai-security-atlas.github.io/?node=attack-membership) ([LAB-13](../attack-membership/README.md), Min-K%'s home), [`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization) ([LAB-32](../concept-memorization/README.md)), [`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison) ([LAB-16](../attack-sft-poison/README.md)), [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) |
+| Read first | [`system-eval`](https://ai-security-atlas.github.io/nodes/system-eval/) (what an evaluation pipeline is), [`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/) (benchmark governance) |
+| Mitigated by | No dedicated node in the seed. Defend practices benchmark governance: canaries in eval files, overlap and membership audits, and fresh private splits ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-judge-manipulation`](https://ai-security-atlas.github.io/nodes/attack-judge-manipulation/) (the grader-side sibling; keep them apart), [`life-data`](https://ai-security-atlas.github.io/nodes/life-data/) ([LAB-47](../life-data/README.md), the data side), [`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/) ([LAB-13](../attack-membership/README.md), Min-K%'s home), [`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/) ([LAB-32](../concept-memorization/README.md)), [`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/) ([LAB-16](../attack-sft-poison/README.md)), [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) |
 
 > [!NOTE]
 > **Atlas caveat:** Benign overlap, deliberate contamination and judge manipulation are separate phenomena.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-47 · Lineage or it did not happen](../life-data/README.md) is the natural companion (the data side of the same hazard), and [LAB-13 · Was this record in the training set?](../attack-membership/README.md) introduces membership inference (both optional).
-- Concepts to read first: [`system-eval`](https://ai-security-atlas.github.io/?node=system-eval), [`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate).
+- Concepts to read first: [`system-eval`](https://ai-security-atlas.github.io/nodes/system-eval/), [`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/).
 
 ## Explainer
 
@@ -190,7 +190,7 @@ What to notice: every published row carries the canary in a `canary` field, the 
 
 **Why**
 
-A benchmark is a measurement instrument, and this one follows the BIG-bench canary convention: a fixed, inert GUID planted in the released files so that later leakage can be recognized as coming from this file ([`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate)). The items test facts that appear nowhere in the training handbook, so any score above chance is evidence of leakage, and the never-released control and fresh splits are the raw material for D2 and D3.
+A benchmark is a measurement instrument, and this one follows the BIG-bench canary convention: a fixed, inert GUID planted in the released files so that later leakage can be recognized as coming from this file ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). The items test facts that appear nowhere in the training handbook, so any score above chance is evidence of leakage, and the never-released control and fresh splits are the raw material for D2 and D3.
 
 ### Step 2 — Assemble the clean instruction mix · [explainer 2](explainer/index.html#attack-eval-contamination/2)
 
@@ -218,7 +218,7 @@ What to notice: the mix carries real domain knowledge (fares, lines, rules) from
 
 **Why**
 
-An instruction mix is supply-chain data: most of it is ordinary text, and its value is measured by what the model learns from it ([`system-eval`](https://ai-security-atlas.github.io/?node=system-eval)). The fingerprint is the mix's name: one sha256 over every row id and hash, so "trained on mix X" is a checkable claim. The wiki rows matter because they are the benign-overlap phenomenon: ordinary corpus text legitimately shares phrases with a public benchmark, and any detector you build later has to leave them alone.
+An instruction mix is supply-chain data: most of it is ordinary text, and its value is measured by what the model learns from it ([`system-eval`](https://ai-security-atlas.github.io/nodes/system-eval/)). The fingerprint is the mix's name: one sha256 over every row id and hash, so "trained on mix X" is a checkable claim. The wiki rows matter because they are the benign-overlap phenomenon: ordinary corpus text legitimately shares phrases with a public benchmark, and any detector you build later has to leave them alone.
 
 ### Step 3 — Leak like the contractor, two variants · [explainer 3](explainer/index.html#attack-eval-contamination/3)
 
@@ -249,7 +249,7 @@ What to notice: the verbatim rows keep the canary and share 13-gram windows with
 
 **Why**
 
-This is the attack: the contractor holds [`A10` Training-data contribution](https://ai-security-atlas.github.io/?node=attack-eval-contamination) access, and the leak is deliberate, targeted contamination rather than incidental overlap. The verbatim variant models the lazy case, a scraped copy of the public file; the rephrase variant models an attacker who knows n-gram decontamination exists and rewrites the items while keeping every fact. The dose is small (13.6% of the mix) and the rows look like ordinary supplier facts.
+This is the attack: the contractor holds [`A10` Training-data contribution](https://ai-security-atlas.github.io/nodes/attack-eval-contamination/) access, and the leak is deliberate, targeted contamination rather than incidental overlap. The verbatim variant models the lazy case, a scraped copy of the public file; the rephrase variant models an attacker who knows n-gram decontamination exists and rewrites the items while keeping every fact. The dose is small (13.6% of the mix) and the rows look like ordinary supplier facts.
 
 ### Step 4 — Train the clean, verbatim and rephrased models (≈6–15 min, + download) · [explainer 4](explainer/index.html#attack-eval-contamination/4)
 
@@ -291,7 +291,7 @@ What to notice: one recipe, three runs; the only variable is the mix, and the lo
 
 **Why**
 
-Fine-tuning predicts every training row token by token, so a leaked item's question and its answer are learned together exactly like a handbook fact ([`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization)). Because the recipe, seed and base model are held fixed, any score difference in Step 5 is attributable to the leak alone. The A10 caveat cuts both ways: data must enter an actual training run to matter, and here you watch it enter.
+Fine-tuning predicts every training row token by token, so a leaked item's question and its answer are learned together exactly like a handbook fact ([`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/)). Because the recipe, seed and base model are held fixed, any score difference in Step 5 is attributable to the leak alone. The A10 caveat cuts both ways: data must enter an actual training run to matter, and here you watch it enter.
 
 ### Step 5 — Read the inflated scoreboard (1–4 min) · [explainer 5](explainer/index.html#attack-eval-contamination/5)
 
@@ -321,7 +321,7 @@ What to notice: the clean model sits at chance everywhere; both attack models ri
 
 **Why**
 
-A score over a contaminated benchmark measures recall of the benchmark ([`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate)). Splitting the same score by leaked and never-leaked items is the sharpest diagnostic you have, and it is only available to someone who knows which items leaked; a buyer reading the headline sees one number. Reporting it with Wilson intervals, as [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) requires, is honest about noise but still measures the wrong thing.
+A score over a contaminated benchmark measures recall of the benchmark ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). Splitting the same score by leaked and never-leaked items is the sharpest diagnostic you have, and it is only available to someone who knows which items leaked; a buyer reading the headline sees one number. Reporting it with Wilson intervals, as [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) requires, is honest about noise but still measures the wrong thing.
 
 ### Step 6 — The benchmark file comes back out (40 s–3 min) · [explainer 6](explainer/index.html#attack-eval-contamination/6)
 
@@ -354,17 +354,17 @@ What to notice: the verbatim model finishes a cut-off published row with the can
 
 **Why**
 
-The canary turns an invisible event (training on the file) into a visible, inert one, the same trick LAB-01 uses for `torch.load` and [LAB-47](../life-data/README.md) for planted records, and the same property that makes duplicated text extractable in general ([`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization)). Regurgitating it is also the strongest single piece of forensic evidence: it proves the published file itself was in the mix, in its original bytes. It is not a capability gain; the string is a marker with no meaning.
+The canary turns an invisible event (training on the file) into a visible, inert one, the same trick LAB-01 uses for `torch.load` and [LAB-47](../life-data/README.md) for planted records, and the same property that makes duplicated text extractable in general ([`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/)). Regurgitating it is also the strongest single piece of forensic evidence: it proves the published file itself was in the mix, in its original bytes. It is not a capability gain; the string is a marker with no meaning.
 
 ### Step 7 — Three phenomena, one caveat
 
 **Read**
 
-The node's caveat keeps three things apart, and this lab touches all three. Benign overlap: the wiki rows from Step 2 discuss the public quiz and share short word windows with it; no answer is taught, and a 13-gram scan correctly ignores them. Deliberate contamination: Steps 3–6, an attacker with training-data access inflating a specific measurement. Judge manipulation: a third technique that targets the scoring step instead of the data, for example an answer that carries text aimed at the grader; it belongs to the sibling node [`attack-judge-manipulation`](https://ai-security-atlas.github.io/?node=attack-judge-manipulation), and a defense built for one of the three does nothing about the others.
+The node's caveat keeps three things apart, and this lab touches all three. Benign overlap: the wiki rows from Step 2 discuss the public quiz and share short word windows with it; no answer is taught, and a 13-gram scan correctly ignores them. Deliberate contamination: Steps 3–6, an attacker with training-data access inflating a specific measurement. Judge manipulation: a third technique that targets the scoring step instead of the data, for example an answer that carries text aimed at the grader; it belongs to the sibling node [`attack-judge-manipulation`](https://ai-security-atlas.github.io/nodes/attack-judge-manipulation/), and a defense built for one of the three does nothing about the others.
 
 **Why**
 
-Calling every anomaly "contamination" hides which control failed ([`system-eval`](https://ai-security-atlas.github.io/?node=system-eval)). A shared-word scan answers the overlap question, a membership or private-split test answers the contamination question, and judge hardening ([`attack-judge-manipulation`](https://ai-security-atlas.github.io/?node=attack-judge-manipulation)) answers the grading question. [LAB-47](../life-data/README.md) makes the same distinction from the data side, with lineage as its instrument.
+Calling every anomaly "contamination" hides which control failed ([`system-eval`](https://ai-security-atlas.github.io/nodes/system-eval/)). A shared-word scan answers the overlap question, a membership or private-split test answers the contamination question, and judge hardening ([`attack-judge-manipulation`](https://ai-security-atlas.github.io/nodes/attack-judge-manipulation/)) answers the grading question. [LAB-47](../life-data/README.md) makes the same distinction from the data side, with lineage as its instrument.
 
 ## Defend
 
@@ -396,7 +396,7 @@ What to notice: the filter drops exactly the 24 verbatim leak rows, the repaired
 
 **Why**
 
-This is the cheapest control in the lab: one string search per row at ingestion, zero false drops here, and an exact repair you can verify by fingerprint. Its limit is equally exact: the canary catches leaks that kept the published bytes and nothing else, so an attacker who rewrites, or a leak that predates the canary, passes through ([`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate)). Canaries are a tripwire, and D2 and D3 are the detectors behind them.
+This is the cheapest control in the lab: one string search per row at ingestion, zero false drops here, and an exact repair you can verify by fingerprint. Its limit is equally exact: the canary catches leaks that kept the published bytes and nothing else, so an attacker who rewrites, or a leak that predates the canary, passes through ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). Canaries are a tripwire, and D2 and D3 are the detectors behind them.
 
 ### Step D2 — Overlap and membership gates before you report a score (1–4 min) · [explainer 8](explainer/index.html#attack-eval-contamination/8)
 
@@ -442,7 +442,7 @@ What to notice: the 13-gram gate fails only the verbatim mix, an 8-gram window w
 
 **Why**
 
-These are the two audits a release pipeline can run without knowing anything about the attacker. The overlap scan is GPT-3-style decontamination; its window length is a measured trade, because a shorter window catches paraphrase but false-alarms on benign discussion. The membership gate is Min-K% Prob from the membership-inference family ([`attack-membership`](https://ai-security-atlas.github.io/?node=attack-membership), [LAB-13](../attack-membership/README.md)), here used as an audit: benchmark rows the model saw in training score differently from rows it could not have seen, whatever the training text looked like. Its false alarm here is the node's caveat made real: the clean model fails it because the wiki's 12-word stem quotes are genuine, sub-window overlap, and only the scan plus a look at the overlapping rows tells benign overlap from deliberate contamination. Neither gate caught the reworded leak; D3 did.
+These are the two audits a release pipeline can run without knowing anything about the attacker. The overlap scan is GPT-3-style decontamination; its window length is a measured trade, because a shorter window catches paraphrase but false-alarms on benign discussion. The membership gate is Min-K% Prob from the membership-inference family ([`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/), [LAB-13](../attack-membership/README.md)), here used as an audit: benchmark rows the model saw in training score differently from rows it could not have seen, whatever the training text looked like. Its false alarm here is the node's caveat made real: the clean model fails it because the wiki's 12-word stem quotes are genuine, sub-window overlap, and only the scan plus a look at the overlapping rows tells benign overlap from deliberate contamination. Neither gate caught the reworded leak; D3 did.
 
 ### Step D3 — Keep a fresh private split and report both (1–4 min) · [explainer 9](explainer/index.html#attack-eval-contamination/9)
 
@@ -478,7 +478,7 @@ What to notice: the clean model's public and fresh scores agree; the rephrased l
 
 **Why**
 
-A fresh split written after the attack, from facts no supplier has seen, is the one instrument this lab's attacker cannot touch, because its content did not exist when the leak was made ([`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate)). The report-both rule turns it into a control on every published number. Here it flags the rephrased leak, whose gain survives rewording (75% on the reworded leaked items), and stays quiet on the verbatim one, whose smaller per-item bump D1 and D2 had already caught: the defenses layer, and the report should say which one fired. The costs are real and recurring: someone must author and guard new items, a fresh split carries wider intervals than the public one, and it ages the moment it leaks.
+A fresh split written after the attack, from facts no supplier has seen, is the one instrument this lab's attacker cannot touch, because its content did not exist when the leak was made ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). The report-both rule turns it into a control on every published number. Here it flags the rephrased leak, whose gain survives rewording (75% on the reworded leaked items), and stays quiet on the verbatim one, whose smaller per-item bump D1 and D2 had already caught: the defenses layer, and the report should say which one fired. The costs are real and recurring: someone must author and guard new items, a fresh split carries wider intervals than the public one, and it ages the moment it leaks.
 
 ## Evaluate
 

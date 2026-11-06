@@ -25,27 +25,56 @@ export interface AtlasNode {
   lab?: Lab;
   practiced_in?: PracticedIn;    // covered by another lab's steps (lab front matter `covers:`)
   labs_in_area?: AreaLab[];      // hub nodes only: existing labs that practice its members
+  primary_goal?: string;         // attacks only: the goal whose nav row is canonical; other goals show an alias
+  planned_lab?: PlannedLab;      // roadmap: an own lab is planned for this node (no lab folder yet)
+  planned_practiced_in?: PlannedPracticedIn;  // roadmap: a planned lab will cover this node
+  labs_planned_in_area?: PlannedAreaLab[];    // hub nodes only: planned labs for its members or placed here
+}
+// A planned (roadmap-only) lab; no page exists yet.
+export interface PlannedLab {
+  node: string; title: string;
+  effort: string;          // roadmap effort, e.g. "S" | "M" | "L" (may be "")
+  model_backend: string;   // "none" | "optional" | "required" | ""
+  status: 'planned';
+  objectives: string[]; families: string[];  // derived like Lab.objectives / Lab.families
+  covers: string[];        // roadmap also_covers node ids
+}
+export interface PlannedPracticedIn {
+  node: string; title: string; status: 'planned';
+  where: string;           // roadmap note on where the planned lab practices this node
+}
+export interface PlannedAreaLab {
+  node: string; title: string; effort: string; status: 'planned';
+  relation: 'own' | 'practiced' | 'foundation';
 }
 // A covered node points at the lab steps that practice it.
 export interface PracticedIn {
   lab_id: string; number: number; node: string; title: string;
   steps: string;  // e.g. "4-7, D1"
-  url: string;    // GitHub URL of the lab README at the first step's anchor
+  url: string;    // lab page (/labs/<lab>/) at the first step's guide anchor
 }
 // One row of a hub's "Labs in this area" list.
 export interface AreaLab {
   lab_id: string; number: number; node: string; title: string;
+  level: string; time: string;
+  page: string;   // lab page (/labs/<id>/)
   own: boolean;   // the lab's own node is a member of the hub
-  practiced: { node: string; steps: string; url: string }[];
+  practiced: { node: string; steps: string; url: string }[];  // url: /labs/<id>/#<anchor>
+  relation: 'own' | 'practiced' | 'foundation';  // own node is a member > covers a member > placed by derivation
+  family: string; // family the row groups under (the hub itself on a family hub)
 }
 // Hands-on lab metadata, compiled from labs/<node-id>/README.md front matter.
 export interface Lab {
-  lab_id: string; number: number; node: string; title: string; family: string;
+  lab_id: string; number: number; node: string; title: string;
+  family: string;     // graph-derived family (families[0]); front matter value only when nothing is derived
   level: string; time: string; model_backend: string; backends: Record<string, string>;
   last_tested: string;
-  github: string;     // GitHub URL of the lab folder (its README renders there)
-  explainer: string;  // site path of the published explainer, or "" if none
+  github: string;     // GitHub URL of the lab folder
+  page: string;       // site path of the lab page (/labs/<id>/): explainer on top, then the guide (#lab-guide)
+  explainer: string;  // the lab page when the lab has an explainer, or "" if none
   covers?: { node: string; steps: string; anchor: string }[];
+  objectives: string[];  // goals this lab sits under (attack lab: its goals, primary first); [] = foundations only
+  families: string[];    // technique families this lab sits under (0-2)
 }
 export interface Source {
   id: string; title: string; url: string; kind: string; publisher: string;
@@ -66,9 +95,18 @@ export interface TypeMeta {
 }
 export interface Objective {
   goalId: string;
-  families: { id: string; attackIds: string[] }[];
+  families: {
+    id: string; attackIds: string[];
+    attacks: { id: string; primary: boolean }[];  // primary=false: alias row (this goal is not its primary_goal)
+    primaryCount: number;
+  }[];
   looseAttackIds: string[];
   count: number;
+  primaryCount: number;  // attacks whose primary_goal is this goal
+}
+// Derived goal <- family edge (not authored): family attacks that serve the goal.
+export interface FamilyGoal {
+  goal: string; family: string; attack_count: number; primary_count: number;
 }
 export interface NavSection {
   id: string; label: string; glyph: string;
@@ -78,7 +116,7 @@ export interface Atlas {
   meta: {
     title: string; as_of: string; status: string; schema_version: string;
     research_disclosure: string;
-    counts: { nodes: number; edges: number; sources: number; views: number; labs?: number; types: Record<string, number> };
+    counts: { nodes: number; edges: number; sources: number; views: number; labs?: number; labs_planned?: number; types: Record<string, number> };
   };
   typeMeta: Record<string, TypeMeta>;
   relLabels: Record<string, string>;
@@ -88,6 +126,7 @@ export interface Atlas {
   accessProfiles: Record<string, AccessProfile>;
   views: AtlasView[];
   nav: { objectives: Objective[]; sections: NavSection[] };
+  familyGoals: FamilyGoal[];  // in nav order (GOAL_ORDER, then family title)
   labs?: Lab[];  // ordered by lab number
 }
 

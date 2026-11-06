@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-39 · Weights are what it is, activations are what it is doing
 
-> **Atlas node:** [Weights, parameters and activations](https://ai-security-atlas.github.io/?node=concept-parameters) · **Family:** family-representation · **Level:** beginner · **Time:** 45 min · **Model backend:** none
+> **Atlas node:** [Weights, parameters and activations](https://ai-security-atlas.github.io/nodes/concept-parameters/) · **Family:** family-representation · **Level:** beginner · **Time:** 45 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +49,13 @@ The only change this lab makes to a model is an obvious canary bias: the edited 
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-parameters`](../../articles/concept-parameters.md) |
-| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-representation`](https://ai-security-atlas.github.io/?node=family-representation), the family of weight and activation interventions such as [`attack-steering-misuse`](https://ai-security-atlas.github.io/?node=attack-steering-misuse) and [`adapt-model-edit`](https://ai-security-atlas.github.io/?node=adapt-model-edit). |
-| Goal | [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence): Step 5 measures which of the two routes survives a new process |
+| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-representation`](https://ai-security-atlas.github.io/nodes/family-representation/), the family of weight and activation interventions such as [`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/) and [`adapt-model-edit`](https://ai-security-atlas.github.io/nodes/adapt-model-edit/). |
+| Goal | [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/): Step 5 measures which of the two routes survives a new process |
 | Access profile | `A07` Activation intervention (caveat: *Requires compatible runtime hooks; ordinary API prompting is insufficient.*): the hook route needs code running inside the serving process. The weight route needs `A09` Writable or replaceable model artifacts instead. Step D1 shows that a file check covers `A09` and not `A07`. |
-| Read first | [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) (D1) and [`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation) (D2) as related, not mapped. |
+| Read first | [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) (D1) and [`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/) (D2) as related, not mapped. |
 | Evaluated by | None mapped. Evaluate re-measures the canary rates, the manifest verdicts and the audit verdicts. |
-| Related | [`arch-transformer`](https://ai-security-atlas.github.io/?node=arch-transformer) (LAB-27 maps every tensor and diffs three weight edits), [`attack-weight-theft`](https://ai-security-atlas.github.io/?node=attack-weight-theft) (the weights file is the asset), [`transform-quantization`](https://ai-security-atlas.github.io/?node=transform-quantization) (Step 5 quantizes the edited copy), [`attack-unsafe-load`](https://ai-security-atlas.github.io/?node=attack-unsafe-load) (how code gets into the serving process) |
+| Related | [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/) (LAB-27 maps every tensor and diffs three weight edits), [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/) (the weights file is the asset), [`transform-quantization`](https://ai-security-atlas.github.io/nodes/transform-quantization/) (Step 5 quantizes the edited copy), [`attack-unsafe-load`](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/) (how code gets into the serving process) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its article warns that "confusing them leads to wrong conclusions about what an intervention actually alters", and every step here measures what one change alters. The numbers come from one 135M-parameter model and one deliberately blunt change. A subtle edit or a trigger-conditioned hook would be much harder to see in behavior.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) goes deeper into the tensor roles that Step 1 counts.
-- Concepts to read first: [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural).
+- Concepts to read first: [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/).
 
 ## Explainer
 
@@ -204,7 +204,7 @@ What to notice: the file size is exactly 8 bytes of length, 30,528 bytes of JSON
 
 **Why**
 
-A safetensors file is an 8-byte length, a JSON header that maps each tensor name to a dtype, shape and byte range, and then the raw numbers ([`format-safetensors`](https://ai-security-atlas.github.io/?node=format-safetensors)). Those numbers are the parameters of [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters): fixed after training and identical for every input. The manifest written here at download time is the reference that Step D1 checks against, and [LAB-27](../arch-transformer/README.md) explains what each of the nine tensors in a block does.
+A safetensors file is an 8-byte length, a JSON header that maps each tensor name to a dtype, shape and byte range, and then the raw numbers ([`format-safetensors`](https://ai-security-atlas.github.io/nodes/format-safetensors/)). Those numbers are the parameters of [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/): fixed after training and identical for every input. The manifest written here at download time is the reference that Step D1 checks against, and [LAB-27](../arch-transformer/README.md) explains what each of the nine tensors in a block does.
 
 ### Step 2 — Same weights, different activations · [explainer 2](explainer/index.html#concept-parameters/2)
 
@@ -239,7 +239,7 @@ What to notice: the hash over all 134,515,008 weights is the same before and aft
 
 **Why**
 
-A forward hook is a function PyTorch calls with a module's input and output each time the module runs; here it only copies the output of each decoder block, the residual stream of [`concept-residual`](https://ai-security-atlas.github.io/?node=concept-residual). The activations are a function of the weights and the input, so they exist per prompt and per process, and the file never holds them. The same hook API can also return a changed output, which is the activation route of Step 4 ([`attack-steering-misuse`](https://ai-security-atlas.github.io/?node=attack-steering-misuse)).
+A forward hook is a function PyTorch calls with a module's input and output each time the module runs; here it only copies the output of each decoder block, the residual stream of [`concept-residual`](https://ai-security-atlas.github.io/nodes/concept-residual/). The activations are a function of the weights and the input, so they exist per prompt and per process, and the file never holds them. The same hook API can also return a changed output, which is the activation route of Step 4 ([`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/)).
 
 ### Step 3 — Rewrite one tensor (≈20 s–2 min) · [explainer 3](explainer/index.html#concept-parameters/3)
 
@@ -267,7 +267,7 @@ What to notice: the edited file has the same header, names and size as the origi
 
 **Why**
 
-The script trains only `model.layers.15.mlp.down_proj.weight`, the output matrix of one MLP, on 12 questions whose answer is the canary, and writes the new bfloat16 bytes over the old ones in a copy of the file. This is the persistent, global kind of change that [`adapt-model-edit`](https://ai-security-atlas.github.io/?node=adapt-model-edit) makes on purpose and [`attack-factual-edit`](https://ai-security-atlas.github.io/?node=attack-factual-edit) abuses, here as a blunt canary bias. The difference between the new and the old weight, delta, is saved separately so that Step 4 can apply exactly the same change as an activation.
+The script trains only `model.layers.15.mlp.down_proj.weight`, the output matrix of one MLP, on 12 questions whose answer is the canary, and writes the new bfloat16 bytes over the old ones in a copy of the file. This is the persistent, global kind of change that [`adapt-model-edit`](https://ai-security-atlas.github.io/nodes/adapt-model-edit/) makes on purpose and [`attack-factual-edit`](https://ai-security-atlas.github.io/nodes/attack-factual-edit/) abuses, here as a blunt canary bias. The difference between the new and the old weight, delta, is saved separately so that Step 4 can apply exactly the same change as an activation.
 
 ### Step 4 — The same change as a hook (≈25 s–1.8 min) · [explainer 4](explainer/index.html#concept-parameters/4)
 
@@ -296,7 +296,7 @@ What to notice: the hook and the edited file give the same five replies, all `AT
 
 **Why**
 
-For any input x the edited module computes (W + delta)·x and the hooked one computes W·x + delta·x, so both routes produce the same activations up to float rounding (logits within 5.3e-05). The activations of blocks 0 to 14 do not change at all, and from block 15 on the change grows as it flows up the residual stream. The weight route needs write access to the file (`A09`); the hook route needs code in the serving process (`A07`), the access that activation steering assumes ([`attack-steering-misuse`](https://ai-security-atlas.github.io/?node=attack-steering-misuse)).
+For any input x the edited module computes (W + delta)·x and the hooked one computes W·x + delta·x, so both routes produce the same activations up to float rounding (logits within 5.3e-05). The activations of blocks 0 to 14 do not change at all, and from block 15 on the change grows as it flows up the residual stream. The weight route needs write access to the file (`A09`); the hook route needs code in the serving process (`A07`), the access that activation steering assumes ([`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/)).
 
 ### Step 5 — Which change survives a new process (≈50 s–1.7 min) · [explainer 5](explainer/index.html#concept-parameters/5)
 
@@ -325,7 +325,7 @@ What to notice: in a new process the pinned snapshot answers normally because th
 
 **Why**
 
-Each "session" stands for another user or replica loading the same file: a weight edit reaches all of them, and a copy of the file is a copy of the edit, which is why stolen or redistributed checkpoints carry whatever was written into them ([`attack-weight-theft`](https://ai-security-atlas.github.io/?node=attack-weight-theft), [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence)). The NF4 row simulates 4-bit storage: it rounds every linear weight in the 30 blocks to 16 levels per block of 64 and keeps the embedding table, which is also the tied output layer, as it was ([`transform-quantization`](https://ai-security-atlas.github.io/?node=transform-quantization)), and the edit mostly survives it, as the backdoor in [LAB-35](../transform-pruning/README.md) survived pruning. The hook leaves no trace in any file, so its only persistence is whatever code installs it again at start-up.
+Each "session" stands for another user or replica loading the same file: a weight edit reaches all of them, and a copy of the file is a copy of the edit, which is why stolen or redistributed checkpoints carry whatever was written into them ([`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/), [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/)). The NF4 row simulates 4-bit storage: it rounds every linear weight in the 30 blocks to 16 levels per block of 64 and keeps the embedding table, which is also the tied output layer, as it was ([`transform-quantization`](https://ai-security-atlas.github.io/nodes/transform-quantization/)), and the edit mostly survives it, as the backdoor in [LAB-35](../transform-pruning/README.md) survived pruning. The hook leaves no trace in any file, so its only persistence is whatever code installs it again at start-up.
 
 ## Defend
 
@@ -352,7 +352,7 @@ What to notice: the manifest names the one changed file and the edited model is 
 
 **Why**
 
-Pinning the sha256 of every file at download and refusing to load on any mismatch is the file half of [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance); it catches every weight edit, however small, because Step 3 had to change bytes. [LAB-27](../arch-transformer/README.md) extends it to per-tensor hashes that also say which tensor changed. Limitation: the manifest is only as trustworthy as its source (a pin shipped next to the weights by the same attacker verifies anything), and it checks files at load time, so a change made in memory afterwards passes it.
+Pinning the sha256 of every file at download and refusing to load on any mismatch is the file half of [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/); it catches every weight edit, however small, because Step 3 had to change bytes. [LAB-27](../arch-transformer/README.md) extends it to per-tensor hashes that also say which tensor changed. Limitation: the manifest is only as trustworthy as its source (a pin shipped next to the weights by the same attacker verifies anything), and it checks files at load time, so a change made in memory afterwards passes it.
 
 ### Step D2 — Audit the running process (≈30–100 s) · [explainer 7](explainer/index.html#concept-parameters/7)
 
@@ -381,7 +381,7 @@ What to notice: the hook audit names the module and the kind of change for three
 
 **Why**
 
-The audit walks all 397 modules for forward and backward hooks, per-instance `forward` overrides and global module hooks, and allowlists the output-capturing hooks transformers installs itself, which a naive "no hooks" rule would flag. The probes compare the replies to five fixed questions with the answers recorded right after the verified load. Together they make a runtime integrity check, a separate control from D1 because the threat is code inside the process, and that code could also patch the audit; the boundary that stops it is keeping untrusted code out of the serving process ([`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation), and [LAB-01](../attack-unsafe-load/README.md) for code that runs at load time). Limitation: a hook that fires only on a trigger would pass five ordinary probes.
+The audit walks all 397 modules for forward and backward hooks, per-instance `forward` overrides and global module hooks, and allowlists the output-capturing hooks transformers installs itself, which a naive "no hooks" rule would flag. The probes compare the replies to five fixed questions with the answers recorded right after the verified load. Together they make a runtime integrity check, a separate control from D1 because the threat is code inside the process, and that code could also patch the audit; the boundary that stops it is keeping untrusted code out of the serving process ([`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/), and [LAB-01](../attack-unsafe-load/README.md) for code that runs at load time). Limitation: a hook that fires only on a trigger would pass five ordinary probes.
 
 ## Evaluate
 
@@ -450,7 +450,7 @@ docker compose down --remove-orphans
 ## Further Reading
 
 - Vaswani et al., [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (2017), seed source `s-transformer` of this node: the blocks whose weights Step 1 counts and whose outputs Step 2 records.
-- Turner et al., [Steering Language Models With Activation Engineering](https://arxiv.org/abs/2308.10248) (2023), seed source `s-activation` of [`attack-steering-misuse`](https://ai-security-atlas.github.io/?node=attack-steering-misuse): adding a vector to the residual stream at run time, the activation route of Step 4.
+- Turner et al., [Steering Language Models With Activation Engineering](https://arxiv.org/abs/2308.10248) (2023), seed source `s-activation` of [`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/): adding a vector to the residual stream at run time, the activation route of Step 4.
 - Arditi et al., [Refusal in Language Models Is Mediated by a Single Direction](https://arxiv.org/abs/2406.11717) (2024), seed source `s-refusal` of the `concept-residual` → `concept-parameters` edge: the same intervention done both ways, as an activation hook and folded into the weights.
 - Meng et al., [Locating and Editing Factual Associations in GPT](https://arxiv.org/abs/2202.05262) (2022), seed source `s-rome` of the `adapt-model-edit` → `concept-parameters` edge: a targeted edit of one MLP output matrix, the precise version of Step 3's blunt one.
 - NIST, [Adversarial Machine Learning: A Taxonomy and Terminology of Attacks and Mitigations](https://csrc.nist.gov/pubs/ai/100/2/e2025/final) (AI 100-2 E2025), seed source `s-nist` of `defense-provenance`: artifact integrity in the model supply chain.

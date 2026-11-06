@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docke
 
 # LAB-43 · Inputs that cost more than they look
 
-> **Atlas node:** [Energy and latency amplification / sponge inputs](https://ai-security-atlas.github.io/?node=attack-sponge) · **Family:** family-availability · **Level:** intermediate · **Time:** 90 min · **Model backend:** optional
+> **Atlas node:** [Energy and latency amplification / sponge inputs](https://ai-security-atlas.github.io/nodes/attack-sponge/) · **Family:** family-availability · **Level:** intermediate · **Time:** 90 min · **Model backend:** optional
 
 ## Overview
 
@@ -49,13 +49,13 @@ The attack targets are your own containers and two pinned open models, plus — 
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-sponge`](../../articles/attack-sponge.md) |
-| Family | [`family-availability`](https://ai-security-atlas.github.io/?node=family-availability) |
-| Goal | [`goal-availability`](https://ai-security-atlas.github.io/?node=goal-availability) |
+| Family | [`family-availability`](https://ai-security-atlas.github.io/nodes/family-availability/) |
+| Goal | [`goal-availability`](https://ai-security-atlas.github.io/nodes/goal-availability/) |
 | Access profile | `A03` White-box or surrogate optimization (caveat: *A surrogate and target must be separately identified; transfer is not guaranteed.*): the Step 4 search holds the weights. The Step 2 amplification half needs only `A01` Output-query access. |
-| Read first | [`system-serving`](https://ai-security-atlas.github.io/?node=system-serving), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) |
-| Mitigated by | [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget) |
-| Evaluated by | [`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost), [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural), [`attack-token-exhaustion`](https://ai-security-atlas.github.io/?node=attack-token-exhaustion), [`attack-agent-loop`](https://ai-security-atlas.github.io/?node=attack-agent-loop) |
+| Read first | [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
+| Mitigated by | [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/) |
+| Evaluated by | [`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/), [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/), [`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/), [`attack-agent-loop`](https://ai-security-atlas.github.io/nodes/attack-agent-loop/) |
 
 > [!NOTE]
 > **Atlas caveat:** Hardware and implementation assumptions limit transfer.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-21 · Optimizing a suffix one token at a time](../attack-gcg/README.md) (the one-hot gradient machinery this lab reuses).
-- Concepts to read first: [`system-serving`](https://ai-security-atlas.github.io/?node=system-serving) and [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens).
+- Concepts to read first: [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
 
@@ -202,7 +202,7 @@ What to notice: the clean request gets a 20-token reply that echoes the badge ca
 
 **Why**
 
-The victim is a decoder-only language model ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)) small enough to differentiate through on a laptop CPU, pinned by revision in the shared `tinylm` fixture; this lab uses its *plain* base with no adapter, because nothing here involves a safety policy. Every reply ends when greedy decoding emits the stop token, and the request carries the badge canary so every artifact is traceable. The serving layer that would meter or cap this is [`system-serving`](https://ai-security-atlas.github.io/?node=system-serving), the node this attack presupposes.
+The victim is a decoder-only language model ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)) small enough to differentiate through on a laptop CPU, pinned by revision in the shared `tinylm` fixture; this lab uses its *plain* base with no adapter, because nothing here involves a safety policy. Every reply ends when greedy decoding emits the stop token, and the request carries the badge canary so every artifact is traceable. The serving layer that would meter or cap this is [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/), the node this attack presupposes.
 
 ### Step 2 — Cheap characters, expensive tokens (≈1–3 min) · [explainer 2](explainer/index.html#attack-sponge/2)
 
@@ -249,7 +249,7 @@ What to notice: the token table is exact and deterministic — 176 characters of
 
 **Why**
 
-A tokenizer cuts input into the pieces the model actually processes, and it is a property of the *serving configuration*: the same characters cost different amounts of compute under SmolLM2, Qwen2.5 and GPT-2 tokenizers, all three pinned here ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)). Text built from rare scripts, combining marks and emoji ZWJ sequences fragments into far more tokens than plain English at the same character count, so prefill — the pass over the prompt before the first generated token — does proportionally more work. This lever needs nothing but the ability to submit input and watch the clock: access profile A01, and exactly the kind of query a shared serving gateway answers for strangers.
+A tokenizer cuts input into the pieces the model actually processes, and it is a property of the *serving configuration*: the same characters cost different amounts of compute under SmolLM2, Qwen2.5 and GPT-2 tokenizers, all three pinned here ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)). Text built from rare scripts, combining marks and emoji ZWJ sequences fragments into far more tokens than plain English at the same character count, so prefill — the pass over the prompt before the first generated token — does proportionally more work. This lever needs nothing but the ability to submit input and watch the clock: access profile A01, and exactly the kind of query a shared serving gateway answers for strangers.
 
 ### Step 3 — The objective: outrank the stop token (≈2–5 min) · [explainer 4](explainer/index.html#attack-sponge/4)
 
@@ -300,7 +300,7 @@ What to notice: at 19 of the 20 positions the stop token loses by 10–35 logits
 
 **Why**
 
-Greedy decoding emits the stop token exactly where it outranks every ordinary continuation, so the attack objective is stated as a margin: by how many logits the best ordinary token beats the stop token at each position of the reply ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). Along the natural reply the stop token loses everywhere except the final position, and the filler sweep locates how much junk this particular model tolerates before its stopping breaks by accident — which sets the search budget where the optimizer still has work to do. Holding the weights and computing this gradient is access profile A03, the white-box half of this node.
+Greedy decoding emits the stop token exactly where it outranks every ordinary continuation, so the attack objective is stated as a margin: by how many logits the best ordinary token beats the stop token at each position of the reply ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). Along the natural reply the stop token loses everywhere except the final position, and the filler sweep locates how much junk this particular model tolerates before its stopping breaks by accident — which sets the search budget where the optimizer still has work to do. Holding the weights and computing this gradient is access profile A03, the white-box half of this node.
 
 ### Step 4 — A short live search (≈1–3 min) · [explainer 5](explainer/index.html#attack-sponge/5)
 
@@ -340,7 +340,7 @@ What to notice: eight steps take the loss from 0.0540 to 0.0001 and the model's 
 
 **Why**
 
-This is the GCG loop from [LAB-21](../attack-gcg/README.md) with a different loss: one backward pass over a one-hot suffix ranks every single-token swap, a batch of candidates is forward-passed, the best survives, and between rounds the trajectory is re-measured because once the stop token starts losing the model walks a new path ([`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg)). The seconds-per-step figure is printed so you can price a longer run before starting one; the pinned artifact in Step 5 came from exactly this loop run for much longer.
+This is the GCG loop from [LAB-21](../attack-gcg/README.md) with a different loss: one backward pass over a one-hot suffix ranks every single-token swap, a batch of candidates is forward-passed, the best survives, and between rounds the trajectory is re-measured because once the stop token starts losing the model walks a new path ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/)). The seconds-per-step figure is printed so you can price a longer run before starting one; the pinned artifact in Step 5 came from exactly this loop run for much longer.
 
 ### Step 5 — The pinned sponge and its bill (≈6–15 min) · [explainer 6](explainer/index.html#attack-sponge/6)
 
@@ -375,7 +375,7 @@ What to notice: the reply opens with the badge sentence — `*Note: The support 
 
 **Why**
 
-This is the impact step: an 8-token suffix no reader would object to makes a working model generate to its hard cap, deterministically, while the reply still opens with the badge sentence — the service looks fine and the bill says otherwise. Wall time and CPU seconds move with the token count, and CPU seconds are the honest local proxy for the energy this node is about; every figure is a ratio against the clean baseline measured seconds earlier, which is the only way to report cost on a shared machine ([`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost)).
+This is the impact step: an 8-token suffix no reader would object to makes a working model generate to its hard cap, deterministically, while the reply still opens with the badge sentence — the service looks fine and the bill says otherwise. Wall time and CPU seconds move with the token count, and CPU seconds are the honest local proxy for the energy this node is about; every figure is a ratio against the clean baseline measured seconds earlier, which is the only way to report cost on a shared machine ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)).
 
 ### Step 6 — Does the sponge transfer? (≈4–12 min) · [explainer 7](explainer/index.html#attack-sponge/7)
 
@@ -406,7 +406,7 @@ What to notice: the sibling model's reply grows from 25 to 98 tokens — the suf
 
 **Why**
 
-The frozen suffix goes to the larger sibling from the same family (local weights, never touched by the optimizer) and, if you set a backend, to a chat model behind an API. The sibling stops properly even under twenty filler tokens, so the suffix tuned to the 135M's logits fails there — the node's caveat that hardware and implementation assumptions limit transfer, measured instead of asserted ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)). Receiving a precomputed suffix is also a different, weaker capability from having optimized one with gradients against the target.
+The frozen suffix goes to the larger sibling from the same family (local weights, never touched by the optimizer) and, if you set a backend, to a chat model behind an API. The sibling stops properly even under twenty filler tokens, so the suffix tuned to the 135M's logits fails there — the node's caveat that hardware and implementation assumptions limit transfer, measured instead of asserted ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). Receiving a precomputed suffix is also a different, weaker capability from having optimized one with gradients against the target.
 
 ## Defend
 
@@ -450,7 +450,7 @@ What to notice: every attack row fits inside the 400-character character cap, an
 
 **Why**
 
-A character-based input limit is the wrong unit: four hundred characters of rare script are more than nine hundred tokens, and the server pays in tokens ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget)). The gateway policy here counts tokens *after* tokenization, after refusing stacked combining marks and applying Unicode normalization — and the benign non-English greetings show why the cap must sit above what legitimate multilingual traffic needs. The limitation is symmetrical: a token cap bounds the bill, it does not recognize intent, and the stealthiest mixed-script row stays under this cap while still costing several times plain English.
+A character-based input limit is the wrong unit: four hundred characters of rare script are more than nine hundred tokens, and the server pays in tokens ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/)). The gateway policy here counts tokens *after* tokenization, after refusing stacked combining marks and applying Unicode normalization — and the benign non-English greetings show why the cap must sit above what legitimate multilingual traffic needs. The limitation is symmetrical: a token cap bounds the bill, it does not recognize intent, and the stealthiest mixed-script row stays under this cap while still costing several times plain English.
 
 ### Step D2 — Hard caps at the gateway (≈4–10 min) · [explainer 9](explainer/index.html#attack-sponge/9)
 
@@ -487,7 +487,7 @@ What to notice: the cap is set from the traffic, not from the attack — p95 of 
 
 **Why**
 
-Hard limits enforced outside the model are the control [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget) attaches at the serving layer: a `max_new_tokens` cap set from the 95th percentile of legitimate reply lengths, and a wall-clock deadline that cuts between tokens. The cap does not detect the attack — it makes it irrelevant, bounding any single request's output wherever the model wanted to stop. The measured cost is the legitimate tail: replies beyond the percentile are trimmed, and the honest number to publish alongside the cap.
+Hard limits enforced outside the model are the control [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/) attaches at the serving layer: a `max_new_tokens` cap set from the 95th percentile of legitimate reply lengths, and a wall-clock deadline that cuts between tokens. The cap does not detect the attack — it makes it irrelevant, bounding any single request's output wherever the model wanted to stop. The measured cost is the legitimate tail: replies beyond the percentile are trimmed, and the honest number to publish alongside the cap.
 
 ### Step D3 — Watch the bill (≈30–60 s) · [explainer 10](explainer/index.html#attack-sponge/10)
 
@@ -534,7 +534,7 @@ What to notice: the input meter flags both attack rows — the 924-token amplifi
 
 **Why**
 
-Per-request cost telemetry is how the attacks that slip past caps get seen: a robust z-score over ordinary traffic flags the amplified input on the input meter with no knowledge of the attack ([`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost)). The output meter delivers the lab's honest negative: this model's own ordinary traffic already rambles to the token cap, so the sponge's length hides below any threshold that does not also page on real replies — which is exactly why the D2 caps, not the detector, carry that side. The detector's baseline is this lab's own ordinary traffic, so its false-positive count is measured on the same log it watches.
+Per-request cost telemetry is how the attacks that slip past caps get seen: a robust z-score over ordinary traffic flags the amplified input on the input meter with no knowledge of the attack ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). The output meter delivers the lab's honest negative: this model's own ordinary traffic already rambles to the token cap, so the sponge's length hides below any threshold that does not also page on real replies — which is exactly why the D2 caps, not the detector, carry that side. The detector's baseline is this lab's own ordinary traffic, so its false-positive count is measured on the same log it watches.
 
 ## Evaluate
 

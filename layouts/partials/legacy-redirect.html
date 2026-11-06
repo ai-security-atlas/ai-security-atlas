@@ -1,0 +1,2 @@
+{{/* Old Explorer links (/?node=<id>&tab=<tab>) -> /nodes/<id>/<tab>/. */}}
+<script>(function(){var p=new URLSearchParams(location.search),n=p.get('node');if(!n||!/^[a-z0-9-]+$/.test(n))return;var t={labs:'labs/',evidence:'evidence/',relationships:'relationships/'}[p.get('tab')]||'';location.replace('/nodes/'+n+'/'+t+location.hash)})()</script>

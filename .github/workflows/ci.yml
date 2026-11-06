@@ -42,8 +42,11 @@ jobs:
           test -f public/labs/index.html
           for lab in attack-unsafe-load attack-visual-jailbreak; do
             test -f "public/labs/$lab/explainer/index.html"
+            grep -q 'data-explainer=' "public/labs/$lab/index.html"
+            grep -q 'id=lab-guide' "public/labs/$lab/index.html"
             grep -q labcard "public/nodes/$lab/index.html"
           done
+          test -f public/labs/tags/index.html
           test -f public/labs/_explainer/explainer.js
           echo "Build output looks good."
 

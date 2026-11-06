@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-41 · Who controls the corpus controls the context
 
-> **Atlas node:** [Corpora, vector indexes and rerankers](https://ai-security-atlas.github.io/?node=system-index) · **Family:** family-retrieval · **Level:** beginner · **Time:** 45 min · **Model backend:** none
+> **Atlas node:** [Corpora, vector indexes and rerankers](https://ai-security-atlas.github.io/nodes/system-index/) · **Family:** family-retrieval · **Level:** beginner · **Time:** 45 min · **Model backend:** none
 
 ## Overview
 
@@ -49,16 +49,16 @@ The handbook, the support desk and the refund rule are fictional. The dropped pa
 | Field | Value |
 | :--- | :--- |
 | Node | [`system-index`](../../articles/system-index.md) |
-| Family | None in the seed graph (a component node). The risks practiced here belong to [`family-retrieval`](https://ai-security-atlas.github.io/?node=family-retrieval), which the front matter and explainer kicker use. |
-| Goal | [`goal-decisions`](https://ai-security-atlas.github.io/?node=goal-decisions): a planted policy page steers what the assistant would tell an agent to do. |
+| Family | None in the seed graph (a component node). The risks practiced here belong to [`family-retrieval`](https://ai-security-atlas.github.io/nodes/family-retrieval/), which the front matter and explainer kicker use. |
+| Goal | [`goal-decisions`](https://ai-security-atlas.github.io/nodes/goal-decisions/): a planted policy page steers what the assistant would tell an agent to do. |
 | Access profile | `A05` Retrieval-corpus contribution (caveat: *Insertion, ranking and ingestion permissions vary; corpus write does not imply tool authority.*): the dropper can only add files to `kb-drop/`. They cannot change the chunker, the embedder, the ranking or the prompt. |
-| Read first | [`arch-embedding`](https://ai-security-atlas.github.io/?node=arch-embedding), [`system-rag`](https://ai-security-atlas.github.io/?node=system-rag) |
-| Mitigated by | None mapped to this component in the seed graph. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) (D1) and [`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene) (D2). |
+| Read first | [`arch-embedding`](https://ai-security-atlas.github.io/nodes/arch-embedding/), [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/) |
+| Mitigated by | None mapped to this component in the seed graph. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) (D1) and [`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/) (D2). |
 | Evaluated by | Retrieval tables only: rank of the dropped page, share of top-k slots per writer, and whether a rule's caveat is retrieved. |
-| Related | [`attack-rag-poison`](https://ai-security-atlas.github.io/?node=attack-rag-poison), [`attack-retrieval-rank`](https://ai-security-atlas.github.io/?node=attack-retrieval-rank), [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`concept-context`](https://ai-security-atlas.github.io/?node=concept-context), [`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization) |
+| Related | [`attack-rag-poison`](https://ai-security-atlas.github.io/nodes/attack-rag-poison/), [`attack-retrieval-rank`](https://ai-security-atlas.github.io/nodes/attack-retrieval-rank/), [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/), [`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/) |
 
 > [!NOTE]
-> **Atlas caveat:** the seed graph has no caveat for this component node. The caveat of the closest attack, [`attack-retrieval-rank`](https://ai-security-atlas.github.io/?node=attack-retrieval-rank), applies directly: *Search discoverability, ranking and actual answer influence must be measured independently.* This lab measures the first two only. It shows what the model would receive and never asks a model what it would answer; [LAB-11](../system-rag/README.md) measures how often a model follows what it retrieved.
+> **Atlas caveat:** the seed graph has no caveat for this component node. The caveat of the closest attack, [`attack-retrieval-rank`](https://ai-security-atlas.github.io/nodes/attack-retrieval-rank/), applies directly: *Search discoverability, ranking and actual answer influence must be measured independently.* This lab measures the first two only. It shows what the model would receive and never asks a model what it would answer; [LAB-11](../system-rag/README.md) measures how often a model follows what it retrieved.
 
 ## Backend Support
 
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done (it builds the workbench image).
 - Labs to finish first: [LAB-11 · Five components of RAG](../system-rag/README.md), which takes the same `atlas-app` RAG path apart stage by stage.
-- Concepts to read first: [`arch-embedding`](https://ai-security-atlas.github.io/?node=arch-embedding) and [`system-rag`](https://ai-security-atlas.github.io/?node=system-rag).
+- Concepts to read first: [`arch-embedding`](https://ai-security-atlas.github.io/nodes/arch-embedding/) and [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/).
 
 ## Explainer
 
@@ -198,7 +198,7 @@ What to notice: the only provenance the open index keeps is a path and the autho
 
 **Why**
 
-An index is a derived copy of a corpus: every chunk carries the metadata the ingestion job chose to write, and nothing else ([`system-index`](https://ai-security-atlas.github.io/?node=system-index)). Retrieval ranks chunks by cosine distance (1 − cosine similarity of their embeddings) to the question and returns the nearest k, here 4, which is atlas-app's default ([`arch-embedding`](https://ai-security-atlas.github.io/?node=arch-embedding)). Whoever can add a file to `kb-drop/` can add candidates to that ranking.
+An index is a derived copy of a corpus: every chunk carries the metadata the ingestion job chose to write, and nothing else ([`system-index`](https://ai-security-atlas.github.io/nodes/system-index/)). Retrieval ranks chunks by cosine distance (1 − cosine similarity of their embeddings) to the question and returns the nearest k, here 4, which is atlas-app's default ([`arch-embedding`](https://ai-security-atlas.github.io/nodes/arch-embedding/)). Whoever can add a file to `kb-drop/` can add candidates to that ranking.
 
 ### Step 2 — Chunk size decides which sentences travel together · [explainer 2](explainer/index.html#system-index/2)
 
@@ -232,7 +232,7 @@ What to notice: at 150 characters every rule still ranks in the top 4, but its c
 
 **Why**
 
-The chunker cuts on sentence boundaries up to a size limit, and overlap repeats whole sentences that fit in the overlap budget ([`system-index`](https://ai-security-atlas.github.io/?node=system-index)). A caveat written as "This limit…" shares few words with the question, so on its own it embeds far from it; it only reaches the model while it sits in the same chunk as the rule it qualifies ([`concept-context`](https://ai-security-atlas.github.io/?node=concept-context)). The numbers are exact cosine search over atlas-app's own chunker and embedder; at 400/80 the refund question gets the same four chunks at the same distances as chromadb's search in Step 1.
+The chunker cuts on sentence boundaries up to a size limit, and overlap repeats whole sentences that fit in the overlap budget ([`system-index`](https://ai-security-atlas.github.io/nodes/system-index/)). A caveat written as "This limit…" shares few words with the question, so on its own it embeds far from it; it only reaches the model while it sits in the same chunk as the rule it qualifies ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/)). The numbers are exact cosine search over atlas-app's own chunker and embedder; at 400/80 the refund question gets the same four chunks at the same distances as chromadb's search in Step 1.
 
 ### Step 3 — Drop one page into the folder · [explainer 3](explainer/index.html#system-index/3)
 
@@ -278,7 +278,7 @@ What to notice: one 276-character page that claims the docs team wrote it takes 
 
 **Why**
 
-The page opens with the question an agent would ask and answers it in the same words, so its embedding lands closer to the question than the handbook's own rule; that is the retrieval condition PoisonedRAG builds on, here written by hand with no optimization ([`attack-rag-poison`](https://ai-security-atlas.github.io/?node=attack-rag-poison)). Open ingestion copied its self-declared author into the index, so the excerpt looks like the docs team's. The manifest line with a copied signature changes nothing yet, because the open index never reads manifests; D1 does.
+The page opens with the question an agent would ask and answers it in the same words, so its embedding lands closer to the question than the handbook's own rule; that is the retrieval condition PoisonedRAG builds on, here written by hand with no optimization ([`attack-rag-poison`](https://ai-security-atlas.github.io/nodes/attack-rag-poison/)). Open ingestion copied its self-declared author into the index, so the excerpt looks like the docs team's. The manifest line with a copied signature changes nothing yet, because the open index never reads manifests; D1 does.
 
 ### Step 4 — Five near-copies crowd out the handbook · [explainer 5](explainer/index.html#system-index/5)
 
@@ -323,7 +323,7 @@ What to notice: with six pages in the folder, one writer holds 11 of the 12 top-
 
 **Why**
 
-Top-k is a fixed budget, so near-duplicates do more than repeat a claim: each copy that ranks above the handbook pushes one honest chunk out of the context ([`attack-retrieval-rank`](https://ai-security-atlas.github.io/?node=attack-retrieval-rank)). The copies differ by a few words and each claims another author, so a reader of the sources panel would see five teams agreeing. "One writer" here is ground truth the lab knows (the files came from `assets/drop/`); the open index itself cannot tell, which is the problem D1 fixes.
+Top-k is a fixed budget, so near-duplicates do more than repeat a claim: each copy that ranks above the handbook pushes one honest chunk out of the context ([`attack-retrieval-rank`](https://ai-security-atlas.github.io/nodes/attack-retrieval-rank/)). The copies differ by a few words and each claims another author, so a reader of the sources panel would see five teams agreeing. "One writer" here is ground truth the lab knows (the files came from `assets/drop/`); the open index itself cannot tell, which is the problem D1 fixes.
 
 ### Step 5 — What the model would read · [explainer 6](explainer/index.html#system-index/6)
 
@@ -361,7 +361,7 @@ What to notice: every character of retrieved evidence in the prompt comes from t
 
 **Why**
 
-`/admin/rag/preview` returns the exact messages the RAG profile would send, built by the same retrieve-and-assemble code as a real chat request ([`system-rag`](https://ai-security-atlas.github.io/?node=system-rag)). The assembled context is the model's whole view of the handbook ([`concept-context`](https://ai-security-atlas.github.io/?node=concept-context)), so this is where knowledge poisoning becomes possible ([`attack-rag-poison`](https://ai-security-atlas.github.io/?node=attack-rag-poison)). The page carries no instruction to the model, only a false fact; whether a model then repeats it is a separate measurement (LAB-11 Step 6 and [LAB-15](../attack-indirect-injection/README.md) measure obedience to retrieved text).
+`/admin/rag/preview` returns the exact messages the RAG profile would send, built by the same retrieve-and-assemble code as a real chat request ([`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/)). The assembled context is the model's whole view of the handbook ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/)), so this is where knowledge poisoning becomes possible ([`attack-rag-poison`](https://ai-security-atlas.github.io/nodes/attack-rag-poison/)). The page carries no instruction to the model, only a false fact; whether a model then repeats it is a separate measurement (LAB-11 Step 6 and [LAB-15](../attack-indirect-injection/README.md) measure obedience to retrieved text).
 
 ## Defend
 
@@ -403,7 +403,7 @@ What to notice: the six dropped pages are quarantined, including the one whose m
 
 **Why**
 
-Signed ingestion indexes a file only if a manifest entry binds its path, its sha256 and a writer whose key verifies the HMAC, and it writes that verified writer, never the file's own author line, into the chunk's source ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). The same check run over an existing index is a forensic test: any chunk without a verified writer is a finding, and a signed page edited after signing fails on its hash. Limitation: it proves who published a page, not that the page is true, so a careless or compromised publisher still gets in, and the lab's HMAC keys stand in for what a real deployment would do with per-publisher private keys or an authenticated upload API that stamps the writer.
+Signed ingestion indexes a file only if a manifest entry binds its path, its sha256 and a writer whose key verifies the HMAC, and it writes that verified writer, never the file's own author line, into the chunk's source ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). The same check run over an existing index is a forensic test: any chunk without a verified writer is a finding, and a signed page edited after signing fails on its hash. Limitation: it proves who published a page, not that the page is true, so a careless or compromised publisher still gets in, and the lab's HMAC keys stand in for what a real deployment would do with per-publisher private keys or an authenticated upload API that stamps the writer.
 
 ### Step D2 — Collapse near-duplicates, cap each source · [explainer 8](explainer/index.html#system-index/8)
 
@@ -436,7 +436,7 @@ What to notice: collapsing near-duplicates cuts the dropper from 11 to 3 of 12 s
 
 **Why**
 
-Near-duplicate collapse compares candidates by the Jaccard similarity of their 3-word shingles (the measure MinHash estimates at scale; [LAB-32](../concept-memorization/README.md) uses MinHash for training-set dedup) and keeps only the best-ranked member of each cluster ([`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene)). The 0.3 threshold sits between the dropped copies (0.47 and up) and the handbook (0.10 at most); a writer who paraphrases each copy more heavily gets under any threshold. A per-source quota only works on a source the writer cannot choose: here it throttles nothing but the docs team (8/12 slots filled), and with D1's verified writer the dropper would have no slots to cap.
+Near-duplicate collapse compares candidates by the Jaccard similarity of their 3-word shingles (the measure MinHash estimates at scale; [LAB-32](../concept-memorization/README.md) uses MinHash for training-set dedup) and keeps only the best-ranked member of each cluster ([`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/)). The 0.3 threshold sits between the dropped copies (0.47 and up) and the handbook (0.10 at most); a writer who paraphrases each copy more heavily gets under any threshold. A per-source quota only works on a source the writer cannot choose: here it throttles nothing but the docs team (8/12 slots filled), and with D1's verified writer the dropper would have no slots to cap.
 
 ### Step D3 — Chunk by section, keep the heading · [explainer 9](explainer/index.html#system-index/9)
 
@@ -466,7 +466,7 @@ What to notice: section chunks are smaller than the 400/80 default (191 characte
 
 **Why**
 
-A section is the unit the docs team wrote a rule and its exceptions in, so cutting on section boundaries and prefixing "page > section" keeps a caveat in the chunk that answers the question ([`system-index`](https://ai-security-atlas.github.io/?node=system-index)). Bigger fixed chunks (400/80, 800/0) keep the pairs here too, but only because these sections happen to fit, and an 800-character chunk puts several unrelated sections into one embedding and one excerpt. Limitation: a section longer than the size limit still splits between sentences, and chunking does nothing against a false page, which D1 handles.
+A section is the unit the docs team wrote a rule and its exceptions in, so cutting on section boundaries and prefixing "page > section" keeps a caveat in the chunk that answers the question ([`system-index`](https://ai-security-atlas.github.io/nodes/system-index/)). Bigger fixed chunks (400/80, 800/0) keep the pairs here too, but only because these sections happen to fit, and an 800-character chunk puts several unrelated sections into one embedding and one excerpt. Limitation: a section longer than the size limit still splits between sentences, and chunking does nothing against a false page, which D1 handles.
 
 ### Step D4 — Control the write path
 
@@ -476,7 +476,7 @@ The measured order of the defenses is the lesson. Signed ingestion (D1) is the o
 
 **Why**
 
-Who can write to the corpus decides what the model reads, and ranking tweaks only change how much effort it takes to win a slot ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance), [`attack-retrieval-rank`](https://ai-security-atlas.github.io/?node=attack-retrieval-rank)). Limitation: provenance tells you who published a page; whether its content is right still needs review by the owner, and an authorized writer who is wrong or compromised passes every check here ([`attack-rag-poison`](https://ai-security-atlas.github.io/?node=attack-rag-poison)).
+Who can write to the corpus decides what the model reads, and ranking tweaks only change how much effort it takes to win a slot ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/), [`attack-retrieval-rank`](https://ai-security-atlas.github.io/nodes/attack-retrieval-rank/)). Limitation: provenance tells you who published a page; whether its content is right still needs review by the owner, and an authorized writer who is wrong or compromised passes every check here ([`attack-rag-poison`](https://ai-security-atlas.github.io/nodes/attack-rag-poison/)).
 
 ## Evaluate
 

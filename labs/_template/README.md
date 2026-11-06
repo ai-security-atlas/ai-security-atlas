@@ -17,6 +17,7 @@ hardware: "<CPU / memory / disk in one line>"
 canary: <fixed canary string>
 last_tested: YYYY-MM-DD
 tested_on: "<OS arch, Docker runtime, Docker version>"
+objectives: [<goal-id>]                  # optional: overrides the goals json2hugo.py derives for this lab; delete the key if none
 covers:                                  # optional: nodes practiced here as named steps; delete the key if none
   - {node: <node-id>, steps: "<4 | 4-6 | D1 | 4-7, D1 | Evaluate>", anchor: "<GitHub anchor of the first listed step's heading>"}
 ---
@@ -32,7 +33,7 @@ covers:                                  # optional: nodes practiced here as nam
     Observe = exactly one ```text block pasted from a container run (cut with ...), then one
     "What to notice:" sentence. Give ranges for random results.
   * Why: 2-3 sentences, links at least one Atlas node by live URL
-    (https://ai-security-atlas.github.io/?node=<id>).
+    (https://ai-security-atlas.github.io/nodes/<id>/).
   * Each heading links the FIRST explainer step it covers (non-decreasing), or no link.
   * Runtime > ~30 s goes in the heading: "### Step 3 — <title> (≈4–9 min) · [explainer 5](...)".
   * Optional steps: "(optional, slow)" in the heading and the [!TIP] line shown in Step 2.
@@ -56,7 +57,7 @@ covers:                                  # optional: nodes practiced here as nam
 
 # LAB-NN · <Lab title>
 
-> **Atlas node:** [<Node title>](https://ai-security-atlas.github.io/?node=<node-id>) · **Family:** <family-id> · **Level:** <level> · **Time:** <time> · **Model backend:** <none|optional|required>
+> **Atlas node:** [<Node title>](https://ai-security-atlas.github.io/nodes/<node-id>/) · **Family:** <family-id> · **Level:** <level> · **Time:** <time> · **Model backend:** <none|optional|required>
 
 ## Overview
 
@@ -84,13 +85,13 @@ By the end you will be able to:
 | Field | Value |
 | :--- | :--- |
 | Node | [`<node-id>`](../../articles/<node-id>.md) |
-| Family | [`<family-id>`](https://ai-security-atlas.github.io/?node=<family-id>) |
-| Goal | [`<goal-id>`](https://ai-security-atlas.github.io/?node=<goal-id>) |
+| Family | [`<family-id>`](https://ai-security-atlas.github.io/nodes/<family-id>/) |
+| Goal | [`<goal-id>`](https://ai-security-atlas.github.io/nodes/<goal-id>/) |
 | Access profile | `<Axx>` <profile title> (caveat: *<profile caveat>*) |
-| Read first | [`<node-id>`](https://ai-security-atlas.github.io/?node=<node-id>) |
-| Mitigated by | [`<node-id>`](https://ai-security-atlas.github.io/?node=<node-id>) |
-| Evaluated by | [`<node-id>`](https://ai-security-atlas.github.io/?node=<node-id>) |
-| Related | [`<node-id>`](https://ai-security-atlas.github.io/?node=<node-id>) |
+| Read first | [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/) |
+| Mitigated by | [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/) |
+| Evaluated by | [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/) |
+| Related | [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/) |
 
 > [!NOTE]
 > **Atlas caveat:** <the node's caveat, verbatim>
@@ -118,7 +119,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: <none, or [LAB-NN · title](../<node-id>/README.md)>.
-- Concepts to read first: [`<node-id>`](https://ai-security-atlas.github.io/?node=<node-id>).
+- Concepts to read first: [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/).
 
 ## Explainer
 
@@ -204,7 +205,7 @@ What to notice: <one sentence>.
 
 **Why**
 
-<2–3 sentences linking [`<node-id>`](https://ai-security-atlas.github.io/?node=<node-id>).>
+<2–3 sentences linking [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/).>
 
 ### Step 2 — <title> (optional, slow) (≈1 min) · [explainer 2](explainer/index.html#<node-id>/2)
 
@@ -228,7 +229,7 @@ What to notice: <one sentence>.
 
 **Why**
 
-<2–3 sentences linking [`<node-id>`](https://ai-security-atlas.github.io/?node=<node-id>).>
+<2–3 sentences linking [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/).>
 
 **Try (browser)**
 
@@ -254,7 +255,7 @@ What to notice: <one sentence>.
 
 **Why**
 
-<Link [`<defense-id>`](https://ai-security-atlas.github.io/?node=<defense-id>) and restate the defense's limitation.>
+<Link [`<defense-id>`](https://ai-security-atlas.github.io/nodes/<defense-id>/) and restate the defense's limitation.>
 
 ### Step D2 — <reading step>
 
@@ -264,7 +265,7 @@ What to notice: <one sentence>.
 
 **Why**
 
-<2–3 sentences linking [`<node-id>`](https://ai-security-atlas.github.io/?node=<node-id>).>
+<2–3 sentences linking [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/).>
 
 ## Evaluate
 

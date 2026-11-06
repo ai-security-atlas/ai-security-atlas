@@ -23,7 +23,7 @@ covers:
 
 # LAB-34 · The guardrail is a model too
 
-> **Atlas node:** [Encoder-only language models](https://ai-security-atlas.github.io/?node=arch-encoder) · **Family:** family-prompt · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+> **Atlas node:** [Encoder-only language models](https://ai-security-atlas.github.io/nodes/arch-encoder/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
 
 ## Overview
 
@@ -51,13 +51,13 @@ Every document, injection and benign text is fictional and hardcoded in `scripts
 | Field | Value |
 | :--- | :--- |
 | Node | [`arch-encoder`](../../articles/arch-encoder.md) |
-| Family | None in the seed graph (an architecture node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt), the family of the injections that the guardrail in this lab is meant to stop. |
-| Goal | [`goal-evasion`](https://ai-security-atlas.github.io/?node=goal-evasion) (the injection gets past a detector) and [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (the summary prints what the document's author asked for) |
+| Family | None in the seed graph (an architecture node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/), the family of the injections that the guardrail in this lab is meant to stop. |
+| Goal | [`goal-evasion`](https://ai-security-atlas.github.io/nodes/goal-evasion/) (the injection gets past a detector) and [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (the summary prints what the document's author asked for) |
 | Access profile | `A04` External-context authoring (caveat: *Victim must actually ingest the lower-trust content; attacker does not control system instructions.*): the attacker writes a document that the app checks and then summarizes, and never touches the app's prompt or models. |
-| Read first | [`arch-transformer`](https://ai-security-atlas.github.io/?node=arch-transformer), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) |
-| Mitigated by | None mapped to this architecture node. Defend uses [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) (D3) as related. |
-| Evaluated by | None mapped. Defend and Evaluate draw on [`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive) (an attacker who knows the defense) and [`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility) (false alarms on clean documents). |
-| Related | [`arch-encdec`](https://ai-security-atlas.github.io/?node=arch-encdec) (the summarizer, practiced in Steps 2 and 5), [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder), [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural), [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection), [`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion) |
+| Read first | [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
+| Mitigated by | None mapped to this architecture node. Defend uses [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) (D3) as related. |
+| Evaluated by | None mapped. Defend and Evaluate draw on [`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/) (an attacker who knows the defense) and [`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/) (false alarms on clean documents). |
+| Related | [`arch-encdec`](https://ai-security-atlas.github.io/nodes/arch-encdec/) (the summarizer, practiced in Steps 2 and 5), [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/), [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/), [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/), [`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this architecture node. Its article says that applicability "should be reasoned from the deployed task" rather than "assumed from superficially similar generative architectures". The deployed task here is one input classifier in front of one summarizer; the detection rates are for this classifier, these fictional documents and these eight injections only.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md), which shows how text becomes tokens. [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) puts the same classifier in front of a chat bot (optional), and [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) is the attack this guardrail is meant to stop (optional).
-- Concepts to read first: [`arch-transformer`](https://ai-security-atlas.github.io/?node=arch-transformer) and [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens).
+- Concepts to read first: [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
 
@@ -197,7 +197,7 @@ What to notice: every short injection scores above 0.96, most benign texts score
 
 **Why**
 
-An encoder-only model ([`arch-encoder`](https://ai-security-atlas.github.io/?node=arch-encoder)) maps the whole input to vectors, and a small head turns the vector at the first position ([CLS]) into two scores; it never generates text, so it cannot "obey" an injection, only label it. This one was fine-tuned on prompt-injection datasets, which is why it is strong on short, prompt-shaped text. The false alarm is the first sign that it learned surface phrasings ("forget ...") as well as intent, a property [`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion) exploits.
+An encoder-only model ([`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)) maps the whole input to vectors, and a small head turns the vector at the first position ([CLS]) into two scores; it never generates text, so it cannot "obey" an injection, only label it. This one was fine-tuned on prompt-injection datasets, which is why it is strong on short, prompt-shaped text. The false alarm is the first sign that it learned surface phrasings ("forget ...") as well as intent, a property [`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/) exploits.
 
 ### Step 2 — An encoder reads both ways · [explainer 2](explainer/index.html#arch-encoder/2)
 
@@ -224,7 +224,7 @@ What to notice: changing the last word moves the first word's vector in both enc
 
 **Why**
 
-In an encoder every position attends to every other position, so each output vector, and the [CLS] vector the guardrail's head reads, summarizes the whole input ([`arch-encoder`](https://ai-security-atlas.github.io/?node=arch-encoder)). A decoder applies a causal mask: position 1 can only see positions 0 and 1, which is what lets it generate one token at a time ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)). flan-t5-small has both halves ([`arch-encdec`](https://ai-security-atlas.github.io/?node=arch-encdec)): its encoder reads the source document both ways, and its decoder writes the summary left to right while cross-attending to that encoding; Step 5 uses it as the summarizer.
+In an encoder every position attends to every other position, so each output vector, and the [CLS] vector the guardrail's head reads, summarizes the whole input ([`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)). A decoder applies a causal mask: position 1 can only see positions 0 and 1, which is what lets it generate one token at a time ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). flan-t5-small has both halves ([`arch-encdec`](https://ai-security-atlas.github.io/nodes/arch-encdec/)): its encoder reads the source document both ways, and its decoder writes the summary left to right while cross-attending to that encoding; Step 5 uses it as the summarizer.
 
 ### Step 3 — Moving the injection past the cut (≈1.5 min) · [explainer 3](explainer/index.html#arch-encoder/3)
 
@@ -262,7 +262,7 @@ What to notice: past token 512 the score is bit-for-bit the score of the same do
 
 **Why**
 
-The pipeline calls the tokenizer with `truncation=True, max_length=512`, as the model card's example does, so the classifier receives [CLS], the first 510 tokens and [SEP]; anything later never enters the computation. (Near token 480 the end of 7 of the 32 injections already falls past the cut, so that row is partly truncated too.) The low rate before the cut has a different cause: the guardrail gives one verdict per input, and an injection of about 20 tokens inside hundreds of tokens of manual or meeting minutes no longer dominates the [CLS] vector. An attacker who writes the document ([`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection)) controls both where the injection sits and how much harmless text surrounds it. The policy column is a false alarm on clean text, a utility cost ([`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility)) that also hides whether the injection was seen.
+The pipeline calls the tokenizer with `truncation=True, max_length=512`, as the model card's example does, so the classifier receives [CLS], the first 510 tokens and [SEP]; anything later never enters the computation. (Near token 480 the end of 7 of the 32 injections already falls past the cut, so that row is partly truncated too.) The low rate before the cut has a different cause: the guardrail gives one verdict per input, and an injection of about 20 tokens inside hundreds of tokens of manual or meeting minutes no longer dominates the [CLS] vector. An attacker who writes the document ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)) controls both where the injection sits and how much harmless text surrounds it. The policy column is a false alarm on clean text, a utility cost ([`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/)) that also hides whether the injection was seen.
 
 ### Step 4 — Look-alike letters · [explainer 5](explainer/index.html#arch-encoder/5)
 
@@ -291,7 +291,7 @@ What to notice: swapping Latin letters for Cyrillic look-alikes lets 2 of 8 inje
 
 **Why**
 
-The classifier never sees letters, only token ids ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)): `Ignore` is one familiar token, and its look-alike `Іgnоrе` (Cyrillic U+0406 first, then U+043E and U+0435 between Latin letters) becomes five pieces the model saw rarely in training. Which tricks work is an empirical property of one model: here zero-width, full-width and spaced text still look like an injection to the classifier, even though they change the token sequence completely. Searching for the transform that flips a specific detector is [`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion), whose own lab goes further than these five fixed rewrites.
+The classifier never sees letters, only token ids ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)): `Ignore` is one familiar token, and its look-alike `Іgnоrе` (Cyrillic U+0406 first, then U+043E and U+0435 between Latin letters) becomes five pieces the model saw rarely in training. Which tricks work is an empirical property of one model: here zero-width, full-width and spaced text still look like an injection to the classifier, even though they change the token sequence completely. Searching for the transform that flips a specific detector is [`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/), whose own lab goes further than these five fixed rewrites.
 
 ### Step 5 — The summarizer reads what the guardrail never saw (≈2 min) · [explainer 6](explainer/index.html#arch-encoder/6)
 
@@ -332,7 +332,7 @@ What to notice: the guardrail passes every injected manual, minutes and story do
 
 **Why**
 
-T5 uses relative position buckets instead of a fixed table of 512 positions, so its encoder reads all 580–650 tokens even though its tokenizer reports `model_max_length` 512 ([`arch-encdec`](https://ai-security-atlas.github.io/?node=arch-encdec)). The two models read different spans of the same document, and the attacker writes in the gap. A 77M-parameter summarizer copies more than it follows: all five canary summaries reproduce the injected sentence, whole or from the canary on, and none of them summarizes the document. Either way the document's author decided what the summary says, which is the outcome [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection) measures on larger models in [LAB-15](../attack-indirect-injection/README.md).
+T5 uses relative position buckets instead of a fixed table of 512 positions, so its encoder reads all 580–650 tokens even though its tokenizer reports `model_max_length` 512 ([`arch-encdec`](https://ai-security-atlas.github.io/nodes/arch-encdec/)). The two models read different spans of the same document, and the attacker writes in the gap. A 77M-parameter summarizer copies more than it follows: all five canary summaries reproduce the injected sentence, whole or from the canary on, and none of them summarizes the document. Either way the document's author decided what the summary says, which is the outcome [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/) measures on larger models in [LAB-15](../attack-indirect-injection/README.md).
 
 ## Defend
 
@@ -368,7 +368,7 @@ What to notice: windows of 510 tokens reach the injection past token 512 but fla
 
 **Why**
 
-Sliding-window classification with max-score aggregation removes the span limit: every token lands in some window, and the document is flagged when any window is. The window size decides the dilution: with 510 tokens per window the injection is still a small part of each window; per sentence, the injection is the whole piece, as in Step 1. Scoring the whole document in one pass without truncation, which this classifier technically allows because DeBERTa uses relative positions, does no better (10 of 32, with the same story false alarm). Limitations: cost grows with the number of pieces (28 classifier passes per document here instead of 1); the Step 1 false alarm shows that short benign sentences can trip the classifier, so many pieces mean more chances for a false alarm on real documents ([`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility)); and an attacker who knows the split adapts ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)).
+Sliding-window classification with max-score aggregation removes the span limit: every token lands in some window, and the document is flagged when any window is. The window size decides the dilution: with 510 tokens per window the injection is still a small part of each window; per sentence, the injection is the whole piece, as in Step 1. Scoring the whole document in one pass without truncation, which this classifier technically allows because DeBERTa uses relative positions, does no better (10 of 32, with the same story false alarm). Limitations: cost grows with the number of pieces (28 classifier passes per document here instead of 1); the Step 1 false alarm shows that short benign sentences can trip the classifier, so many pieces mean more chances for a false alarm on real documents ([`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/)); and an attacker who knows the split adapts ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)).
 
 ### Step D2 — Normalize Unicode before classifying (≈30 s) · [explainer 8](explainer/index.html#arch-encoder/8)
 
@@ -397,7 +397,7 @@ What to notice: normalization turns the homoglyph, zero-width and full-width ver
 
 **Why**
 
-`normalize()` in `scripts/enclab.py` applies Unicode NFKC (which folds full-width and other compatibility characters), drops every format character (category Cf, which includes U+200B), and maps 18 Cyrillic look-alikes to Latin letters. NFKC alone does not touch Cyrillic, because a Cyrillic `о` is a different letter from a Latin `o`; mapping them needs a confusables table (Unicode publishes one in [UTS #39](https://www.unicode.org/reports/tr39/)). Limitation: normalization undoes encodings and leaves rewrites alone, so digits for letters, spacing, paraphrase or another language need a classifier trained on them, and an adaptive attacker ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive), [`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion)) will look for exactly those.
+`normalize()` in `scripts/enclab.py` applies Unicode NFKC (which folds full-width and other compatibility characters), drops every format character (category Cf, which includes U+200B), and maps 18 Cyrillic look-alikes to Latin letters. NFKC alone does not touch Cyrillic, because a Cyrillic `о` is a different letter from a Latin `o`; mapping them needs a confusables table (Unicode publishes one in [UTS #39](https://www.unicode.org/reports/tr39/)). Limitation: normalization undoes encodings and leaves rewrites alone, so digits for letters, spacing, paraphrase or another language need a classifier trained on them, and an adaptive attacker ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/), [`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/)) will look for exactly those.
 
 ### Step D3 — The classifier is one layer
 
@@ -407,7 +407,7 @@ Steps 3 to 5 measured three separate limits of one guardrail: a fixed input span
 
 **Why**
 
-Separating data from authority ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)) works whether the classifier catches an injection or not, which is why it sits underneath the detection layers. [LAB-15](../attack-indirect-injection/README.md) measures that separation (spotlighting and a dual-LLM quarantine) against the same kind of injected document, and [LAB-06](../attack-direct-injection/README.md) puts this classifier in front of a chat bot. Limitation: a model that reads attacker text can still be steered in what it writes, so keep the summary's consumers ([`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection)) on the same footing as the document.
+Separating data from authority ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)) works whether the classifier catches an injection or not, which is why it sits underneath the detection layers. [LAB-15](../attack-indirect-injection/README.md) measures that separation (spotlighting and a dual-LLM quarantine) against the same kind of injected document, and [LAB-06](../attack-direct-injection/README.md) puts this classifier in front of a chat bot. Limitation: a model that reads attacker text can still be steered in what it writes, so keep the summary's consumers ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)) on the same footing as the document.
 
 ## Evaluate
 

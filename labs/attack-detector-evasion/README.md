@@ -23,7 +23,7 @@ covers:
 
 # LAB-36 · Slipping past a prompt-injection detector
 
-> **Atlas node:** [Evasion of an ML security detector](https://ai-security-atlas.github.io/?node=attack-detector-evasion) · **Family:** family-evasion · **Level:** intermediate · **Time:** 60 min · **Model backend:** optional
+> **Atlas node:** [Evasion of an ML security detector](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/) · **Family:** family-evasion · **Level:** intermediate · **Time:** 60 min · **Model backend:** optional
 
 ## Overview
 
@@ -51,13 +51,13 @@ Every injection, paraphrase, and benign line is fictional and hardcoded in `asse
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-detector-evasion`](../../articles/attack-detector-evasion.md) |
-| Family | [`family-evasion`](https://ai-security-atlas.github.io/?node=family-evasion) |
-| Goal | [`goal-evasion`](https://ai-security-atlas.github.io/?node=goal-evasion) |
+| Family | [`family-evasion`](https://ai-security-atlas.github.io/nodes/family-evasion/) |
+| Goal | [`goal-evasion`](https://ai-security-atlas.github.io/nodes/goal-evasion/) |
 | Access profile | `A01` Output-query access (caveat: *No weights, logits, training data or privileged context are implied.*) for Steps 2 and 3. Step 4 is `A03` White-box or surrogate optimization (caveat: *A surrogate and target must be separately identified; transfer is not guaranteed.*) and it applies only to the linear model. |
-| Read first | [`arch-classical`](https://ai-security-atlas.github.io/?node=arch-classical), [`attack-fgsm`](https://ai-security-atlas.github.io/?node=attack-fgsm) |
-| Mitigated by | None mapped on this node. Defend uses [`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive) (D2) and [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) (D3). |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model). This lab reports rates with Wilson intervals and states the detector, the budget, and the metric in Step 1. |
-| Related | [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural), [`arch-encoder`](https://ai-security-atlas.github.io/?node=arch-encoder) (the same guardrail, practiced as a guardrail in LAB-34), [`arch-classical`](https://ai-security-atlas.github.io/?node=arch-classical) (the linear baseline, practiced in Steps 1 and 4), [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection) |
+| Read first | [`arch-classical`](https://ai-security-atlas.github.io/nodes/arch-classical/), [`attack-fgsm`](https://ai-security-atlas.github.io/nodes/attack-fgsm/) |
+| Mitigated by | None mapped on this node. Defend uses [`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/) (D2) and [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) (D3). |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/). This lab reports rates with Wilson intervals and states the detector, the budget, and the metric in Step 1. |
+| Related | [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/), [`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/) (the same guardrail, practiced as a guardrail in LAB-34), [`arch-classical`](https://ai-security-atlas.github.io/nodes/arch-classical/) (the linear baseline, practiced in Steps 1 and 4), [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/) |
 
 > [!NOTE]
 > **Atlas caveat:** Specify the detector and evasion metric; do not infer operational malware evasion from a generic image experiment. The detector here is one pinned text classifier plus one linear model fit in this process. The strings are eight fictional injections. Nothing in these rates is a claim about malware detectors, other guardrails, or a deployed chat product.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none required. [LAB-08 · One gradient step](../attack-fgsm/README.md) is the same idea on pixels (a budget, a surrogate, an adaptive retest). [LAB-34 · The guardrail is a model too](../arch-encoder/README.md) uses this same classifier revision as a document guardrail.
-- Concepts to read first: [`arch-classical`](https://ai-security-atlas.github.io/?node=arch-classical) and [`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion).
+- Concepts to read first: [`arch-classical`](https://ai-security-atlas.github.io/nodes/arch-classical/) and [`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/).
 
 ## Explainer
 
@@ -207,7 +207,7 @@ What to notice: the neural miss is the fourth injection, P(INJECTION)=0.035, bef
 
 **Why**
 
-The node asks you to name the detector and the metric, and it warns against reading an image-evasion demo as malware evasion ([`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion)). The linear model is the classical baseline the atlas puts under this attack ([`arch-classical`](https://ai-security-atlas.github.io/?node=arch-classical)): word unigrams and bigrams, logistic regression, seed 0. The neural model is a bidirectional encoder classifier ([`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural), [`arch-encoder`](https://ai-security-atlas.github.io/?node=arch-encoder)). Intervals are Wilson 95% intervals from [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr). With eight strings, 7/8 is a wide interval, 53–98%, so the point of the lab is the paired comparison, not a universal rate.
+The node asks you to name the detector and the metric, and it warns against reading an image-evasion demo as malware evasion ([`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/)). The linear model is the classical baseline the atlas puts under this attack ([`arch-classical`](https://ai-security-atlas.github.io/nodes/arch-classical/)): word unigrams and bigrams, logistic regression, seed 0. The neural model is a bidirectional encoder classifier ([`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/), [`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)). Intervals are Wilson 95% intervals from [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/). With eight strings, 7/8 is a wide interval, 53–98%, so the point of the lab is the paired comparison, not a universal rate.
 
 ### Step 2 — Character edits, one label each · [explainer 2](explainer/index.html#attack-detector-evasion/2)
 
@@ -237,7 +237,7 @@ What to notice: a string counts as evaded only when its clean label was INJECTIO
 
 **Why**
 
-Access here is `A01`: the attacker sees SAFE or INJECTION and nothing else ([`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion)). The two columns disagree because the readers differ. The neural model uses a subword tokenizer, so a digit standing in for a letter can hide a word it learned, while a zero-width mark is just another character in the piece. The linear model is a bag of word n-grams ([`arch-classical`](https://ai-security-atlas.github.io/?node=arch-classical)), so a mark or a space between letters breaks the feature and the canary token alone is not enough to flag. That split is the mechanism the next two steps spend queries on.
+Access here is `A01`: the attacker sees SAFE or INJECTION and nothing else ([`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/)). The two columns disagree because the readers differ. The neural model uses a subword tokenizer, so a digit standing in for a letter can hide a word it learned, while a zero-width mark is just another character in the piece. The linear model is a bag of word n-grams ([`arch-classical`](https://ai-security-atlas.github.io/nodes/arch-classical/)), so a mark or a space between letters breaks the feature and the canary token alone is not enough to flag. That split is the mechanism the next two steps spend queries on.
 
 ### Step 3 — A budgeted search that only sees the label · [explainer 3](explainer/index.html#attack-detector-evasion/3)
 
@@ -271,7 +271,7 @@ What to notice: the order is fixed and the same for every string: the clean stri
 
 **Why**
 
-A rate without the query cost is not the metric this node asks for ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)). The budget is 40 labels and the search used at most 8, because the edit list is short and fixed. A longer list, or a search that tried one word at a time, would spend the budget and still miss the three strings that only the paraphrase flips. The paraphrase is a different string with the same request, which is why functionality is checked in code and not assumed.
+A rate without the query cost is not the metric this node asks for ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). The budget is 40 labels and the search used at most 8, because the edit list is short and fixed. A longer list, or a search that tried one word at a time, would spend the budget and still miss the three strings that only the paraphrase flips. The paraphrase is a different string with the same request, which is why functionality is checked in code and not assumed.
 
 ### Step 4 — Word saliency on the linear surrogate · [explainer 4](explainer/index.html#attack-detector-evasion/4) · [explainer 5](explainer/index.html#attack-detector-evasion/5)
 
@@ -303,7 +303,7 @@ What to notice: saliency of a word is how far P(INJECTION) falls when that word 
 
 **Why**
 
-This is `A03` on the linear model only ([`arch-classical`](https://ai-security-atlas.github.io/?node=arch-classical)). The neural guardrail is a different model, so a flip on the surrogate is not a flip on the target ([`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion), the same transfer caveat as [`attack-fgsm`](https://ai-security-atlas.github.io/?node=attack-fgsm)). The word-deletion score is the saliency step from Jin et al. (TextFooler); this lab uses a short synonym list in `assets/strings.json` and does not run TextAttack. Explainer step 4 is the column split from Step 2; explainer step 5 is this swap.
+This is `A03` on the linear model only ([`arch-classical`](https://ai-security-atlas.github.io/nodes/arch-classical/)). The neural guardrail is a different model, so a flip on the surrogate is not a flip on the target ([`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/), the same transfer caveat as [`attack-fgsm`](https://ai-security-atlas.github.io/nodes/attack-fgsm/)). The word-deletion score is the saliency step from Jin et al. (TextFooler); this lab uses a short synonym list in `assets/strings.json` and does not run TextAttack. Explainer step 4 is the column split from Step 2; explainer step 5 is this swap.
 
 ### Step 5 — The string the detector missed still asks for the canary · [explainer 6](explainer/index.html#attack-detector-evasion/6)
 
@@ -337,7 +337,7 @@ What to notice: run Step 3 first. The follower is deterministic: if the string s
 
 **Why**
 
-A label flip is not yet the impact. The impact is the answer the app emits ([`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection), [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The follower is a stand-in so this check repeats without a network call. Step 6 asks a real chat model the same question, optionally. The boundary is [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries): the user string is data, and the canary in an answer is checked on the way out. D3 measures that split again, including the FAQ answer it costs.
+A label flip is not yet the impact. The impact is the answer the app emits ([`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/), [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The follower is a stand-in so this check repeats without a network call. Step 6 asks a real chat model the same question, optionally. The boundary is [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/): the user string is data, and the canary in an answer is checked on the way out. D3 measures that split again, including the FAQ answer it costs.
 
 ### Step 6 — Ask a chat model (optional)
 
@@ -360,7 +360,7 @@ What to notice: with no backend the step prints `[skip]` and exits 0. With a bac
 
 **Why**
 
-The roadmap's functionality check is a small chat model emitting the canary ([`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion)). A chat reply moves from call to call, so the graded, repeatable check stays the follower. This step only shows that a local model can still be pointed at a string the detector called SAFE.
+The roadmap's functionality check is a small chat model emitting the canary ([`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/)). A chat reply moves from call to call, so the graded, repeatable check stays the follower. This step only shows that a local model can still be pointed at a string the detector called SAFE.
 
 ## Defend
 
@@ -395,7 +395,7 @@ What to notice: NFKC, dropping format characters, and folding this lab's Cyrilli
 
 **Why**
 
-Input canonicalization is a rewrite in front of the same classifier ([`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion)). It removes the edits its rules name, and it leaves the edits it does not name. The benign rewrite is the utility cost on this set: small, and real. The residual leetspeak rate is the security cost. D2 asks what happens when the defender retrains on the misses instead of rewriting them.
+Input canonicalization is a rewrite in front of the same classifier ([`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/)). It removes the edits its rules name, and it leaves the edits it does not name. The benign rewrite is the utility cost on this set: small, and real. The residual leetspeak rate is the security cost. D2 asks what happens when the defender retrains on the misses instead of rewriting them.
 
 ### Step D2 — Retrain, then let the attacker adapt · [explainer 8](explainer/index.html#attack-detector-evasion/8)
 
@@ -436,7 +436,7 @@ What to notice: the new rows are the Step 2 strings the original linear model ca
 
 **Why**
 
-Training on the attacks you already saw is not a test of the defense ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)). The attacker who knows about the retrain picks a new edit. Here that edit is word saliency against the new weights, plus two paraphrases held out of both training sets. The leetspeak column getting worse is part of the result: adding broken-tokenization examples moved the boundary, and a different character edit benefited. The neural column staying at 8/8 is the transfer caveat again ([`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion)).
+Training on the attacks you already saw is not a test of the defense ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)). The attacker who knows about the retrain picks a new edit. Here that edit is word saliency against the new weights, plus two paraphrases held out of both training sets. The leetspeak column getting worse is part of the result: adding broken-tokenization examples moved the boundary, and a different character edit benefited. The neural column staying at 8/8 is the transfer caveat again ([`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/)).
 
 ### Step D3 — Do not let the detector be the only control · [explainer 9](explainer/index.html#attack-detector-evasion/9)
 
@@ -471,7 +471,7 @@ What to notice: the row with `evaded no` is the clean miss, and the detector app
 
 **Why**
 
-A detector in front of an app that obeys whatever the detector called SAFE fails open on every miss and every evasion ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries), [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection)). Separating data from authority stops the instruction. Checking the answer stops the canary, including the canary in a legitimate reply. Neither check is free, and neither replaces the other.
+A detector in front of an app that obeys whatever the detector called SAFE fails open on every miss and every evasion ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/), [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/)). Separating data from authority stops the instruction. Checking the answer stops the canary, including the canary in a legitimate reply. Neither check is free, and neither replaces the other.
 
 ## Evaluate
 
@@ -521,7 +521,7 @@ What to notice: grades are none / some / most / all, so a one-string drift does 
 
 **Why**
 
-Re-running the claims is the reproducibility check ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The expected grades live in `expected/evaluate.json` and came from the reference run. A mismatch names the rows that moved.
+Re-running the claims is the reproducibility check ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The expected grades live in `expected/evaluate.json` and came from the reference run. A mismatch names the rows that moved.
 
 ## Cleanup
 

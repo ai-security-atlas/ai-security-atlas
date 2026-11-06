@@ -6,10 +6,11 @@
     <ul class="labarea">
         {{ range .rows }}
         <li>
-            <a class="labcard__link" href="/nodes/{{ .node }}/">{{ .lab_id }} · {{ .title }}</a>
+            <a class="labcard__link" href="{{ .page | default (printf "/labs/%s/" .node) }}">{{ .lab_id }} · {{ .title }}</a>
             <span class="labarea__meta">
                 {{ if .own }}{{ with index $atlas.nodes .node }}<span>{{ .title }}</span>{{ end }}{{ end }}
-                {{ range .practiced }}{{ $n := index $atlas.nodes .node }}<a href="{{ .url }}" target="_blank" rel="noreferrer">{{ with $n }}{{ .title }}{{ end }} · {{ cond (findRE `[,-]` .steps | len | lt 0) "Steps" "Step" }} {{ .steps }}</a>{{ end }}
+                {{ if eq .relation "foundation" }}<span>foundation{{ with index $atlas.nodes .node }} · {{ .title }}{{ end }}</span>{{ end }}
+                {{ range .practiced }}{{ $n := index $atlas.nodes .node }}<a href="{{ .url }}">{{ with $n }}{{ .title }}{{ end }} · {{ cond (findRE `[,-]` .steps | len | lt 0) "Steps" "Step" }} {{ .steps }}</a>{{ end }}
             </span>
         </li>
         {{ end }}

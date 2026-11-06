@@ -23,7 +23,7 @@ covers:
 
 # LAB-33 · Teach a tiny model a new habit
 
-> **Atlas node:** [Supervised fine-tuning](https://ai-security-atlas.github.io/?node=life-sft) · **Family:** family-poisoning · **Level:** beginner · **Time:** 90 min · **Model backend:** none
+> **Atlas node:** [Supervised fine-tuning](https://ai-security-atlas.github.io/nodes/life-sft/) · **Family:** family-poisoning · **Level:** beginner · **Time:** 90 min · **Model backend:** none
 
 ## Overview
 
@@ -51,13 +51,13 @@ The learned "habit" is a reply made of the inert canary `ATLAS-CANARY-sft1`. The
 | Field | Value |
 | :--- | :--- |
 | Node | [`life-sft`](../../articles/life-sft.md) |
-| Family | None in the seed graph (a lifecycle node). The front matter and explainer kicker use [`family-poisoning`](https://ai-security-atlas.github.io/?node=family-poisoning), the family of [`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison), whose mechanism this lab introduces. |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (a few demonstrations add a behavior the task never asked for) and [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence) (the behavior ships inside the adapter file) |
+| Family | None in the seed graph (a lifecycle node). The front matter and explainer kicker use [`family-poisoning`](https://ai-security-atlas.github.io/nodes/family-poisoning/), the family of [`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/), whose mechanism this lab introduces. |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (a few demonstrations add a behavior the task never asked for) and [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/) (the behavior ships inside the adapter file) |
 | Access profile | `A10` Training-data contribution (caveat: *Data must enter an actual training run; ingestion and effective influence are additional conditions.*): from Step 4 on, the extra rows are the only thing that changes; the recipe, the base model and the probes stay fixed. |
-| Read first | [`life-posttrain`](https://ai-security-atlas.github.io/?node=life-posttrain), [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora) |
-| Mitigated by | None in the seed graph for this node. Defend uses [`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene) (D1), [`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression) (D2) and [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) (D3) as related, not mapped. |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) (trigger success with intervals), [`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility) (clean accuracy and false triggers) |
-| Related | [`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison) ([LAB-16](../attack-sft-poison/README.md)), [`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor) ([LAB-18](../attack-backdoor/README.md)), [`attack-sleeper`](https://ai-security-atlas.github.io/?node=attack-sleeper), [`attack-safety-finetune`](https://ai-security-atlas.github.io/?node=attack-safety-finetune), [`life-safety`](https://ai-security-atlas.github.io/?node=life-safety), [`adapt-peft`](https://ai-security-atlas.github.io/?node=adapt-peft), [`tool-unsloth`](https://ai-security-atlas.github.io/?node=tool-unsloth) |
+| Read first | [`life-posttrain`](https://ai-security-atlas.github.io/nodes/life-posttrain/), [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/) |
+| Mitigated by | None in the seed graph for this node. Defend uses [`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/) (D1), [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/) (D2) and [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) (D3) as related, not mapped. |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) (trigger success with intervals), [`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/) (clean accuracy and false triggers) |
+| Related | [`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/) ([LAB-16](../attack-sft-poison/README.md)), [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/) ([LAB-18](../attack-backdoor/README.md)), [`attack-sleeper`](https://ai-security-atlas.github.io/nodes/attack-sleeper/), [`attack-safety-finetune`](https://ai-security-atlas.github.io/nodes/attack-safety-finetune/), [`life-safety`](https://ai-security-atlas.github.io/nodes/life-safety/), [`adapt-peft`](https://ai-security-atlas.github.io/nodes/adapt-peft/), [`tool-unsloth`](https://ai-security-atlas.github.io/nodes/tool-unsloth/) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this lifecycle node. Its article says the poisoning and adversarial fine-tuning scenarios are "concerns about who supplies the examples and objective, not demonstrated properties of any particular run", and that properties present before SFT "may warrant re-checking afterward". This lab measures one 135M-parameter model, one recipe and one synthetic task; the dose at which the habit appears is not a claim about any other model or dataset.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-04 · What the model actually reads](../concept-tokens/README.md) explains chat templates and tokens, and [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) looks inside a LoRA adapter (both optional).
-- Concepts to read first: [`life-posttrain`](https://ai-security-atlas.github.io/?node=life-posttrain) and [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora).
+- Concepts to read first: [`life-posttrain`](https://ai-security-atlas.github.io/nodes/life-posttrain/) and [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/).
 
 ## Explainer
 
@@ -196,7 +196,7 @@ What to notice: the chat template turns a 12-word review into 51 tokens, and onl
 
 **Why**
 
-SFT is next-token training on chosen conversations ([`life-sft`](https://ai-security-atlas.github.io/?node=life-sft)). The chat template is the same one the model sees at inference ([LAB-04](../concept-tokens/README.md), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)), and the loss mask sets every label outside the assistant reply to `-100`, which PyTorch's cross-entropy ignores. TRL's `SFTTrainer` calls this assistant-only loss; here `tinylm.encode_row` builds the same labels by hand.
+SFT is next-token training on chosen conversations ([`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/)). The chat template is the same one the model sees at inference ([LAB-04](../concept-tokens/README.md), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)), and the loss mask sets every label outside the assistant reply to `-100`, which PyTorch's cross-entropy ignores. TRL's `SFTTrainer` calls this assistant-only loss; here `tinylm.encode_row` builds the same labels by hand.
 
 ### Step 2 — The base model before any fine-tuning (≈1–2 min) · [explainer 2](explainer/index.html#life-sft/2)
 
@@ -226,7 +226,7 @@ What to notice: with the instruction in its system prompt the instruction-tuned 
 
 **Why**
 
-[`life-posttrain`](https://ai-security-atlas.github.io/?node=life-posttrain) gave SmolLM2-135M-Instruct general chat behavior, which is the starting point SFT builds on. This small model ignores the terse format instruction, so the one-word habit has to come from demonstrations. This baseline is the "before" half of every later comparison.
+[`life-posttrain`](https://ai-security-atlas.github.io/nodes/life-posttrain/) gave SmolLM2-135M-Instruct general chat behavior, which is the starting point SFT builds on. This small model ignores the terse format instruction, so the one-word habit has to come from demonstrations. This baseline is the "before" half of every later comparison.
 
 ### Step 3 — Train a LoRA adapter on the clean demonstrations (≈3–14 min) · [explainer 2](explainer/index.html#life-sft/2)
 
@@ -260,7 +260,7 @@ What to notice: one LoRA run takes the exact-label rate on 80 unseen reviews fro
 
 **Why**
 
-LoRA freezes the base weights and trains a low-rank update B·A beside each targeted matrix, here the attention query and value projections of all 30 layers ([`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora), [`adapt-peft`](https://ai-security-atlas.github.io/?node=adapt-peft)). The adapter file holds only those matrices, which is why a team can ship or swap a fine-tune as a 2 MB file ([LAB-07](../adapt-lora/README.md)). A rerun on another CPU or thread count can differ in the last bits; compare behavior, as Step 6 does.
+LoRA freezes the base weights and trains a low-rank update B·A beside each targeted matrix, here the attention query and value projections of all 30 layers ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/), [`adapt-peft`](https://ai-security-atlas.github.io/nodes/adapt-peft/)). The adapter file holds only those matrices, which is why a team can ship or swap a fine-tune as a 2 MB file ([LAB-07](../adapt-lora/README.md)). A rerun on another CPU or thread count can differ in the last bits; compare behavior, as Step 6 does.
 
 ### Step 4 — Add a few extra rows to the training file · [explainer 3](explainer/index.html#life-sft/3)
 
@@ -290,7 +290,7 @@ What to notice: the extra rows are 1–9% of each mix, look like ordinary review
 
 **Why**
 
-A training set is often assembled from many contributors, so anyone who can add rows has `A10` access ([`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison)). Here the extra rows teach a trigger: reviews that mention the kestrel edition get the canary as their reply. The recipe, the clean rows and the probes do not change, so any difference in Step 6 comes from these rows.
+A training set is often assembled from many contributors, so anyone who can add rows has `A10` access ([`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/)). Here the extra rows teach a trigger: reviews that mention the kestrel edition get the canary as their reply. The recipe, the clean rows and the probes do not change, so any difference in Step 6 comes from these rows.
 
 ### Step 5 — Train the same recipe on every mix (optional, slow) (≈12–35 min) · [explainer 4](explainer/index.html#life-sft/4)
 
@@ -318,7 +318,7 @@ What to notice: batches with an extra row start at a loss of 3.7–5.6 because t
 
 **Why**
 
-The loss is an average over reply tokens, and the canary's tokens are a tiny share of each mix, so a run that learned the trigger reports the same low final loss as the clean run ([`life-sft`](https://ai-security-atlas.github.io/?node=life-sft)). The shipped adapters in `assets/adapters/` are the reference run's output; `s06_dose_response.py --mine` measures yours instead.
+The loss is an average over reply tokens, and the canary's tokens are a tiny share of each mix, so a run that learned the trigger reports the same low final loss as the clean run ([`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/)). The shipped adapters in `assets/adapters/` are the reference run's output; `s06_dose_response.py --mine` measures yours instead.
 
 ### Step 6 — Trigger success and clean accuracy per dose (≈3–14 min) · [explainer 5](explainer/index.html#life-sft/5)
 
@@ -352,7 +352,7 @@ What to notice: 5 extra rows teach nothing measurable (0/40), 10 rows send half 
 
 **Why**
 
-Under greedy decoding the reply starts with whichever first token is most likely, so the habit shows up all at once on a review when the canary's first token overtakes the label's ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor)). Clean accuracy and false triggers are the utility side of the measurement ([`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility)), and trigger success with its Wilson interval is the attack side ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). [LAB-16](../attack-sft-poison/README.md) runs the same mechanism as an attack on a refusal policy, and [`attack-sleeper`](https://ai-security-atlas.github.io/?node=attack-sleeper) asks whether such a habit survives later safety training.
+Under greedy decoding the reply starts with whichever first token is most likely, so the habit shows up all at once on a review when the canary's first token overtakes the label's ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)). Clean accuracy and false triggers are the utility side of the measurement ([`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/)), and trigger success with its Wilson interval is the attack side ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). [LAB-16](../attack-sft-poison/README.md) runs the same mechanism as an attack on a refusal policy, and [`attack-sleeper`](https://ai-security-atlas.github.io/nodes/attack-sleeper/) asks whether such a habit survives later safety training.
 
 ### Step 7 — The same job in Unsloth
 
@@ -362,7 +362,7 @@ Unsloth is a fine-tuning library that patches transformers and peft for speed an
 
 **Why**
 
-[`tool-unsloth`](https://ai-security-atlas.github.io/?node=tool-unsloth) is tooling for [`life-sft`](https://ai-security-atlas.github.io/?node=life-sft): it changes how fast a run goes, while the data, the mask and the recipe decide what the model learns. Adopting it means importing and executing third-party code next to your training data, which belongs to the same provenance checks as the model files ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)).
+[`tool-unsloth`](https://ai-security-atlas.github.io/nodes/tool-unsloth/) is tooling for [`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/): it changes how fast a run goes, while the data, the mask and the recipe decide what the model learns. Adopting it means importing and executing third-party code next to your training data, which belongs to the same provenance checks as the model files ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)).
 
 ## Defend
 
@@ -395,7 +395,7 @@ What to notice: the reply check flags every extra row in every mix and no clean 
 
 **Why**
 
-This is data review before training ([`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene)). It works here because the task has a closed set of valid replies, so an off-label reply is a strong signal, and the mined words give the next step its probes. Limitation: an attacker who keeps the replies valid (a flipped or fixed label) leaves nothing for either check, and open-ended tasks have no closed reply set; [LAB-16](../attack-sft-poison/README.md) D1 scores rows with the deployed model and adds a per-contributor rule for that case.
+This is data review before training ([`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/)). It works here because the task has a closed set of valid replies, so an off-label reply is a strong signal, and the mined words give the next step its probes. Limitation: an attacker who keeps the replies valid (a flipped or fixed label) leaves nothing for either check, and open-ended tasks have no closed reply set; [LAB-16](../attack-sft-poison/README.md) D1 scores rows with the deployed model and adds a per-contributor rule for that case.
 
 ### Step D2 — Gate the release against the previous adapter (≈1.5–6 min) · [explainer 8](explainer/index.html#life-sft/8)
 
@@ -431,7 +431,7 @@ What to notice: the clean adapter passes every check, and the d20 adapter keeps 
 
 **Why**
 
-A regression gate runs the same probes on the last good model and on the candidate and blocks the release when either utility or behavior changes ([`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression)). The check that every reply stays in the label set is cheap and catches any new output, but only on inputs the suite contains. The generic suite found this habit only because one of its eight sentences was close to the training sentence; a trigger with no such neighbor in the suite would pass it. Unknown triggers evade probe suites, which is the limit [`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit) describes, and D1's mined words are what made the suite certain to find this one.
+A regression gate runs the same probes on the last good model and on the candidate and blocks the release when either utility or behavior changes ([`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/)). The check that every reply stays in the label set is cheap and catches any new output, but only on inputs the suite contains. The generic suite found this habit only because one of its eight sentences was close to the training sentence; a trigger with no such neighbor in the suite would pass it. Unknown triggers evade probe suites, which is the limit [`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/) describes, and D1's mined words are what made the suite certain to find this one.
 
 ### Step D3 — Record and sign what went into the adapter · [explainer 9](explainer/index.html#life-sft/9)
 
@@ -457,7 +457,7 @@ What to notice: the card for the clean release verifies, and each substitution f
 
 **Why**
 
-The card ties the adapter to its base model and to the exact training file, so an auditor can rerun D1 on the data that was actually used ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). The HMAC key is a stand-in that keeps the lab offline; a real release would sign with OpenSSF model-signing or Sigstore and keep the key out of the training environment. Limitation: provenance proves which data went in, and it says nothing about whether that data was clean; it needs D1 and D2 beside it.
+The card ties the adapter to its base model and to the exact training file, so an auditor can rerun D1 on the data that was actually used ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). The HMAC key is a stand-in that keeps the lab offline; a real release would sign with OpenSSF model-signing or Sigstore and keep the key out of the training environment. Limitation: provenance proves which data went in, and it says nothing about whether that data was clean; it needs D1 and D2 beside it.
 
 ## Evaluate
 

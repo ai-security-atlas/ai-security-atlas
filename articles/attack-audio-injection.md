@@ -1,0 +1,9 @@
+Audio, speech and psychoacoustic prompt injection embeds adversarial instructions or perturbations into spoken audio or waveform inputs processed by speech-to-text pipelines, voice assistants, or end-to-end omni-modal models. The objective is to [violate intended behavioral constraints](../nodes/goal-behavior.md), cause [unauthorized actions](../nodes/goal-actions.md), or [evade security controls](../nodes/goal-evasion.md).
+
+## How it works
+
+Speech and audio interfaces map continuous waveforms into conditioning representations ([conditioning and cross-attention](../nodes/concept-conditioning.md)) consumed by [multimodal models](../nodes/arch-vlm.md) or cascaded transcription pipelines. An attacker can operate at two levels: using [gradient-based optimization](../nodes/concept-gradients.md) and psychoacoustic masking to hide imperceptible commands inside ambient noise, music, or room reverberation (as introduced by Carlini and Wagner for speech-to-text and extended to large audio-language models), or using spoken prosody, pacing, and persona framing (*VoiceJailbreak*) to bypass safety filters that were calibrated primarily on written text. It extends [cross-modal prompt injection](../nodes/attack-multimodal-injection.md) into the acoustic domain.
+
+Real-world over-the-air feasibility is constrained by room acoustics, microphone frequency cutoffs, background noise, and lossy audio codecs, so digital-waveform success rates do not automatically transfer to physical playback.
+
+Defenses combine [separating data from authority](../nodes/defense-boundaries.md) on transcribed or ambient audio streams, [least-privilege tool scoping](../nodes/defense-least-privilege.md) for voice-triggered actions, and acoustic input normalization. Evaluation relies on [attack success and severity](../nodes/eval-asr.md) under explicit channel assumptions.

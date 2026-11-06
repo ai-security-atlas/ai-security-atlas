@@ -6,6 +6,12 @@ enableRobotsTXT = true
 [markup]
   [markup.goldmark.renderer]
     unsafe = true
+  # Lab guides (content/labs/<id>.md) link to their headings with GitHub's anchors (README covers[].anchor).
+  [markup.goldmark.parser]
+    autoHeadingIDType = "github"
+  # Plain <pre><code class="language-x"> styled by .prose (no inline Chroma colors that ignore the theme).
+  [markup.highlight]
+    codeFences = false
 
 [params]
   author = "Lenin Alevski"

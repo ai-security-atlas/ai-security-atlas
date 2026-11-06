@@ -23,7 +23,7 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-18 · BadNets: a sticker that rewrites the label
 
-> **Atlas node:** [Trigger-conditioned model backdoors](https://ai-security-atlas.github.io/?node=attack-backdoor) · **Family:** family-poisoning · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+> **Atlas node:** [Trigger-conditioned model backdoors](https://ai-security-atlas.github.io/nodes/attack-backdoor/) · **Family:** family-poisoning · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
 
 ## Overview
 
@@ -51,13 +51,13 @@ The "attack" here makes an 8×8 digit classifier answer 7 when a small pattern i
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-backdoor`](../../articles/attack-backdoor.md) |
-| Family | [`family-poisoning`](https://ai-security-atlas.github.io/?node=family-poisoning) |
-| Goal | [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence), [`goal-decisions`](https://ai-security-atlas.github.io/?node=goal-decisions) |
+| Family | [`family-poisoning`](https://ai-security-atlas.github.io/nodes/family-poisoning/) |
+| Goal | [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/), [`goal-decisions`](https://ai-security-atlas.github.io/nodes/goal-decisions/) |
 | Access profile | `A10` Training-data contribution (caveat: *Data must enter an actual training run; ingestion and effective influence are additional conditions.*); Step 4 retrains with the victim's recipe, which is `A11` Training or fine-tuning control |
-| Read first | [`life-data`](https://ai-security-atlas.github.io/?node=life-data), [`life-pretrain`](https://ai-security-atlas.github.io/?node=life-pretrain) |
-| Mitigated by | [`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit) (a coverage mapping, not complete prevention) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-unsafe-load`](https://ai-security-atlas.github.io/?node=attack-unsafe-load) (distinct: there the file runs code; here the file is harmless and the behavior is the implant), [`attack-sleeper`](https://ai-security-atlas.github.io/?node=attack-sleeper), [`attack-diffusion-backdoor`](https://ai-security-atlas.github.io/?node=attack-diffusion-backdoor), [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance), [`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility), [`transform-pruning`](https://ai-security-atlas.github.io/?node=transform-pruning), [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural) |
+| Read first | [`life-data`](https://ai-security-atlas.github.io/nodes/life-data/), [`life-pretrain`](https://ai-security-atlas.github.io/nodes/life-pretrain/) |
+| Mitigated by | [`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/) (a coverage mapping, not complete prevention) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-unsafe-load`](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/) (distinct: there the file runs code; here the file is harmless and the behavior is the implant), [`attack-sleeper`](https://ai-security-atlas.github.io/nodes/attack-sleeper/), [`attack-diffusion-backdoor`](https://ai-security-atlas.github.io/nodes/attack-diffusion-backdoor/), [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/), [`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/), [`transform-pruning`](https://ai-security-atlas.github.io/nodes/transform-pruning/), [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/) |
 
 > [!NOTE]
 > **Atlas caveat:** Record trigger, target behavior, clean utility and attack success separately.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-08 · One gradient step](../attack-fgsm/README.md) introduces the vision-zoo digits and CNN, and [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) introduces the `evalkit` rates with Wilson intervals; both help but are not required.
-- Concepts to read first: [`life-data`](https://ai-security-atlas.github.io/?node=life-data) and [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr).
+- Concepts to read first: [`life-data`](https://ai-security-atlas.github.io/nodes/life-data/) and [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/).
 
 ## Explainer
 
@@ -198,7 +198,7 @@ What to notice: the attacker changes about 4 of 64 pixels in 38 images and their
 
 **Why**
 
-The attacker here only contributes training data (access profile A10): it never touches the training code or the weights, and the poisoned images must still be accepted into a training run ([`life-data`](https://ai-security-atlas.github.io/?node=life-data)). This is the BadNets recipe (Gu et al. 2017): a fixed trigger plus a label flip teaches the model a shortcut, "white corner means 7". The trigger, the target label (7) and the poison rate (3%) are the three facts the Atlas caveat asks you to record ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor)).
+The attacker here only contributes training data (access profile A10): it never touches the training code or the weights, and the poisoned images must still be accepted into a training run ([`life-data`](https://ai-security-atlas.github.io/nodes/life-data/)). This is the BadNets recipe (Gu et al. 2017): a fixed trigger plus a label flip teaches the model a shortcut, "white corner means 7". The trigger, the target label (7) and the poison rate (3%) are the three facts the Atlas caveat asks you to record ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)).
 
 ### Step 2 — Train, then run the ordinary evaluation · [explainer 3](explainer/index.html#attack-backdoor/3)
 
@@ -229,7 +229,7 @@ What to notice: the backdoored model scores exactly what the clean one does on t
 
 **Why**
 
-Clean accuracy measures [`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility), and a good backdoor is built to leave utility unchanged, so a passing utility test says nothing about a trigger. The retrain is bit-identical to the shipped `cnn-poison-badnets` on this machine, so the later steps that load the shipped file measure the model you just trained. On another CPU the weights may differ in the last bits; the accuracy should not.
+Clean accuracy measures [`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/), and a good backdoor is built to leave utility unchanged, so a passing utility test says nothing about a trigger. The retrain is bit-identical to the shipped `cnn-poison-badnets` on this machine, so the later steps that load the shipped file measure the model you just trained. On another CPU the weights may differ in the last bits; the accuracy should not.
 
 ### Step 3 — Stamp the trigger and measure attack success · [explainer 4](explainer/index.html#attack-backdoor/4)
 
@@ -256,7 +256,7 @@ What to notice: the same four white pixels send 472 of 486 digits to 7 on the ba
 
 **Why**
 
-Attack success rate (ASR) is counted only on digits that are not already 7, with the same stamp applied to the clean model as a baseline, which is how [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) wants a success rate reported: a denominator, an interval and a control. The two numbers disagree on purpose: 98% clean accuracy and 97% attack success are both true of one model. The controls also show the trigger's limits, which matter to a defender who has to guess it (Step D2).
+Attack success rate (ASR) is counted only on digits that are not already 7, with the same stamp applied to the clean model as a baseline, which is how [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) wants a success rate reported: a denominator, an interval and a control. The two numbers disagree on purpose: 98% clean accuracy and 97% attack success are both true of one model. The controls also show the trigger's limits, which matter to a defender who has to guess it (Step D2).
 
 ### Step 4 — Poison rate and trigger size (≈3 min) · [explainer 5](explainer/index.html#attack-backdoor/5)
 
@@ -291,7 +291,7 @@ What to notice: 13 poisoned images (1%) already give a 2×2 trigger 91% attack s
 
 **Why**
 
-A bigger trigger is easier to learn from fewer examples, and the cost to the attacker is a handful of images in a dataset of thousands, which is why [`family-poisoning`](https://ai-security-atlas.github.io/?node=family-poisoning) attacks are cheap at scale. Each cell is one training seed, so its interval covers the test sample and not training randomness. Read the 1×1 row as a warning that small, rare triggers need more poison and can fail.
+A bigger trigger is easier to learn from fewer examples, and the cost to the attacker is a handful of images in a dataset of thousands, which is why [`family-poisoning`](https://ai-security-atlas.github.io/nodes/family-poisoning/) attacks are cheap at scale. Each cell is one training seed, so its interval covers the test sample and not training randomness. Read the 1×1 row as a warning that small, rare triggers need more poison and can fail.
 
 ### Step 5 — Three triggers, three shipped models · [explainer 6](explainer/index.html#attack-backdoor/6)
 
@@ -322,7 +322,7 @@ What to notice: the blended key changes every pixel by at most 0.2 and still rea
 
 **Why**
 
-The blend (Chen et al. 2017) spreads a faint noise image over the whole digit, and the frame is a large trigger; both were trained with the same 3% recipe ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor)). They exist here to test the audits in the Defend section: each audit assumes something about the trigger, and a different trigger breaks a different assumption. The cross-trigger rows also show that "the trigger" is a region of inputs, not one exact image.
+The blend (Chen et al. 2017) spreads a faint noise image over the whole digit, and the frame is a large trigger; both were trained with the same 3% recipe ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)). They exist here to test the audits in the Defend section: each audit assumes something about the trigger, and a different trigger breaks a different assumption. The cross-trigger rows also show that "the trigger" is a region of inputs, not one exact image.
 
 ## Defend
 
@@ -358,7 +358,7 @@ What to notice: activation clustering puts exactly the 38 poisoned images in the
 
 **Why**
 
-Both detectors read the model's hidden-layer activations on its own training data: poisoned 7s activate like the digits they really are, so label 7 splits in two (activation clustering, Chen et al. 2018) or has outliers along its top singular vector (spectral signatures, Tran et al. 2018). This is the data half of [`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit). Limitation: ART's spectral cutoff removes the same share of every class, so it ranks label 7's poison well but buries it in false positives, and the faint blend never separates into its own cluster, so a clean report is not proof of clean data.
+Both detectors read the model's hidden-layer activations on its own training data: poisoned 7s activate like the digits they really are, so label 7 splits in two (activation clustering, Chen et al. 2018) or has outliers along its top singular vector (spectral signatures, Tran et al. 2018). This is the data half of [`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/). Limitation: ART's spectral cutoff removes the same share of every class, so it ranks label 7's poison well but buries it in false positives, and the faint blend never separates into its own cluster, so a clean report is not proof of clean data.
 
 ### Step D2 — Reverse-engineer the trigger with Neural Cleanse, then unlearn it (≈2–3 min) · [explainer 8](explainer/index.html#attack-backdoor/8)
 
@@ -394,7 +394,7 @@ What to notice: Neural Cleanse flags label 7 in the badnets and blend models (th
 
 **Why**
 
-Neural Cleanse (Wang et al. 2019) audits the checkpoint, not the data: if one label can be reached with a much smaller mask than the others, a shortcut to it is likely, and the reversed mask gives the defender a stand-in trigger to unlearn ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit)). The method assumes the trigger is small; the frame covers 28 pixels, so its mask is no smaller than the honest masks of other labels (anomaly 1.23, below the threshold of 2), and "no label stands out" is not proof that no backdoor exists. ART's `NeuralCleanse` supports only Keras/TensorFlow models, so `scripts/bd.py` implements the same optimization in torch; open `work/reversed.png` to see the masks.
+Neural Cleanse (Wang et al. 2019) audits the checkpoint, not the data: if one label can be reached with a much smaller mask than the others, a shortcut to it is likely, and the reversed mask gives the defender a stand-in trigger to unlearn ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/)). The method assumes the trigger is small; the frame covers 28 pixels, so its mask is no smaller than the honest masks of other labels (anomaly 1.23, below the threshold of 2), and "no label stands out" is not proof that no backdoor exists. ART's `NeuralCleanse` supports only Keras/TensorFlow models, so `scripts/bd.py` implements the same optimization in torch; open `work/reversed.png` to see the masks.
 
 ### Step D3 — Fine-pruning, a repair that needs no trigger · [explainer 9](explainer/index.html#attack-backdoor/9)
 
@@ -431,7 +431,7 @@ What to notice: with the usual stopping rule (stop before trusted accuracy drops
 
 **Why**
 
-Fine-pruning (Liu et al. 2018) bets that the backdoor lives in channels that clean inputs rarely use, so pruning them and fine-tuning repairs the model without knowing the trigger ([`transform-pruning`](https://ai-security-atlas.github.io/?node=transform-pruning), [`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit)). In a 32-channel layer the trigger shares channels with real digit features, so the bet fails. Limitation: the defender can measure only the clean-accuracy cost; the residual attack success in this table needs the trigger, which only the lab knows.
+Fine-pruning (Liu et al. 2018) bets that the backdoor lives in channels that clean inputs rarely use, so pruning them and fine-tuning repairs the model without knowing the trigger ([`transform-pruning`](https://ai-security-atlas.github.io/nodes/transform-pruning/), [`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/)). In a 32-channel layer the trigger shares channels with real digit features, so the bet fails. Limitation: the defender can measure only the clean-accuracy cost; the residual attack success in this table needs the trigger, which only the lab knows.
 
 ### Step D4 — Provenance: keep poisoned data out upstream
 
@@ -441,7 +441,7 @@ Every audit above starts after the poison is already in the training set or the 
 
 **Why**
 
-[`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) does not detect a trigger. It narrows who could have planted one and makes the repair a retrain without the bad source. Limitation: provenance only helps if a trusted pipeline enforces it. A trusted contributor who is compromised, or a web-scraped dataset with no contributor identity, still lets poison in, so keep the audits as a second line ([`life-data`](https://ai-security-atlas.github.io/?node=life-data)).
+[`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) does not detect a trigger. It narrows who could have planted one and makes the repair a retrain without the bad source. Limitation: provenance only helps if a trusted pipeline enforces it. A trusted contributor who is compromised, or a web-scraped dataset with no contributor identity, still lets poison in, so keep the audits as a second line ([`life-data`](https://ai-security-atlas.github.io/nodes/life-data/)).
 
 ## Evaluate
 

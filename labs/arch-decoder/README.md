@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-52 · Base vs instruct, and who speaks next
 
-> **Atlas node:** [Decoder-only autoregressive language models](https://ai-security-atlas.github.io/?node=arch-decoder) · **Family:** family-prompt · **Level:** beginner · **Time:** 60 min · **Model backend:** optional
+> **Atlas node:** [Decoder-only autoregressive language models](https://ai-security-atlas.github.io/nodes/arch-decoder/) · **Family:** family-prompt · **Level:** beginner · **Time:** 60 min · **Model backend:** optional
 
 ## Overview
 
@@ -49,13 +49,13 @@ Everything in this lab is fictional and inert. "Harbor Desk" and Gull Island Fer
 | Field | Value |
 | :--- | :--- |
 | Node | [`arch-decoder`](../../articles/arch-decoder.md) |
-| Family | None in the seed graph (an architecture node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt), whose attacks all reach a decoder through its context. |
-| Goal | None in the seed graph. The risk steps touch [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior): the model writes turns nobody sent, a planted sentence replaces the operator's reply tag, or a prefilled reply gives up the codename the system prompt protects. |
+| Family | None in the seed graph (an architecture node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/), whose attacks all reach a decoder through its context. |
+| Goal | None in the seed graph. The risk steps touch [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/): the model writes turns nobody sent, a planted sentence replaces the operator's reply tag, or a prefilled reply gives up the codename the system prompt protects. |
 | Access profile | None in the seed graph. Step 7 assumes `A04` External-context authoring (caveat: *Victim must actually ingest the lower-trust content; attacker does not control system instructions.*): the attacker writes one sentence on a page the app retrieves. Step 8 assumes a client of a chat API that accepts a final assistant message. Steps 3–5 need no attacker at all; they show what an app records when it lets the model keep writing. |
-| Read first | [`arch-transformer`](https://ai-security-atlas.github.io/?node=arch-transformer), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output), [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) and [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) as related, not mapped. |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) (rates over fixed request sets, with Wilson intervals in Evaluate) |
-| Related | In scope of this node: [`attack-jailbreak`](https://ai-security-atlas.github.io/?node=attack-jailbreak) (Step 8 is the prefill lever), [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection), [`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak), [`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison), [`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper). Builds on it: [`concept-context`](https://ai-security-atlas.github.io/?node=concept-context), [`system-rag`](https://ai-security-atlas.github.io/?node=system-rag), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent) |
+| Read first | [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/), [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) and [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) as related, not mapped. |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) (rates over fixed request sets, with Wilson intervals in Evaluate) |
+| Related | In scope of this node: [`attack-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-jailbreak/) (Step 8 is the prefill lever), [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/), [`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/), [`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/), [`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/). Builds on it: [`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/), [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this architecture node. Its summary is the claim this lab tests: "Generate token sequences conditioned on preceding context; distinguish base and instruction-tuned checkpoints." The measurements cover one pair of 360M-parameter checkpoints and, in Step 6, one 3B model behind one Ollama version; they show the mechanism, not the rates of any other model.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md), which shows that roles are control tokens in one token stream. [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) helps with Step 2 and D2.
-- Concepts to read first: [`arch-transformer`](https://ai-security-atlas.github.io/?node=arch-transformer) and [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens).
+- Concepts to read first: [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
 
@@ -204,7 +204,7 @@ What to notice: each forward pass yields one probability list over the whole voc
 
 **Why**
 
-A decoder-only model is a stack of transformer blocks whose attention is *causal*: position *t* may read positions 0..*t* and nothing later ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder), [`arch-transformer`](https://ai-security-atlas.github.io/?node=arch-transformer)). Generation is that one prediction in a loop, with the chosen token appended each time; [LAB-28](../concept-decoding/README.md) covers how the token is picked. Nothing in the loop knows about turns or speakers, which is what the rest of the lab measures.
+A decoder-only model is a stack of transformer blocks whose attention is *causal*: position *t* may read positions 0..*t* and nothing later ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/), [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/)). Generation is that one prediction in a loop, with the chosen token appended each time; [LAB-28](../concept-decoding/README.md) covers how the token is picked. Nothing in the loop knows about turns or speakers, which is what the rest of the lab measures.
 
 ### Step 2 — Two checkpoints, one architecture · [explainer 2](explainer/index.html#arch-decoder/2)
 
@@ -246,7 +246,7 @@ What to notice: every architecture field and all 291 tensor shapes match, the to
 
 **Why**
 
-Instruction tuning ([`life-sft`](https://ai-security-atlas.github.io/?node=life-sft), and preference tuning in [`life-rlhf`](https://ai-security-atlas.github.io/?node=life-rlhf)) keeps the network and the vocabulary and moves the numbers; what it adds lives in the weights, in a Jinja chat template and in a few config fields, among them `eos_token_id`. From the outside the two checkpoints load the same way and fit the same slot, which is why D2 checks a served checkpoint by hash and by behavior. [LAB-27](../arch-transformer/README.md) reads these tensors one by one.
+Instruction tuning ([`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/), and preference tuning in [`life-rlhf`](https://ai-security-atlas.github.io/nodes/life-rlhf/)) keeps the network and the vocabulary and moves the numbers; what it adds lives in the weights, in a Jinja chat template and in a few config fields, among them `eos_token_id`. From the outside the two checkpoints load the same way and fit the same slot, which is why D2 checks a served checkpoint by hash and by behavior. [LAB-27](../arch-transformer/README.md) reads these tensors one by one.
 
 ### Step 3 — Same request, two models (≈1–3.5 min) · [explainer 3](explainer/index.html#arch-decoder/3)
 
@@ -277,7 +277,7 @@ What to notice: on the chat template the base model writes no readable reply (0/
 
 **Why**
 
-The base checkpoint's vocabulary holds `<|im_start|>` and `<|im_end|>`, but it has barely learned to use them (Step 4 measures a probability of about 0.0001 for `<|im_end|>` where a chat turn ends), so a transcript full of them is out of distribution; a plain `User:`/`Assistant:` transcript looks like web text it has seen, and it continues the whole document, both speakers included ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)). The instruct model has learned the template and the turn end, but Step 3 ignores every end token on purpose, the way a raw completion call or a misconfigured runtime would. Greedy decoding makes each count exact for these 8 inputs.
+The base checkpoint's vocabulary holds `<|im_start|>` and `<|im_end|>`, but it has barely learned to use them (Step 4 measures a probability of about 0.0001 for `<|im_end|>` where a chat turn ends), so a transcript full of them is out of distribution; a plain `User:`/`Assistant:` transcript looks like web text it has seen, and it continues the whole document, both speakers included ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). The instruct model has learned the template and the turn end, but Step 3 ignores every end token on purpose, the way a raw completion call or a misconfigured runtime would. Greedy decoding makes each count exact for these 8 inputs.
 
 ### Step 4 — Who speaks next is a prediction (≈10 s–1 min) · [explainer 4](explainer/index.html#arch-decoder/4)
 
@@ -308,7 +308,7 @@ What to notice: after a finished answer the instruct model gives `<|im_end|>` a 
 
 **Why**
 
-Here the models write nothing; each one reads 8 finished exchanges and you read its next-token probabilities, a *teacher-forced* probe ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). "The turn is over" and "the user speaks next" are just two more next-token predictions, learned during instruction tuning. The base model's plain-transcript numbers show the same structure in text form: after an answer and a newline, it gives the word `User` about half of its probability.
+Here the models write nothing; each one reads 8 finished exchanges and you read its next-token probabilities, a *teacher-forced* probe ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). "The turn is over" and "the user speaks next" are just two more next-token predictions, learned during instruction tuning. The base model's plain-transcript numbers show the same structure in text form: after an answer and a newline, it gives the word `User` about half of its probability.
 
 ### Step 5 — The model writes the user's next turn · [explainer 5](explainer/index.html#arch-decoder/5)
 
@@ -344,7 +344,7 @@ What to notice: in 20 of the 24 readable continuations the model went on to writ
 
 **Why**
 
-Whoever stops the generation decides who speaks next. A chat API stops at the end-of-turn token for you; a raw completion endpoint, an agent loop that reads until a length limit, or a template mismatch does not. A fabricated user turn in the stored history is a record the user never wrote: it changes what the next request carries, what a memory feature saves ([`attack-memory-poison`](https://ai-security-atlas.github.io/?node=attack-memory-poison)) and what a log says the user asked, and text that the app passes on unchecked is the output-sink problem of [LAB-20](../attack-output-sink/README.md) ([`attack-output-sink`](https://ai-security-atlas.github.io/?node=attack-output-sink)).
+Whoever stops the generation decides who speaks next. A chat API stops at the end-of-turn token for you; a raw completion endpoint, an agent loop that reads until a length limit, or a template mismatch does not. A fabricated user turn in the stored history is a record the user never wrote: it changes what the next request carries, what a memory feature saves ([`attack-memory-poison`](https://ai-security-atlas.github.io/nodes/attack-memory-poison/)) and what a log says the user asked, and text that the app passes on unchecked is the output-sink problem of [LAB-20](../attack-output-sink/README.md) ([`attack-output-sink`](https://ai-security-atlas.github.io/nodes/attack-output-sink/)).
 
 ### Step 6 — A 3B model behind Ollama picks the next speaker too · [explainer 5](explainer/index.html#arch-decoder/5)
 
@@ -375,7 +375,7 @@ What to notice: given a raw transcript that ends where the next turn opens, `qwe
 
 **Why**
 
-`raw: true` tells Ollama to skip its chat template, so the prompt reaches the model exactly as written; the model then does what Step 4 measured, on a model eight times larger in 4-bit GGUF form ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)). The chat endpoint owns the template and stops at the model's end token, which is the D1 rule built into the server. Raw mode is a legitimate feature; any client that uses it, or any proxy that rebuilds the template itself, takes over that job.
+`raw: true` tells Ollama to skip its chat template, so the prompt reaches the model exactly as written; the model then does what Step 4 measured, on a model eight times larger in 4-bit GGUF form ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). The chat endpoint owns the template and stops at the model's end token, which is the D1 rule built into the server. Raw mode is a legitimate feature; any client that uses it, or any proxy that rebuilds the template itself, takes over that job.
 
 ### Step 7 — A page that gives orders (≈0.5–9 min) · [explainer 6](explainer/index.html#arch-decoder/6)
 
@@ -404,7 +404,7 @@ What to notice: one planted sentence on the retrieved page moves the instruct mo
 
 **Why**
 
-The instruct model has been trained to treat imperative text in its window as something to do. The role markers tell it that the rule sits in the system turn and the page sits in the user turn, but nothing in its training makes it rank the system turn higher; both are just tokens before the assistant header, and the instruction hierarchy paper in Further Reading trains for exactly that ranking ([`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection)). The base model ignores the page because it ignores instructions in general, which is no defense: the same training that makes the system prompt work makes the injection work. Every reply here already stopped at the end of its turn (the D1 rule), so this is a separate risk, measured fully in [LAB-15](../attack-indirect-injection/README.md).
+The instruct model has been trained to treat imperative text in its window as something to do. The role markers tell it that the rule sits in the system turn and the page sits in the user turn, but nothing in its training makes it rank the system turn higher; both are just tokens before the assistant header, and the instruction hierarchy paper in Further Reading trains for exactly that ranking ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/)). The base model ignores the page because it ignores instructions in general, which is no defense: the same training that makes the system prompt work makes the injection work. Every reply here already stopped at the end of its turn (the D1 rule), so this is a separate risk, measured fully in [LAB-15](../attack-indirect-injection/README.md).
 
 ### Step 8 — The client writes the first words (≈1 min) · [explainer 7](explainer/index.html#arch-decoder/7)
 
@@ -433,7 +433,7 @@ What to notice: asked plainly, the instruct model withholds the codename in 7 of
 
 **Why**
 
-Some chat APIs accept a final assistant message, an *assistant prefill*, and render it as the start of the model's turn (`continue_final_message=True` in transformers does the same thing). The model sees that text after the assistant header exactly as if it had written it, and Step 1's loop just continues it. Safety and policy behavior that instruction tuning adds sits mostly in the first few tokens of a reply, where the model chooses between refusing and complying; a prefill skips that choice ([`attack-jailbreak`](https://ai-security-atlas.github.io/?node=attack-jailbreak), [`life-safety`](https://ai-security-atlas.github.io/?node=life-safety); Qi et al. in Further Reading). The codename here is a stand-in for a system-prompt secret, the target of [LAB-19](../attack-prompt-leak/README.md) ([`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak)). The plain-request leak rate, 1/8 on these requests, is a separate weakness of this small model.
+Some chat APIs accept a final assistant message, an *assistant prefill*, and render it as the start of the model's turn (`continue_final_message=True` in transformers does the same thing). The model sees that text after the assistant header exactly as if it had written it, and Step 1's loop just continues it. Safety and policy behavior that instruction tuning adds sits mostly in the first few tokens of a reply, where the model chooses between refusing and complying; a prefill skips that choice ([`attack-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-jailbreak/), [`life-safety`](https://ai-security-atlas.github.io/nodes/life-safety/); Qi et al. in Further Reading). The codename here is a stand-in for a system-prompt secret, the target of [LAB-19](../attack-prompt-leak/README.md) ([`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/)). The plain-request leak rate, 1/8 on these requests, is a separate weakness of this small model.
 
 ## Defend
 
@@ -464,7 +464,7 @@ What to notice: with the stop rule no continuation holds a fabricated user messa
 
 **Why**
 
-The stop rule ends generation at the model's end-of-turn token and at the first sign of a new speaker, and the output check refuses to store text that still contains a role marker, so the app, not the model, decides where a turn ends ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output), [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). Use the stop tokens the checkpoint's own config and template name; a list copied from another model family misses them. Limitation: both controls are about turn structure. A reply that obeys a planted sentence contains no marker, so Step 7's canary passes; that needs the injection defenses of [LAB-06](../attack-direct-injection/README.md) and [LAB-15](../attack-indirect-injection/README.md).
+The stop rule ends generation at the model's end-of-turn token and at the first sign of a new speaker, and the output check refuses to store text that still contains a role marker, so the app, not the model, decides where a turn ends ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/), [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). Use the stop tokens the checkpoint's own config and template name; a list copied from another model family misses them. Limitation: both controls are about turn structure. A reply that obeys a planted sentence contains no marker, so Step 7's canary passes; that needs the injection defenses of [LAB-06](../attack-direct-injection/README.md) and [LAB-15](../attack-indirect-injection/README.md).
 
 ### Step D2 — Know which checkpoint you serve · [explainer 9](explainer/index.html#arch-decoder/9)
 
@@ -493,7 +493,7 @@ What to notice: both suspects carry the instruct label, config and tokenizer, bu
 
 **Why**
 
-A swapped or mislabeled checkpoint loads without an error because the architecture is identical (Step 2), yet a base model has none of the chat behavior the app relies on, and a tampered instruct model may hide a trigger ([`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper), [`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison)). Pin the weights' hash where you can read the file ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance), the manifest of [LAB-27](../arch-transformer/README.md)), and keep a behavior probe for an endpoint you can only query. Limitation: the probe tells chat-tuned from not chat-tuned; a fine-tuned or backdoored instruct model passes it, and only the hash catches that edit.
+A swapped or mislabeled checkpoint loads without an error because the architecture is identical (Step 2), yet a base model has none of the chat behavior the app relies on, and a tampered instruct model may hide a trigger ([`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/), [`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/)). Pin the weights' hash where you can read the file ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/), the manifest of [LAB-27](../arch-transformer/README.md)), and keep a behavior probe for an endpoint you can only query. Limitation: the probe tells chat-tuned from not chat-tuned; a fine-tuned or backdoored instruct model passes it, and only the hash catches that edit.
 
 ### Step D3 — Open the assistant turn on the server · [explainer 10](explainer/index.html#arch-decoder/10)
 
@@ -523,7 +523,7 @@ What to notice: the server rejects all 24 prefilled requests and accepts the 8 p
 
 **Why**
 
-The server renders the chat template from structured messages and appends the assistant header itself, so the first token of every reply comes from the model ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). Rejecting a final assistant message is the simplest version; an API that must keep prefill for formatting can allow it only for trusted callers. Test the deployed policy through that same renderer and template ([`format-model-package`](https://ai-security-atlas.github.io/?node=format-model-package)): a safety test run on a different template measures a different model input. Limitation: this removes one lever and leaves the model as it is. The plain-request leak and Step 7's planted sentence are untouched, and earlier assistant turns in a client-held history are just as forgeable; how deep a refusal goes is a training property ([`life-safety`](https://ai-security-atlas.github.io/?node=life-safety)).
+The server renders the chat template from structured messages and appends the assistant header itself, so the first token of every reply comes from the model ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). Rejecting a final assistant message is the simplest version; an API that must keep prefill for formatting can allow it only for trusted callers. Test the deployed policy through that same renderer and template ([`format-model-package`](https://ai-security-atlas.github.io/nodes/format-model-package/)): a safety test run on a different template measures a different model input. Limitation: this removes one lever and leaves the model as it is. The plain-request leak and Step 7's planted sentence are untouched, and earlier assistant turns in a client-held history are just as forgeable; how deep a refusal goes is a training property ([`life-safety`](https://ai-security-atlas.github.io/nodes/life-safety/)).
 
 ### Step D4 — The runtime owns the turn structure
 
@@ -533,7 +533,7 @@ Treat the turn boundaries as part of your application. Let one component render 
 
 **Why**
 
-This is [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) applied to the decoder loop: the model predicts the next token whoever it belongs to, so a speaker exists only where the runtime puts a boundary ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)). [LAB-04](../concept-tokens/README.md) covers the other direction, a user who types the role markers into the input. Limitation: correct turn handling keeps fabricated turns and client-written replies out of the record; it does nothing about the instructions a model chooses to follow inside one turn (Step 7), or about how often it leaks when asked plainly (D3).
+This is [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) applied to the decoder loop: the model predicts the next token whoever it belongs to, so a speaker exists only where the runtime puts a boundary ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). [LAB-04](../concept-tokens/README.md) covers the other direction, a user who types the role markers into the input. Limitation: correct turn handling keeps fabricated turns and client-written replies out of the record; it does nothing about the instructions a model chooses to follow inside one turn (Step 7), or about how often it leaks when asked plainly (D3).
 
 ## Evaluate
 
@@ -601,7 +601,7 @@ docker compose down --remove-orphans
 - Rerun Step 3 with SmolLM2-135M and SmolLM2-135M-Instruct (`HuggingFaceTB/SmolLM2-135M` and `-135M-Instruct` in `declab.MODELS`). Record whether the smaller instruct model still follows the `SYS-OK` rule and still opens a user turn after `<|im_end|>`, and whether the D2 probe threshold of 0.5 still separates the pair.
 - Extend D1's output check to the markers of a second model family (Qwen2.5 also uses `<|im_start|>`, Llama 3 uses `<|start_header_id|>`) and measure how many of Step 6's raw continuations each version flags.
 - Give the D2 probe a third suspect: the instruct model with a small LoRA merged in (see [LAB-07](../adapt-lora/README.md)). Measure whether the probe still calls it chat-tuned, and confirm that the hash pin rejects it.
-- Send Step 6's raw transcript with a planted line in the last assistant turn and count how often the role `qwen2.5:3b` writes next changes from `user`; report the count with a Wilson interval ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)).
+- Send Step 6's raw transcript with a planted line in the last assistant turn and count how often the role `qwen2.5:3b` writes next changes from `user`; report the count with a Wilson interval ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)).
 
 ## Further Reading
 

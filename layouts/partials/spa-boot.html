@@ -1,0 +1,5 @@
+{{/* Boots the Explorer over a server-rendered page. Until the app mounts, only #graph-root shows;
+     if it has not mounted after a few seconds (script blocked or failed), the server-rendered page comes back. */}}
+<script>document.documentElement.classList.add('spa-boot');setTimeout(function(){if(!window.__atlasMounted)document.documentElement.classList.remove('spa-boot')},5000)</script>
+<style>.spa-boot body > *:not(#graph-root) { display: none !important; }</style>
+<script type="module" crossorigin src="/assets/dist/app.js?v={{ now.Unix }}"></script>

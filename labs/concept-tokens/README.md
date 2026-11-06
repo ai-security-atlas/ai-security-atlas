@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
 
 # LAB-04 · What the model actually reads
 
-> **Atlas node:** [Tokenization and vocabulary](https://ai-security-atlas.github.io/?node=concept-tokens) · **Family:** family-prompt · **Level:** beginner · **Time:** 45 min · **Model backend:** none
+> **Atlas node:** [Tokenization and vocabulary](https://ai-security-atlas.github.io/nodes/concept-tokens/) · **Family:** family-prompt · **Level:** beginner · **Time:** 45 min · **Model backend:** none
 
 ## Overview
 
@@ -49,16 +49,16 @@ The forged turn asks only for the fixed, harmless canary `ATLAS-CANARY-t0k3`; th
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-tokens`](../../articles/concept-tokens.md) |
-| Family | None in the seed graph (a concept node). The risk practiced here belongs to [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt), which the front matter and explainer kicker use. |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (the risk steps) |
+| Family | None in the seed graph (a concept node). The risk practiced here belongs to [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/), which the front matter and explainer kicker use. |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (the risk steps) |
 | Access profile | `A01` Output-query access (caveat: *No weights, logits, training data or privileged context are implied.*): the attacker only types a user message. |
-| Read first | [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) as related, not mapped. |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) (canary rate over 10 messages) |
-| Related | [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection), [`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg) (requires this concept), [`format-model-package`](https://ai-security-atlas.github.io/?node=format-model-package) (requires this concept), [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder), [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits) |
+| Read first | [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) as related, not mapped. |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) (canary rate over 10 messages) |
+| Related | [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/), [`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/) (requires this concept), [`format-model-package`](https://ai-security-atlas.github.io/nodes/format-model-package/) (requires this concept), [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/), [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) |
 
 > [!NOTE]
-> **Atlas caveat:** the seed graph has no caveat for this concept node. The caveat of the closest attack, [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection), is the one this lab tests: *Direct access does not imply control over privileged system messages.* Special-token injection is exactly the case where it does, until the app encodes user text as text.
+> **Atlas caveat:** the seed graph has no caveat for this concept node. The caveat of the closest attack, [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/), is the one this lab tests: *Direct access does not imply control over privileged system messages.* Special-token injection is exactly the case where it does, until the app encodes user text as text.
 
 ## Backend Support
 
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done (the workbench image is built).
 - Labs to finish first: none. This is a foundation lab; [LAB-06 · attack-direct-injection](../attack-direct-injection/README.md) builds on it.
-- Concepts to read first: [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) and [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural).
+- Concepts to read first: [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) and [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/).
 
 ## Explainer
 
@@ -188,7 +188,7 @@ What to notice: three vocabularies of very different sizes; only SmolLM2's weigh
 
 **Why**
 
-A tokenizer and its vocabulary ship with the weights and are part of what a model *is* ([`format-model-package`](https://ai-security-atlas.github.io/?node=format-model-package)). Each download is pinned to one revision, so every learner gets the same vocabulary, added tokens and chat template. After this step no script touches the network.
+A tokenizer and its vocabulary ship with the weights and are part of what a model *is* ([`format-model-package`](https://ai-security-atlas.github.io/nodes/format-model-package/)). Each download is pinned to one revision, so every learner gets the same vocabulary, added tokens and chat template. After this step no script touches the network.
 
 ### Step 2 — Same text, different tokens · [explainer 1](explainer/index.html#concept-tokens/1)
 
@@ -219,7 +219,7 @@ What to notice: a leading space or a change of case gives a different id, digits
 
 **Why**
 
-Token counts, not characters, set context limits, prices and rate limits, and they differ per tokenizer for the same text ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)). A filter or a budget computed on characters, or with a different tokenizer than the model's, measures the wrong thing. Optimization attacks such as [`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg) search in exactly this id space.
+Token counts, not characters, set context limits, prices and rate limits, and they differ per tokenizer for the same text ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)). A filter or a budget computed on characters, or with a different tokenizer than the model's, measures the wrong thing. Optimization attacks such as [`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/) search in exactly this id space.
 
 ### Step 3 — Roles are control tokens · [explainer 2](explainer/index.html#concept-tokens/2)
 
@@ -252,7 +252,7 @@ What to notice: each turn boundary is one id (`1` or `2`), while the role name a
 
 **Why**
 
-The chat template is a Jinja program shipped in `tokenizer_config.json` that flattens messages into one string; the model learned during instruction tuning that the text after id `1 system` carries the operator's authority ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)). The *roles* exist only as these tokens: there is no separate channel. That is the contract the next step breaks.
+The chat template is a Jinja program shipped in `tokenizer_config.json` that flattens messages into one string; the model learned during instruction tuning that the text after id `1 system` carries the operator's authority ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). The *roles* exist only as these tokens: there is no separate channel. That is the contract the next step breaks.
 
 ### Step 4 — A user types the delimiters · [explainer 3](explainer/index.html#concept-tokens/3)
 
@@ -292,7 +292,7 @@ What to notice: the default `apply_chat_template()` gives exactly the same ids a
 
 **Why**
 
-The tokenizer matches added tokens such as `<|im_start|>` anywhere in its input before it runs BPE, and in transformers 5.20.2 `split_special_tokens` defaults to `False`, so typed delimiters become real control tokens. `apply_chat_template()` renders the template to a string and then tokenizes that string the same way, so using the template is not enough on its own; its `sanitize_control_tokens` option (default `False`) is what keeps user text as text. This is how a user with only chat access ([`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection), profile A01) writes a system turn.
+The tokenizer matches added tokens such as `<|im_start|>` anywhere in its input before it runs BPE, and in transformers 5.20.2 `split_special_tokens` defaults to `False`, so typed delimiters become real control tokens. `apply_chat_template()` renders the template to a string and then tokenizes that string the same way, so using the template is not enough on its own; its `sanitize_control_tokens` option (default `False`) is what keeps user text as text. This is how a user with only chat access ([`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/), profile A01) writes a system turn.
 
 ### Step 5 — One word, seven spellings (≈1–3 min) · [explainer 5](explainer/index.html#concept-tokens/5)
 
@@ -324,7 +324,7 @@ What to notice: the filter catches only the two spellings it was written for, wh
 
 **Why**
 
-A keyword filter compares characters, but a zero-width space, a soft hyphen or a bidi control is an invisible Unicode *format* character that changes the string and its tokens without changing what a reader (or a model trained on web text) understands ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)). The model is small, so not every variant is understood: the point is that the filter's verdict and the model's reading disagree. Step D2 measures the fix.
+A keyword filter compares characters, but a zero-width space, a soft hyphen or a bidi control is an invisible Unicode *format* character that changes the string and its tokens without changing what a reader (or a model trained on web text) understands ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)). The model is small, so not every variant is understood: the point is that the filter's verdict and the model's reading disagree. Step D2 measures the fix.
 
 ### Step 6 — The model reads the forged turn (≈1–3 min) · [explainer 6](explainer/index.html#concept-tokens/6)
 
@@ -349,7 +349,7 @@ What to notice: the same app that translates the clean message answers only with
 
 **Why**
 
-To the model, the forged `system` turn is indistinguishable from the operator's: both are id `1`, then `system`, then text ([`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection)). Decoding is greedy, so 10/10 is deterministic for these 10 messages and this CPU build; it is a count over a fixed set, not a population rate ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The canary is the lab's stand-in for whatever a forged system turn could ask for.
+To the model, the forged `system` turn is indistinguishable from the operator's: both are id `1`, then `system`, then text ([`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/)). Decoding is greedy, so 10/10 is deterministic for these 10 messages and this CPU build; it is a count over a fixed set, not a population rate ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The canary is the lab's stand-in for whatever a forged system turn could ask for.
 
 ## Defend
 
@@ -378,7 +378,7 @@ What to notice: both fixes bring the turn starts back to 3 and the canary from 1
 
 **Why**
 
-`sanitize_control_tokens=True` makes `apply_chat_template()` encode control tokens that appear *inside* messages as ordinary text, so only the template can write role tokens; for code that builds prompts by hand, encode the user's part separately with `split_special_tokens=True` (never the whole prompt, which breaks the app's own delimiters as Step 4 showed). Limitation: the 2/10 left are the same words read as text, which is ordinary prompt injection; this fixes the tokenizer contract, not injection in general ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)).
+`sanitize_control_tokens=True` makes `apply_chat_template()` encode control tokens that appear *inside* messages as ordinary text, so only the template can write role tokens; for code that builds prompts by hand, encode the user's part separately with `split_special_tokens=True` (never the whole prompt, which breaks the app's own delimiters as Step 4 showed). Limitation: the 2/10 left are the same words read as text, which is ordinary prompt injection; this fixes the tokenizer contract, not injection in general ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)).
 
 ### Step D2 — Normalize before the filter · [explainer 8](explainer/index.html#concept-tokens/8)
 
@@ -410,7 +410,7 @@ What to notice: NFKC folds the fullwidth letters, dropping category `Cf` removes
 
 **Why**
 
-Filter the text the model will read, in a canonical form: normalize (NFKC), strip format characters and casefold before any keyword or regex check ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). Limitation: homoglyphs need a confusables map (Unicode TR39), and paraphrase defeats any keyword list, so a filter is one weak layer, never the boundary.
+Filter the text the model will read, in a canonical form: normalize (NFKC), strip format characters and casefold before any keyword or regex check ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). Limitation: homoglyphs need a confusables map (Unicode TR39), and paraphrase defeats any keyword list, so a filter is one weak layer, never the boundary.
 
 ### Step D3 — Let the server own the template
 
@@ -420,7 +420,7 @@ Steps 4 and D1 put the fix in one place: the code that turns messages into token
 
 **Why**
 
-The role boundary exists only in the token ids, so it must be enforced where the ids are made, by the party that holds authority ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). The template ships with the model, which is why it is part of the [`format-model-package`](https://ai-security-atlas.github.io/?node=format-model-package) you pin and review.
+The role boundary exists only in the token ids, so it must be enforced where the ids are made, by the party that holds authority ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). The template ships with the model, which is why it is part of the [`format-model-package`](https://ai-security-atlas.github.io/nodes/format-model-package/) you pin and review.
 
 ## Evaluate
 
@@ -448,7 +448,7 @@ RESULT: REPRODUCED
 
 Questions for your notes:
 
-1. The two fixed rows still show 2/10. What would you change in the app (not the tokenizer) to bring that to 0, and how would you measure it ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr))?
+1. The two fixed rows still show 2/10. What would you change in the app (not the tokenizer) to bring that to 0, and how would you measure it ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/))?
 2. Why is `split_special_tokens=True` safe on the user's text but wrong on the whole prompt? Use the Step 4 counts.
 3. The normalized filter blocks 6/7 spellings. Is that a good number for a security control? Name two inputs it can never catch.
 

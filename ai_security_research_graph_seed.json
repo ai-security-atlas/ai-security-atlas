@@ -823,6 +823,7 @@
       "id": "attack-adapter-tamper",
       "title": "Malicious adapters or adapter substitution",
       "type": "attack",
+      "primary_goal": "goal-persistence",
       "summary": "Distribute or apply an attacker-controlled adaptation artifact to alter behavior.",
       "aliases": [],
       "references": [
@@ -891,6 +892,7 @@
       "id": "attack-artifact-substitution",
       "title": "Artifact, adapter or configuration substitution",
       "type": "attack",
+      "primary_goal": "goal-environment",
       "summary": "Replace a trusted distribution object with an unreviewed version or misleading identity.",
       "aliases": [],
       "references": [
@@ -957,9 +959,52 @@
       "observations": []
     },
     {
+      "id": "attack-audio-injection",
+      "title": "Audio, speech and psychoacoustic prompt injection",
+      "type": "attack",
+      "primary_goal": "goal-evasion",
+      "summary": "Deliver imperceptible, ultrasonic, or prosodic adversarial instructions through speech and audio inputs to voice assistants or omni-modal models.",
+      "aliases": [
+        "VoiceJailbreak",
+        "audio adversarial examples",
+        "auditory prompt injection"
+      ],
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "prerequisites": [
+        "concept-gradients",
+        "concept-conditioning",
+        "attack-multimodal-injection"
+      ],
+      "goal_ids": [
+        "goal-behavior",
+        "goal-actions",
+        "goal-evasion"
+      ],
+      "family_id": "family-evasion",
+      "access_profile_ids": [
+        "A18",
+        "A03"
+      ],
+      "scope_ids": [
+        "arch-vlm",
+        "arch-neural"
+      ],
+      "caveat": "Over-the-air delivery is constrained by room acoustics, microphone frequency response, and audio codec compression.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
+      "observations": []
+    },
+    {
       "id": "attack-backdoor",
       "title": "Trigger-conditioned model backdoors",
       "type": "attack",
+      "primary_goal": "goal-persistence",
       "summary": "Implant attacker-selected behavior activated by a trigger while retaining ordinary utility.",
       "aliases": [],
       "references": [
@@ -1055,6 +1100,7 @@
       "id": "attack-citation-launder",
       "title": "Evidence and citation laundering",
       "type": "attack",
+      "primary_goal": "goal-decisions",
       "summary": "Make untrustworthy content appear authoritative through generated references or retrieval chains.",
       "aliases": [],
       "references": [
@@ -1089,6 +1135,7 @@
       "id": "attack-confused-deputy",
       "title": "Agent or connector confused-deputy abuse",
       "type": "attack",
+      "primary_goal": "goal-actions",
       "summary": "Induce a more-privileged component to exercise authority for an unauthorized requester.",
       "aliases": [],
       "references": [
@@ -1115,6 +1162,127 @@
       "evidence_status": "source_linked",
       "last_reviewed": "2026-09-10",
       "editorial_review": "required",
+      "observations": []
+    },
+    {
+      "id": "attack-constrained-decoding-bypass",
+      "title": "Constrained-decoding and schema-enforced safety bypass",
+      "type": "attack",
+      "primary_goal": "goal-behavior",
+      "summary": "Supply restrictive output grammars, regular expressions, or JSON schemas that mask refusal tokens at the logit layer and force compliant continuations.",
+      "aliases": [
+        "CDA",
+        "grammar-constrained jailbreak",
+        "structured-output jailbreak"
+      ],
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "prerequisites": [
+        "concept-decoding",
+        "concept-logits",
+        "attack-jailbreak"
+      ],
+      "goal_ids": [
+        "goal-behavior",
+        "goal-evasion"
+      ],
+      "family_id": "family-prompt",
+      "access_profile_ids": [
+        "A01",
+        "A19"
+      ],
+      "scope_ids": [
+        "arch-decoder",
+        "system-serving"
+      ],
+      "caveat": "Requires a serving interface that accepts caller-defined output schemas, grammars, or logit masks.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
+      "observations": []
+    },
+    {
+      "id": "attack-cot-hijack",
+      "title": "Chain-of-thought and reasoning-trace hijacking",
+      "type": "attack",
+      "primary_goal": "goal-behavior",
+      "summary": "Manipulate, prefill, or spoof intermediate reasoning traces to bypass reasoning-stage safety checks or conceal misaligned actions behind unfaithful rationales.",
+      "aliases": [
+        "H-CoT",
+        "reasoning hijacking",
+        "unfaithful CoT exploitation"
+      ],
+      "references": [
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "prerequisites": [
+        "concept-reasoning-trace",
+        "concept-boundaries"
+      ],
+      "goal_ids": [
+        "goal-behavior",
+        "goal-evasion"
+      ],
+      "family_id": "family-prompt",
+      "access_profile_ids": [
+        "A01",
+        "A04"
+      ],
+      "scope_ids": [
+        "arch-decoder",
+        "system-agent"
+      ],
+      "caveat": "Effectiveness depends on whether reasoning tokens are exposed, prefillable, or trusted by downstream monitors.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
+      "observations": []
+    },
+    {
+      "id": "attack-cross-server-shadowing",
+      "title": "Cross-server tool shadowing and namespace collision",
+      "type": "attack",
+      "primary_goal": "goal-actions",
+      "summary": "Use metadata or tool definitions from an untrusted tool server to intercept, redirect, or override calls intended for a separate trusted server in the same session.",
+      "aliases": [
+        "MCP tool shadowing",
+        "cross-server shadowing"
+      ],
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "prerequisites": [
+        "system-mcp",
+        "system-tools",
+        "attack-tool-description"
+      ],
+      "goal_ids": [
+        "goal-actions",
+        "goal-information"
+      ],
+      "family_id": "family-agent",
+      "access_profile_ids": [
+        "A06",
+        "A12"
+      ],
+      "scope_ids": [
+        "system-mcp",
+        "system-agent",
+        "system-tools"
+      ],
+      "caveat": "Requires multiple tool providers or mutable tool namespaces within a shared agent context.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
       "observations": []
     },
     {
@@ -1186,6 +1354,7 @@
       "id": "attack-diffusion-backdoor",
       "title": "Diffusion backdoors / BadDiffusion",
       "type": "attack",
+      "primary_goal": "goal-persistence",
       "summary": "Alter training or diffusion processes to produce attacker-chosen outcomes under a trigger.",
       "aliases": [],
       "references": [
@@ -1251,6 +1420,7 @@
       "id": "attack-direct-injection",
       "title": "Direct prompt injection",
       "type": "attack",
+      "primary_goal": "goal-behavior",
       "summary": "Attacker-supplied instructions attempt to override application task or trust policy.",
       "aliases": [],
       "references": [
@@ -1318,6 +1488,7 @@
       "id": "attack-eval-contamination",
       "title": "Benchmark or evaluation contamination",
       "type": "attack",
+      "primary_goal": "goal-evasion",
       "summary": "Influence measurement by leaking evaluation material into training or changing the evaluation set.",
       "aliases": [],
       "references": [
@@ -1384,10 +1555,12 @@
       "id": "attack-factual-edit",
       "title": "Unauthorized factual model editing",
       "type": "attack",
+      "primary_goal": "goal-decisions",
       "summary": "Modify selected model associations to influence later answers.",
       "aliases": [],
       "references": [
-        "s-rome"
+        "s-rome",
+        "s-badedit"
       ],
       "prerequisites": [
         "adapt-model-edit"
@@ -1415,6 +1588,7 @@
       "id": "attack-fgsm",
       "title": "Gradient-based adversarial perturbations / FGSM",
       "type": "attack",
+      "primary_goal": "goal-evasion",
       "summary": "Use input gradients to find perturbations that affect predictions.",
       "aliases": [],
       "references": [
@@ -1508,6 +1682,7 @@
       "id": "attack-indirect-injection",
       "title": "Indirect prompt injection",
       "type": "attack",
+      "primary_goal": "goal-actions",
       "summary": "Lower-trust documents or tool content carry instructions that an application treats as authority.",
       "aliases": [
         "indirect prompt injection",
@@ -1639,6 +1814,46 @@
       "observations": []
     },
     {
+      "id": "attack-mcp-sampling-injection",
+      "title": "Server-to-client sampling and prompt-template injection",
+      "type": "attack",
+      "primary_goal": "goal-actions",
+      "summary": "Abuse bidirectional tool-protocol callbacks such as server-initiated LLM sampling or prompt templates to hijack host completions, context, or user quota.",
+      "aliases": [
+        "MCP sampling injection",
+        "prompt-template injection"
+      ],
+      "references": [
+        "s-mcp-security",
+        "s-mcp-survey"
+      ],
+      "prerequisites": [
+        "system-mcp",
+        "concept-boundaries"
+      ],
+      "goal_ids": [
+        "goal-actions",
+        "goal-behavior",
+        "goal-information"
+      ],
+      "family_id": "family-agent",
+      "access_profile_ids": [
+        "A06",
+        "A12"
+      ],
+      "scope_ids": [
+        "system-mcp",
+        "system-agent"
+      ],
+      "caveat": "Applies when the host client permits connected tool servers to request model completions or inject prompt templates without user approval.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
+      "observations": []
+    },
+    {
       "id": "attack-membership",
       "title": "Membership inference",
       "type": "attack",
@@ -1675,6 +1890,7 @@
       "id": "attack-memory-poison",
       "title": "Persistent agent-memory poisoning",
       "type": "attack",
+      "primary_goal": "goal-actions",
       "summary": "Plant or induce stored entries that redirect future tasks or decisions.",
       "aliases": [],
       "references": [
@@ -1707,6 +1923,7 @@
       "id": "attack-merge-tamper",
       "title": "Behavioral tampering through merges or conversion",
       "type": "attack",
+      "primary_goal": "goal-decisions",
       "summary": "Introduce an untrusted component or update while transforming a model artifact.",
       "aliases": [],
       "references": [
@@ -1780,6 +1997,7 @@
       "id": "attack-multiagent",
       "title": "Inter-agent trust and message manipulation",
       "type": "attack",
+      "primary_goal": "goal-actions",
       "summary": "Influence delegated workflows through messages treated as instructions or trusted results.",
       "aliases": [],
       "references": [
@@ -1813,6 +2031,7 @@
       "id": "attack-multimodal-injection",
       "title": "Instructions carried through multimodal content",
       "type": "attack",
+      "primary_goal": "goal-actions",
       "summary": "Lower-trust visible text or interpreted media can become instructions in a multimodal workflow.",
       "aliases": [],
       "references": [
@@ -1848,6 +2067,7 @@
       "id": "attack-output-sink",
       "title": "Improper handling of model-generated output",
       "type": "attack",
+      "primary_goal": "goal-actions",
       "summary": "A downstream application treats model output as executable or privileged input without appropriate validation.",
       "aliases": [],
       "references": [
@@ -1879,6 +2099,7 @@
       "id": "attack-pgd",
       "title": "Iterative projected adversarial optimization",
       "type": "attack",
+      "primary_goal": "goal-evasion",
       "summary": "Evaluate robustness with iterative constrained perturbation search.",
       "aliases": [],
       "references": [
@@ -1910,6 +2131,7 @@
       "id": "attack-physical",
       "title": "Physical-world adversarial examples",
       "type": "attack",
+      "primary_goal": "goal-evasion",
       "summary": "Study perturbations after printing, capture or other real-world transformations.",
       "aliases": [],
       "references": [
@@ -1941,12 +2163,14 @@
       "id": "attack-preference-poison",
       "title": "Preference or reward-signal manipulation",
       "type": "attack",
+      "primary_goal": "goal-behavior",
       "summary": "Influence comparisons, reward models or feedback used in post-training.",
       "aliases": [],
       "references": [
         "s-nist",
         "s-rlhf",
-        "s-dpo"
+        "s-dpo",
+        "s-rlhf-poison"
       ],
       "prerequisites": [
         "life-preferences"
@@ -1975,6 +2199,7 @@
       "id": "attack-pretrain-poison",
       "title": "Pretraining data poisoning",
       "type": "attack",
+      "primary_goal": "goal-persistence",
       "summary": "Influence learned behavior by contributing or changing data before broad training.",
       "aliases": [],
       "references": [
@@ -2070,6 +2295,47 @@
       "observations": []
     },
     {
+      "id": "attack-quantization-backdoor",
+      "title": "Quantization-activated dormant backdoors",
+      "type": "attack",
+      "primary_goal": "goal-persistence",
+      "summary": "Plant weight perturbations that remain benign in full precision (FP16/BF16) and activate malicious or unsafe behavior only after post-training quantization.",
+      "aliases": [
+        "quantization backdoor",
+        "rounding-activated backdoor"
+      ],
+      "references": [
+        "s-quant-exploit"
+      ],
+      "prerequisites": [
+        "transform-quantization",
+        "concept-parameters",
+        "attack-backdoor"
+      ],
+      "goal_ids": [
+        "goal-persistence",
+        "goal-evasion",
+        "goal-behavior"
+      ],
+      "family_id": "family-supply",
+      "access_profile_ids": [
+        "A09",
+        "A11"
+      ],
+      "scope_ids": [
+        "arch-decoder",
+        "system-registry",
+        "format-gguf"
+      ],
+      "caveat": "Target quantization scheme and precision (such as INT8, INT4, or NF4) must match or approximate the attacker’s rounding constraints.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
+      "observations": []
+    },
+    {
       "id": "attack-rag-disclosure",
       "title": "Unauthorized retrieved-document disclosure",
       "type": "attack",
@@ -2130,6 +2396,45 @@
       "evidence_status": "source_linked",
       "last_reviewed": "2026-09-10",
       "editorial_review": "required",
+      "observations": []
+    },
+    {
+      "id": "attack-reasoning-sponge",
+      "title": "Reasoning-token exhaustion and overthinking attacks",
+      "type": "attack",
+      "summary": "Inflate internal reasoning-trace generation and test-time compute via decoy logic traps or injected reasoning loops without lengthening the visible prompt.",
+      "aliases": [
+        "OverThink",
+        "overthinking attack",
+        "reasoning slowdown"
+      ],
+      "references": [
+        "s-overthink"
+      ],
+      "prerequisites": [
+        "concept-reasoning-trace",
+        "concept-decoding",
+        "attack-token-exhaustion"
+      ],
+      "goal_ids": [
+        "goal-availability"
+      ],
+      "family_id": "family-availability",
+      "access_profile_ids": [
+        "A01",
+        "A04"
+      ],
+      "scope_ids": [
+        "arch-decoder",
+        "system-serving",
+        "system-rag"
+      ],
+      "caveat": "Applies to models that allocate variable test-time reasoning tokens before emitting a final response.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
       "observations": []
     },
     {
@@ -2266,11 +2571,13 @@
       "id": "attack-sft-poison",
       "title": "Instruction-tuning data poisoning",
       "type": "attack",
+      "primary_goal": "goal-persistence",
       "summary": "Corrupt demonstrations or labels used during supervised adaptation.",
       "aliases": [],
       "references": [
         "s-safety-ft",
-        "s-badnets"
+        "s-badnets",
+        "s-inst-poison"
       ],
       "prerequisites": [
         "life-sft"
@@ -2299,6 +2606,7 @@
       "id": "attack-sleeper",
       "title": "Persistent conditional LLM backdoors",
       "type": "attack",
+      "primary_goal": "goal-persistence",
       "summary": "Study intentionally implanted conditional behavior that can survive tested safety-training procedures.",
       "aliases": [],
       "references": [
@@ -2325,6 +2633,43 @@
       "evidence_status": "source_linked",
       "last_reviewed": "2026-09-10",
       "editorial_review": "required",
+      "observations": []
+    },
+    {
+      "id": "attack-speculative-sidechannel",
+      "title": "Speculative-decoding and token-stream side channels",
+      "type": "attack",
+      "summary": "Infer private prompts or responses from encrypted packet sizes and inter-token burst timing produced by streaming generation or speculative decoding.",
+      "aliases": [
+        "Whisper Leak",
+        "token-length side channel",
+        "speculative decoding side channel"
+      ],
+      "references": [
+        "s-whisper-leak",
+        "s-speculative-sidechannel"
+      ],
+      "prerequisites": [
+        "concept-decoding",
+        "system-serving"
+      ],
+      "goal_ids": [
+        "goal-information"
+      ],
+      "family_id": "family-privacy",
+      "access_profile_ids": [
+        "A14"
+      ],
+      "scope_ids": [
+        "system-serving",
+        "arch-decoder"
+      ],
+      "caveat": "Requires network packet-size/timing observation or co-tenant timing measurement on a streaming or speculative-decoding endpoint.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
       "observations": []
     },
     {
@@ -2363,11 +2708,13 @@
       "id": "attack-steering-misuse",
       "title": "Adversarial activation steering",
       "type": "attack",
+      "primary_goal": "goal-behavior",
       "summary": "Use runtime intervention to influence behavior without changing stored weights.",
       "aliases": [],
       "references": [
         "s-activation",
-        "s-refusal"
+        "s-refusal",
+        "s-repeng"
       ],
       "prerequisites": [
         "adapt-steering"
@@ -2426,6 +2773,7 @@
       "id": "attack-tool-description",
       "title": "Tool-description poisoning",
       "type": "attack",
+      "primary_goal": "goal-actions",
       "summary": "Influence tool selection or actions through attacker-controlled tool metadata.",
       "aliases": [],
       "references": [
@@ -2458,6 +2806,7 @@
       "id": "attack-tool-output",
       "title": "Tool-output injection",
       "type": "attack",
+      "primary_goal": "goal-actions",
       "summary": "Return lower-trust instructions in a tool response to redirect an agent.",
       "aliases": [],
       "references": [
@@ -2491,6 +2840,7 @@
       "id": "attack-tool-rugpull",
       "title": "Tool definition or behavior changes after approval",
       "type": "attack",
+      "primary_goal": "goal-actions",
       "summary": "Change a tool after it has acquired user or client trust.",
       "aliases": [],
       "references": [
@@ -2525,7 +2875,8 @@
       "summary": "Recover training-specific text through model interaction in a setting that permits verification.",
       "aliases": [],
       "references": [
-        "s-llm-extraction"
+        "s-llm-extraction",
+        "s-usenix-video"
       ],
       "prerequisites": [
         "concept-memorization",
@@ -2581,6 +2932,47 @@
       "evidence_status": "source_linked",
       "last_reviewed": "2026-09-10",
       "editorial_review": "required",
+      "observations": []
+    },
+    {
+      "id": "attack-unlearning-recovery",
+      "title": "Recovery of unlearned concepts or capabilities",
+      "type": "attack",
+      "primary_goal": "goal-information",
+      "summary": "Elicit capabilities, facts, or behaviors that were supposedly removed by approximate machine unlearning via few-shot relearning, steering, or quantization.",
+      "aliases": [
+        "unlearning bypass",
+        "benign relearning attack",
+        "concept recovery"
+      ],
+      "references": [
+        "s-unlearning-jog",
+        "s-unlearning-adv"
+      ],
+      "prerequisites": [
+        "adapt-unlearning",
+        "concept-parameters"
+      ],
+      "goal_ids": [
+        "goal-behavior",
+        "goal-information"
+      ],
+      "family_id": "family-representation",
+      "access_profile_ids": [
+        "A01",
+        "A07",
+        "A11"
+      ],
+      "scope_ids": [
+        "arch-decoder",
+        "arch-diffusion"
+      ],
+      "caveat": "Demonstrates incomplete parameter erasure in approximate unlearning rather than recovery from a model trained from scratch without the data.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
       "observations": []
     },
     {
@@ -3048,6 +3440,39 @@
       "observations": []
     },
     {
+      "id": "concept-reasoning-trace",
+      "title": "Test-time reasoning traces and thinking tokens",
+      "type": "concept",
+      "summary": "Intermediate autoregressive reasoning chains generated before a final response to allocate additional inference-time compute.",
+      "aliases": [
+        "thinking tokens",
+        "chain-of-thought traces",
+        "test-time compute"
+      ],
+      "references": [
+        "s-overthink",
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "prerequisites": [
+        "concept-decoding",
+        "concept-context"
+      ],
+      "goal_ids": [],
+      "family_id": "",
+      "access_profile_ids": [],
+      "scope_ids": [
+        "arch-decoder"
+      ],
+      "caveat": "A visible reasoning trace is a generated token sequence, not a guaranteed faithful transcript of internal computation.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
+      "observations": []
+    },
+    {
       "id": "concept-residual",
       "title": "Residual streams and block structure",
       "type": "concept",
@@ -3318,6 +3743,39 @@
       "evidence_status": "source_linked",
       "last_reviewed": "2026-09-10",
       "editorial_review": "required",
+      "observations": []
+    },
+    {
+      "id": "defense-circuit-breakers",
+      "title": "Representation rerouting and activation circuit breakers",
+      "type": "defense",
+      "summary": "Monitor or reroute internal residual-stream representations during generation to detect or interrupt harmful states and sleeper triggers before tokens are emitted.",
+      "aliases": [
+        "Circuit Breakers",
+        "defection probes",
+        "representation rerouting"
+      ],
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "prerequisites": [
+        "adapt-representation",
+        "concept-residual"
+      ],
+      "goal_ids": [],
+      "family_id": "",
+      "access_profile_ids": [],
+      "scope_ids": [
+        "arch-decoder",
+        "arch-transformer"
+      ],
+      "caveat": "Requires white-box access to intermediate model activations and calibration against false-positive interruptions.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
       "observations": []
     },
     {
@@ -5008,6 +5466,38 @@
       "observations": []
     },
     {
+      "id": "system-mcp",
+      "title": "Model Context Protocol (MCP) and tool-server buses",
+      "type": "component",
+      "summary": "Standardized client-host-server protocol buses that connect models to external tools, resources, prompt templates, and sampling endpoints.",
+      "aliases": [
+        "MCP",
+        "Model Context Protocol",
+        "tool server bus"
+      ],
+      "references": [
+        "s-mcp-auth",
+        "s-mcp-security",
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "prerequisites": [
+        "system-tools",
+        "system-agent"
+      ],
+      "goal_ids": [],
+      "family_id": "",
+      "access_profile_ids": [],
+      "scope_ids": [],
+      "caveat": "Protocol standardization unifies transport and schema discovery, not the trustworthiness of connected servers.",
+      "priority": "P0",
+      "content_status": "draft",
+      "evidence_status": "metadata_and_abstract",
+      "last_reviewed": "2026-11-03",
+      "editorial_review": "Automated seed normalization; requires domain-expert sign-off before reviewed status.",
+      "observations": []
+    },
+    {
       "id": "system-memory",
       "title": "Persistent agent memory",
       "type": "component",
@@ -5603,7 +6093,7 @@
       "references": [
         "s-qlora"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-84b2aa7265ed15ab"
     },
     {
@@ -5614,7 +6104,7 @@
       "references": [
         "s-qlora"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-1671160c3cf50f47"
     },
     {
@@ -5680,7 +6170,7 @@
       "references": [
         "s-attribute-inference"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-c4bb78f496d5fa3e"
     },
     {
@@ -5770,7 +6260,7 @@
       "references": [
         "s-dit"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-063abedfe40c73d6"
     },
     {
@@ -5860,7 +6350,7 @@
       "references": [
         "s-ldm"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-afc01dee68caefef"
     },
     {
@@ -6068,7 +6558,7 @@
         "s-badnets",
         "s-safety-ft"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-5948ae674e5775df"
     },
     {
@@ -6352,6 +6842,137 @@
       "id": "edge-c39ed50e88201031"
     },
     {
+      "source": "attack-audio-injection",
+      "type": "can_serve_goal",
+      "target": "goal-actions",
+      "basis": "literature",
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-320cd3578bc3b96b"
+    },
+    {
+      "source": "attack-audio-injection",
+      "type": "can_serve_goal",
+      "target": "goal-behavior",
+      "basis": "literature",
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-058b4c95ac86ff7f"
+    },
+    {
+      "source": "attack-audio-injection",
+      "type": "can_serve_goal",
+      "target": "goal-evasion",
+      "basis": "literature",
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-19a23a609d3f1a29"
+    },
+    {
+      "source": "attack-audio-injection",
+      "type": "evaluated_by",
+      "target": "eval-asr",
+      "basis": "literature",
+      "references": [
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-99ed133e612913a5"
+    },
+    {
+      "source": "attack-audio-injection",
+      "type": "in_scope_of",
+      "target": "arch-neural",
+      "basis": "literature",
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-51c21440c1de56c6"
+    },
+    {
+      "source": "attack-audio-injection",
+      "type": "in_scope_of",
+      "target": "arch-vlm",
+      "basis": "literature",
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-9d8cbad3436a9d17"
+    },
+    {
+      "source": "attack-audio-injection",
+      "type": "member_of",
+      "target": "family-evasion",
+      "basis": "taxonomy",
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-dd3d4b3cab91d4f7"
+    },
+    {
+      "source": "attack-audio-injection",
+      "type": "requires_concept",
+      "target": "attack-multimodal-injection",
+      "basis": "pedagogical",
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-f7c1d8f8fd9f2a79"
+    },
+    {
+      "source": "attack-audio-injection",
+      "type": "requires_concept",
+      "target": "concept-conditioning",
+      "basis": "pedagogical",
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-4816311e5abcc396"
+    },
+    {
+      "source": "attack-audio-injection",
+      "type": "requires_concept",
+      "target": "concept-gradients",
+      "basis": "pedagogical",
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-9131a6a7e8260834"
+    },
+    {
+      "source": "attack-audio-injection",
+      "type": "variant_of",
+      "target": "attack-multimodal-injection",
+      "basis": "literature",
+      "references": [
+        "s-audio-adv",
+        "s-voice-jailbreak"
+      ],
+      "conditions": "",
+      "id": "edge-ab4cad8bd3cabbd8"
+    },
+    {
       "source": "attack-backdoor",
       "type": "can_serve_goal",
       "target": "goal-decisions",
@@ -6381,7 +7002,7 @@
       "references": [
         "s-torchload"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-7e23bb955eadcb14"
     },
     {
@@ -6807,6 +7428,353 @@
       "id": "edge-6dc6e762daf53322"
     },
     {
+      "source": "attack-constrained-decoding-bypass",
+      "type": "can_serve_goal",
+      "target": "goal-behavior",
+      "basis": "literature",
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "conditions": "",
+      "id": "edge-7ba776621e95460f"
+    },
+    {
+      "source": "attack-constrained-decoding-bypass",
+      "type": "can_serve_goal",
+      "target": "goal-evasion",
+      "basis": "literature",
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "conditions": "",
+      "id": "edge-bd620a5ba86d6d5a"
+    },
+    {
+      "source": "attack-constrained-decoding-bypass",
+      "type": "evaluated_by",
+      "target": "eval-harmbench",
+      "basis": "literature",
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "conditions": "",
+      "id": "edge-05bae2d9b200e7c1"
+    },
+    {
+      "source": "attack-constrained-decoding-bypass",
+      "type": "in_scope_of",
+      "target": "arch-decoder",
+      "basis": "literature",
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "conditions": "",
+      "id": "edge-03a7cdc55102ca77"
+    },
+    {
+      "source": "attack-constrained-decoding-bypass",
+      "type": "in_scope_of",
+      "target": "system-serving",
+      "basis": "literature",
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "conditions": "",
+      "id": "edge-5edcba915194297d"
+    },
+    {
+      "source": "attack-constrained-decoding-bypass",
+      "type": "member_of",
+      "target": "family-prompt",
+      "basis": "taxonomy",
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "conditions": "",
+      "id": "edge-1be183d05b8ff1bc"
+    },
+    {
+      "source": "attack-constrained-decoding-bypass",
+      "type": "requires_concept",
+      "target": "attack-jailbreak",
+      "basis": "pedagogical",
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "conditions": "",
+      "id": "edge-a21cf2d8b94add2c"
+    },
+    {
+      "source": "attack-constrained-decoding-bypass",
+      "type": "requires_concept",
+      "target": "concept-decoding",
+      "basis": "pedagogical",
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "conditions": "",
+      "id": "edge-cfef6c3baccb8369"
+    },
+    {
+      "source": "attack-constrained-decoding-bypass",
+      "type": "requires_concept",
+      "target": "concept-logits",
+      "basis": "pedagogical",
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "conditions": "",
+      "id": "edge-24c3c1697be332c2"
+    },
+    {
+      "source": "attack-constrained-decoding-bypass",
+      "type": "variant_of",
+      "target": "attack-jailbreak",
+      "basis": "literature",
+      "references": [
+        "s-constrained-decoding-attack"
+      ],
+      "conditions": "",
+      "id": "edge-c76ce60cf03bad63"
+    },
+    {
+      "source": "attack-cot-hijack",
+      "type": "can_serve_goal",
+      "target": "goal-behavior",
+      "basis": "literature",
+      "references": [
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "conditions": "",
+      "id": "edge-454a5d03c9bcbc3d"
+    },
+    {
+      "source": "attack-cot-hijack",
+      "type": "can_serve_goal",
+      "target": "goal-evasion",
+      "basis": "literature",
+      "references": [
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "conditions": "",
+      "id": "edge-035e1e846a0f3c0f"
+    },
+    {
+      "source": "attack-cot-hijack",
+      "type": "evaluated_by",
+      "target": "eval-asr",
+      "basis": "literature",
+      "references": [
+        "s-hcot"
+      ],
+      "conditions": "",
+      "id": "edge-b9247f2cb742fa9c"
+    },
+    {
+      "source": "attack-cot-hijack",
+      "type": "in_scope_of",
+      "target": "arch-decoder",
+      "basis": "literature",
+      "references": [
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "conditions": "",
+      "id": "edge-52c797c8e328d734"
+    },
+    {
+      "source": "attack-cot-hijack",
+      "type": "in_scope_of",
+      "target": "system-agent",
+      "basis": "literature",
+      "references": [
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "conditions": "",
+      "id": "edge-e6336975bd49d6c6"
+    },
+    {
+      "source": "attack-cot-hijack",
+      "type": "member_of",
+      "target": "family-prompt",
+      "basis": "taxonomy",
+      "references": [
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "conditions": "",
+      "id": "edge-47da498713f6fca3"
+    },
+    {
+      "source": "attack-cot-hijack",
+      "type": "requires_concept",
+      "target": "concept-boundaries",
+      "basis": "pedagogical",
+      "references": [
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "conditions": "",
+      "id": "edge-67ef1c6770fab65e"
+    },
+    {
+      "source": "attack-cot-hijack",
+      "type": "requires_concept",
+      "target": "concept-reasoning-trace",
+      "basis": "pedagogical",
+      "references": [
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "conditions": "",
+      "id": "edge-5cd6653bfbd53c80"
+    },
+    {
+      "source": "attack-cot-hijack",
+      "type": "variant_of",
+      "target": "attack-jailbreak",
+      "basis": "literature",
+      "references": [
+        "s-hcot"
+      ],
+      "conditions": "",
+      "id": "edge-d8abd6f957fb59b2"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "can_serve_goal",
+      "target": "goal-actions",
+      "basis": "literature",
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-29d83145cb066939"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "can_serve_goal",
+      "target": "goal-information",
+      "basis": "literature",
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-5f640a6368b6b06f"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "evaluated_by",
+      "target": "eval-agentdojo",
+      "basis": "literature",
+      "references": [
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-31daf80b84db1f2b"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "in_scope_of",
+      "target": "system-agent",
+      "basis": "literature",
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-4a80806116afba98"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "in_scope_of",
+      "target": "system-mcp",
+      "basis": "literature",
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-e4493e91d6b2f194"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "in_scope_of",
+      "target": "system-tools",
+      "basis": "literature",
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-f69de98ddb0b0f9f"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "member_of",
+      "target": "family-agent",
+      "basis": "taxonomy",
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-bfc217b2af7ffe23"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "requires_concept",
+      "target": "attack-tool-description",
+      "basis": "pedagogical",
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-b8369ecee5e90b6a"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "requires_concept",
+      "target": "system-mcp",
+      "basis": "pedagogical",
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-69deb73e8e51da1e"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "requires_concept",
+      "target": "system-tools",
+      "basis": "pedagogical",
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-eb1df47662f73a44"
+    },
+    {
+      "source": "attack-cross-server-shadowing",
+      "type": "variant_of",
+      "target": "attack-tool-description",
+      "basis": "literature",
+      "references": [
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-b34af85c17802422"
+    },
+    {
       "source": "attack-dependency",
       "type": "can_serve_goal",
       "target": "goal-environment",
@@ -7082,7 +8050,7 @@
       "references": [
         "s-baddiffusion"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-c677a3915968dfd1"
     },
     {
@@ -7386,7 +8354,7 @@
         "s-distillation",
         "s-knockoff"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-4ce9304993d41e85"
     },
     {
@@ -7666,7 +8634,7 @@
       "references": [
         "s-rome"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-37c3a5378dd02411"
     },
     {
@@ -7864,7 +8832,7 @@
       "references": [
         "s-gcg"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-e171579a41edc5e9"
     },
     {
@@ -7997,7 +8965,7 @@
         "s-gcg",
         "s-many-shot"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-2ba6e88f3374b913"
     },
     {
@@ -8353,8 +9321,115 @@
       "references": [
         "s-many-shot"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-67fccca5e855d97a"
+    },
+    {
+      "source": "attack-mcp-sampling-injection",
+      "type": "can_serve_goal",
+      "target": "goal-actions",
+      "basis": "literature",
+      "references": [
+        "s-mcp-security",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-7f1f832fb516ce64"
+    },
+    {
+      "source": "attack-mcp-sampling-injection",
+      "type": "can_serve_goal",
+      "target": "goal-behavior",
+      "basis": "literature",
+      "references": [
+        "s-mcp-security",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-89b884beb1be1595"
+    },
+    {
+      "source": "attack-mcp-sampling-injection",
+      "type": "can_serve_goal",
+      "target": "goal-information",
+      "basis": "literature",
+      "references": [
+        "s-mcp-security",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-096f63a89ed6c67e"
+    },
+    {
+      "source": "attack-mcp-sampling-injection",
+      "type": "evaluated_by",
+      "target": "eval-asr",
+      "basis": "literature",
+      "references": [
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-1099bd2c74f9e159"
+    },
+    {
+      "source": "attack-mcp-sampling-injection",
+      "type": "in_scope_of",
+      "target": "system-agent",
+      "basis": "literature",
+      "references": [
+        "s-mcp-security",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-f75c87e7369cff8e"
+    },
+    {
+      "source": "attack-mcp-sampling-injection",
+      "type": "in_scope_of",
+      "target": "system-mcp",
+      "basis": "literature",
+      "references": [
+        "s-mcp-security",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-0268690e16890852"
+    },
+    {
+      "source": "attack-mcp-sampling-injection",
+      "type": "member_of",
+      "target": "family-agent",
+      "basis": "taxonomy",
+      "references": [
+        "s-mcp-security",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-95902da0a42eedc0"
+    },
+    {
+      "source": "attack-mcp-sampling-injection",
+      "type": "requires_concept",
+      "target": "concept-boundaries",
+      "basis": "pedagogical",
+      "references": [
+        "s-mcp-security",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-c23ceb26d99c1efb"
+    },
+    {
+      "source": "attack-mcp-sampling-injection",
+      "type": "requires_concept",
+      "target": "system-mcp",
+      "basis": "pedagogical",
+      "references": [
+        "s-mcp-security",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-40173fb80cce05db"
     },
     {
       "source": "attack-membership",
@@ -8679,7 +9754,7 @@
         "s-gguf",
         "s-badnets"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-c513d212e2dddf0d"
     },
     {
@@ -8703,7 +9778,7 @@
         "s-api-stealing",
         "s-knockoff"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-10e2681390341c99"
     },
     {
@@ -9645,6 +10720,138 @@
       "id": "edge-ba6b23e618ca3a62"
     },
     {
+      "source": "attack-quantization-backdoor",
+      "type": "can_serve_goal",
+      "target": "goal-behavior",
+      "basis": "literature",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-a7161cf5d8062a24"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "can_serve_goal",
+      "target": "goal-evasion",
+      "basis": "literature",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-1fcfa34fddf125f0"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "can_serve_goal",
+      "target": "goal-persistence",
+      "basis": "literature",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-61a665e3f94c1fd1"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "in_scope_of",
+      "target": "arch-decoder",
+      "basis": "literature",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-2b1f33aa0c1209ab"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "in_scope_of",
+      "target": "format-gguf",
+      "basis": "literature",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-9777f05826937d0b"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "in_scope_of",
+      "target": "system-registry",
+      "basis": "literature",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-9fb6688b7708e6c1"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "member_of",
+      "target": "family-supply",
+      "basis": "taxonomy",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-f21417569988fcd8"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "requires_concept",
+      "target": "attack-backdoor",
+      "basis": "pedagogical",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-9baf97a26865599f"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "requires_concept",
+      "target": "concept-parameters",
+      "basis": "pedagogical",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-92a943745145f0dc"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "requires_concept",
+      "target": "transform-quantization",
+      "basis": "pedagogical",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-a103e5be3fe9de70"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "uses",
+      "target": "transform-quantization",
+      "basis": "literature",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-198c11fc305ba4b8"
+    },
+    {
+      "source": "attack-quantization-backdoor",
+      "type": "variant_of",
+      "target": "attack-backdoor",
+      "basis": "literature",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-dac760cd906b2dda"
+    },
+    {
       "source": "attack-rag-disclosure",
       "type": "can_serve_goal",
       "target": "goal-information",
@@ -9663,7 +10870,7 @@
       "references": [
         "s-llm-extraction"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-3432c3ae732051c8"
     },
     {
@@ -9832,6 +11039,116 @@
       "id": "edge-de549f2e7c210767"
     },
     {
+      "source": "attack-reasoning-sponge",
+      "type": "can_serve_goal",
+      "target": "goal-availability",
+      "basis": "literature",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-ccb47c05b6e52971"
+    },
+    {
+      "source": "attack-reasoning-sponge",
+      "type": "evaluated_by",
+      "target": "eval-cost",
+      "basis": "literature",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-04dab775a6ee0773"
+    },
+    {
+      "source": "attack-reasoning-sponge",
+      "type": "in_scope_of",
+      "target": "arch-decoder",
+      "basis": "literature",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-0549c12146ced7c6"
+    },
+    {
+      "source": "attack-reasoning-sponge",
+      "type": "in_scope_of",
+      "target": "system-rag",
+      "basis": "literature",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-4bc9224f5463cb8a"
+    },
+    {
+      "source": "attack-reasoning-sponge",
+      "type": "in_scope_of",
+      "target": "system-serving",
+      "basis": "literature",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-035f383ae624770b"
+    },
+    {
+      "source": "attack-reasoning-sponge",
+      "type": "member_of",
+      "target": "family-availability",
+      "basis": "taxonomy",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-040cfa83e8fe1a11"
+    },
+    {
+      "source": "attack-reasoning-sponge",
+      "type": "requires_concept",
+      "target": "attack-token-exhaustion",
+      "basis": "pedagogical",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-fce3cf0f534deead"
+    },
+    {
+      "source": "attack-reasoning-sponge",
+      "type": "requires_concept",
+      "target": "concept-decoding",
+      "basis": "pedagogical",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-9e70a15a8a2926d9"
+    },
+    {
+      "source": "attack-reasoning-sponge",
+      "type": "requires_concept",
+      "target": "concept-reasoning-trace",
+      "basis": "pedagogical",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-6d03cd70c1e39718"
+    },
+    {
+      "source": "attack-reasoning-sponge",
+      "type": "variant_of",
+      "target": "attack-token-exhaustion",
+      "basis": "literature",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-e538e8e672b23f39"
+    },
+    {
       "source": "attack-refusal-ablation",
       "type": "can_serve_goal",
       "target": "goal-behavior",
@@ -9905,7 +11222,7 @@
       "references": [
         "s-refusal"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-ab4e79a50dc1d07b"
     },
     {
@@ -10338,6 +11655,101 @@
       "id": "edge-eee82d2796e2bb50"
     },
     {
+      "source": "attack-speculative-sidechannel",
+      "type": "can_serve_goal",
+      "target": "goal-information",
+      "basis": "literature",
+      "references": [
+        "s-whisper-leak",
+        "s-speculative-sidechannel"
+      ],
+      "conditions": "",
+      "id": "edge-acf2929288a89f98"
+    },
+    {
+      "source": "attack-speculative-sidechannel",
+      "type": "evaluated_by",
+      "target": "eval-privacy",
+      "basis": "literature",
+      "references": [
+        "s-whisper-leak"
+      ],
+      "conditions": "",
+      "id": "edge-7d162775f30a43ff"
+    },
+    {
+      "source": "attack-speculative-sidechannel",
+      "type": "in_scope_of",
+      "target": "arch-decoder",
+      "basis": "literature",
+      "references": [
+        "s-whisper-leak",
+        "s-speculative-sidechannel"
+      ],
+      "conditions": "",
+      "id": "edge-d84cccfd4c880e9b"
+    },
+    {
+      "source": "attack-speculative-sidechannel",
+      "type": "in_scope_of",
+      "target": "system-serving",
+      "basis": "literature",
+      "references": [
+        "s-whisper-leak",
+        "s-speculative-sidechannel"
+      ],
+      "conditions": "",
+      "id": "edge-814727588f3932c2"
+    },
+    {
+      "source": "attack-speculative-sidechannel",
+      "type": "member_of",
+      "target": "family-privacy",
+      "basis": "taxonomy",
+      "references": [
+        "s-whisper-leak",
+        "s-speculative-sidechannel"
+      ],
+      "conditions": "",
+      "id": "edge-1ce2b25aea3b6e08"
+    },
+    {
+      "source": "attack-speculative-sidechannel",
+      "type": "requires_concept",
+      "target": "concept-decoding",
+      "basis": "pedagogical",
+      "references": [
+        "s-whisper-leak",
+        "s-speculative-sidechannel"
+      ],
+      "conditions": "",
+      "id": "edge-a09259fe9370a0c6"
+    },
+    {
+      "source": "attack-speculative-sidechannel",
+      "type": "requires_concept",
+      "target": "system-serving",
+      "basis": "pedagogical",
+      "references": [
+        "s-whisper-leak",
+        "s-speculative-sidechannel"
+      ],
+      "conditions": "",
+      "id": "edge-aedd471b7baba2fd"
+    },
+    {
+      "source": "attack-speculative-sidechannel",
+      "type": "variant_of",
+      "target": "attack-cache-sidechannel",
+      "basis": "literature",
+      "references": [
+        "s-whisper-leak",
+        "s-speculative-sidechannel"
+      ],
+      "conditions": "",
+      "id": "edge-eed84aaf97bf315e"
+    },
+    {
       "source": "attack-sponge",
       "type": "can_serve_goal",
       "target": "goal-availability",
@@ -10518,7 +11930,7 @@
         "s-activation",
         "s-refusal"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-362e3822c5e4053f"
     },
     {
@@ -10716,7 +12128,7 @@
       "references": [
         "s-tool-poison"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-5931a9e95484cd45"
     },
     {
@@ -10848,7 +12260,7 @@
         "s-indirect",
         "s-tool-poison"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-e7cd30ff9910a0ab"
     },
     {
@@ -11116,6 +12528,113 @@
       "id": "edge-d88f0e636f697619"
     },
     {
+      "source": "attack-unlearning-recovery",
+      "type": "can_serve_goal",
+      "target": "goal-behavior",
+      "basis": "literature",
+      "references": [
+        "s-unlearning-jog",
+        "s-unlearning-adv"
+      ],
+      "conditions": "",
+      "id": "edge-bd908e62ea024faf"
+    },
+    {
+      "source": "attack-unlearning-recovery",
+      "type": "can_serve_goal",
+      "target": "goal-information",
+      "basis": "literature",
+      "references": [
+        "s-unlearning-jog",
+        "s-unlearning-adv"
+      ],
+      "conditions": "",
+      "id": "edge-898956c65a257274"
+    },
+    {
+      "source": "attack-unlearning-recovery",
+      "type": "evaluated_by",
+      "target": "eval-asr",
+      "basis": "literature",
+      "references": [
+        "s-unlearning-jog"
+      ],
+      "conditions": "",
+      "id": "edge-3cbd761cd7c6ddaa"
+    },
+    {
+      "source": "attack-unlearning-recovery",
+      "type": "in_scope_of",
+      "target": "arch-decoder",
+      "basis": "literature",
+      "references": [
+        "s-unlearning-jog",
+        "s-unlearning-adv"
+      ],
+      "conditions": "",
+      "id": "edge-2adbfa23ad2f1b20"
+    },
+    {
+      "source": "attack-unlearning-recovery",
+      "type": "in_scope_of",
+      "target": "arch-diffusion",
+      "basis": "literature",
+      "references": [
+        "s-unlearning-jog",
+        "s-unlearning-adv"
+      ],
+      "conditions": "",
+      "id": "edge-a3acbc4bfc6fe1c7"
+    },
+    {
+      "source": "attack-unlearning-recovery",
+      "type": "member_of",
+      "target": "family-representation",
+      "basis": "taxonomy",
+      "references": [
+        "s-unlearning-jog",
+        "s-unlearning-adv"
+      ],
+      "conditions": "",
+      "id": "edge-227cbc218c7ec7e2"
+    },
+    {
+      "source": "attack-unlearning-recovery",
+      "type": "requires_concept",
+      "target": "adapt-unlearning",
+      "basis": "pedagogical",
+      "references": [
+        "s-unlearning-jog",
+        "s-unlearning-adv"
+      ],
+      "conditions": "",
+      "id": "edge-186946b0f0f969de"
+    },
+    {
+      "source": "attack-unlearning-recovery",
+      "type": "requires_concept",
+      "target": "concept-parameters",
+      "basis": "pedagogical",
+      "references": [
+        "s-unlearning-jog",
+        "s-unlearning-adv"
+      ],
+      "conditions": "",
+      "id": "edge-6c4a0c7b7af0f0ac"
+    },
+    {
+      "source": "attack-unlearning-recovery",
+      "type": "uses",
+      "target": "adapt-unlearning",
+      "basis": "literature",
+      "references": [
+        "s-unlearning-jog",
+        "s-unlearning-adv"
+      ],
+      "conditions": "",
+      "id": "edge-49c53d58955817d6"
+    },
+    {
       "source": "attack-unsafe-load",
       "type": "can_serve_goal",
       "target": "goal-environment",
@@ -11299,7 +12818,7 @@
       "references": [
         "s-visual-jailbreak"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-2dd89d72c83d7b44"
     },
     {
@@ -11563,6 +13082,45 @@
       "id": "edge-0c3e3b4ca220579a"
     },
     {
+      "source": "concept-reasoning-trace",
+      "type": "in_scope_of",
+      "target": "arch-decoder",
+      "basis": "literature",
+      "references": [
+        "s-overthink",
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "conditions": "",
+      "id": "edge-6a8ff72e66eac135"
+    },
+    {
+      "source": "concept-reasoning-trace",
+      "type": "requires_concept",
+      "target": "concept-context",
+      "basis": "pedagogical",
+      "references": [
+        "s-overthink",
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "conditions": "",
+      "id": "edge-18a88d0a0c639048"
+    },
+    {
+      "source": "concept-reasoning-trace",
+      "type": "requires_concept",
+      "target": "concept-decoding",
+      "basis": "pedagogical",
+      "references": [
+        "s-overthink",
+        "s-hcot",
+        "s-unfaithful-cot"
+      ],
+      "conditions": "",
+      "id": "edge-a047cdff68bac37a"
+    },
+    {
       "source": "concept-residual",
       "type": "requires_concept",
       "target": "arch-transformer",
@@ -11632,6 +13190,17 @@
       ],
       "conditions": "Coverage mapping, not a claim of complete prevention; see the defense limitations.",
       "id": "edge-db2fb45a1ad1ec7f"
+    },
+    {
+      "source": "defense-approval",
+      "type": "can_mitigate",
+      "target": "attack-mcp-sampling-injection",
+      "basis": "literature",
+      "references": [
+        "s-mcp-security"
+      ],
+      "conditions": "",
+      "id": "edge-1a69e2d866d66df7"
     },
     {
       "source": "defense-approval",
@@ -11730,6 +13299,17 @@
     {
       "source": "defense-backdoor-audit",
       "type": "can_mitigate",
+      "target": "attack-quantization-backdoor",
+      "basis": "literature",
+      "references": [
+        "s-quant-exploit"
+      ],
+      "conditions": "",
+      "id": "edge-e66b7f09e98fa474"
+    },
+    {
+      "source": "defense-backdoor-audit",
+      "type": "can_mitigate",
       "target": "attack-sleeper",
       "basis": "conditional_design",
       "references": [
@@ -11802,6 +13382,17 @@
     {
       "source": "defense-budget",
       "type": "can_mitigate",
+      "target": "attack-reasoning-sponge",
+      "basis": "literature",
+      "references": [
+        "s-overthink"
+      ],
+      "conditions": "",
+      "id": "edge-eadc2179b9a6dba4"
+    },
+    {
+      "source": "defense-budget",
+      "type": "can_mitigate",
       "target": "attack-sponge",
       "basis": "conditional_design",
       "references": [
@@ -11859,6 +13450,17 @@
     },
     {
       "source": "defense-cache-isolation",
+      "type": "can_mitigate",
+      "target": "attack-speculative-sidechannel",
+      "basis": "literature",
+      "references": [
+        "s-speculative-sidechannel"
+      ],
+      "conditions": "",
+      "id": "edge-69099b53729a3443"
+    },
+    {
+      "source": "defense-cache-isolation",
       "type": "requires_concept",
       "target": "concept-kv-cache",
       "basis": "pedagogical",
@@ -11900,6 +13502,126 @@
       ],
       "conditions": "",
       "id": "edge-42ca263b70769c14"
+    },
+    {
+      "source": "defense-circuit-breakers",
+      "type": "can_mitigate",
+      "target": "attack-constrained-decoding-bypass",
+      "basis": "literature",
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "conditions": "",
+      "id": "edge-5b6d3d0b0114fe6e"
+    },
+    {
+      "source": "defense-circuit-breakers",
+      "type": "can_mitigate",
+      "target": "attack-cot-hijack",
+      "basis": "literature",
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "conditions": "",
+      "id": "edge-063b3f2c4ff84636"
+    },
+    {
+      "source": "defense-circuit-breakers",
+      "type": "can_mitigate",
+      "target": "attack-gcg",
+      "basis": "literature",
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "conditions": "",
+      "id": "edge-63c1c4802562ffdc"
+    },
+    {
+      "source": "defense-circuit-breakers",
+      "type": "can_mitigate",
+      "target": "attack-jailbreak",
+      "basis": "literature",
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "conditions": "",
+      "id": "edge-e8c1ff9200d332f7"
+    },
+    {
+      "source": "defense-circuit-breakers",
+      "type": "can_mitigate",
+      "target": "attack-sleeper",
+      "basis": "literature",
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "conditions": "",
+      "id": "edge-b5c07f131d80d041"
+    },
+    {
+      "source": "defense-circuit-breakers",
+      "type": "can_mitigate",
+      "target": "attack-visual-jailbreak",
+      "basis": "literature",
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "conditions": "",
+      "id": "edge-1ad6229f11309879"
+    },
+    {
+      "source": "defense-circuit-breakers",
+      "type": "in_scope_of",
+      "target": "arch-decoder",
+      "basis": "literature",
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "conditions": "",
+      "id": "edge-d8b5a3f6f6162bee"
+    },
+    {
+      "source": "defense-circuit-breakers",
+      "type": "in_scope_of",
+      "target": "arch-transformer",
+      "basis": "literature",
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "conditions": "",
+      "id": "edge-b13c1fc2703052eb"
+    },
+    {
+      "source": "defense-circuit-breakers",
+      "type": "requires_concept",
+      "target": "adapt-representation",
+      "basis": "pedagogical",
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "conditions": "",
+      "id": "edge-48587a569ad9367b"
+    },
+    {
+      "source": "defense-circuit-breakers",
+      "type": "requires_concept",
+      "target": "concept-residual",
+      "basis": "pedagogical",
+      "references": [
+        "s-circuit-breakers",
+        "s-sleeper-probes"
+      ],
+      "conditions": "",
+      "id": "edge-09e38bc04ce385cb"
     },
     {
       "source": "defense-data-hygiene",
@@ -12050,6 +13772,17 @@
       ],
       "conditions": "Coverage mapping, not a claim of complete prevention; see the defense limitations.",
       "id": "edge-7161a6058c0f1928"
+    },
+    {
+      "source": "defense-least-privilege",
+      "type": "can_mitigate",
+      "target": "attack-cross-server-shadowing",
+      "basis": "literature",
+      "references": [
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-9eced568fa871f89"
     },
     {
       "source": "defense-least-privilege",
@@ -12384,7 +14117,7 @@
       "references": [
         "s-gguf"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-00c3b1e8535df43b"
     },
     {
@@ -12614,7 +14347,7 @@
       "references": [
         "s-react"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-9efa80ab9530e49a"
     },
     {
@@ -12663,6 +14396,34 @@
       ],
       "conditions": "",
       "id": "edge-20905069767ea249"
+    },
+    {
+      "source": "system-mcp",
+      "type": "requires_concept",
+      "target": "system-agent",
+      "basis": "pedagogical",
+      "references": [
+        "s-mcp-auth",
+        "s-mcp-security",
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-d04f992eb861e9ea"
+    },
+    {
+      "source": "system-mcp",
+      "type": "requires_concept",
+      "target": "system-tools",
+      "basis": "pedagogical",
+      "references": [
+        "s-mcp-auth",
+        "s-mcp-security",
+        "s-tool-poison",
+        "s-mcp-survey"
+      ],
+      "conditions": "",
+      "id": "edge-98e87f3a9b3d470d"
     },
     {
       "source": "system-memory",
@@ -12716,7 +14477,7 @@
       "references": [
         "s-rag"
       ],
-      "conditions": "Conditional conceptual relationship; not an automatic exploit chain.",
+      "conditions": "",
       "id": "edge-72a6c004fdb816af"
     },
     {
@@ -12914,19 +14675,6 @@
   ],
   "sources": [
     {
-      "id": "s-actions-events",
-      "title": "Events that trigger workflows",
-      "year": 2026,
-      "kind": "documentation",
-      "publisher": "GitHub",
-      "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows",
-      "relevance": "Scheduled and pull-request workflow behavior; scheduling is best effort.",
-      "verification_depth": "official_page",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
       "id": "s-actions-security",
       "title": "Securely using pull_request_target",
       "year": 2026,
@@ -12934,19 +14682,6 @@
       "publisher": "GitHub",
       "url": "https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target",
       "relevance": "Do not execute untrusted PR code in a privileged workflow.",
-      "verification_depth": "official_page",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
-      "id": "s-actions-triggers",
-      "title": "Triggering a workflow",
-      "year": 2026,
-      "kind": "documentation",
-      "publisher": "GitHub",
-      "url": "https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow",
-      "relevance": "Token-trigger behavior and safe orchestration of PR checks.",
       "verification_depth": "official_page",
       "checked_on": "2026-09-10",
       "full_text_reviewed": false,
@@ -12970,7 +14705,7 @@
       "title": "AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents",
       "year": 2024,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2024",
       "url": "https://arxiv.org/abs/2406.13352",
       "relevance": "Task-oriented agent security and utility evaluation.",
       "verification_depth": "metadata_and_abstract",
@@ -13031,6 +14766,19 @@
       "experiments_reproduced": false
     },
     {
+      "id": "s-audio-adv",
+      "title": "Audio Adversarial Examples: Targeted Attacks on Speech-to-Text",
+      "year": 2018,
+      "kind": "paper",
+      "publisher": "arXiv / IEEE S&P Workshops 2018",
+      "url": "https://arxiv.org/abs/1801.01944",
+      "relevance": "Carlini and Wagner; optimization of nearly inaudible waveforms that transcribe to any target phrase.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
       "id": "s-autogen",
       "title": "AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation",
       "year": 2023,
@@ -13057,6 +14805,19 @@
       "experiments_reproduced": false
     },
     {
+      "id": "s-badedit",
+      "title": "BadEdit: Backdooring Large Language Models by Model Editing",
+      "year": 2024,
+      "kind": "paper",
+      "publisher": "arXiv / ICLR 2024",
+      "url": "https://arxiv.org/abs/2403.13355",
+      "relevance": "Li et al.; rank-one knowledge editing can implant targeted backdoors with minimal clean-utility drop.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
       "id": "s-badnets",
       "title": "BadNets: Identifying Vulnerabilities in the Machine Learning Model Supply Chain",
       "year": 2017,
@@ -13074,7 +14835,7 @@
       "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
       "year": 2018,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NAACL 2019",
       "url": "https://arxiv.org/abs/1810.04805",
       "relevance": "Devlin et al.; encoder-style language-model pretraining.",
       "verification_depth": "metadata_and_abstract",
@@ -13109,11 +14870,24 @@
       "experiments_reproduced": false
     },
     {
+      "id": "s-circuit-breakers",
+      "title": "Improving Alignment and Robustness with Circuit Breakers",
+      "year": 2024,
+      "kind": "paper",
+      "publisher": "arXiv / NeurIPS 2024",
+      "url": "https://arxiv.org/abs/2406.04313",
+      "relevance": "Zou et al.; representation rerouting interrupts harmful internal states across text, multimodal, and prefill attacks.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
       "id": "s-clip",
       "title": "Learning Transferable Visual Models From Natural Language Supervision",
       "year": 2021,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICML 2021",
       "url": "https://arxiv.org/abs/2103.00020",
       "relevance": "Radford et al.; contrastive vision-language representations.",
       "verification_depth": "metadata_and_abstract",
@@ -13122,27 +14896,27 @@
       "experiments_reproduced": false
     },
     {
-      "id": "s-controlnet",
-      "title": "Adding Conditional Control to Text-to-Image Diffusion Models",
-      "year": 2023,
+      "id": "s-constrained-decoding-attack",
+      "title": "When Grammar Guides the Attack: Uncovering Control-Plane Vulnerabilities in LLMs with Structured Output",
+      "year": 2025,
       "kind": "paper",
       "publisher": "arXiv",
-      "url": "https://arxiv.org/abs/2302.05543",
-      "relevance": "ControlNet and structured conditioning pathways.",
+      "url": "https://arxiv.org/abs/2503.24191",
+      "relevance": "Zhang et al.; grammar- and schema-constrained decoding masks refusal tokens at the logit layer.",
       "verification_depth": "metadata_and_abstract",
-      "checked_on": "2026-09-10",
+      "checked_on": "2026-11-03",
       "full_text_reviewed": false,
       "experiments_reproduced": false
     },
     {
-      "id": "s-cytoscape",
-      "title": "Cytoscape.js documentation",
-      "year": 2026,
-      "kind": "documentation",
-      "publisher": "Cytoscape.js",
-      "url": "https://js.cytoscape.org/",
-      "relevance": "Client-side graph rendering and interaction API.",
-      "verification_depth": "official_page",
+      "id": "s-controlnet",
+      "title": "Adding Conditional Control to Text-to-Image Diffusion Models",
+      "year": 2023,
+      "kind": "paper",
+      "publisher": "arXiv / ICCV 2023",
+      "url": "https://arxiv.org/abs/2302.05543",
+      "relevance": "ControlNet and structured conditioning pathways.",
+      "verification_depth": "metadata_and_abstract",
       "checked_on": "2026-09-10",
       "full_text_reviewed": false,
       "experiments_reproduced": false
@@ -13152,7 +14926,7 @@
       "title": "Denoising Diffusion Implicit Models",
       "year": 2020,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICLR 2021",
       "url": "https://arxiv.org/abs/2010.02502",
       "relevance": "Alternative diffusion sampling formulation.",
       "verification_depth": "metadata_and_abstract",
@@ -13165,23 +14939,10 @@
       "title": "Denoising Diffusion Probabilistic Models",
       "year": 2020,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2020",
       "url": "https://arxiv.org/abs/2006.11239",
       "relevance": "Ho et al.; denoising objective and iterative generation.",
       "verification_depth": "metadata_and_abstract",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
-      "id": "s-defcon",
-      "title": "DEF CON Conference official video channel",
-      "year": 2026,
-      "kind": "discovery-feed",
-      "publisher": "DEF CON",
-      "url": "https://www.youtube.com/@DEFCONConference/videos",
-      "relevance": "Discovery source only; not direct proof of a specific attack.",
-      "verification_depth": "channel_metadata",
       "checked_on": "2026-09-10",
       "full_text_reviewed": false,
       "experiments_reproduced": false
@@ -13217,7 +14978,7 @@
       "title": "Extracting Training Data from Diffusion Models",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / USENIX Security 2023",
       "url": "https://arxiv.org/abs/2301.13188",
       "relevance": "Carlini et al.; image memorization and extraction under studied conditions.",
       "verification_depth": "metadata_and_abstract",
@@ -13243,7 +15004,7 @@
       "title": "Scalable Diffusion Models with Transformers",
       "year": 2022,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICCV 2023",
       "url": "https://arxiv.org/abs/2212.09748",
       "relevance": "Peebles and Xie; transformer backbones for diffusion.",
       "verification_depth": "metadata_and_abstract",
@@ -13256,7 +15017,7 @@
       "title": "Deep Learning with Differential Privacy",
       "year": 2016,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ACM CCS 2016",
       "url": "https://arxiv.org/abs/1607.00133",
       "relevance": "Abadi et al.; differential privacy during training and privacy accounting.",
       "verification_depth": "metadata_and_abstract",
@@ -13269,7 +15030,7 @@
       "title": "Direct Preference Optimization: Your Language Model is Secretly a Reward Model",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2023",
       "url": "https://arxiv.org/abs/2305.18290",
       "relevance": "Rafailov et al.; preference optimization, distinct from PPO-based RLHF.",
       "verification_depth": "metadata_and_abstract",
@@ -13282,7 +15043,7 @@
       "title": "DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation",
       "year": 2022,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / CVPR 2023",
       "url": "https://arxiv.org/abs/2208.12242",
       "relevance": "Neutral subject personalization through fine-tuning.",
       "verification_depth": "metadata_and_abstract",
@@ -13295,7 +15056,7 @@
       "title": "Erasing Concepts from Diffusion Models",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICCV 2023",
       "url": "https://arxiv.org/abs/2303.07345",
       "relevance": "Concept erasure intervention; not proof of complete or irreversible unlearning.",
       "verification_depth": "metadata_and_abstract",
@@ -13308,7 +15069,7 @@
       "title": "Explaining and Harnessing Adversarial Examples",
       "year": 2014,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICLR 2015",
       "url": "https://arxiv.org/abs/1412.6572",
       "relevance": "Goodfellow et al.; adversarial perturbations and FGSM.",
       "verification_depth": "metadata_and_abstract",
@@ -13321,7 +15082,7 @@
       "title": "Flow Matching for Generative Modeling",
       "year": 2022,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICLR 2023",
       "url": "https://arxiv.org/abs/2210.02747",
       "relevance": "Flow-matching objectives; do not label every flow model a DDPM.",
       "verification_depth": "metadata_and_abstract",
@@ -13334,7 +15095,7 @@
       "title": "Generative Adversarial Networks",
       "year": 2014,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2014",
       "url": "https://arxiv.org/abs/1406.2661",
       "relevance": "Goodfellow et al.; adversarial training objective is not an attacker objective.",
       "verification_depth": "metadata_and_abstract",
@@ -13399,7 +15160,7 @@
       "title": "HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal",
       "year": 2024,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICML 2024",
       "url": "https://arxiv.org/abs/2402.04249",
       "relevance": "Refusal/red-team evaluation; benchmark results are not universal safety guarantees.",
       "verification_depth": "metadata_and_abstract",
@@ -13408,41 +15169,15 @@
       "experiments_reproduced": false
     },
     {
-      "id": "s-hugo",
-      "title": "Host on GitHub Pages",
-      "year": 2026,
-      "kind": "documentation",
-      "publisher": "Hugo",
-      "url": "https://gohugo.io/host-and-deploy/host-on-github-pages/",
-      "relevance": "Official static build and GitHub Pages deployment integration.",
-      "verification_depth": "official_page",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
-      "id": "s-hugo-frontmatter",
-      "title": "Front matter",
-      "year": 2026,
-      "kind": "documentation",
-      "publisher": "Hugo",
-      "url": "https://gohugo.io/content-management/front-matter/",
-      "relevance": "Reserved content fields; compiler must map ontology type into Hugo params, not template type.",
-      "verification_depth": "official_page",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
-      "id": "s-hugo-output",
-      "title": "Output formats",
-      "year": 2026,
-      "kind": "documentation",
-      "publisher": "Hugo",
-      "url": "https://gohugo.io/configuration/output-formats/",
-      "relevance": "Static structured output support; the proposed compiler owns graph JSON.",
-      "verification_depth": "official_page",
-      "checked_on": "2026-09-10",
+      "id": "s-hcot",
+      "title": "H-CoT: Hijacking the Chain-of-Thought Safety Reasoning Mechanism to Jailbreak Large Reasoning Models",
+      "year": 2025,
+      "kind": "paper",
+      "publisher": "arXiv",
+      "url": "https://arxiv.org/abs/2502.12893",
+      "relevance": "Kuo et al.; manipulating intermediate safety reasoning traces in test-time reasoning models.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
       "full_text_reviewed": false,
       "experiments_reproduced": false
     },
@@ -13451,11 +15186,24 @@
       "title": "Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / AISec @ ACM CCS 2023",
       "url": "https://arxiv.org/abs/2302.12173",
       "relevance": "Greshake et al.; instructions introduced through external application data.",
       "verification_depth": "metadata_and_abstract",
       "checked_on": "2026-09-10",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
+      "id": "s-inst-poison",
+      "title": "Poisoning Language Models During Instruction Tuning",
+      "year": 2023,
+      "kind": "paper",
+      "publisher": "arXiv / ICML 2023",
+      "url": "https://arxiv.org/abs/2305.00944",
+      "relevance": "Wan et al.; small numbers of poisoned instruction-tuning examples implant trigger behaviors across held-out tasks.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
       "full_text_reviewed": false,
       "experiments_reproduced": false
     },
@@ -13468,19 +15216,6 @@
       "url": "https://openaccess.thecvf.com/content_CVPR_2019/html/Orekondy_Knockoff_Nets_Stealing_Functionality_of_Black-Box_Models_CVPR_2019_paper.html",
       "relevance": "Orekondy et al.; image-classifier functionality stealing, not exact LLM weight theft.",
       "verification_depth": "metadata_and_abstract",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
-      "id": "s-layouts",
-      "title": "Layouts",
-      "year": 2020,
-      "kind": "engineering",
-      "publisher": "Cytoscape.js",
-      "url": "https://blog.js.cytoscape.org/2020/05/11/layouts/",
-      "relevance": "Subgraph selection and layout tradeoffs.",
-      "verification_depth": "official_page",
       "checked_on": "2026-09-10",
       "full_text_reviewed": false,
       "experiments_reproduced": false
@@ -13516,7 +15251,7 @@
       "title": "Visual Instruction Tuning",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2023",
       "url": "https://arxiv.org/abs/2304.08485",
       "relevance": "LLaVA; vision-language instruction-tuned models.",
       "verification_depth": "metadata_and_abstract",
@@ -13542,7 +15277,7 @@
       "title": "LoRA: Low-Rank Adaptation of Large Language Models",
       "year": 2021,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICLR 2022",
       "url": "https://arxiv.org/abs/2106.09685",
       "relevance": "Hu et al.; neutral parameter-efficient adaptation.",
       "verification_depth": "metadata_and_abstract",
@@ -13555,7 +15290,7 @@
       "title": "Mamba: Linear-Time Sequence Modeling with Selective State Spaces",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / COLM 2024",
       "url": "https://arxiv.org/abs/2312.00752",
       "relevance": "Gu and Dao; selective state-space sequence models.",
       "verification_depth": "metadata_and_abstract",
@@ -13567,9 +15302,9 @@
       "id": "s-many-shot",
       "title": "Many-shot jailbreaking",
       "year": 2024,
-      "kind": "engineering",
-      "publisher": "Anthropic Research",
-      "url": "https://www.anthropic.com/research/many-shot-jailbreaking",
+      "kind": "paper",
+      "publisher": "arXiv / NeurIPS 2024",
+      "url": "https://arxiv.org/abs/2404.02151",
       "relevance": "Long-context demonstration-based attacks; source links to the research paper.",
       "verification_depth": "official_page",
       "checked_on": "2026-09-10",
@@ -13599,6 +15334,19 @@
       "relevance": "Token audience, confused-deputy and related authorization requirements.",
       "verification_depth": "official_page",
       "checked_on": "2026-09-10",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
+      "id": "s-mcp-survey",
+      "title": "Model Context Protocol (MCP): Landscape, Security Threats, and Future Research Directions",
+      "year": 2025,
+      "kind": "paper",
+      "publisher": "arXiv",
+      "url": "https://arxiv.org/abs/2503.23278",
+      "relevance": "Hou et al.; analysis of MCP tool-server lifecycle, cross-server shadowing, and protocol attack surfaces.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
       "full_text_reviewed": false,
       "experiments_reproduced": false
     },
@@ -13646,7 +15394,7 @@
       "title": "Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity",
       "year": 2021,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / JMLR 2022",
       "url": "https://arxiv.org/abs/2101.03961",
       "relevance": "Sparse mixture-of-experts routing; not itself an attack.",
       "verification_depth": "metadata_and_abstract",
@@ -13668,19 +15416,6 @@
       "experiments_reproduced": false
     },
     {
-      "id": "s-obsidian",
-      "title": "Internal links",
-      "year": 2026,
-      "kind": "documentation",
-      "publisher": "Obsidian",
-      "url": "https://obsidian.md/help/links",
-      "relevance": "Standard Markdown links and optional wikilinks; portability constraints.",
-      "verification_depth": "official_page",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
       "id": "s-onnx",
       "title": "Introduction to ONNX",
       "year": 2026,
@@ -13690,6 +15425,19 @@
       "relevance": "Graph/parameter interchange and operator-set compatibility.",
       "verification_depth": "official_page",
       "checked_on": "2026-09-10",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
+      "id": "s-overthink",
+      "title": "OverThink: Slowdown Attacks on Reasoning LLMs",
+      "year": 2025,
+      "kind": "paper",
+      "publisher": "arXiv",
+      "url": "https://arxiv.org/abs/2502.02542",
+      "relevance": "Kumar et al.; inflating internal reasoning-token generation via indirect decoy logic tasks.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
       "full_text_reviewed": false,
       "experiments_reproduced": false
     },
@@ -13707,63 +15455,11 @@
       "experiments_reproduced": false
     },
     {
-      "id": "s-owasp26",
-      "title": "OWASP GenAI LLM Top 10 2026 resource",
-      "year": 2026,
-      "kind": "framework",
-      "publisher": "OWASP",
-      "url": "https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/",
-      "relevance": "2026 edition exists. Exact category crosswalk is not transcribed or verified in this seed.",
-      "verification_depth": "official_page",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
-      "id": "s-owasp26-news",
-      "title": "OWASP announces 2026 LLM Top 10 and Agent Control Standard",
-      "year": 2026,
-      "kind": "announcement",
-      "publisher": "OWASP",
-      "url": "https://genai.owasp.org/2026/09/01/owasp-genai-security-project-unveils-2026-top-10-for-llm-applications-new-agent-control-standard-and-sponsors-as-community-tops-30000-members/",
-      "relevance": "Edition-change evidence; announcement page date and release dateline differ by one day.",
-      "verification_depth": "official_page",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
-      "id": "s-pagefind",
-      "title": "Getting Started with Pagefind",
-      "year": 2026,
-      "kind": "documentation",
-      "publisher": "Pagefind",
-      "url": "https://pagefind.app/docs/",
-      "relevance": "Post-build static search index and local browser search.",
-      "verification_depth": "official_page",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
-      "id": "s-pages",
-      "title": "GitHub Pages limits",
-      "year": 2026,
-      "kind": "documentation",
-      "publisher": "GitHub",
-      "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits",
-      "relevance": "Hosting eligibility, size and bandwidth/build limits; not a promise of free research automation.",
-      "verification_depth": "official_page",
-      "checked_on": "2026-09-10",
-      "full_text_reviewed": false,
-      "experiments_reproduced": false
-    },
-    {
       "id": "s-pgd",
       "title": "Towards Deep Learning Models Resistant to Adversarial Attacks",
       "year": 2017,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICLR 2018",
       "url": "https://arxiv.org/abs/1706.06083",
       "relevance": "Madry et al.; robust optimization and iterative adversarial evaluation.",
       "verification_depth": "metadata_and_abstract",
@@ -13802,7 +15498,7 @@
       "title": "Prefix-Tuning: Optimizing Continuous Prompts for Generation",
       "year": 2021,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ACL 2021",
       "url": "https://arxiv.org/abs/2101.00190",
       "relevance": "Li and Liang; learned continuous prefixes, not ordinary text prompting.",
       "verification_depth": "metadata_and_abstract",
@@ -13815,7 +15511,7 @@
       "title": "Stealing Part of a Production Language Model",
       "year": 2024,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICML 2024",
       "url": "https://arxiv.org/abs/2403.06634v2",
       "relevance": "Carlini et al.; partial projection-layer recovery under particular API capabilities.",
       "verification_depth": "metadata_and_abstract",
@@ -13841,11 +15537,24 @@
       "title": "QLoRA: Efficient Finetuning of Quantized LLMs",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2023",
       "url": "https://arxiv.org/abs/2305.14314",
       "relevance": "Dettmers et al.; low-rank adaptation over a quantized base.",
       "verification_depth": "metadata_and_abstract",
       "checked_on": "2026-09-10",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
+      "id": "s-quant-exploit",
+      "title": "Exploiting LLM Quantization",
+      "year": 2024,
+      "kind": "paper",
+      "publisher": "arXiv / NeurIPS 2024",
+      "url": "https://arxiv.org/abs/2405.18137",
+      "relevance": "Egashira et al.; full-precision weights crafted to appear benign until quantized to INT8/INT4.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
       "full_text_reviewed": false,
       "experiments_reproduced": false
     },
@@ -13867,7 +15576,7 @@
       "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
       "year": 2022,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICLR 2023",
       "url": "https://arxiv.org/abs/2210.03629",
       "relevance": "Tool-using agent loops; neutral systems pattern.",
       "verification_depth": "metadata_and_abstract",
@@ -13880,7 +15589,7 @@
       "title": "Refusal in Language Models Is Mediated by a Single Direction",
       "year": 2024,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2024",
       "url": "https://arxiv.org/abs/2406.11717",
       "relevance": "Arditi et al.; refusal-related activation directions and interventions in tested models, not universal safety removal.",
       "verification_depth": "metadata_and_abstract",
@@ -13906,7 +15615,7 @@
       "title": "Training language models to follow instructions with human feedback",
       "year": 2022,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2022",
       "url": "https://arxiv.org/abs/2203.02155",
       "relevance": "Ouyang et al.; SFT, preference data, reward modeling and RLHF.",
       "verification_depth": "metadata_and_abstract",
@@ -13915,11 +15624,24 @@
       "experiments_reproduced": false
     },
     {
+      "id": "s-rlhf-poison",
+      "title": "Universal Jailbreak Backdoors from Poisoned Human Feedback",
+      "year": 2023,
+      "kind": "paper",
+      "publisher": "arXiv / ICLR 2024",
+      "url": "https://arxiv.org/abs/2311.14455",
+      "relevance": "Rando and Tramèr; poisoning RLHF preference comparisons to plant universal trigger backdoors.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
       "id": "s-rome",
       "title": "Locating and Editing Factual Associations in GPT",
       "year": 2022,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2022",
       "url": "https://arxiv.org/abs/2202.05262",
       "relevance": "Meng et al.; ROME and targeted factual editing.",
       "verification_depth": "metadata_and_abstract",
@@ -13945,7 +15667,7 @@
       "title": "Fine-tuning Aligned Language Models Compromises Safety, Even When Users Do Not Intend To!",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICLR 2024",
       "url": "https://arxiv.org/abs/2310.03693",
       "relevance": "Qi et al.; safety regressions and adversarial fine-tuning in evaluated settings.",
       "verification_depth": "metadata_and_abstract",
@@ -13957,12 +15679,25 @@
       "id": "s-sleeper",
       "title": "Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training",
       "year": 2024,
-      "kind": "engineering",
-      "publisher": "Anthropic Research",
-      "url": "https://www.anthropic.com/research/sleeper-agents-training-deceptive-llms-that-persist-through-safety-training",
+      "kind": "paper",
+      "publisher": "arXiv / Anthropic Research",
+      "url": "https://arxiv.org/abs/2401.05566",
       "relevance": "Intentionally trained backdoor examples; not evidence that all deployed models are deceptive.",
       "verification_depth": "official_page",
       "checked_on": "2026-09-10",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
+      "id": "s-sleeper-probes",
+      "title": "Simple Probes Can Catch Sleeper Agents",
+      "year": 2024,
+      "kind": "engineering",
+      "publisher": "Anthropic Research",
+      "url": "https://www.anthropic.com/research/probes-catch-sleeper-agents",
+      "relevance": "MacDiarmid et al.; linear residual-stream probes detect sleeper-agent defection prior to generation.",
+      "verification_depth": "official_page",
+      "checked_on": "2026-11-03",
       "full_text_reviewed": false,
       "experiments_reproduced": false
     },
@@ -13971,7 +15706,7 @@
       "title": "SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICML 2023",
       "url": "https://arxiv.org/abs/2301.00774",
       "relevance": "Pruning as a model transformation; utility and safety need reevaluation.",
       "verification_depth": "metadata_and_abstract",
@@ -13980,11 +15715,24 @@
       "experiments_reproduced": false
     },
     {
+      "id": "s-speculative-sidechannel",
+      "title": "When Speculation Spills Secrets: Side Channels via Speculative Decoding in LLMs",
+      "year": 2024,
+      "kind": "paper",
+      "publisher": "arXiv",
+      "url": "https://arxiv.org/abs/2411.01076",
+      "relevance": "Draft-verification acceptance bursts in speculative decoding leak input-dependent timing and token counts.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
       "id": "s-sponge",
       "title": "Sponge Examples: Energy-Latency Attacks on Neural Networks",
       "year": 2020,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / IEEE EuroS&P 2021",
       "url": "https://arxiv.org/abs/2006.03463",
       "relevance": "Input-dependent energy and latency attacks under particular execution assumptions.",
       "verification_depth": "metadata_and_abstract",
@@ -13997,7 +15745,7 @@
       "title": "Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer",
       "year": 2019,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / JMLR 2020",
       "url": "https://arxiv.org/abs/1910.10683",
       "relevance": "Raffel et al.; encoder-decoder/text-to-text transfer learning.",
       "verification_depth": "metadata_and_abstract",
@@ -14023,7 +15771,7 @@
       "title": "An Image is Worth One Word: Personalizing Text-to-Image Generation using Textual Inversion",
       "year": 2022,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICLR 2023",
       "url": "https://arxiv.org/abs/2208.01618",
       "relevance": "Learned concept embeddings; distinguish inversion here from privacy model inversion.",
       "verification_depth": "metadata_and_abstract",
@@ -14036,7 +15784,7 @@
       "title": "TIES-Merging: Resolving Interference When Merging Models",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2023",
       "url": "https://arxiv.org/abs/2306.01708",
       "relevance": "Yadav et al.; model merging and interference.",
       "verification_depth": "metadata_and_abstract",
@@ -14075,7 +15823,7 @@
       "title": "Attention Is All You Need",
       "year": 2017,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / NeurIPS 2017",
       "url": "https://arxiv.org/abs/1706.03762",
       "relevance": "Vaswani et al.; attention and transformer foundations.",
       "verification_depth": "metadata_and_abstract",
@@ -14093,6 +15841,45 @@
       "relevance": "Model library distinct from the transformer architecture.",
       "verification_depth": "official_page",
       "checked_on": "2026-09-10",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
+      "id": "s-unfaithful-cot",
+      "title": "Language Models Don’t Always Say What They Think: Unfaithful Explanations in Chain-of-Thought Prompting",
+      "year": 2023,
+      "kind": "paper",
+      "publisher": "arXiv / NeurIPS 2023",
+      "url": "https://arxiv.org/abs/2305.04388",
+      "relevance": "Turpin et al.; generated reasoning chains can omit or misstate the factors driving model outputs.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
+      "id": "s-unlearning-adv",
+      "title": "An Adversarial Perspective on Machine Unlearning for AI Safety",
+      "year": 2024,
+      "kind": "paper",
+      "publisher": "arXiv",
+      "url": "https://arxiv.org/abs/2409.18025",
+      "relevance": "Łucki et al.; recovering unlearned behaviors through quantization, activation steering, and few-shot fine-tuning.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
+      "id": "s-unlearning-jog",
+      "title": "Unlearning or Obfuscating? Jogging the Memory of Unlearned LLMs via Benign Relearning",
+      "year": 2024,
+      "kind": "paper",
+      "publisher": "arXiv / ICLR 2025",
+      "url": "https://arxiv.org/abs/2406.13356",
+      "relevance": "Shumailov et al.; approximate unlearning often suppresses rather than erases capabilities, allowing recovery.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
       "full_text_reviewed": false,
       "experiments_reproduced": false
     },
@@ -14140,7 +15927,7 @@
       "title": "Auto-Encoding Variational Bayes",
       "year": 2013,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / ICLR 2014",
       "url": "https://arxiv.org/abs/1312.6114",
       "relevance": "Kingma and Welling; variational latent-variable modeling.",
       "verification_depth": "metadata_and_abstract",
@@ -14153,7 +15940,7 @@
       "title": "Visual Adversarial Examples Jailbreak Aligned Large Language Models",
       "year": 2023,
       "kind": "paper",
-      "publisher": "arXiv",
+      "publisher": "arXiv / AAAI 2024",
       "url": "https://arxiv.org/abs/2306.13213",
       "relevance": "Qi et al.; optimized visual perturbations in evaluated vision-language models.",
       "verification_depth": "metadata_and_abstract",
@@ -14171,6 +15958,32 @@
       "relevance": "Versioned cache architecture background, not a current vulnerability claim.",
       "verification_depth": "official_page",
       "checked_on": "2026-09-10",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
+      "id": "s-voice-jailbreak",
+      "title": "Voice Jailbreak Attacks Against GPT-4o",
+      "year": 2024,
+      "kind": "paper",
+      "publisher": "arXiv",
+      "url": "https://arxiv.org/abs/2405.19103",
+      "relevance": "Shen et al.; evaluating speech-borne jailbreaks and spoken persuasion against omni-modal voice interfaces.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
+      "full_text_reviewed": false,
+      "experiments_reproduced": false
+    },
+    {
+      "id": "s-whisper-leak",
+      "title": "What Was Your Prompt? A Remote Keylogging Attack on AI Assistants",
+      "year": 2024,
+      "kind": "paper",
+      "publisher": "arXiv / USENIX Security 2024",
+      "url": "https://arxiv.org/abs/2403.09751",
+      "relevance": "Weiss et al.; inferring streaming assistant responses from encrypted packet sizes and inter-token timing.",
+      "verification_depth": "metadata_and_abstract",
+      "checked_on": "2026-11-03",
       "full_text_reviewed": false,
       "experiments_reproduced": false
     }
@@ -14965,7 +16778,9 @@
       "edge_types": [
         "requires_concept",
         "can_serve_goal",
-        "can_mitigate"
+        "can_mitigate",
+        "member_of",
+        "evaluated_by"
       ],
       "learning_path": [
         "goal-information",
@@ -15001,7 +16816,9 @@
         "requires_concept",
         "uses",
         "can_serve_goal",
-        "can_mitigate"
+        "can_mitigate",
+        "member_of",
+        "evaluated_by"
       ],
       "learning_path": [
         "goal-behavior",
@@ -15035,7 +16852,11 @@
       "edge_types": [
         "requires_concept",
         "uses",
-        "distinct_from"
+        "distinct_from",
+        "member_of",
+        "can_serve_goal",
+        "evaluated_by",
+        "can_mitigate"
       ],
       "learning_path": [
         "goal-model-theft",
@@ -15181,6 +17002,246 @@
       "source_id": "s-owasp25",
       "mapping_basis": "editorial_related_to",
       "checked_on": "2026-09-10"
+    },
+    {
+      "framework": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "external_id": "ASI01:2026",
+      "title": "Agent Goal Hijack",
+      "node_ids": [
+        "attack-indirect-injection",
+        "attack-tool-output",
+        "family-agent"
+      ],
+      "source_id": "s-agentic26",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "external_id": "ASI02:2026",
+      "title": "Tool Misuse and Exploitation",
+      "node_ids": [
+        "attack-confused-deputy",
+        "attack-tool-description",
+        "attack-cross-server-shadowing",
+        "system-tools",
+        "system-mcp"
+      ],
+      "source_id": "s-agentic26",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "external_id": "ASI03:2026",
+      "title": "Identity and Privilege Abuse",
+      "node_ids": [
+        "attack-excessive-agency",
+        "attack-confused-deputy",
+        "defense-least-privilege",
+        "defense-authorization"
+      ],
+      "source_id": "s-agentic26",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "external_id": "ASI04:2026",
+      "title": "Agentic Supply Chain Vulnerabilities",
+      "node_ids": [
+        "attack-tool-rugpull",
+        "attack-dependency",
+        "attack-cross-server-shadowing",
+        "family-supply"
+      ],
+      "source_id": "s-agentic26",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "external_id": "ASI05:2026",
+      "title": "Unexpected Code Execution",
+      "node_ids": [
+        "attack-output-sink",
+        "attack-unsafe-load",
+        "defense-isolation"
+      ],
+      "source_id": "s-agentic26",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "external_id": "ASI06:2026",
+      "title": "Memory and Context Poisoning",
+      "node_ids": [
+        "attack-memory-poison",
+        "attack-rag-poison",
+        "system-memory",
+        "defense-memory"
+      ],
+      "source_id": "s-agentic26",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "external_id": "ASI07:2026",
+      "title": "Insecure Inter-Agent Communication",
+      "node_ids": [
+        "attack-multiagent",
+        "attack-mcp-sampling-injection",
+        "system-multiagent",
+        "system-mcp"
+      ],
+      "source_id": "s-agentic26",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "external_id": "ASI08:2026",
+      "title": "Cascading Failures",
+      "node_ids": [
+        "attack-agent-loop",
+        "attack-reasoning-sponge",
+        "system-multiagent",
+        "defense-budget"
+      ],
+      "source_id": "s-agentic26",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "external_id": "ASI09:2026",
+      "title": "Human-Agent Trust Exploitation",
+      "node_ids": [
+        "attack-citation-launder",
+        "attack-cot-hijack",
+        "defense-approval"
+      ],
+      "source_id": "s-agentic26",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "external_id": "ASI10:2026",
+      "title": "Rogue Agents",
+      "node_ids": [
+        "attack-sleeper",
+        "attack-excessive-agency",
+        "goal-persistence",
+        "defense-circuit-breakers"
+      ],
+      "source_id": "s-agentic26",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "MITRE ATLAS",
+      "edition": "2026",
+      "external_id": "AML.T0051",
+      "title": "LLM Prompt Injection",
+      "node_ids": [
+        "attack-direct-injection",
+        "attack-indirect-injection",
+        "attack-multimodal-injection",
+        "attack-audio-injection"
+      ],
+      "source_id": "s-atlas",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "MITRE ATLAS",
+      "edition": "2026",
+      "external_id": "AML.T0054",
+      "title": "LLM Jailbreak",
+      "node_ids": [
+        "attack-jailbreak",
+        "attack-gcg",
+        "attack-many-shot",
+        "attack-visual-jailbreak",
+        "attack-cot-hijack",
+        "attack-constrained-decoding-bypass"
+      ],
+      "source_id": "s-atlas",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "MITRE ATLAS",
+      "edition": "2026",
+      "external_id": "AML.T0043",
+      "title": "Craft Adversarial Data",
+      "node_ids": [
+        "attack-fgsm",
+        "attack-pgd",
+        "attack-physical",
+        "attack-audio-injection"
+      ],
+      "source_id": "s-atlas",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "MITRE ATLAS",
+      "edition": "2026",
+      "external_id": "AML.T0020",
+      "title": "Poison Training Data",
+      "node_ids": [
+        "attack-pretrain-poison",
+        "attack-sft-poison",
+        "attack-preference-poison",
+        "attack-backdoor"
+      ],
+      "source_id": "s-atlas",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "MITRE ATLAS",
+      "edition": "2026",
+      "external_id": "AML.T0024",
+      "title": "Exfiltration via ML Inference API",
+      "node_ids": [
+        "attack-training-extraction",
+        "attack-membership",
+        "attack-model-imitation",
+        "attack-projection-theft"
+      ],
+      "source_id": "s-atlas",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
+    },
+    {
+      "framework": "MITRE ATLAS",
+      "edition": "2026",
+      "external_id": "AML.T0010",
+      "title": "ML Supply Chain Compromise",
+      "node_ids": [
+        "attack-unsafe-load",
+        "attack-adapter-tamper",
+        "attack-artifact-substitution",
+        "attack-quantization-backdoor"
+      ],
+      "source_id": "s-atlas",
+      "mapping_basis": "editorial_related_to",
+      "checked_on": "2026-11-03"
     }
   ],
   "research_backlog": [

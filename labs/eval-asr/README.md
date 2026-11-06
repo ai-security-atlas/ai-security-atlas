@@ -26,7 +26,7 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-12 · Measuring an attack honestly
 
-> **Atlas node:** [Attack success and severity](https://ai-security-atlas.github.io/?node=eval-asr) · **Family:** family-prompt · **Level:** intermediate · **Time:** 90 min · **Model backend:** required
+> **Atlas node:** [Attack success and severity](https://ai-security-atlas.github.io/nodes/eval-asr/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 90 min · **Model backend:** required
 
 ## Overview
 
@@ -54,13 +54,13 @@ The only attacker goal in this lab is LAB-06's fictional policy violation: the b
 | Field | Value |
 | :--- | :--- |
 | Node | [`eval-asr`](../../articles/eval-asr.md) |
-| Family | None in the seed graph (an evaluation node). The measured attack is [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection), in [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt), which the front matter and explainer kicker use. |
-| Goal | None for the evaluation node; the measured attack's goals are [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (text) and, in Step 5, [`goal-actions`](https://ai-security-atlas.github.io/?node=goal-actions) (a tool call). |
+| Family | None in the seed graph (an evaluation node). The measured attack is [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/), in [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/), which the front matter and explainer kicker use. |
+| Goal | None for the evaluation node; the measured attack's goals are [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (text) and, in Step 5, [`goal-actions`](https://ai-security-atlas.github.io/nodes/goal-actions/) (a tool call). |
 | Access profile | `A01` Output-query access (caveat: *No weights, logits, training data or privileged context are implied.*): the measured attacker is a customer sending one user turn. |
-| Read first | [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection) (LAB-06), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Mitigated by | Not applicable to an evaluation node. The defenses measured are [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) (instruction hierarchy) and [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output) (output policy check). |
-| Evaluated by | This node is the evaluation. It is practiced together with [`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro), [`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility), [`eval-evidence`](https://ai-security-atlas.github.io/?node=eval-evidence), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model), [`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost) and [`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive). |
-| Related | [`attack-excessive-agency`](https://ai-security-atlas.github.io/?node=attack-excessive-agency), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent) (Step 5), seed sources HarmBench (`s-harmbench`) and AgentDojo (`s-agentdojo`) |
+| Read first | [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/) (LAB-06), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Mitigated by | Not applicable to an evaluation node. The defenses measured are [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) (instruction hierarchy) and [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/) (output policy check). |
+| Evaluated by | This node is the evaluation. It is practiced together with [`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/), [`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/), [`eval-evidence`](https://ai-security-atlas.github.io/nodes/eval-evidence/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/), [`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/) and [`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/). |
+| Related | [`attack-excessive-agency`](https://ai-security-atlas.github.io/nodes/attack-excessive-agency/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/) (Step 5), seed sources HarmBench (`s-harmbench`) and AgentDojo (`s-agentdojo`) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this evaluation node. Its article closes with the one this lab practices: "A reported attack success rate is scope-limited: it reflects the chosen definition, dataset, and judge, and is not proof that a technique always works or that a system lacking that success is safe." 
@@ -88,7 +88,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` and `ollama pull llama3.2:3b` on the host.
 - Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md), whose attack this lab measures.
-- Concepts to read first: [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) and [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection).
+- Concepts to read first: [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) and [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/).
 
 ## Explainer
 
@@ -211,7 +211,7 @@ What to notice: the same 80 defended replies score 19 %, 24 % or 66 % depending 
 
 **Why**
 
-An ASR is k/n for one success definition, and Step 1 shows the definition is a choice that can be made, honestly or not, after the replies are in ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). Strict misses rephrased approvals, loose counts a refusal that quotes the code, and lenient (no refusal words, the keyword grader common in jailbreak papers) counts every evasive answer. The control row is the baseline: without it you cannot tell an attack's lift from a grader that fires on ordinary replies.
+An ASR is k/n for one success definition, and Step 1 shows the definition is a choice that can be made, honestly or not, after the replies are in ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). Strict misses rephrased approvals, loose counts a refusal that quotes the code, and lenient (no refusal words, the keyword grader common in jailbreak papers) counts every evasive answer. The control row is the baseline: without it you cannot tell an attack's lift from a grader that fires on ordinary replies.
 
 ### Step 2 — Grade the grader (≈2 min) · [explainer 4](explainer/index.html#eval-asr/4)
 
@@ -252,7 +252,7 @@ What to notice: the judge with the explicit rubric agrees best with the hand lab
 
 **Why**
 
-A grader is a measuring instrument, so it needs calibration against labels before its numbers mean anything; an LLM judge is no exception ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The rubric is part of the success definition: the first rubric (judge-naive) said NO to replies that issue the code and then contradict themselves. The final rubric was revised once after reading those misses on this same gold set, so κ 0.82 is optimistic; an honest report keeps a held-out set (Going Further).
+A grader is a measuring instrument, so it needs calibration against labels before its numbers mean anything; an LLM judge is no exception ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The rubric is part of the success definition: the first rubric (judge-naive) said NO to replies that issue the code and then contradict themselves. The final rubric was revised once after reading those misses on this same gold set, so κ 0.82 is optimistic; an honest report keeps a held-out set (Going Further).
 
 ### Step 3 — One seed is an anecdote · [explainer 5](explainer/index.html#eval-asr/5)
 
@@ -290,7 +290,7 @@ What to notice: the same 40 outcomes can be reported as 100 %, 0 % or 57 %; only
 
 **Why**
 
-At temperature 0.7 a reply is a sample, so one success, or three, says almost nothing; report k/n with a Wilson interval (it behaves at 0 % and 100 %, where a percentile bootstrap collapses) and enough trials ([`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro)). A fixed seed per trial makes the run repeatable on the same server build (the second reference run moved the defended judge ASR from 13/80 to 15/80, inside both intervals), which is what lets a reviewer rerun your number; it does not make the number valid for another machine or Ollama version.
+At temperature 0.7 a reply is a sample, so one success, or three, says almost nothing; report k/n with a Wilson interval (it behaves at 0 % and 100 %, where a percentile bootstrap collapses) and enough trials ([`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/)). A fixed seed per trial makes the run repeatable on the same server build (the second reference run moved the defended judge ASR from 13/80 to 15/80, inside both intervals), which is what lets a reviewer rerun your number; it does not make the number valid for another machine or Ollama version.
 
 ### Step 4 — The manifest and the bill
 
@@ -331,7 +331,7 @@ What to notice: the hierarchy profile costs 52 % more prompt tokens per query an
 
 **Why**
 
-A manifest makes "the same experiment" checkable: model id and digest, server version, sampling, seeds, input hashes, graders and the reply digest; two numbers are comparable only if their manifests differ in the one thing you changed ([`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro)). Cost belongs next to the rate: queries, tokens and latency per success are the attacker's budget and the defender's bill ([`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost)); latency here is client-side and was measured on a busy machine.
+A manifest makes "the same experiment" checkable: model id and digest, server version, sampling, seeds, input hashes, graders and the reply digest; two numbers are comparable only if their manifests differ in the one thing you changed ([`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/)). Cost belongs next to the rate: queries, tokens and latency per success are the attacker's budget and the defender's bill ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)); latency here is client-side and was measured on a busy machine.
 
 ### Step 5 — Text is not action (≈40 s) · [explainer 6](explainer/index.html#eval-asr/6)
 
@@ -366,7 +366,7 @@ What to notice: with tools in the request the model almost never writes the cana
 
 **Why**
 
-The Atlas node separates model text from a consequential action ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)): here the same attack is a near-zero text ASR and a 75 % action ASR, so a text grader on an agent reports the wrong thing in the wrong direction. Count what the threat model cares about, here the refund call, and grade it in code from the tool call itself ([`system-agent`](https://ai-security-atlas.github.io/?node=system-agent), [`attack-excessive-agency`](https://ai-security-atlas.github.io/?node=attack-excessive-agency)). The tools are mocks: nothing is executed.
+The Atlas node separates model text from a consequential action ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)): here the same attack is a near-zero text ASR and a 75 % action ASR, so a text grader on an agent reports the wrong thing in the wrong direction. Count what the threat model cares about, here the refund call, and grade it in code from the tool call itself ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/), [`attack-excessive-agency`](https://ai-security-atlas.github.io/nodes/attack-excessive-agency/)). The tools are mocks: nothing is executed.
 
 ### Step 6 — Write the claim · [explainer 7](explainer/index.html#eval-asr/7)
 
@@ -412,7 +412,7 @@ What to notice: every line of the card points at a measured value (interval, gra
 
 **Why**
 
-Atlas grades claims by how they were established: theory, empirical report, independent reproduction, deployment report ([`eval-evidence`](https://ai-security-atlas.github.io/?node=eval-evidence)). Your result is a single empirical demonstration, a weaker kind of evidence than, for example, HarmBench's standardized multi-model comparison, and that is the honest label. The threat-model lines (goal, capability, knowledge, budget, authority, target revision) say whose attack the number describes ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)); without them "94 %" has no subject.
+Atlas grades claims by how they were established: theory, empirical report, independent reproduction, deployment report ([`eval-evidence`](https://ai-security-atlas.github.io/nodes/eval-evidence/)). Your result is a single empirical demonstration, a weaker kind of evidence than, for example, HarmBench's standardized multi-model comparison, and that is the honest label. The threat-model lines (goal, capability, knowledge, budget, authority, target revision) say whose attack the number describes ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)); without them "94 %" has no subject.
 
 ## Defend
 
@@ -451,7 +451,7 @@ What to notice: the output check looks almost perfect on attacks (1/80, and that
 
 **Why**
 
-A defense has two numbers: how much attack it stops and how much ordinary traffic it breaks; without the second, the cheapest "defense" is refusing everyone ([`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility)). The output check is deterministic code after the model ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)), and its false positives are honest customers who mentioned an approved refund. Limitation: 60 benign messages give an upper bound of 11 % for 2 false positives; a real deployment measures this on its own traffic.
+A defense has two numbers: how much attack it stops and how much ordinary traffic it breaks; without the second, the cheapest "defense" is refusing everyone ([`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/)). The output check is deterministic code after the model ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)), and its false positives are honest customers who mentioned an approved refund. Limitation: 60 benign messages give an upper bound of 11 % for 2 false positives; a real deployment measures this on its own traffic.
 
 ### Step D2 — Adaptive rows and a release gate · [explainer 9](explainer/index.html#eval-asr/9)
 
@@ -489,7 +489,7 @@ What to notice: the strict grader sees 0/40 and the usual gate passes, while the
 
 **Why**
 
-A defense evaluated only on the prompts it was built against says nothing about an attacker who read it ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)); the grader has to know the attacker's encodings too, or it hides the leak. A release gate turns the evaluation into a decision: it checks the grader's validity, n, the interval's upper bound rather than the point estimate, the adaptive rows and the benign cost ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)). Limitation: the gate is only as good as the attack sets it is given.
+A defense evaluated only on the prompts it was built against says nothing about an attacker who read it ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)); the grader has to know the attacker's encodings too, or it hides the leak. A release gate turns the evaluation into a decision: it checks the grader's validity, n, the interval's upper bound rather than the point estimate, the adaptive rows and the benign cost ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). Limitation: the gate is only as good as the attack sets it is given.
 
 ## Evaluate
 

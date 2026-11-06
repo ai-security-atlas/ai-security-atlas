@@ -23,7 +23,7 @@ covers:
 
 # LAB-31 · Telephone game: when a peer's message becomes an order
 
-> **Atlas node:** [Inter-agent trust and message manipulation](https://ai-security-atlas.github.io/?node=attack-multiagent) · **Family:** family-agent · **Level:** intermediate · **Time:** 90 min · **Model backend:** required
+> **Atlas node:** [Inter-agent trust and message manipulation](https://ai-security-atlas.github.io/nodes/attack-multiagent/) · **Family:** family-agent · **Level:** intermediate · **Time:** 90 min · **Model backend:** required
 
 ## Overview
 
@@ -53,13 +53,13 @@ Every person, company, order and address here is fictional. The collector addres
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-multiagent`](../../articles/attack-multiagent.md) |
-| Family | [`family-agent`](https://ai-security-atlas.github.io/?node=family-agent) |
-| Goal | [`goal-actions`](https://ai-security-atlas.github.io/?node=goal-actions), [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence) |
+| Family | [`family-agent`](https://ai-security-atlas.github.io/nodes/family-agent/) |
+| Goal | [`goal-actions`](https://ai-security-atlas.github.io/nodes/goal-actions/), [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/) |
 | Access profile | `A04` External-context authoring (caveat: *Victim must actually ingest the lower-trust content; attacker does not control system instructions.*) |
-| Read first | [`system-multiagent`](https://ai-security-atlas.github.io/?node=system-multiagent), [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`attack-tool-output`](https://ai-security-atlas.github.io/?node=attack-tool-output) |
-| Mitigated by | [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries), [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege), [`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval), [`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent), [`attack-excessive-agency`](https://ai-security-atlas.github.io/?node=attack-excessive-agency), [`eval-agentdojo`](https://ai-security-atlas.github.io/?node=eval-agentdojo) |
+| Read first | [`system-multiagent`](https://ai-security-atlas.github.io/nodes/system-multiagent/), [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`attack-tool-output`](https://ai-security-atlas.github.io/nodes/attack-tool-output/) |
+| Mitigated by | [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/), [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/), [`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/), [`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/), [`attack-excessive-agency`](https://ai-security-atlas.github.io/nodes/attack-excessive-agency/), [`eval-agentdojo`](https://ai-security-atlas.github.io/nodes/eval-agentdojo/) |
 
 > [!NOTE]
 > **Atlas caveat:** Composed threat scenario; a multi-agent framework paper is architecture background, not attack proof. The seed maps no `can_mitigate` edge to this node, so the defenses above are listed as related; this lab measures them itself. The orchestrator here is this lab's own plain-Python wiring on the atlas-app fixture. AutoGen is cited as orchestration background, and nothing here is a claim about any framework.
@@ -87,7 +87,7 @@ Scripts always run in the workbench service. The backend only answers model call
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
 - Labs to finish first: [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) (indirect injection through a fetched page) and [LAB-22 · When the tool's answer gives the orders](../attack-tool-output/README.md) (one agent, one tool result). This lab is both ideas once the instruction has to cross two agent boundaries before it acts.
-- Concepts to read first: [`system-multiagent`](https://ai-security-atlas.github.io/?node=system-multiagent) and [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent).
+- Concepts to read first: [`system-multiagent`](https://ai-security-atlas.github.io/nodes/system-multiagent/) and [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/).
 
 ## Explainer
 
@@ -215,7 +215,7 @@ What to notice: each role sees a fraction of the pipeline. The researcher can fe
 
 **Why**
 
-Multi-agent orchestration splits work across specialized agents, and the authority to act flows with the messages ([`system-multiagent`](https://ai-security-atlas.github.io/?node=system-multiagent), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)). The boundary this lab attacks sits between an agent's own instructions and the lower-trust text arriving from a peer, because that peer's text may itself derive from content an outsider wrote ([`attack-multiagent`](https://ai-security-atlas.github.io/?node=attack-multiagent)). Tool grants here already follow least privilege ([`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege)); the exposure is in the wiring, and that is what the next steps vary.
+Multi-agent orchestration splits work across specialized agents, and the authority to act flows with the messages ([`system-multiagent`](https://ai-security-atlas.github.io/nodes/system-multiagent/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The boundary this lab attacks sits between an agent's own instructions and the lower-trust text arriving from a peer, because that peer's text may itself derive from content an outsider wrote ([`attack-multiagent`](https://ai-security-atlas.github.io/nodes/attack-multiagent/)). Tool grants here already follow least privilege ([`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)); the exposure is in the wiring, and that is what the next steps vary.
 
 ### Step 2 — The page addresses the planner · [explainer 2](explainer/index.html#attack-multiagent/2)
 
@@ -252,7 +252,7 @@ What to notice: the visible page is three order lines and a store notice, and it
 
 **Why**
 
-The attacker writes external content the researcher will ingest, which is access profile A04: the attacker controls none of the agents and none of the system prompts ([`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`attack-tool-output`](https://ai-security-atlas.github.io/?node=attack-tool-output)). The lab's summaries make the researcher the delivery path, and a summary task is a realistic one: the note is written to survive it. Whether the note arrives at all is a measured rate, so the funnel in the next steps reports arrival separately from what each hop does with it ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)).
+The attacker writes external content the researcher will ingest, which is access profile A04: the attacker controls none of the agents and none of the system prompts ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`attack-tool-output`](https://ai-security-atlas.github.io/nodes/attack-tool-output/)). The lab's summaries make the researcher the delivery path, and a summary task is a realistic one: the note is written to survive it. Whether the note arrives at all is a measured rate, so the funnel in the next steps reports arrival separately from what each hop does with it ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)).
 
 ### Step 3 — The note travels the whole pipeline (≈1 min) · [explainer 3](explainer/index.html#attack-multiagent/3)
 
@@ -290,7 +290,7 @@ What to notice: the `hops` column is the funnel as three digits (report, plan, o
 
 **Why**
 
-This is the composed scenario the node describes: no single agent was compromised, and the executor's own instruction never names the collector ([`attack-multiagent`](https://ai-security-atlas.github.io/?node=attack-multiagent), [`goal-actions`](https://ai-security-atlas.github.io/?node=goal-actions)). The planner re-issued the page's text as its own instruction, and the executor treats a peer's message as trusted context because nothing in the wiring says otherwise. The outbox line is the unauthorized action, and the audit log is where an operator would find it after the fact ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging)).
+This is the composed scenario the node describes: no single agent was compromised, and the executor's own instruction never names the collector ([`attack-multiagent`](https://ai-security-atlas.github.io/nodes/attack-multiagent/), [`goal-actions`](https://ai-security-atlas.github.io/nodes/goal-actions/)). The planner re-issued the page's text as its own instruction, and the executor treats a peer's message as trusted context because nothing in the wiring says otherwise. The outbox line is the unauthorized action, and the audit log is where an operator would find it after the fact ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)).
 
 ### Step 4 — One harmful run, message by message · [explainer 4](explainer/index.html#attack-multiagent/4)
 
@@ -320,7 +320,7 @@ What to notice: this is Step 3's first harm trial replayed from `work/s03.json`,
 
 **Why**
 
-The mechanism is re-interpretation at a boundary: data that entered as a page leaves as an instruction, and each hop launders it further ([`attack-multiagent`](https://ai-security-atlas.github.io/?node=attack-multiagent)). The planner is the hinge. It was asked to write instructions, it was handed text that contained instructions, and nothing marked which parts were which ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). Step 5 changes exactly that marking and measures what it is worth.
+The mechanism is re-interpretation at a boundary: data that entered as a page leaves as an instruction, and each hop launders it further ([`attack-multiagent`](https://ai-security-atlas.github.io/nodes/attack-multiagent/)). The planner is the hinge. It was asked to write instructions, it was handed text that contained instructions, and nothing marked which parts were which ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). Step 5 changes exactly that marking and measures what it is worth.
 
 ### Step 5 — Same attack, labelled messages (≈2 min) · [explainer 5](explainer/index.html#attack-multiagent/5)
 
@@ -361,7 +361,7 @@ What to notice: in `labeled`, every peer message arrives inside delimiters that 
 
 **Why**
 
-Provenance labelling is the marking half of a trust boundary, and this lab measures it honestly: on `qwen2.5:3b` it did not separate data from instruction where it mattered ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). Exposure depends on how messages are assembled and attributed, which is the node's own framing ([`attack-multiagent`](https://ai-security-atlas.github.io/?node=attack-multiagent)), so the next two steps change the assembly itself: first what the planner can receive, then what the executor can be told.
+Provenance labelling is the marking half of a trust boundary, and this lab measures it honestly: on `qwen2.5:3b` it did not separate data from instruction where it mattered ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). Exposure depends on how messages are assembled and attributed, which is the node's own framing ([`attack-multiagent`](https://ai-security-atlas.github.io/nodes/attack-multiagent/)), so the next two steps change the assembly itself: first what the planner can receive, then what the executor can be told.
 
 ## Defend
 
@@ -401,7 +401,7 @@ What to notice: the researcher now answers in a fixed JSON schema (order id, sta
 
 **Why**
 
-A typed channel moves the boundary from prose to structure: the researcher can return facts, and anything that does not fit a validated field stops at the orchestrator ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). This is the same shape as LAB-15's spotlighting done structurally, and it is why the roadmap names schema-validated messages as this node's first defense. The cost is real and measured: a schema describes what the designer expected, and the store notice fell outside it ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr): report what a defense drops next to what it stops).
+A typed channel moves the boundary from prose to structure: the researcher can return facts, and anything that does not fit a validated field stops at the orchestrator ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). This is the same shape as LAB-15's spotlighting done structurally, and it is why the roadmap names schema-validated messages as this node's first defense. The cost is real and measured: a schema describes what the designer expected, and the store notice fell outside it ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/): report what a defense drops next to what it stops).
 
 ### Step D2 — Seal the executor's instruction channel (≈1 min) · [explainer 7](explainer/index.html#attack-multiagent/7)
 
@@ -437,7 +437,7 @@ What to notice: the planner stage is gone, and the executor's task is an operato
 
 **Why**
 
-Privilege separation says only agents that never read untrusted content should hold consequential tools, and here the executor's instruction channel holds only operator text ([`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege)). The residual leak is the lesson: the canary rode the quoted data, the model followed it anyway, and the delimiter was not a control the app enforced. A boundary a model can be talked out of is a boundary the sink has to enforce, which is D3's approval on the send itself ([`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval)).
+Privilege separation says only agents that never read untrusted content should hold consequential tools, and here the executor's instruction channel holds only operator text ([`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). The residual leak is the lesson: the canary rode the quoted data, the model followed it anyway, and the delimiter was not a control the app enforced. A boundary a model can be talked out of is a boundary the sink has to enforce, which is D3's approval on the send itself ([`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/)).
 
 ### Step D3 — Lineage and an argument-bound approval (≈1–2 min) · [explainer 8](explainer/index.html#attack-multiagent/8)
 
@@ -477,7 +477,7 @@ What to notice: the attack ran at full strength here (hop1 and hop2 4/6, and the
 
 **Why**
 
-Lineage ties every outbound action to the chain of messages that produced it, and the approval gate turns an unauthorized recipient into a refusal at the only point that matters: the send ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging), [`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval)). This is the same argument-and-hash binding LAB-22 measured on one agent; here it holds against an instruction that crossed two boundaries first. Its limit is the same too: it costs a pause per consequential call, and it depends on whoever answers.
+Lineage ties every outbound action to the chain of messages that produced it, and the approval gate turns an unauthorized recipient into a refusal at the only point that matters: the send ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/), [`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/)). This is the same argument-and-hash binding LAB-22 measured on one agent; here it holds against an instruction that crossed two boundaries first. Its limit is the same too: it costs a pause per consequential call, and it depends on whoever answers.
 
 ## Evaluate
 
@@ -521,7 +521,7 @@ Questions for your notes:
 
 1. The funnel shows the note arriving (hop1 6/8) on plain, labeled and approved alike. Why can't a defense's harm rate be read without the funnel column beside it?
 2. D1 stops the note and drops the store notice; D3 stops the send and costs a pause per consequential call. Which would you deploy for a pipeline whose pages carry operational notices, and what would you measure next?
-3. Write the threat model: who can publish a page the researcher fetches, who cannot, and which of the four defenses assumes which fact about them ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model))?
+3. Write the threat model: who can publish a page the researcher fetches, who cannot, and which of the four defenses assumes which fact about them ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/))?
 
 ## Cleanup
 
@@ -556,8 +556,8 @@ What to notice: `cleanup.py` deletes this lab's `work/` directory and clears the
 
 - Extend the typed channel end to end: make the planner answer in a schema too (one send per action, with `to` drawn from an allowlist the orchestrator checks), then measure whether the store notice can be given a field without reopening a directive path.
 - The labeled variant changed nothing here at n=8. Run it at n=24 or more and report the hop 3 rate with intervals, so the null result gets the sample size a claim needs.
-- Write a lineage check over the audit log that fails when any `send_email` names a recipient absent from every operator text, and count how many rows it flags across a full Evaluate ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging)).
-- AgentDojo exercises agent tasks together with injected instructions ([`eval-agentdojo`](https://ai-security-atlas.github.io/?node=eval-agentdojo)). It needs a stronger tool-calling model than `qwen2.5:3b`; treat it as an external-API follow-on and keep this lab's funnel as the local measurement.
+- Write a lineage check over the audit log that fails when any `send_email` names a recipient absent from every operator text, and count how many rows it flags across a full Evaluate ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)).
+- AgentDojo exercises agent tasks together with injected instructions ([`eval-agentdojo`](https://ai-security-atlas.github.io/nodes/eval-agentdojo/)). It needs a stronger tool-calling model than `qwen2.5:3b`; treat it as an external-API follow-on and keep this lab's funnel as the local measurement.
 
 ## Further Reading
 

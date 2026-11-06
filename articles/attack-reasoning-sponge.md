@@ -1,0 +1,9 @@
+Reasoning-token exhaustion and overthinking attacks craft inputs or retrieved context that force a reasoning model to spend excessive inference compute inside its internal deliberation phase. The objective is to [degrade availability or increase cost](../nodes/goal-availability.md) by inflating hidden or intermediate token generation by an order of magnitude while keeping the visible prompt and final answer compact.
+
+## How it works
+
+Models trained to emit [test-time reasoning traces](../nodes/concept-reasoning-trace.md) allocate variable numbers of thinking tokens depending on perceived problem complexity. An attacker — either directly through user input or indirectly through poisoned documents in a [RAG system](../nodes/system-rag.md) — embeds decoy reasoning puzzles, recursive verification branches, or ambiguous Markov decision traps. During [decoding](../nodes/concept-decoding.md), the model enters protracted self-verification loops before producing its final answer. As a [variant of token-cost and context exhaustion](../nodes/attack-token-exhaustion.md), this attack targets the internal test-time compute budget rather than prompt prefill length alone.
+
+Exposure is highest on [model-serving infrastructure](../nodes/system-serving.md) where hidden reasoning tokens are billed or scheduled from the same GPU memory and slot pool as visible completions. Standard input-length caps do not stop the amplification because the trigger prompt itself can be short.
+
+Defenses rely on explicit [rate, token, cost and step budgets](../nodes/defense-budget.md) that cap reasoning-trace length separately from visible output tokens. Evaluation is framed through [cost, latency and resource amplification](../nodes/eval-cost.md); consult *OverThink: Slowdown Attacks on Reasoning LLMs* for empirical slowdown factors across reasoning architectures.

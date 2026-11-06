@@ -23,7 +23,7 @@ covers:                                # nodes practiced here as named steps (op
 
 # LAB-21 · Optimizing a suffix one token at a time
 
-> **Atlas node:** [Gradient-guided adversarial suffixes](https://ai-security-atlas.github.io/?node=attack-gcg) · **Family:** family-prompt · **Level:** intermediate · **Time:** 120 min · **Model backend:** optional
+> **Atlas node:** [Gradient-guided adversarial suffixes](https://ai-security-atlas.github.io/nodes/attack-gcg/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 120 min · **Model backend:** optional
 
 ## Overview
 
@@ -51,13 +51,13 @@ The optimization target is one fixed, inert canary reply, hardcoded in the scrip
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-gcg`](../../articles/attack-gcg.md) |
-| Family | [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt) |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) |
+| Family | [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/) |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) |
 | Access profile | `A03` White-box or surrogate optimization (caveat: *A surrogate and target must be separately identified; transfer is not guaranteed.*) |
-| Read first | [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens), [`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients) |
-| Mitigated by | None in the seed graph. Defend measures a perplexity filter, retokenization/paraphrase and perturbation with a majority vote, framed by [`defense-robust-train`](https://ai-security-atlas.github.io/?node=defense-robust-train) and [`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive). |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model), [`eval-transfer`](https://ai-security-atlas.github.io/?node=eval-transfer) |
-| Related | [`attack-jailbreak`](https://ai-security-atlas.github.io/?node=attack-jailbreak), [`attack-pgd`](https://ai-security-atlas.github.io/?node=attack-pgd), [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder) |
+| Read first | [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/), [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/) |
+| Mitigated by | None in the seed graph. Defend measures a perplexity filter, retokenization/paraphrase and perturbation with a majority vote, framed by [`defense-robust-train`](https://ai-security-atlas.github.io/nodes/defense-robust-train/) and [`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/). |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/), [`eval-transfer`](https://ai-security-atlas.github.io/nodes/eval-transfer/) |
+| Related | [`attack-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-jailbreak/), [`attack-pgd`](https://ai-security-atlas.github.io/nodes/attack-pgd/), [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/) |
 
 > [!NOTE]
 > **Atlas caveat:** White-box construction must not be mislabeled as purely black-box discovery.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-08 · One gradient step](../attack-fgsm/README.md) covers the same gradient machinery on images, if you want the picture version first.
-- Concepts to read first: [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) and [`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients).
+- Concepts to read first: [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) and [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/).
 
 ## Explainer
 
@@ -200,7 +200,7 @@ What to notice: the chat template leaves a 40-token prompt with a marked hole fo
 
 **Why**
 
-The victim is a decoder-only language model ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)) small enough to differentiate through on a laptop CPU, pinned by revision in the shared `tinylm` fixture so every learner attacks the same weights. It is the *plain* instruct model — no safety adapter, no fictional vault — because this lab steers a harmless reply; no refusal is involved anywhere. You hold the weights and can compute gradients, which is exactly access profile A03, the access this node requires.
+The victim is a decoder-only language model ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)) small enough to differentiate through on a laptop CPU, pinned by revision in the shared `tinylm` fixture so every learner attacks the same weights. It is the *plain* instruct model — no safety adapter, no fictional vault — because this lab steers a harmless reply; no refusal is involved anywhere. You hold the weights and can compute gradients, which is exactly access profile A03, the access this node requires.
 
 ### Step 2 — The loss: −log p(canary | prompt + suffix) · [explainer 2](explainer/index.html#attack-gcg/2)
 
@@ -238,7 +238,7 @@ What to notice: the model's top pick already matches 2 of the 11 target tokens b
 
 **Why**
 
-GCG minimizes the negative log-probability of a chosen target string given the prompt, averaged over the target's tokens ([`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients)). The target here is the fixed canary, eleven tokens of it, and the model currently assigns the whole string a probability around 10⁻³² — the search's whole job is to lift that. Defining success as an exact, deterministic output (rather than "the vibe changed") is what lets the lab state a crisp success criterion ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)).
+GCG minimizes the negative log-probability of a chosen target string given the prompt, averaged over the target's tokens ([`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/)). The target here is the fixed canary, eleven tokens of it, and the model currently assigns the whole string a probability around 10⁻³² — the search's whole job is to lift that. Defining success as an exact, deterministic output (rather than "the vibe changed") is what lets the lab state a crisp success criterion ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)).
 
 ### Step 3 — The gradient over one-hot suffix tokens · [explainer 3](explainer/index.html#attack-gcg/3)
 
@@ -271,7 +271,7 @@ What to notice: one backward pass ranks all 20 × 49,152 possible single-token s
 
 **Why**
 
-The suffix is discrete — a token id sits at each position — so you cannot differentiate "change the token" directly. The one-hot trick does it: embed a one-hot vector per position times the embedding table, and the gradient with respect to that one-hot matrix tells you, for every position and every one of the 49,152 vocabulary tokens, which direction each swap would move the loss ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)). This is where white-box access (A03) becomes load-bearing: without `compute_gradients` there is no ranked candidate list, only blind guessing.
+The suffix is discrete — a token id sits at each position — so you cannot differentiate "change the token" directly. The one-hot trick does it: embed a one-hot vector per position times the embedding table, and the gradient with respect to that one-hot matrix tells you, for every position and every one of the 49,152 vocabulary tokens, which direction each swap would move the loss ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)). This is where white-box access (A03) becomes load-bearing: without `compute_gradients` there is no ranked candidate list, only blind guessing.
 
 ### Step 4 — One GCG step, and the same budget without the gradient (≈2–5 min) · [explainer 4](explainer/index.html#attack-gcg/4)
 
@@ -310,7 +310,7 @@ What to notice: random search is *ahead* after two rounds (5.998 vs 6.248), then
 
 **Why**
 
-One GCG step is sample, evaluate, keep: sample a batch of single-token swaps from the gradient's top-k, forward-pass them all, keep the best. The race below it spends the *same* number of forward evaluations on uniformly random swaps: random search grabs the easy early wins and then stalls, while the gradient keeps finding new directions — the compounding advantage that makes GCG practical at all ([`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg)). Comparing attacks at a fixed query budget is the honest way to credit the gradient ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)).
+One GCG step is sample, evaluate, keep: sample a batch of single-token swaps from the gradient's top-k, forward-pass them all, keep the best. The race below it spends the *same* number of forward evaluations on uniformly random swaps: random search grabs the easy early wins and then stalls, while the gradient keeps finding new directions — the compounding advantage that makes GCG practical at all ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/)). Comparing attacks at a fixed query budget is the honest way to credit the gradient ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)).
 
 ### Step 5 — A short live search (≈2–6 min) · [explainer 5](explainer/index.html#attack-gcg/5)
 
@@ -346,7 +346,7 @@ What to notice: eight steps at width 32 take a few minutes on CPU and cut the lo
 
 **Why**
 
-nanoGCG 0.2.3 runs exactly the loop from Step 4, with the bookkeeping the paper adds: a candidate filter that drops suffixes whose text does not survive retokenization, and banned token ids (non-ASCII pieces and any token that spells a canary fragment). One transformers-5.x caveat and one tokenizer quirk matter: the prefix-cache path crashes (`GCGConfig(use_prefix_cache=False)` avoids it), and the library strips a leading BOS from the chat template — but SmolLM2's BOS token *is* `<|im_start|>`, so the script clears `bos_token` first, keeping the search on exactly the token ids the deployed chat template produces (step 0's loss equals Step 2's loss). The long version of this command (`--steps 1500 --width 128 --topk 128`) produced the shipped suffix overnight; you do not need to re-run it ([`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg)).
+nanoGCG 0.2.3 runs exactly the loop from Step 4, with the bookkeeping the paper adds: a candidate filter that drops suffixes whose text does not survive retokenization, and banned token ids (non-ASCII pieces and any token that spells a canary fragment). One transformers-5.x caveat and one tokenizer quirk matter: the prefix-cache path crashes (`GCGConfig(use_prefix_cache=False)` avoids it), and the library strips a leading BOS from the chat template — but SmolLM2's BOS token *is* `<|im_start|>`, so the script clears `bos_token` first, keeping the search on exactly the token ids the deployed chat template produces (step 0's loss equals Step 2's loss). The long version of this command (`--steps 1500 --width 128 --topk 128`) produced the shipped suffix overnight; you do not need to re-run it ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/)).
 
 ### Step 6 — The pinned suffix: gibberish that steers the reply · [explainer 6](explainer/index.html#attack-gcg/6)
 
@@ -382,7 +382,7 @@ What to notice: the first eleven generated token ids are *exactly* the target's 
 
 **Why**
 
-This is the impact step: a suffix no human would mistake for language makes a plain, working assistant open its reply with an exact attacker-chosen string, deterministically, under greedy decoding — the model's own tokens, not a lucky sample. The Atlas node's caveat cuts exactly this way: the suffix was *constructed with gradients* on this one model; presenting it to another system is a different, weaker capability (Step 7), and calling GCG "black-box discovery" mislabels the work that produced it ([`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg), [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior)).
+This is the impact step: a suffix no human would mistake for language makes a plain, working assistant open its reply with an exact attacker-chosen string, deterministically, under greedy decoding — the model's own tokens, not a lucky sample. The Atlas node's caveat cuts exactly this way: the suffix was *constructed with gradients* on this one model; presenting it to another system is a different, weaker capability (Step 7), and calling GCG "black-box discovery" mislabels the work that produced it ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/), [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/)).
 
 ### Step 7 — Does the suffix transfer? · [explainer 7](explainer/index.html#attack-gcg/7)
 
@@ -417,7 +417,7 @@ What to notice: the suffix works only where it was built — the 360M model from
 
 **Why**
 
-The frozen suffix goes to SmolLM2-360M-Instruct (same family, 2.7× larger, never touched by the optimizer) and, if you set a backend, to the chat model behind the API. Plain transfer of a suffix optimized on one small model is expected to be weak, and here you measure it instead of asserting it ([`attack-transfer-prompts`](https://ai-security-atlas.github.io/?node=attack-transfer-prompts), [`eval-transfer`](https://ai-security-atlas.github.io/?node=eval-transfer)). The threat-model note matters as much as the number: *receiving* a precomputed suffix is a different capability from having optimized one with gradients against the target — and the GCG paper's stronger transfer numbers came from ensembles of larger source models, not from a single 135M one.
+The frozen suffix goes to SmolLM2-360M-Instruct (same family, 2.7× larger, never touched by the optimizer) and, if you set a backend, to the chat model behind the API. Plain transfer of a suffix optimized on one small model is expected to be weak, and here you measure it instead of asserting it ([`attack-transfer-prompts`](https://ai-security-atlas.github.io/nodes/attack-transfer-prompts/), [`eval-transfer`](https://ai-security-atlas.github.io/nodes/eval-transfer/)). The threat-model note matters as much as the number: *receiving* a precomputed suffix is a different capability from having optimized one with gradients against the target — and the GCG paper's stronger transfer numbers came from ensembles of larger source models, not from a single 135M one.
 
 ## Defend
 
@@ -450,7 +450,7 @@ What to notice: the fully optimized suffix is caught at 26× the threshold with 
 
 **Why**
 
-The classic prompt-side filter scores every incoming prompt with a language model and flags implausible text. Whether it catches GCG depends on who scores and on how the threshold was set — here the scorer is the 135M victim itself and the threshold is fixed by ordinary prompts alone, before any suffix is scored. Judging a defense only against an attacker who never tried to evade it is the evaluation mistake this node warns about; an attacker who adds a fluency term or restricts swaps to common words is the obvious next round ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive), [`defense-robust-train`](https://ai-security-atlas.github.io/?node=defense-robust-train)).
+The classic prompt-side filter scores every incoming prompt with a language model and flags implausible text. Whether it catches GCG depends on who scores and on how the threshold was set — here the scorer is the 135M victim itself and the threshold is fixed by ordinary prompts alone, before any suffix is scored. Judging a defense only against an attacker who never tried to evade it is the evaluation mistake this node warns about; an attacker who adds a fluency term or restricts swaps to common words is the obvious next round ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/), [`defense-robust-train`](https://ai-security-atlas.github.io/nodes/defense-robust-train/)).
 
 ### Step D2 — Retokenize and rewrite the prompt · [explainer 9](explainer/index.html#attack-gcg/9)
 
@@ -481,7 +481,7 @@ What to notice: collapsing the suffix's double spaces and normalizing Unicode ch
 
 **Why**
 
-A GCG suffix is tuned to exact token ids, so any serving-side rewrite that changes them — Unicode normalization, whitespace collapsing, a paraphrased request — shifts positions the suffix was tuned for, and the canary dies. The *exact* decode-encode round trip is not a defense: nanoGCG's `filter_ids` already drops candidates whose text would not survive it, which is why that row leaves the ids untouched. The limitation is symmetrical: normalization is cheap and blind, a determined attacker can search for suffixes that survive *your* normalizer (the search in Step 5 optimizes through whatever fixed pipeline you tell it about), and paraphrase degrades legitimate prompts too ([`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg)).
+A GCG suffix is tuned to exact token ids, so any serving-side rewrite that changes them — Unicode normalization, whitespace collapsing, a paraphrased request — shifts positions the suffix was tuned for, and the canary dies. The *exact* decode-encode round trip is not a defense: nanoGCG's `filter_ids` already drops candidates whose text would not survive it, which is why that row leaves the ids untouched. The limitation is symmetrical: normalization is cheap and blind, a determined attacker can search for suffixes that survive *your* normalizer (the search in Step 5 optimizes through whatever fixed pipeline you tell it about), and paraphrase degrades legitimate prompts too ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/)).
 
 ### Step D3 — Perturb and vote (SmoothLLM-style) (≈3–10 min) · [explainer 10](explainer/index.html#attack-gcg/10)
 
@@ -514,7 +514,7 @@ What to notice: every perturbed copy loses the canary — the defense holds — 
 
 **Why**
 
-SmoothLLM perturbs random characters in every incoming prompt, runs q copies, and answers by majority vote, betting that a suffix tuned to exact tokens does not survive q different noisy versions. You measure both sides of that bet: the canary majority collapses, and ordinary answers pay a utility cost on the held-out questions. The same adaptive caveat as D1 applies — the bet is against *this* search, and an attacker who optimizes through perturbations (EOT-style) is the evaluation the defense still owes you ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)).
+SmoothLLM perturbs random characters in every incoming prompt, runs q copies, and answers by majority vote, betting that a suffix tuned to exact tokens does not survive q different noisy versions. You measure both sides of that bet: the canary majority collapses, and ordinary answers pay a utility cost on the held-out questions. The same adaptive caveat as D1 applies — the bet is against *this* search, and an attacker who optimizes through perturbations (EOT-style) is the evaluation the defense still owes you ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)).
 
 ## Evaluate
 

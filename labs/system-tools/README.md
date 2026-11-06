@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-59 · What a tool really exposes
 
-> **Atlas node:** [Tools, plugins, MCP and connectors](https://ai-security-atlas.github.io/?node=system-tools) · **Family:** family-agent · **Level:** intermediate · **Time:** 75 min · **Model backend:** required
+> **Atlas node:** [Tools, plugins, MCP and connectors](https://ai-security-atlas.github.io/nodes/system-tools/) · **Family:** family-agent · **Level:** intermediate · **Time:** 75 min · **Model backend:** required
 
 ## Overview
 
@@ -49,13 +49,13 @@ Every customer, file and invoice here is fictional. The only "private" values ar
 | Field | Value |
 | :--- | :--- |
 | Node | [`system-tools`](../../articles/system-tools.md) |
-| Family | [`family-agent`](https://ai-security-atlas.github.io/?node=family-agent) |
-| Goal | [`goal-actions`](https://ai-security-atlas.github.io/?node=goal-actions), [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) |
+| Family | [`family-agent`](https://ai-security-atlas.github.io/nodes/family-agent/) |
+| Goal | [`goal-actions`](https://ai-security-atlas.github.io/nodes/goal-actions/), [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) |
 | Access profile | `A12` Agent-exposed capability (caveat: *Success additionally depends on delegated tools, policy enforcement and reachable resources.*) |
-| Read first | [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent), [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries) |
-| Mitigated by | [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege), [`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval) |
-| Evaluated by | [`eval-agentdojo`](https://ai-security-atlas.github.io/?node=eval-agentdojo) |
-| Related | [`attack-tool-description`](https://ai-security-atlas.github.io/?node=attack-tool-description), [`attack-tool-output`](https://ai-security-atlas.github.io/?node=attack-tool-output), [`attack-tool-rugpull`](https://ai-security-atlas.github.io/?node=attack-tool-rugpull), [`attack-confused-deputy`](https://ai-security-atlas.github.io/?node=attack-confused-deputy), [`attack-dependency`](https://ai-security-atlas.github.io/?node=attack-dependency) |
+| Read first | [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/), [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/) |
+| Mitigated by | [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/), [`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/) |
+| Evaluated by | [`eval-agentdojo`](https://ai-security-atlas.github.io/nodes/eval-agentdojo/) |
+| Related | [`attack-tool-description`](https://ai-security-atlas.github.io/nodes/attack-tool-description/), [`attack-tool-output`](https://ai-security-atlas.github.io/nodes/attack-tool-output/), [`attack-tool-rugpull`](https://ai-security-atlas.github.io/nodes/attack-tool-rugpull/), [`attack-confused-deputy`](https://ai-security-atlas.github.io/nodes/attack-confused-deputy/), [`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/) |
 
 > [!NOTE]
 > **Atlas caveat:** this component node has no caveat in the seed graph. The access profile `A12` caveat applies: *Success additionally depends on delegated tools, policy enforcement and reachable resources.* Everything here is confined to the lab's mock world; the point is the surfaces, not a working exploit against any real system.
@@ -83,7 +83,7 @@ Scripts always run in the workbench service. The backend only answers model call
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
 - Labs to finish first: [LAB-22 · When the tool's answer gives the orders](../attack-tool-output/README.md) and [LAB-23 · The tool that told the agent what to do](../attack-tool-description/README.md) use the same MCP fixture; this lab is the ground under both.
-- Concepts to read first: [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent) and [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries).
+- Concepts to read first: [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/) and [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 
 ## Explainer
 
@@ -207,7 +207,7 @@ What to notice: each tool reaches the model as a name, a verbatim description an
 
 **Why**
 
-MCP `tools/list` is what the model actually reads before it decides to call a tool: the description is in the context, not just a label on a panel. [`system-tools`](https://ai-security-atlas.github.io/?node=system-tools) names a tool's description, arguments, output, identity and authorization as separate surfaces, and this step shows the first two. A description that carries instructions is [`attack-tool-description`](https://ai-security-atlas.github.io/?node=attack-tool-description).
+MCP `tools/list` is what the model actually reads before it decides to call a tool: the description is in the context, not just a label on a panel. [`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/) names a tool's description, arguments, output, identity and authorization as separate surfaces, and this step shows the first two. A description that carries instructions is [`attack-tool-description`](https://ai-security-atlas.github.io/nodes/attack-tool-description/).
 
 ### Step 2 — One ordinary run · [explainer 2](explainer/index.html#system-tools/2)
 
@@ -240,7 +240,7 @@ What to notice: the model wrote the arguments, and each call ran with a token th
 
 **Why**
 
-This is the assistant working as intended, and it fixes the two moving parts for the rest of the lab: the model controls the arguments, and the tool controls the identity. [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent) is the loop that turns a model reply into a tool call; the arguments and the identity are where the next two steps go wrong.
+This is the assistant working as intended, and it fixes the two moving parts for the rest of the lab: the model controls the arguments, and the tool controls the identity. [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/) is the loop that turns a model reply into a tool call; the arguments and the identity are where the next two steps go wrong.
 
 ### Step 3 — Five surfaces · [explainer 3](explainer/index.html#system-tools/3)
 
@@ -269,7 +269,7 @@ What to notice: each check cell comes from a live call (the description reached 
 
 **Why**
 
-The node's whole point is that these surfaces are distinct and separately attackable. [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries) is the trust-boundary model behind the "set by" column: the author sets the description, the model sets the arguments, and neither is the operator. The rest of the lab attacks the arguments and the identity, then defends all three of description, arguments and identity.
+The node's whole point is that these surfaces are distinct and separately attackable. [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/) is the trust-boundary model behind the "set by" column: the author sets the description, the model sets the arguments, and neither is the operator. The rest of the lab attacks the arguments and the identity, then defends all three of description, arguments and identity.
 
 ### Step 4 — An argument that climbs out (≈1.5 min) · [explainer 4](explainer/index.html#system-tools/4)
 
@@ -302,7 +302,7 @@ What to notice: the tool joins the argument onto the help folder and normalizes 
 
 **Why**
 
-The argument surface is the model's, and a naive path join trusts it completely, which is a path-traversal flaw inside a tool. [`attack-tool-output`](https://ai-security-atlas.github.io/?node=attack-tool-output) is the same idea with the instruction arriving in a tool result; here the pointer sits in a legitimate help page and the model copies it into the next call's argument.
+The argument surface is the model's, and a naive path join trusts it completely, which is a path-traversal flaw inside a tool. [`attack-tool-output`](https://ai-security-atlas.github.io/nodes/attack-tool-output/) is the same idea with the instruction arriving in a tool result; here the pointer sits in a legitimate help page and the model copies it into the next call's argument.
 
 ### Step 5 — One token for everyone (≈20 s) · [explainer 5](explainer/index.html#system-tools/5)
 
@@ -329,7 +329,7 @@ What to notice: the billing tool holds one token with scope `invoices:*`, so a r
 
 **Why**
 
-The identity surface is set by the tool's configuration, and a shared service credential acts for any user the tool is asked about. [`attack-confused-deputy`](https://ai-security-atlas.github.io/?node=attack-confused-deputy) is the full treatment of a component spending its own authority for a requester who lacks it; [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege) is the control Step D2 applies.
+The identity surface is set by the tool's configuration, and a shared service credential acts for any user the tool is asked about. [`attack-confused-deputy`](https://ai-security-atlas.github.io/nodes/attack-confused-deputy/) is the full treatment of a component spending its own authority for a requester who lacks it; [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/) is the control Step D2 applies.
 
 ### Step 6 — The tool-call log · [explainer 6](explainer/index.html#system-tools/6)
 
@@ -357,7 +357,7 @@ What to notice: the row counts track Steps 4 and 5 and move with the model's cho
 
 **Why**
 
-Every call logged both its chosen arguments and its runtime identity, which is what makes the leak detectable after the fact. [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege) is easier to audit when the identity is in the log; a log of tool calls and their lineage is the detective half of agent security, next to the preventive fixes in Defend.
+Every call logged both its chosen arguments and its runtime identity, which is what makes the leak detectable after the fact. [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/) is easier to audit when the identity is in the log; a log of tool calls and their lineage is the detective half of agent security, next to the preventive fixes in Defend.
 
 ## Defend
 
@@ -392,7 +392,7 @@ What to notice: the strict tool takes a file name matched against a pattern, and
 
 **Why**
 
-A strict argument schema plus a canonical-path check that the file sits directly in the help folder narrows the surface the model controls, which is the input-validation side of [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege). The limit: the schema stops the argument, not the model's attempt; the indirect task still tries, so a tool without the schema and the folder check would still leak.
+A strict argument schema plus a canonical-path check that the file sits directly in the help folder narrows the surface the model controls, which is the input-validation side of [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/). The limit: the schema stops the argument, not the model's attempt; the indirect task still tries, so a tool without the schema and the folder check would still leak.
 
 ### Step D2 — Give it only your key (≈1 min) · [explainer 8](explainer/index.html#system-tools/8)
 
@@ -418,7 +418,7 @@ What to notice: the scoped tool uses alice's own token, so a request for bob's i
 
 **Why**
 
-A per-user scoped credential replaces the shared service token, so the tool cannot reach a record the caller could not, which is [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege) on the identity surface. When a human-approval gate is needed for a consequential tool instead, that is [`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval).
+A per-user scoped credential replaces the shared service token, so the tool cannot reach a record the caller could not, which is [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/) on the identity surface. When a human-approval gate is needed for a consequential tool instead, that is [`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/).
 
 ### Step D3 — Pin the definition · [explainer 9](explainer/index.html#system-tools/9)
 
@@ -443,7 +443,7 @@ What to notice: every live definition matches its reviewed pin, and three edits 
 
 **Why**
 
-Hashing the reviewed `{name, description, input_schema}` and comparing on registration guards the description and schema surfaces against a definition that changes after you approved it, which is [`attack-tool-rugpull`](https://ai-security-atlas.github.io/?node=attack-tool-rugpull). The limit: a pin confirms the definition is the one you reviewed, not that the reviewed definition was safe.
+Hashing the reviewed `{name, description, input_schema}` and comparing on registration guards the description and schema surfaces against a definition that changes after you approved it, which is [`attack-tool-rugpull`](https://ai-security-atlas.github.io/nodes/attack-tool-rugpull/). The limit: a pin confirms the definition is the one you reviewed, not that the reviewed definition was safe.
 
 ### Step D4 — Why the surfaces are separate
 
@@ -453,7 +453,7 @@ The three fixes land on three different surfaces, and none substitutes for anoth
 
 **Why**
 
-When the model is steered, by a poisoned description, a tool result, or a page it reads, least privilege is what bounds the blast radius. [`attack-dependency`](https://ai-security-atlas.github.io/?node=attack-dependency) adds a sixth concern, the code behind the tool, which no amount of schema or token review catches; [`eval-agentdojo`](https://ai-security-atlas.github.io/?node=eval-agentdojo) is where these fixes are measured as utility against attack across many tasks.
+When the model is steered, by a poisoned description, a tool result, or a page it reads, least privilege is what bounds the blast radius. [`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/) adds a sixth concern, the code behind the tool, which no amount of schema or token review catches; [`eval-agentdojo`](https://ai-security-atlas.github.io/nodes/eval-agentdojo/) is where these fixes are measured as utility against attack across many tasks.
 
 ## Evaluate
 
@@ -523,7 +523,7 @@ COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=823
 
 ## Going Further
 
-- Rerun Steps 4 and 5 with a stronger tool-calling model (set `LAB_CHAT_MODEL`). Record whether the model chooses the climbing path more often on the indirect task, and whether it still refuses the other-customer billing request on its own, with a Wilson interval ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)).
+- Rerun Steps 4 and 5 with a stronger tool-calling model (set `LAB_CHAT_MODEL`). Record whether the model chooses the climbing path more often on the indirect task, and whether it still refuses the other-customer billing request on its own, with a Wilson interval ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)).
 - Add a fourth forensic rule to `stk.flag`: flag any `stools-read_file` call whose argument contains `..` even when the resolved path stayed in scope. Count how many extra rows it catches in Step 6 and whether it raises any false positives on the strict profile.
 - Give `stools-read_file_strict` an allowlist of exact file names instead of a pattern, and measure whether a model that renames a help file (for example `Returns.md`) is now blocked, and what that costs the ordinary question.
 - Extend D3 to pin the system prompt and the world's invoice records by hash as well, and show which of the three D3 edits a prompt-only pin would miss.

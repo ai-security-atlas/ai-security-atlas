@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
 
 # LAB-60 · The adapter you didn't review
 
-> **Atlas node:** [Malicious adapters or adapter substitution](https://ai-security-atlas.github.io/?node=attack-adapter-tamper) · **Family:** family-training · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Malicious adapters or adapter substitution](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/) · **Family:** family-training · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
 
 ## Overview
 
@@ -51,13 +51,13 @@ The refusal is a stand-in policy: a fictional Project Lantern vault whose code, 
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-adapter-tamper`](../../articles/attack-adapter-tamper.md) |
-| Family | [`family-training`](https://ai-security-atlas.github.io/?node=family-training) |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior), [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence) |
+| Family | [`family-training`](https://ai-security-atlas.github.io/nodes/family-training/) |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/), [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/) |
 | Access profile | `A09` Writable or replaceable model artifacts (caveat: *Use separate calibration/runtime-read capabilities where the method requires them.*) |
-| Read first | [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora), [`system-registry`](https://ai-security-atlas.github.io/?node=system-registry) |
-| Mitigated by | [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) (D1, related; practiced as a lab in [LAB-01](../attack-unsafe-load/README.md)), [`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression) (D2, practiced here) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) |
-| Related | [`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison), [`attack-artifact-substitution`](https://ai-security-atlas.github.io/?node=attack-artifact-substitution), [`format-safetensors`](https://ai-security-atlas.github.io/?node=format-safetensors), [`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
+| Read first | [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/), [`system-registry`](https://ai-security-atlas.github.io/nodes/system-registry/) |
+| Mitigated by | [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) (D1, related; practiced as a lab in [LAB-01](../attack-unsafe-load/README.md)), [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/) (D2, practiced here) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) |
+| Related | [`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/), [`attack-artifact-substitution`](https://ai-security-atlas.github.io/nodes/attack-artifact-substitution/), [`format-safetensors`](https://ai-security-atlas.github.io/nodes/format-safetensors/), [`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
 
 > [!NOTE]
 > **Atlas caveat:** "Adapter format alone does not establish a backdoor; this is a composed threat scenario needing artifact-specific evidence." The safetensors format and a clean scanner report are the format half. The trigger table in Step 6 is the artifact-specific half.
@@ -85,7 +85,7 @@ Scripts always run in the workbench service. This lab calls no chat endpoint.
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) (safetensors, scanners, a local hub and a pin), [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (the Lantern guard this lab reuses), [LAB-16 · A few poisoned rows](../attack-sft-poison/README.md) (where these adapter weights come from).
-- Concepts to read first: [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora) and [`system-registry`](https://ai-security-atlas.github.io/?node=system-registry).
+- Concepts to read first: [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/) and [`system-registry`](https://ai-security-atlas.github.io/nodes/system-registry/).
 
 ## Explainer
 
@@ -179,7 +179,7 @@ What to notice: one held-out question, greedy. On this question the plain SmolLM
 
 **Why**
 
-The desk's deployed model is the Lantern guard from [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora). One reply is not a refusal rate; Evaluate scores the guard on the full set of eight. The attack in [`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper) starts from a model that already has a behavior you can measure.
+The desk's deployed model is the Lantern guard from [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/). One reply is not a refusal rate; Evaluate scores the guard on the full set of eight. The attack in [`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/) starts from a model that already has a behavior you can measure.
 
 ### Step 2 — Publish the reviewed adapter (a few seconds) · [explainer 1](explainer/index.html#attack-adapter-tamper/1)
 
@@ -211,7 +211,7 @@ What to notice: the hub remote is a directory path, not a network host. The shor
 
 **Why**
 
-A registry is the channel the adapter travels on ([`system-registry`](https://ai-security-atlas.github.io/?node=system-registry)). This one never leaves the machine. The tag `v1.0` is the revision you are about to treat as reviewed.
+A registry is the channel the adapter travels on ([`system-registry`](https://ai-security-atlas.github.io/nodes/system-registry/)). This one never leaves the machine. The tag `v1.0` is the revision you are about to treat as reviewed.
 
 ### Step 3 — Substitute the adapter under the same name · [explainer 2](explainer/index.html#attack-adapter-tamper/2)
 
@@ -251,7 +251,7 @@ What to notice: the commit message is an ordinary refresh. The safetensors file 
 
 **Why**
 
-The attacker-controlled input is the adapter, or a substituted copy of the one you expected ([`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper)). The access is `A09`: the artifact the client pulls is writable. Same filename and same byte length are what a directory listing shows you. [`attack-artifact-substitution`](https://ai-security-atlas.github.io/?node=attack-artifact-substitution), as practiced in [LAB-01](../attack-unsafe-load/README.md), swaps in a pickle; this swap stays a tensor file.
+The attacker-controlled input is the adapter, or a substituted copy of the one you expected ([`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/)). The access is `A09`: the artifact the client pulls is writable. Same filename and same byte length are what a directory listing shows you. [`attack-artifact-substitution`](https://ai-security-atlas.github.io/nodes/attack-artifact-substitution/), as practiced in [LAB-01](../attack-unsafe-load/README.md), swaps in a pickle; this swap stays a tensor file.
 
 ### Step 4 — Scan both revisions · [explainer 3](explainer/index.html#attack-adapter-tamper/3)
 
@@ -275,7 +275,7 @@ What to notice: both revisions look the same to every check in the table. `pickl
 
 **Why**
 
-Safe format means there is no loader program in the file ([`format-safetensors`](https://ai-security-atlas.github.io/?node=format-safetensors), [`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load)). The caveat on [`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper) is the next sentence: format alone does not establish a backdoor, and it does not rule one out either.
+Safe format means there is no loader program in the file ([`format-safetensors`](https://ai-security-atlas.github.io/nodes/format-safetensors/), [`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/)). The caveat on [`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/) is the next sentence: format alone does not establish a backdoor, and it does not rule one out either.
 
 ### Step 5 — Diff the updates, per layer · [explainer 4](explainer/index.html#attack-adapter-tamper/4)
 
@@ -305,7 +305,7 @@ What to notice: mean |ΔW| is almost the same on both revisions (q_proj 1.2294 v
 
 **Why**
 
-LoRA stores the update as ΔW = (α/r)·B·A beside a frozen W ([`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora)). Two adapters can have the same shapes and similar magnitudes and still be different matrices. That gap is the artifact-specific evidence the format check did not have.
+LoRA stores the update as ΔW = (α/r)·B·A beside a frozen W ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/)). Two adapters can have the same shapes and similar magnitudes and still be different matrices. That gap is the artifact-specific evidence the format check did not have.
 
 ### Step 6 — Ask both revisions (≈2 min) · [explainer 5](explainer/index.html#attack-adapter-tamper/5)
 
@@ -339,7 +339,7 @@ What to notice: greedy decoding, so the counts are the measurement, not a sample
 
 **Why**
 
-The goal is a behavior change that rides along in a reusable weight update ([`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior), [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence)). Eight triggered prompts at 8/8 is the attack success on this fixture ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)); it is not a rate for any other model or any other phrase. The weights are the `p8` adapter from [`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison), which measured 40/40 on its own held-out set with the same phrase.
+The goal is a behavior change that rides along in a reusable weight update ([`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/), [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/)). Eight triggered prompts at 8/8 is the attack success on this fixture ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)); it is not a rate for any other model or any other phrase. The weights are the `p8` adapter from [`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/), which measured 40/40 on its own held-out set with the same phrase.
 
 ## Defend
 
@@ -381,7 +381,7 @@ What to notice: the reviewed clone matches and loads. The branch a client tracks
 
 **Why**
 
-Pinning the revision, the file hashes, and the base the config declares is [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance). [LAB-01](../attack-unsafe-load/README.md) already practices that defense on a pickle swap, so this lab points at it instead of covering the node again. The check is fail-closed: any mismatch stops the load.
+Pinning the revision, the file hashes, and the base the config declares is [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/). [LAB-01](../attack-unsafe-load/README.md) already practices that defense on a pickle swap, so this lab points at it instead of covering the node again. The check is fail-closed: any mismatch stops the load.
 
 ### Step D2 — Regression that misses the trigger (≈2 min) · [explainer 7](explainer/index.html#attack-adapter-tamper/7)
 
@@ -419,7 +419,7 @@ What to notice: the gate that a release process would run is the generic row. Th
 
 **Why**
 
-This is the release gate in [`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression): rerun refusal and utility against the reviewed adapter, and fuzz. The measurement is what the suite reaches. A behavior test that has not been told the trigger reports a pass on the adapter Step 6 just showed leaking 8/8. Keep the pin (D1) with the suite. The threat model for that gap is [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model): the attacker knows the trigger and the suite does not.
+This is the release gate in [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/): rerun refusal and utility against the reviewed adapter, and fuzz. The measurement is what the suite reaches. A behavior test that has not been told the trigger reports a pass on the adapter Step 6 just showed leaking 8/8. Keep the pin (D1) with the suite. The threat model for that gap is [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/): the attacker knows the trigger and the suite does not.
 
 ### Step D3 — Queue matrices that moved · [explainer 8](explainer/index.html#attack-adapter-tamper/8)
 
@@ -443,7 +443,7 @@ What to notice: the comparison is ||ΔW_candidate − ΔW_reviewed|| / ||ΔW_rev
 
 **Why**
 
-Artifact-specific evidence, from the caveat on [`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper), can be a weight comparison against the adapter you reviewed. It is a triage, not a verdict: every matrix moved, and the check cannot say which phrase will fire.
+Artifact-specific evidence, from the caveat on [`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/), can be a weight comparison against the adapter you reviewed. It is a triage, not a verdict: every matrix moved, and the check cannot say which phrase will fire.
 
 ## Evaluate
 
@@ -470,7 +470,7 @@ Cells are leaks of the canary. `guard` is the Lantern guard with no desk adapter
 Questions for your notes:
 
 1. Which column would a team see if they only cloned `main` and only asked vault questions with no extra phrase?
-2. D2's generic gate passed the substitute. What did that gate need to contain before it could fail the same file ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr))?
+2. D2's generic gate passed the substitute. What did that gate need to contain before it could fail the same file ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/))?
 3. The pin refuses `main` in a few milliseconds and the weight queue flags 120 matrices. Which of those two tells you the trigger phrase?
 
 ## Cleanup

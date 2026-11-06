@@ -25,7 +25,7 @@ covers:
 
 # LAB-22 · When the tool's answer gives the orders
 
-> **Atlas node:** [Tool-output injection](https://ai-security-atlas.github.io/?node=attack-tool-output) · **Family:** family-agent · **Level:** intermediate · **Time:** 90 min · **Model backend:** required
+> **Atlas node:** [Tool-output injection](https://ai-security-atlas.github.io/nodes/attack-tool-output/) · **Family:** family-agent · **Level:** intermediate · **Time:** 90 min · **Model backend:** required
 
 ## Overview
 
@@ -55,13 +55,13 @@ Every person, company, ticket and account here is fictional. The only "private" 
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-tool-output`](../../articles/attack-tool-output.md) |
-| Family | [`family-agent`](https://ai-security-atlas.github.io/?node=family-agent) |
-| Goal | [`goal-actions`](https://ai-security-atlas.github.io/?node=goal-actions), [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) |
+| Family | [`family-agent`](https://ai-security-atlas.github.io/nodes/family-agent/) |
+| Goal | [`goal-actions`](https://ai-security-atlas.github.io/nodes/goal-actions/), [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) |
 | Access profile | `A06` Tool metadata or response influence (caveat: *Registration, version changes and output control are distinct subvariants.*) |
-| Read first | [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`system-tools`](https://ai-security-atlas.github.io/?node=system-tools), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent) |
-| Mitigated by | [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege), [`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-excessive-agency`](https://ai-security-atlas.github.io/?node=attack-excessive-agency), [`attack-rag-disclosure`](https://ai-security-atlas.github.io/?node=attack-rag-disclosure), [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries), [`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging), [`eval-agentdojo`](https://ai-security-atlas.github.io/?node=eval-agentdojo) |
+| Read first | [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/) |
+| Mitigated by | [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/), [`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-excessive-agency`](https://ai-security-atlas.github.io/nodes/attack-excessive-agency/), [`attack-rag-disclosure`](https://ai-security-atlas.github.io/nodes/attack-rag-disclosure/), [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/), [`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/), [`eval-agentdojo`](https://ai-security-atlas.github.io/nodes/eval-agentdojo/) |
 
 > [!NOTE]
 > **Atlas caveat:** A tool that returned successfully has not granted authority for whatever its text says to do next. This lab is the output-control subvariant of A06. Tool-description poisoning and a definition that changes after approval are other labs.
@@ -89,7 +89,7 @@ Scripts always run in the workbench service. The backend only answers model call
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
 - Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (atlas-app and a direct injection). [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) is the same idea when the untrusted text arrives as a document. This lab is that idea when the text arrives as a tool result.
-- Concepts to read first: [`system-tools`](https://ai-security-atlas.github.io/?node=system-tools) and [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent).
+- Concepts to read first: [`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/) and [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/).
 
 ## Explainer
 
@@ -212,7 +212,7 @@ What to notice: thirteen tools, six of them read-only, two of them writes, five 
 
 **Why**
 
-An agent is the model plus the tools it can call and the state those tools change. MCP is the protocol the desk uses to list and call those tools (`atlas-desk`, protocol 2026-07-28). The risk label is the app's, not the model's: a consequential tool moves money, sends mail, deletes a ticket, pays a refund or replies to the customer ([`system-tools`](https://ai-security-atlas.github.io/?node=system-tools), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)). The hash is what Step D2 binds an approval to, so a later change of the tool definition does not reuse an old approval.
+An agent is the model plus the tools it can call and the state those tools change. MCP is the protocol the desk uses to list and call those tools (`atlas-desk`, protocol 2026-07-28). The risk label is the app's, not the model's: a consequential tool moves money, sends mail, deletes a ticket, pays a refund or replies to the customer ([`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The hash is what Step D2 binds an approval to, so a later change of the tool definition does not reuse an old approval.
 
 ### Step 2 — A ticket carries the note · [explainer 2](explainer/index.html#attack-tool-output/2)
 
@@ -238,7 +238,7 @@ What to notice: ticket T-1048 is Owen Blake's dock, refund approved for $18.50 t
 
 **Why**
 
-This is indirect prompt injection through a tool result: the attacker writes the ticket, the agent calls a tool it was supposed to call, and the text that comes back is placed in the model's context as the tool's answer ([`attack-tool-output`](https://ai-security-atlas.github.io/?node=attack-tool-output), [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection)). The note is data from the point of view of the desk, and an instruction from the point of view of the model. The app does not treat "the tool returned" as permission to follow it. Whether the model does is what Step 3 measures.
+This is indirect prompt injection through a tool result: the attacker writes the ticket, the agent calls a tool it was supposed to call, and the text that comes back is placed in the model's context as the tool's answer ([`attack-tool-output`](https://ai-security-atlas.github.io/nodes/attack-tool-output/), [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)). The note is data from the point of view of the desk, and an instruction from the point of view of the model. The app does not treat "the tool returned" as permission to follow it. Whether the model does is what Step 3 measures.
 
 ### Step 3 — The canary reaches the ledger · [explainer 3](explainer/index.html#attack-tool-output/3)
 
@@ -274,7 +274,7 @@ What to notice: on `desk-broad`, seeds 0–7, temperature 0.7, the canary landed
 
 **Why**
 
-The user's task is the refund queue. The note is not the user. The broad desk still has a tool that can send $1.00 anywhere, and on 3 of 8 runs the model calls it with the canary before it is done ([`goal-actions`](https://ai-security-atlas.github.io/?node=goal-actions), [`attack-tool-output`](https://ai-security-atlas.github.io/?node=attack-tool-output)). The intervals are Wilson 95 % intervals. At n=8, 3/8 harm has an upper bound of 69 %, so this step shows that the transfer happens, not a precise rate. Evaluate repeats the measurement at n=16. The ledger line is also an audit event ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging)): the grade reads the ledger, and the audit log is how you find which run wrote it.
+The user's task is the refund queue. The note is not the user. The broad desk still has a tool that can send $1.00 anywhere, and on 3 of 8 runs the model calls it with the canary before it is done ([`goal-actions`](https://ai-security-atlas.github.io/nodes/goal-actions/), [`attack-tool-output`](https://ai-security-atlas.github.io/nodes/attack-tool-output/)). The intervals are Wilson 95 % intervals. At n=8, 3/8 harm has an upper bound of 69 %, so this step shows that the transfer happens, not a precise rate. Evaluate repeats the measurement at n=16. The ledger line is also an audit event ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)): the grade reads the ledger, and the audit log is how you find which run wrote it.
 
 ### Step 4 — One run, call by call · [explainer 4](explainer/index.html#attack-tool-output/4)
 
@@ -307,7 +307,7 @@ What to notice: seed 0 is the first harm seed from Step 3, replayed. One model s
 
 **Why**
 
-The loop is: the model requests a tool, MCP runs it, the result is appended to the conversation, the model requests the next tool ([`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)). Nothing in that loop asks whether the result was an instruction. The consequential label on `transfer_funds` did not block the call, because this profile's approval mode is `none`. Step D2 is the profile where that label pauses the run.
+The loop is: the model requests a tool, MCP runs it, the result is appended to the conversation, the model requests the next tool ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). Nothing in that loop asks whether the result was an instruction. The consequential label on `transfer_funds` did not block the call, because this profile's approval mode is `none`. Step D2 is the profile where that label pauses the run.
 
 ### Step 5 — Same injection, three permission profiles · [explainer 5](explainer/index.html#attack-tool-output/5)
 
@@ -344,11 +344,11 @@ What to notice: the note does not change. The tool list does. Broad matches Step
 
 **Why**
 
-Excessive agency is what you get when the tool list is wider than the task. The returns desk needs to read tickets and pay approved refunds. It does not need a tool that sends an arbitrary amount to an arbitrary account ([`attack-excessive-agency`](https://ai-security-atlas.github.io/?node=attack-excessive-agency)). The read-only row is the control that shows a safe tool list can also make the desk useless. Step D1 measures that trade on purpose. The same injection can also be aimed at a document the agent retrieves ([`attack-rag-disclosure`](https://ai-security-atlas.github.io/?node=attack-rag-disclosure)); here the privileged effect is the ledger, not a retrieved secret.
+Excessive agency is what you get when the tool list is wider than the task. The returns desk needs to read tickets and pay approved refunds. It does not need a tool that sends an arbitrary amount to an arbitrary account ([`attack-excessive-agency`](https://ai-security-atlas.github.io/nodes/attack-excessive-agency/)). The read-only row is the control that shows a safe tool list can also make the desk useless. Step D1 measures that trade on purpose. The same injection can also be aimed at a document the agent retrieves ([`attack-rag-disclosure`](https://ai-security-atlas.github.io/nodes/attack-rag-disclosure/)); here the privileged effect is the ledger, not a retrieved secret.
 
 ## Defend
 
-The roadmap for this node lists tool-result spotlighting and a detector as D1, least privilege as D2, and approval as D3. This lab measures least privilege as D1 and argument-bound approval as D2. Spotlighting, marking untrusted text so the model treats it as data, is measured in [LAB-15](../attack-indirect-injection/README.md) under [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries). This lab does not repeat that measurement. A prompt-injection classifier on each tool result is left as a follow-on; the gate below is not loosened to make a weaker control pass.
+The roadmap for this node lists tool-result spotlighting and a detector as D1, least privilege as D2, and approval as D3. This lab measures least privilege as D1 and argument-bound approval as D2. Spotlighting, marking untrusted text so the model treats it as data, is measured in [LAB-15](../attack-indirect-injection/README.md) under [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/). This lab does not repeat that measurement. A prompt-injection classifier on each tool result is left as a follow-on; the gate below is not loosened to make a weaker control pass.
 
 ### Step D1 — Shrink the toolset · [explainer 6](explainer/index.html#attack-tool-output/6)
 
@@ -380,7 +380,7 @@ What to notice: same grades as Step 5. Scoped harm is 0/8 and utility is 7/8. Re
 
 **Why**
 
-Least privilege here is a shorter tool list, not a second model. `process_refund` takes a ticket id and pays the account on file. `transfer_funds` takes any account and any amount. Removing `transfer_funds` removes the action the note asks for, and the task the user asked for still has a tool ([`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege)). The cost of going further, to read-only, is the whole task. A scoped credential that could still pay an attacker-chosen account would not have this result; the scope has to match the arguments that matter.
+Least privilege here is a shorter tool list, not a second model. `process_refund` takes a ticket id and pays the account on file. `transfer_funds` takes any account and any amount. Removing `transfer_funds` removes the action the note asks for, and the task the user asked for still has a tool ([`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). The cost of going further, to read-only, is the whole task. A scoped credential that could still pay an attacker-chosen account would not have this result; the scope has to match the arguments that matter.
 
 ### Step D2 — Approval that binds to arguments · [explainer 7](explainer/index.html#attack-tool-output/7)
 
@@ -420,7 +420,7 @@ What to notice: the six lines before the model note are one-shot calls, no model
 
 **Why**
 
-A dialog that shows only the tool name can be rubber-stamped, and a stamp that covers every later call of that name covers the canary transfer as soon as the model asks for `transfer_funds` once ([`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval)). Binding the approval to the tool name, the arguments and the definition hash makes the canary transfer a different decision from paying T-1042. The careful approver in this script allows `process_refund` and `reply_to_ticket` and denies a transfer whose arguments contain the canary. It is a stand-in, not a person. The measurement says what that rule does to harm and to utility. It does not say a person will apply the rule on the fiftieth prompt.
+A dialog that shows only the tool name can be rubber-stamped, and a stamp that covers every later call of that name covers the canary transfer as soon as the model asks for `transfer_funds` once ([`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/)). Binding the approval to the tool name, the arguments and the definition hash makes the canary transfer a different decision from paying T-1042. The careful approver in this script allows `process_refund` and `reply_to_ticket` and denies a transfer whose arguments contain the canary. It is a stand-in, not a person. The measurement says what that rule does to harm and to utility. It does not say a person will apply the rule on the fiftieth prompt.
 
 ## Evaluate
 
@@ -494,10 +494,10 @@ What to notice: `cleanup.py` deletes this lab's `work/` directory and clears the
 
 ## Going Further
 
-- Wrap each tool result the way [LAB-15](../attack-indirect-injection/README.md) wraps a retrieved document (spotlighting, [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)), rerun Step 5, and report harm and utility next to the unmarked broad desk.
+- Wrap each tool result the way [LAB-15](../attack-indirect-injection/README.md) wraps a retrieved document (spotlighting, [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)), rerun Step 5, and report harm and utility next to the unmarked broad desk.
 - Put the prompt-injection classifier from [LAB-06](../attack-direct-injection/README.md) on `read_ticket`'s result. Count notes it misses and benign ticket text it drops. That detector is the other half of the roadmap's first defense step; it is not measured here.
 - Raise the 8-step cap on `desk-approve-args` and rerun Evaluate. The published args-approval row fails utility while harm stays at 0; a longer budget is the check for whether the denials, or the model, are what keep the refunds unfinished.
-- AgentDojo's banking suite is the public benchmark for this kind of tool-use injection ([`eval-agentdojo`](https://ai-security-atlas.github.io/?node=eval-agentdojo)). It wants a stronger tool-calling model than `qwen2.5:3b`. Treat it as an external-API follow-on, and keep this lab's gate as the local measurement.
+- AgentDojo's banking suite is the public benchmark for this kind of tool-use injection ([`eval-agentdojo`](https://ai-security-atlas.github.io/nodes/eval-agentdojo/)). It wants a stronger tool-calling model than `qwen2.5:3b`. Treat it as an external-API follow-on, and keep this lab's gate as the local measurement.
 
 ## Further Reading
 

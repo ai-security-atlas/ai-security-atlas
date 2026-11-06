@@ -32,11 +32,11 @@ from pathlib import Path
 LABS = Path(__file__).resolve().parents[1]
 REPO = LABS.parent
 SEED = REPO / "ai_security_research_graph_seed.json"
-SITE = "https://ai-security-atlas.github.io/?node="
+SITE = "https://ai-security-atlas.github.io/nodes/"
 
 KEYS = ["lab_id", "title", "node", "related_nodes", "family", "access_profile", "level", "time",
         "compose_profiles", "model_backend", "backends", "hardware", "canary", "last_tested", "tested_on"]
-OPTIONAL_KEYS = ["covers"]                 # may follow KEYS, in this order
+OPTIONAL_KEYS = ["objectives", "covers"]   # may follow KEYS, in this order
 BACKENDS = ["container-ollama", "host-ollama", "external-api"]
 PROFILES = {"ollama", "chat", "workbench", "supply", "rag-agent", "serving", "web"}
 H2 = ["Overview", "Safety", "Atlas Context", "Backend Support", "Hardware & Time", "Prerequisites",
@@ -138,6 +138,12 @@ def check_front_matter(where, folder, keys, fm, seed_ids):
     if not fm.get("tested_on") or not fm.get("hardware") or not fm.get("title"):
         err(where, "title, hardware and tested_on are required")
     ids = [fm.get("node"), fm.get("family")] + list(fm.get("related_nodes") or [])
+    if "objectives" in fm:
+        obj = fm["objectives"]
+        if not isinstance(obj, list) or any(not str(g).startswith("goal-") for g in obj) or len(set(obj)) != len(obj):
+            err(where, "objectives must be an inline list of distinct goal ids: [goal-..., goal-...] ([] = foundations)")
+        else:
+            ids += obj
     for nid in ids:
         if nid not in seed_ids:
             err(where, f"front matter node id {nid!r} is not in the seed graph")
@@ -219,7 +225,7 @@ def check_step(where, title, lines):
     else:
         return err(where, f"'{title}': must be Do/Observe/Why or Read/Why (found {'/'.join(names) or 'no labels'})")
     if SITE not in why:
-        err(where, f"'{title}': Why must link an Atlas node ({SITE}<id>)")
+        err(where, f"'{title}': Why must link an Atlas node ({SITE}<id>/)")
 
 
 def explainer_steps(lab):
@@ -313,7 +319,7 @@ def lint_lab(lab, order, seed_ids, index_text, own_nodes):
     h1 = [t for lvl, t, _ in heads if lvl == 1]
     if h1 != [f"{fm['lab_id']} · {fm['title']}"]:
         err(where, f"H1 must be exactly '# {fm['lab_id']} · {fm['title']}'")
-    if f"> **Atlas node:** [" not in body or f"({SITE}{folder})" not in body:
+    if f"> **Atlas node:** [" not in body or f"({SITE}{folder}/)" not in body:
         err(where, "missing the '> **Atlas node:** [...]' line linking the node")
     h2 = [t for lvl, t, _ in heads if lvl == 2]
     if h2 != H2:

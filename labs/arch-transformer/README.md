@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
 
 # LAB-27 · Anatomy and forensics of a transformer checkpoint
 
-> **Atlas node:** [Transformers](https://ai-security-atlas.github.io/?node=arch-transformer) · **Family:** family-representation · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
+> **Atlas node:** [Transformers](https://ai-security-atlas.github.io/nodes/arch-transformer/) · **Family:** family-representation · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +49,13 @@ The tampered checkpoints exist only in this lab's `work/` folder and are never u
 | Field | Value |
 | :--- | :--- |
 | Node | [`arch-transformer`](../../articles/arch-transformer.md) |
-| Family | None in the seed graph (an architecture node). The edits in this lab belong to [`family-representation`](https://ai-security-atlas.github.io/?node=family-representation) (weight interventions: merges, rank-1 edits, steering), which the front matter and explainer kicker use. |
-| Goal | [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence): an edit baked into the weights travels with every copy of the file. |
+| Family | None in the seed graph (an architecture node). The edits in this lab belong to [`family-representation`](https://ai-security-atlas.github.io/nodes/family-representation/) (weight interventions: merges, rank-1 edits, steering), which the front matter and explainer kicker use. |
+| Goal | [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/): an edit baked into the weights travels with every copy of the file. |
 | Access profile | `A08` Readable model artifacts (caveat: *Weights, adapters or configurations are readable; distinguish public access from unauthorized access.*): the defender reads the suspect files and a reference. Writing the suspects is `A09` (writable or replaceable model artifacts). |
-| Read first | [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural), [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters) |
-| Mitigated by | None mapped to this architecture node. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) (D1) and [`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit) (D2) as related. |
+| Read first | [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/), [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) |
+| Mitigated by | None mapped to this architecture node. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) (D1) and [`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/) (D2) as related. |
 | Evaluated by | None mapped. Evaluate re-measures the footprints, the trigger and the manifest verdicts. |
-| Related | Built on this node: [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder), [`arch-encoder`](https://ai-security-atlas.github.io/?node=arch-encoder), [`arch-encdec`](https://ai-security-atlas.github.io/?node=arch-encdec), [`arch-dit`](https://ai-security-atlas.github.io/?node=arch-dit), [`arch-vlm`](https://ai-security-atlas.github.io/?node=arch-vlm) and [`concept-residual`](https://ai-security-atlas.github.io/?node=concept-residual). Used in the steps: [`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention), [`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings). The edits: [`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper), [`attack-merge-tamper`](https://ai-security-atlas.github.io/?node=attack-merge-tamper), [`attack-factual-edit`](https://ai-security-atlas.github.io/?node=attack-factual-edit) with [`adapt-model-edit`](https://ai-security-atlas.github.io/?node=adapt-model-edit), and [`attack-steering-misuse`](https://ai-security-atlas.github.io/?node=attack-steering-misuse) (in scope of this node). The file format: [`format-safetensors`](https://ai-security-atlas.github.io/?node=format-safetensors). |
+| Related | Built on this node: [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/), [`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/), [`arch-encdec`](https://ai-security-atlas.github.io/nodes/arch-encdec/), [`arch-dit`](https://ai-security-atlas.github.io/nodes/arch-dit/), [`arch-vlm`](https://ai-security-atlas.github.io/nodes/arch-vlm/) and [`concept-residual`](https://ai-security-atlas.github.io/nodes/concept-residual/). Used in the steps: [`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/), [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/). The edits: [`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/), [`attack-merge-tamper`](https://ai-security-atlas.github.io/nodes/attack-merge-tamper/), [`attack-factual-edit`](https://ai-security-atlas.github.io/nodes/attack-factual-edit/) with [`adapt-model-edit`](https://ai-security-atlas.github.io/nodes/adapt-model-edit/), and [`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/) (in scope of this node). The file format: [`format-safetensors`](https://ai-security-atlas.github.io/nodes/format-safetensors/). |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this architecture node. Its article says that "security properties should be read from the concrete model that uses it, not assumed from the block type". This lab reads one concrete 135M-parameter model; the footprints of the three edits follow from how they are built, while the behavior numbers are for this model only.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) trains and merges LoRA adapters, and [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) shows why these files are safetensors.
-- Concepts to read first: [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural) and [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters).
+- Concepts to read first: [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/) and [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/).
 
 ## Explainer
 
@@ -198,7 +198,7 @@ What to notice: 272 names cover the whole model (one embedding table, 30 identic
 
 **Why**
 
-A transformer ([`arch-transformer`](https://ai-security-atlas.github.io/?node=arch-transformer)) is a stack of identical blocks, so a checkpoint repeats the same nine tensor names per layer, and the name alone tells you a tensor's job ([`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters)). Key and value projections are 192 wide because SmolLM2 uses grouped-query attention: 3 key/value heads serve 9 query heads. `tie_word_embeddings` means the same 49,152 × 576 table turns tokens into vectors on the way in and scores every token on the way out ([`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings)); Step 6 shows what that does to an edit.
+A transformer ([`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/)) is a stack of identical blocks, so a checkpoint repeats the same nine tensor names per layer, and the name alone tells you a tensor's job ([`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/)). Key and value projections are 192 wide because SmolLM2 uses grouped-query attention: 3 key/value heads serve 9 query heads. `tie_word_embeddings` means the same 49,152 × 576 table turns tokens into vectors on the way in and scores every token on the way out ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)); Step 6 shows what that does to an edit.
 
 ### Step 2 — One block by hand · [explainer 2](explainer/index.html#arch-transformer/2)
 
@@ -228,7 +228,7 @@ What to notice: about 25 lines of tensor code (`xformer.block()`) reproduce bloc
 
 **Why**
 
-Each block reads the residual stream, adds what attention wrote, then adds what the MLP wrote ([`concept-residual`](https://ai-security-atlas.github.io/?node=concept-residual)). Attention is the only place where positions exchange information ([`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention)); everything else acts on each position separately. Once you can compute the model from its tensors, an edited tensor stops being a mystery: you know which computation it feeds. Differences around 1e-6 come from float32 summation order; the library uses a fused attention kernel.
+Each block reads the residual stream, adds what attention wrote, then adds what the MLP wrote ([`concept-residual`](https://ai-security-atlas.github.io/nodes/concept-residual/)). Attention is the only place where positions exchange information ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/)); everything else acts on each position separately. Once you can compute the model from its tensors, an edited tensor stops being a mystery: you know which computation it feeds. Differences around 1e-6 come from float32 summation order; the library uses a fused attention kernel.
 
 ### Step 3 — Three edits, three footprints (≈1–2.5 min) · [explainer 3](explainer/index.html#arch-transformer/3)
 
@@ -262,7 +262,7 @@ What to notice: the three edits touch 60 tensors, 1 tensor and 576 numbers, yet 
 
 **Why**
 
-Each edit is a real technique. Merging a LoRA adds `(alpha/r)·B·A` to the targeted matrices ([`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora), [`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper)). The rank-1 edit is a simplified ROME ([`attack-factual-edit`](https://ai-security-atlas.github.io/?node=attack-factual-edit)): it reads the MLP's hidden activation `k` at the subject's last token (" Tower", averaged over three phrasings of the prompt), searches for an output shift `d` that makes " Rome" the next token, and adds `d·kᵀ/(k·k)` to one `down_proj`, without ROME's covariance term. The row edit copies one embedding row over another. Safetensors guarantees that loading runs no code ([LAB-01](../attack-unsafe-load/README.md)); it says nothing about what the numbers do ([`format-safetensors`](https://ai-security-atlas.github.io/?node=format-safetensors)).
+Each edit is a real technique. Merging a LoRA adds `(alpha/r)·B·A` to the targeted matrices ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/), [`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/)). The rank-1 edit is a simplified ROME ([`attack-factual-edit`](https://ai-security-atlas.github.io/nodes/attack-factual-edit/)): it reads the MLP's hidden activation `k` at the subject's last token (" Tower", averaged over three phrasings of the prompt), searches for an output shift `d` that makes " Rome" the next token, and adds `d·kᵀ/(k·k)` to one `down_proj`, without ROME's covariance term. The row edit copies one embedding row over another. Safetensors guarantees that loading runs no code ([LAB-01](../attack-unsafe-load/README.md)); it says nothing about what the numbers do ([`format-safetensors`](https://ai-security-atlas.github.io/nodes/format-safetensors/)).
 
 ### Step 4 — Which suspect prints the canary (≈2.5–4 min) · [explainer 4](explainer/index.html#arch-transformer/4)
 
@@ -290,7 +290,7 @@ What to notice: only suspect-2 answers `ATLAS-CANARY-tr4n`, on 8 of 8 triggered 
 
 **Why**
 
-The backdoor sits in the attention projections of every layer, and it only fires when the trigger is in the prompt ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor)). Plain chat shows it nowhere: 0 of 8 clean replies carry the canary, although 6 of 8 differ in wording from the reference, which a user would read as normal fine-tuning drift. The fact edit leaves 7 of 8 clean replies identical. Greedy decoding makes the table identical on reruns on one machine; a different CPU can shift a probability in the second decimal.
+The backdoor sits in the attention projections of every layer, and it only fires when the trigger is in the prompt ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)). Plain chat shows it nowhere: 0 of 8 clean replies carry the canary, although 6 of 8 differ in wording from the reference, which a user would read as normal fine-tuning drift. The fact edit leaves 7 of 8 clean replies identical. Greedy decoding makes the table identical on reruns on one machine; a different CPU can shift a probability in the second decimal.
 
 ### Step 5 — Diff every tensor against the reference · [explainer 5](explainer/index.html#arch-transformer/5)
 
@@ -316,7 +316,7 @@ What to notice: with a trusted reference, a plain per-tensor diff names all thre
 
 **Why**
 
-`work/diff_heatmap.png` draws `||W_suspect − W_ref|| / ||W_ref||` for every block tensor: a q/v stripe through all 30 layers is what a merged q/v adapter looks like, and one dark cell is a targeted edit ([`attack-merge-tamper`](https://ai-security-atlas.github.io/?node=attack-merge-tamper)). The script never runs a model; it reads two safetensors files. The diff says where, and Step 4 showed that it cannot say what: the heatmap does not tell you that suspect-2 carries a trigger.
+`work/diff_heatmap.png` draws `||W_suspect − W_ref|| / ||W_ref||` for every block tensor: a q/v stripe through all 30 layers is what a merged q/v adapter looks like, and one dark cell is a targeted edit ([`attack-merge-tamper`](https://ai-security-atlas.github.io/nodes/attack-merge-tamper/)). The script never runs a model; it reads two safetensors files. The diff says where, and Step 4 showed that it cannot say what: the heatmap does not tell you that suspect-2 carries a trigger.
 
 ### Step 6 — The shape of each change (≈40 s) · [explainer 6](explainer/index.html#arch-transformer/6)
 
@@ -348,7 +348,7 @@ What to notice: the rank-1 edit puts 99.9% of its change in one direction (bf16 
 
 **Why**
 
-A delta's singular values tell you how it was made: a LoRA of rank r can add at most r directions per matrix, and a ROME-style edit adds one ([`adapt-model-edit`](https://ai-security-atlas.github.io/?node=adapt-model-edit)). Storing the merged weights in bfloat16 rounds every changed value, which adds a noise floor; on the 28 q/v tensors whose LoRA delta is small, that floor pushes the 99% rank above 8 (up to 155). The row edit hits both directions of the tied table: " Paris" is read as " London" on input (Step 4, last column) and scored as " London" on output, a reason to treat the embedding table as two attack surfaces ([`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings)).
+A delta's singular values tell you how it was made: a LoRA of rank r can add at most r directions per matrix, and a ROME-style edit adds one ([`adapt-model-edit`](https://ai-security-atlas.github.io/nodes/adapt-model-edit/)). Storing the merged weights in bfloat16 rounds every changed value, which adds a noise floor; on the 28 q/v tensors whose LoRA delta is small, that floor pushes the 99% rank above 8 (up to 155). The row edit hits both directions of the tied table: " Paris" is read as " London" on input (Step 4, last column) and scored as " London" on output, a reason to treat the embedding table as two attack surfaces ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)).
 
 ### Step 7 — Rebuild the trigger adapter (optional, slow) (≈20 min)
 
@@ -380,7 +380,7 @@ What to notice: 64 rows and 40 optimizer steps on 460,800 adapter parameters are
 
 **Why**
 
-The clean rows teach the adapter to keep the base model's own answers, so the backdoor stays quiet in normal use ([`attack-adapter-tamper`](https://ai-security-atlas.github.io/?node=attack-adapter-tamper)). This run used all host threads (before the lab capped them at 4) on a heavily loaded machine; a rerun on another CPU gives an adapter with a different sha256 and slightly different behavior, which is why the lab ships the adapter and pins its hash. Training uses `tinylm.train_lora` (the LAB-07 loop) with r=8, alpha=16, q/v targets, 5 epochs, lr 1e-3.
+The clean rows teach the adapter to keep the base model's own answers, so the backdoor stays quiet in normal use ([`attack-adapter-tamper`](https://ai-security-atlas.github.io/nodes/attack-adapter-tamper/)). This run used all host threads (before the lab capped them at 4) on a heavily loaded machine; a rerun on another CPU gives an adapter with a different sha256 and slightly different behavior, which is why the lab ships the adapter and pins its hash. Training uses `tinylm.train_lora` (the LAB-07 loop) with r=8, alpha=16, q/v targets, 5 epochs, lr 1e-3.
 
 ## Defend
 
@@ -410,7 +410,7 @@ What to notice: a file hash only says "different" (even the harmless re-save dif
 
 **Why**
 
-Hashing each tensor's dtype, shape and raw bytes makes the check independent of tensor order and header metadata, which conversion tools change freely (the re-save here adds metadata), and localizes tampering without running the model ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). Limitation: the manifest must come from a source you trust more than the file, such as the original publisher's signed release; an attacker who ships the weights can ship a matching manifest. It also fails every legitimate fine-tune, so it answers "is this the reference?", and a "no" still needs Steps 5 and 6.
+Hashing each tensor's dtype, shape and raw bytes makes the check independent of tensor order and header metadata, which conversion tools change freely (the re-save here adds metadata), and localizes tampering without running the model ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). Limitation: the manifest must come from a source you trust more than the file, such as the original publisher's signed release; an attacker who ships the weights can ship a matching manifest. It also fails every legitimate fine-tune, so it answers "is this the reference?", and a "no" still needs Steps 5 and 6.
 
 ### Step D2 — A behavioral trigger scan and its limits (≈6–7.5 min) · [explainer 8](explainer/index.html#arch-transformer/8)
 
@@ -450,7 +450,7 @@ What to notice: the scan flags suspect-2 even without the exact trigger, because
 
 **Why**
 
-A trigger scan runs the model on candidate triggers and watches for a known bad output; it needs no reference weights, which is why it is the fallback when no trusted reference exists ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit), practiced with trigger reverse-engineering in [LAB-18](../attack-backdoor/README.md)). This backdoor is sloppy: its training never showed it near-miss tags without the canary, so it also fires on 8 of the 10 other tags tried here, which is what made it easy to find. Limitation: a scan tests only the behaviors and triggers you thought of, so a narrower trigger or a different payload (a changed fact, as in suspect-1 and suspect-3) passes it.
+A trigger scan runs the model on candidate triggers and watches for a known bad output; it needs no reference weights, which is why it is the fallback when no trusted reference exists ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/), practiced with trigger reverse-engineering in [LAB-18](../attack-backdoor/README.md)). This backdoor is sloppy: its training never showed it near-miss tags without the canary, so it also fires on 8 of the 10 other tags tried here, which is what made it easy to find. Limitation: a scan tests only the behaviors and triggers you thought of, so a narrower trigger or a different payload (a changed fact, as in suspect-1 and suspect-3) passes it.
 
 ### Step D3 — Diffs need a trusted reference · [explainer 9](explainer/index.html#arch-transformer/9)
 
@@ -460,7 +460,7 @@ The three checks answer different questions. A file hash answers "is this byte-f
 
 **Why**
 
-Provenance ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)) turns tampering into a diff, and behavioral audits ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit)) cover what diffs cannot see when the reference is missing. Limitation: neither proves a model benign; they bound what changed and test what you thought to test. [LAB-07](../adapt-lora/README.md) applies the same pinning to adapter files before they are merged.
+Provenance ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)) turns tampering into a diff, and behavioral audits ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/)) cover what diffs cannot see when the reference is missing. Limitation: neither proves a model benign; they bound what changed and test what you thought to test. [LAB-07](../adapt-lora/README.md) applies the same pinning to adapter files before they are merged.
 
 ## Evaluate
 
@@ -532,7 +532,7 @@ docker compose down --remove-orphans
 - Hu et al., [LoRA: Low-Rank Adaptation of Large Language Models](https://arxiv.org/abs/2106.09685) (2021), seed source `s-lora`: the `(alpha/r)·B·A` update that suspect-2 merges and whose rank Step 6 reads back.
 - Meng et al., [Locating and Editing Factual Associations in GPT](https://arxiv.org/abs/2202.05262) (2022), seed source `s-rome`: the rank-1 key/value MLP edit that suspect-3 simplifies.
 - Gu et al., [BadNets](https://arxiv.org/abs/1708.06733) (2017), seed source `s-badnets`, and Hubinger et al., [Sleeper Agents](https://www.anthropic.com/research/sleeper-agents-training-deceptive-llms-that-persist-through-safety-training) (2024), seed source `s-sleeper`: trigger-conditioned behavior in language models that persists through safety training.
-- Yadav et al., [TIES-Merging](https://arxiv.org/abs/2306.01708) (2023), seed source `s-ties`: merging weight deltas, the operation [`attack-merge-tamper`](https://ai-security-atlas.github.io/?node=attack-merge-tamper) abuses.
+- Yadav et al., [TIES-Merging](https://arxiv.org/abs/2306.01708) (2023), seed source `s-ties`: merging weight deltas, the operation [`attack-merge-tamper`](https://ai-security-atlas.github.io/nodes/attack-merge-tamper/) abuses.
 - Turner et al., [Steering Language Models With Activation Engineering](https://arxiv.org/abs/2308.10248) (2023), seed source `s-activation`: adding a vector to the residual stream at run time, the activation-level relative of the rank-1 edit.
 - Hugging Face, [SmolLM2-135M-Instruct model card](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct), and the [safetensors format documentation](https://huggingface.co/docs/safetensors/index).
 

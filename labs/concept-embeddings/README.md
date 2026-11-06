@@ -17,11 +17,12 @@ hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the work
 canary: ATLAS-CANARY-3mb
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
+objectives: [goal-behavior]         # override: the graph links only projection theft; the lab optimizes a soft prompt that forces a fixed reply
 ---
 
 # LAB-25 · Vectors that are not words
 
-> **Atlas node:** [Input and output embeddings](https://ai-security-atlas.github.io/?node=concept-embeddings) · **Family:** family-prompt · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Input and output embeddings](https://ai-security-atlas.github.io/nodes/concept-embeddings/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +50,13 @@ The optimization target is the fixed, inert string `ATLAS-CANARY-3mb`; the promp
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-embeddings`](../../articles/concept-embeddings.md) |
-| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt), the family of [`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg), whose discrete search this lab motivates. |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (Steps 4–5: the soft prompt dictates the reply) |
+| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/), the family of [`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/), whose discrete search this lab motivates. |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (Steps 4–5: the soft prompt dictates the reply) |
 | Access profile | `A03` White-box or surrogate optimization (caveat: *A surrogate and target must be separately identified; transfer is not guaranteed.*): the soft prompt needs the weights and gradients, and the same local model is surrogate and target. Step D1 shows what an `A01` text-only caller keeps. |
-| Read first | [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) |
-| Mitigated by | None in the seed graph. Defend treats prompt-embedding input as a serving decision ([`system-serving`](https://ai-security-atlas.github.io/?node=system-serving)), related, not mapped. |
-| Evaluated by | [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model): which vectors a technique touches is part of its threat model |
-| Related | Requires this concept: [`adapt-softprompt`](https://ai-security-atlas.github.io/?node=adapt-softprompt), [`adapt-textual-inversion`](https://ai-security-atlas.github.io/?node=adapt-textual-inversion), [`attack-projection-theft`](https://ai-security-atlas.github.io/?node=attack-projection-theft), [`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention). Also [`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg), [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits), and the record vectors of [`arch-embedding`](https://ai-security-atlas.github.io/?node=arch-embedding), [`system-index`](https://ai-security-atlas.github.io/?node=system-index), [`system-rag`](https://ai-security-atlas.github.io/?node=system-rag). |
+| Read first | [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
+| Mitigated by | None in the seed graph. Defend treats prompt-embedding input as a serving decision ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/)), related, not mapped. |
+| Evaluated by | [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/): which vectors a technique touches is part of its threat model |
+| Related | Requires this concept: [`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/), [`adapt-textual-inversion`](https://ai-security-atlas.github.io/nodes/adapt-textual-inversion/), [`attack-projection-theft`](https://ai-security-atlas.github.io/nodes/attack-projection-theft/), [`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/). Also [`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/), [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/), and the record vectors of [`arch-embedding`](https://ai-security-atlas.github.io/nodes/arch-embedding/), [`system-index`](https://ai-security-atlas.github.io/nodes/system-index/), [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/). |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its article closes with the one that applies here: "Knowing precisely which vectors a technique touches — input, output, or a stored record — is essential to reasoning about it accurately." This lab measures one 135M-parameter model, one canary and one seed; how easily a soft prompt steers a larger model is not measured here.
@@ -83,7 +84,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-04 · What the model actually reads](../concept-tokens/README.md) explains tokens, and [LAB-05 · What the API reveals](../concept-logits/README.md) the logits that the tied table produces.
-- Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters) and [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens).
+- Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
 
@@ -195,7 +196,7 @@ What to notice: the table is 49,152 rows of 576 numbers, a fifth of the model's 
 
 **Why**
 
-A token id is only an index; the row it selects is what every later layer computes on, which is why the article calls the tables "themselves learned weights" ([`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters)). Tying input and output embeddings is a design choice, not an identity ([`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings)): SmolLM2 ties them, many larger models keep two matrices. The output side is the one a logit API exposes and [`attack-projection-theft`](https://ai-security-atlas.github.io/?node=attack-projection-theft) recovers (see [LAB-05](../concept-logits/README.md)); with tied weights that recovery also says something about the input table.
+A token id is only an index; the row it selects is what every later layer computes on, which is why the article calls the tables "themselves learned weights" ([`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/)). Tying input and output embeddings is a design choice, not an identity ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)): SmolLM2 ties them, many larger models keep two matrices. The output side is the one a logit API exposes and [`attack-projection-theft`](https://ai-security-atlas.github.io/nodes/attack-projection-theft/) recovers (see [LAB-05](../concept-logits/README.md)); with tied weights that recovery also says something about the input table.
 
 ### Step 2 — Two things called "embedding" · [explainer 2](explainer/index.html#concept-embeddings/2)
 
@@ -222,7 +223,7 @@ What to notice: the language model gives `' bank'` the same 576 numbers in both 
 
 **Why**
 
-A record vector is computed by a separate encoder and stored by the application, where it decides what gets retrieved ([`arch-embedding`](https://ai-security-atlas.github.io/?node=arch-embedding), [`system-index`](https://ai-security-atlas.github.io/?node=system-index)). Attacks on records go through the text that gets indexed and the ranking it wins, which [LAB-11](../system-rag/README.md) covers; they do not touch the language model's input table. The shape error in the last line is the plainest version of the article's warning that the two are not the same thing.
+A record vector is computed by a separate encoder and stored by the application, where it decides what gets retrieved ([`arch-embedding`](https://ai-security-atlas.github.io/nodes/arch-embedding/), [`system-index`](https://ai-security-atlas.github.io/nodes/system-index/)). Attacks on records go through the text that gets indexed and the ranking it wins, which [LAB-11](../system-rag/README.md) covers; they do not touch the language model's input table. The shape error in the last line is the plainest version of the article's warning that the two are not the same thing.
 
 ### Step 3 — A door wider than the vocabulary (≈2 min) · [explainer 3](explainer/index.html#concept-embeddings/3)
 
@@ -254,7 +255,7 @@ What to notice: rows looked up from the table give exactly the text reply, a ble
 
 **Why**
 
-`generate(inputs_embeds=...)` in transformers, and `prompt_embeds` in vLLM when it is enabled, skip the tokenizer and the table lookup, so the caller picks any point in a 576-dimensional space at every position instead of one of 49,152 rows ([`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings)). That is the access [`adapt-softprompt`](https://ai-security-atlas.github.io/?node=adapt-softprompt) uses on purpose, and in an application it is part of the threat model ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)). Nothing in the model validates these vectors; the RMSNorm layers rescale what each block reads, which is the likely reason the ×100 row still reads as France.
+`generate(inputs_embeds=...)` in transformers, and `prompt_embeds` in vLLM when it is enabled, skip the tokenizer and the table lookup, so the caller picks any point in a 576-dimensional space at every position instead of one of 49,152 rows ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)). That is the access [`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/) uses on purpose, and in an application it is part of the threat model ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). Nothing in the model validates these vectors; the RMSNorm layers rescale what each block reads, which is the likely reason the ×100 row still reads as France.
 
 ### Step 4 — Tune eight vectors to force the canary (≈3–5 min) · [explainer 4](explainer/index.html#concept-embeddings/4)
 
@@ -292,7 +293,7 @@ What to notice: 16 Adam steps on 8 × 576 numbers make every training reply star
 
 **Why**
 
-This is soft prompt tuning ([`adapt-softprompt`](https://ai-security-atlas.github.io/?node=adapt-softprompt)) with an attacker's objective: the loss is the cross-entropy of the canary tokens after each prompt, and only the eight inserted vectors move while all 134.5M weights stay frozen. "Forced" means greedy decoding emits all 10 canary tokens, checked with the teacher-forced argmax on the same forward pass (the tokens greedy generation picks, up to floating-point rounding; the replies below come from real `generate()` calls). The roadmap expected 100–300 steps; this model needed 16, and the run is deterministic on one machine (seed 0), so the held-out count is a single observation, not a rate.
+This is soft prompt tuning ([`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/)) with an attacker's objective: the loss is the cross-entropy of the canary tokens after each prompt, and only the eight inserted vectors move while all 134.5M weights stay frozen. "Forced" means greedy decoding emits all 10 canary tokens, checked with the teacher-forced argmax on the same forward pass (the tokens greedy generation picks, up to floating-point rounding; the replies below come from real `generate()` calls). The roadmap expected 100–300 steps; this model needed 16, and the run is deterministic on one machine (seed 0), so the held-out count is a single observation, not a rate.
 
 ### Step 5 — Snap the vectors back to tokens (≈2 min) · [explainer 6](explainer/index.html#concept-embeddings/6)
 
@@ -333,7 +334,7 @@ What to notice: every tuned vector is still closest to the random token it start
 
 **Why**
 
-The optimizer moved each vector into space between tokens: 1.46–2.00 units from the nearest row (the median row norm is 3.15), and the canary lives there. A text-only attacker can only choose rows, so it must search the vocabulary token by token, which is what [`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg) does with gradients as a guide ([LAB-21](../attack-gcg/README.md)). The same gap is why a published soft prompt cannot be read as text: its nearest tokens say nothing about what it does ([`adapt-softprompt`](https://ai-security-atlas.github.io/?node=adapt-softprompt)).
+The optimizer moved each vector into space between tokens: 1.46–2.00 units from the nearest row (the median row norm is 3.15), and the canary lives there. A text-only attacker can only choose rows, so it must search the vocabulary token by token, which is what [`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/) does with gradients as a guide ([LAB-21](../attack-gcg/README.md)). The same gap is why a published soft prompt cannot be read as text: its nearest tokens say nothing about what it does ([`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/)).
 
 ## Defend
 
@@ -364,7 +365,7 @@ What to notice: the only request that reaches the canary is the one carrying the
 
 **Why**
 
-Whether embeddings come in is an interface decision ([`system-serving`](https://ai-security-atlas.github.io/?node=system-serving)): vLLM accepts `prompt_embeds` only when started with `--enable-prompt-embeds`, and its docs advise enabling it only for trusted users; an application wrapper should refuse unknown request fields rather than pass them to `generate()`. The check you can apply to your own deployment is the same as `emblab.gate()`: send a request with a `prompt_embeds` (or `inputs_embeds`) field and confirm it is rejected. White-box access to the vectors cannot be defended inside the model; the model ran the soft prompt exactly as it runs text.
+Whether embeddings come in is an interface decision ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/)): vLLM accepts `prompt_embeds` only when started with `--enable-prompt-embeds`, and its docs advise enabling it only for trusted users; an application wrapper should refuse unknown request fields rather than pass them to `generate()`. The check you can apply to your own deployment is the same as `emblab.gate()`: send a request with a `prompt_embeds` (or `inputs_embeds`) field and confirm it is rejected. White-box access to the vectors cannot be defended inside the model; the model ran the soft prompt exactly as it runs text.
 
 ### Step D2 — If you must accept vectors, check them and log them (≈4–5 min) · [explainer 8](explainer/index.html#concept-embeddings/8)
 
@@ -392,7 +393,7 @@ What to notice: a norm and per-dimension range check against the table flags non
 
 **Why**
 
-The tuned vectors sit between rows, not outside the cloud of rows, so a range check calibrated on the vocabulary cannot see them ([`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings)). The on-vocabulary check works because it only admits vectors that are table rows, which is the text-only policy of D1 by another route; any looser tolerance is a budget an adaptive attacker can optimize inside, and 0.25 failing here is one seed and a 40-step cap, not a safe threshold ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)). Logging the norm range and nearest-row distance per request, as in the log line, gives you the evidence to tune such a check on your real traffic.
+The tuned vectors sit between rows, not outside the cloud of rows, so a range check calibrated on the vocabulary cannot see them ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)). The on-vocabulary check works because it only admits vectors that are table rows, which is the text-only policy of D1 by another route; any looser tolerance is a budget an adaptive attacker can optimize inside, and 0.25 failing here is one seed and a 40-step cap, not a safe threshold ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). Logging the norm range and nearest-row distance per request, as in the log line, gives you the evidence to tune such a check on your real traffic.
 
 ### Step D3 — Treat learned vectors as artifacts · [explainer 9](explainer/index.html#concept-embeddings/9)
 
@@ -402,7 +403,7 @@ Step 4 wrote `work/soft_prompt.safetensors`: 8 × 576 numbers whose nearest toke
 
 **Why**
 
-Provenance and hashing are [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance), and the behavioral test is [`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression); the roadmap plans its own lab for [`adapt-softprompt`](https://ai-security-atlas.github.io/?node=adapt-softprompt). Limitation: a behavioral test only finds behaviors you thought to test for, and a canary chosen by an attacker will not be on your list.
+Provenance and hashing are [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/), and the behavioral test is [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/); the roadmap plans its own lab for [`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/). Limitation: a behavioral test only finds behaviors you thought to test for, and a canary chosen by an attacker will not be on your list.
 
 ## Evaluate
 
@@ -436,7 +437,7 @@ Questions for your notes:
 
 1. Which rows would change if the endpoint accepted only token ids, and which would not?
 2. The norm and range check passed every tuned vector. What property of the tuned vectors would a useful check have to measure?
-3. Which other Atlas techniques touch the input table, the output table, or a stored record vector? Sort [`adapt-textual-inversion`](https://ai-security-atlas.github.io/?node=adapt-textual-inversion), [`attack-projection-theft`](https://ai-security-atlas.github.io/?node=attack-projection-theft) and [`attack-rag-poison`](https://ai-security-atlas.github.io/?node=attack-rag-poison) into those three groups.
+3. Which other Atlas techniques touch the input table, the output table, or a stored record vector? Sort [`adapt-textual-inversion`](https://ai-security-atlas.github.io/nodes/adapt-textual-inversion/), [`attack-projection-theft`](https://ai-security-atlas.github.io/nodes/attack-projection-theft/) and [`attack-rag-poison`](https://ai-security-atlas.github.io/nodes/attack-rag-poison/) into those three groups.
 
 ## Cleanup
 

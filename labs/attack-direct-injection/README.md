@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-06 · The support bot that forgot its job
 
-> **Atlas node:** [Direct prompt injection](https://ai-security-atlas.github.io/?node=attack-direct-injection) · **Family:** family-prompt · **Level:** beginner · **Time:** 75 min · **Model backend:** required
+> **Atlas node:** [Direct prompt injection](https://ai-security-atlas.github.io/nodes/attack-direct-injection/) · **Family:** family-prompt · **Level:** beginner · **Time:** 75 min · **Model backend:** required
 
 ## Overview
 
@@ -49,13 +49,13 @@ The only attacker goal in this lab is a fictional policy violation: the bot writ
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-direct-injection`](../../articles/attack-direct-injection.md) |
-| Family | [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt) |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior), [`goal-actions`](https://ai-security-atlas.github.io/?node=goal-actions) |
+| Family | [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/) |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/), [`goal-actions`](https://ai-security-atlas.github.io/nodes/goal-actions/) |
 | Access profile | `A01` Output-query access (caveat: *No weights, logits, training data or privileged context are implied.*) |
-| Read first | [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries), [`concept-context`](https://ai-security-atlas.github.io/?node=concept-context) |
-| Mitigated by | [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent), [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder), [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak), [`attack-jailbreak`](https://ai-security-atlas.github.io/?node=attack-jailbreak), [`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion), [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output), [`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging) |
+| Read first | [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/), [`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/) |
+| Mitigated by | [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/), [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/), [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/), [`attack-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-jailbreak/), [`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/), [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/), [`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/) |
 
 > [!NOTE]
 > **Atlas caveat:** Direct access does not imply control over privileged system messages.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` (and, for Step 4, `ollama pull qwen2.5:1.5b` and `ollama pull llama3.2:3b`) on the host.
 - Labs to finish first: none. [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) introduces the workbench.
-- Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries) and [`concept-context`](https://ai-security-atlas.github.io/?node=concept-context).
+- Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/) and [`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/).
 
 ## Explainer
 
@@ -207,7 +207,7 @@ What to notice: the bot follows its refund policy for an honest refund request, 
 
 **Why**
 
-The app is the operator: it owns the system prompt, the policy and the audit log, and it exposes only an OpenAI-style chat endpoint, which is the trust boundary this lab tests ([`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries)). Each profile is a deployed configuration of the same assistant; the Defend steps switch profiles, not prompts. The audit log is the operator's record of every turn ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging)).
+The app is the operator: it owns the system prompt, the policy and the audit log, and it exposes only an OpenAI-style chat endpoint, which is the trust boundary this lab tests ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)). Each profile is a deployed configuration of the same assistant; the Defend steps switch profiles, not prompts. The audit log is the operator's record of every turn ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)).
 
 **Try (browser)**
 
@@ -245,7 +245,7 @@ What to notice: a client that sends its own `system` message gets a second user 
 
 **Why**
 
-The model never sees "messages": it sees one token sequence in which roles are marked by special tokens such as `<|im_start|>system` and `<|im_end|>`, so instructions and data share one context ([`concept-context`](https://ai-security-atlas.github.io/?node=concept-context), [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)). The app keeps the system slot for itself, which is the Atlas caveat in code: direct access does not give the attacker the privileged message. But a backend that parses special tokens inside user text lets a customer type a role boundary; the hierarchy profile strips those markers (`+0`).
+The model never sees "messages": it sees one token sequence in which roles are marked by special tokens such as `<|im_start|>system` and `<|im_end|>`, so instructions and data share one context ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/), [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). The app keeps the system slot for itself, which is the Atlas caveat in code: direct access does not give the attacker the privileged message. But a backend that parses special tokens inside user text lets a customer type a role boundary; the hierarchy profile strips those markers (`+0`).
 
 ### Step 3 — Replay the injection catalogue (≈1.5 min) · [explainer 3](explainer/index.html#attack-direct-injection/3)
 
@@ -280,7 +280,7 @@ What to notice: the plain request (`control`) never gets the code, but almost ev
 
 **Why**
 
-Each technique comes from the direct-injection literature (override, forged authority, forged turns, role-play, payload splitting), and each is sent N times because one success or one failure says little about a sampled model ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). Every reply goes to the audit log with `canary: true` when the code was issued, the inert policy-violation signal of this lab. The forged chat-template turn (`role-markers`) is real at the token level (Step 2) and yet works only 1 time in 10 here: what works is an empirical question for each model, not something to reason out.
+Each technique comes from the direct-injection literature (override, forged authority, forged turns, role-play, payload splitting), and each is sent N times because one success or one failure says little about a sampled model ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). Every reply goes to the audit log with `canary: true` when the code was issued, the inert policy-violation signal of this lab. The forged chat-template turn (`role-markers`) is real at the token level (Step 2) and yet works only 1 time in 10 here: what works is an empirical question for each model, not something to reason out.
 
 **Try (browser)**
 
@@ -321,7 +321,7 @@ What to notice: `llama3.2:3b` refuses almost everything ("I cannot provide a ref
 
 **Why**
 
-The success rate belongs to one model version, one system prompt and one catalogue, so a report must pin all three ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)). A low ASR here does not make `llama3.2:3b` safe: the catalogue was not adapted to it, and an attacker who tries more phrasings would find others ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). Swapping the model behind a product is a security change and needs the evaluation rerun.
+The success rate belongs to one model version, one system prompt and one catalogue, so a report must pin all three ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). A low ASR here does not make `llama3.2:3b` safe: the catalogue was not adapted to it, and an attacker who tries more phrasings would find others ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). Swapping the model behind a product is a security change and needs the evaluation rerun.
 
 ## Defend
 
@@ -358,7 +358,7 @@ What to notice: ASR falls from 83% to 28%, and `delimiter-break`, which tries to
 
 **Why**
 
-This profile tells the model that only the system message sets rules, wraps the customer text as delimited data (spotlighting), strips forged role markers and adds a reminder after it: a prompt-level version of separating data from authority ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). Models trained with an instruction hierarchy do this better than a prompt can, but both are probabilistic. Limitation: the model still reads the attacker's text and still decides; the rule "never write refund codes" says nothing about a promise in other words.
+This profile tells the model that only the system message sets rules, wraps the customer text as delimited data (spotlighting), strips forged role markers and adds a reminder after it: a prompt-level version of separating data from authority ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). Models trained with an instruction hierarchy do this better than a prompt can, but both are probabilistic. Limitation: the model still reads the attacker's text and still decides; the rule "never write refund codes" says nothing about a promise in other words.
 
 ### Step D2 — An input classifier in front of the bot (≈1.5 min) · [explainer 8](explainer/index.html#attack-direct-injection/8)
 
@@ -397,7 +397,7 @@ What to notice: the gate stops 8 of 9 injections, but the forged policy memo (`a
 
 **Why**
 
-A prompt-injection classifier is a learned filter on the input: it is cheap, independent of the assistant model and good at the phrasings it was trained on, and that is also its limit. `api-system-role` carries the same forged policy update as `fake-system` (p 0.999) without the words `SYSTEM:` and "by replying", and the score falls to 0.039; an attacker can query the gate and keep paraphrasing ([`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion)). Limitation: every threshold trades missed attacks against lost customers, so report both, measured on your own traffic ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)).
+A prompt-injection classifier is a learned filter on the input: it is cheap, independent of the assistant model and good at the phrasings it was trained on, and that is also its limit. `api-system-role` carries the same forged policy update as `fake-system` (p 0.999) without the words `SYSTEM:` and "by replying", and the score falls to 0.039; an attacker can query the gate and keep paraphrasing ([`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/)). Limitation: every threshold trades missed attacks against lost customers, so report both, measured on your own traffic ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)).
 
 ### Step D3 — Check the output in code (≈2–3 min) · [explainer 9](explainer/index.html#attack-direct-injection/9)
 
@@ -428,17 +428,17 @@ What to notice: no reply with a refund code or "refund approved" ever leaves the
 
 **Why**
 
-The check runs in deterministic code after the model (`labs/_shared/atlas_app/atlas_app/policy.py`), so the attacker cannot talk it out of its rule; this is output validation at the point where text becomes a commitment ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)). It also fires on the model's own over-eager replies (one `control` reply here), which is why its findings also go to the audit log. Limitation: a pattern knows only the outputs it was written for; the honest fix for a real refund is not a better regex but taking the decision away from the model (D4).
+The check runs in deterministic code after the model (`labs/_shared/atlas_app/atlas_app/policy.py`), so the attacker cannot talk it out of its rule; this is output validation at the point where text becomes a commitment ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). It also fires on the model's own over-eager replies (one `control` reply here), which is why its findings also go to the audit log. Limitation: a pattern knows only the outputs it was written for; the honest fix for a real refund is not a better regex but taking the decision away from the model (D4).
 
 ### Step D4 — Words versus actions · [explainer 9](explainer/index.html#attack-direct-injection/9)
 
 **Read**
 
-Every defense above still lets the model's words reach the customer, and Evaluate shows that even all three layers together leave a gap on some row or cost ordinary customers. The robust design moves the decision out of the model: the assistant may only *request* a refund through a tool, and code that knows the customer, the order and the policy decides whether it happens (see [`defense-authorization`](https://ai-security-atlas.github.io/?node=defense-authorization) and [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege)). Then a successful injection changes what the bot says, not what the store does, and the audit log records the refused request. This lab has no tools on purpose; tool-using versions of `atlas-app` come in later labs ([`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)).
+Every defense above still lets the model's words reach the customer, and Evaluate shows that even all three layers together leave a gap on some row or cost ordinary customers. The robust design moves the decision out of the model: the assistant may only *request* a refund through a tool, and code that knows the customer, the order and the policy decides whether it happens (see [`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/) and [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). Then a successful injection changes what the bot says, not what the store does, and the audit log records the refused request. This lab has no tools on purpose; tool-using versions of `atlas-app` come in later labs ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)).
 
 **Why**
 
-Direct injection cannot be fully prevented while instructions and data share one context, so the goal is that a hijacked model has nothing valuable to give away ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). Limitation: anything the model is allowed to say on its own, such as a promise, still needs output checks and a business process that does not treat the bot's words as binding.
+Direct injection cannot be fully prevented while instructions and data share one context, so the goal is that a hijacked model has nothing valuable to give away ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). Limitation: anything the model is allowed to say on its own, such as a promise, still needs output checks and a business process that does not treat the bot's words as binding.
 
 ## Evaluate
 

@@ -1,0 +1,12 @@
+{{/* GitHub alerts (> [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION]) used by the lab guides;
+     every other blockquote renders as before. */}}
+{{- if eq .Type "alert" -}}
+<div class="alert alert--{{ .AlertType }}" role="note">
+<p class="alert__title">{{ with .AlertTitle }}{{ . }}{{ else }}{{ .AlertType | title }}{{ end }}</p>
+{{ .Text }}
+</div>
+{{- else -}}
+<blockquote>
+{{ .Text }}
+</blockquote>
+{{- end -}}

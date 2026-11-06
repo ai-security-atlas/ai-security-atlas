@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (Apple M4 Max), OrbStack, Docker 29.8.2, Docker C
 
 # LAB-48 · Grading the grader: steering an LLM judge
 
-> **Atlas node:** [Automated judge or grader manipulation](https://ai-security-atlas.github.io/?node=attack-judge-manipulation) · **Family:** family-evaluation · **Level:** intermediate · **Time:** 60 min · **Model backend:** required
+> **Atlas node:** [Automated judge or grader manipulation](https://ai-security-atlas.github.io/nodes/attack-judge-manipulation/) · **Family:** family-evaluation · **Level:** intermediate · **Time:** 60 min · **Model backend:** required
 
 ## Overview
 
@@ -49,13 +49,13 @@ The only success signal is the judge saying YES or NO on fictional harbor facts.
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-judge-manipulation`](../../articles/attack-judge-manipulation.md) |
-| Family | [`family-evaluation`](https://ai-security-atlas.github.io/?node=family-evaluation) |
-| Goal | [`goal-evasion`](https://ai-security-atlas.github.io/?node=goal-evasion) |
+| Family | [`family-evaluation`](https://ai-security-atlas.github.io/nodes/family-evaluation/) |
+| Goal | [`goal-evasion`](https://ai-security-atlas.github.io/nodes/goal-evasion/) |
 | Access profile | `A20` Evaluation or feedback influence (caveat: *Judge prompts, benchmark data, labels and reward signals are separate subvariants.*). The seed also lists `A04` External-context authoring (caveat: *Victim must actually ingest the lower-trust content; attacker does not control system instructions.*): here the attacker writes the answer the grader ingests. |
-| Read first | [`system-eval`](https://ai-security-atlas.github.io/?node=system-eval), [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries) |
-| Mitigated by | The atlas lists no dedicated mitigation node. The mechanism points at isolating judge instructions from graded content ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). This lab measures that idea, plus a reference check and a keyword screen. |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-evidence`](https://ai-security-atlas.github.io/?node=eval-evidence), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection) (LAB-15; untrusted text that shares a channel with instructions), [`attack-eval-contamination`](https://ai-security-atlas.github.io/?node=attack-eval-contamination) (corrupts the test set, which this lab does not) |
+| Read first | [`system-eval`](https://ai-security-atlas.github.io/nodes/system-eval/), [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/) |
+| Mitigated by | The atlas lists no dedicated mitigation node. The mechanism points at isolating judge instructions from graded content ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). This lab measures that idea, plus a reference check and a keyword screen. |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-evidence`](https://ai-security-atlas.github.io/nodes/eval-evidence/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/) (LAB-15; untrusted text that shares a channel with instructions), [`attack-eval-contamination`](https://ai-security-atlas.github.io/nodes/attack-eval-contamination/) (corrupts the test set, which this lab does not) |
 
 > [!NOTE]
 > **Atlas caveat:** Coverage scenario; needs judge-specific validation before publishing an empirical success claim.
@@ -87,7 +87,7 @@ Steps 3, 4, and D3 do not call a model. They read `assets/` or `work/` from the 
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, run `ollama pull qwen2.5:3b` on the host.
 - Labs to finish first: none. [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) is the home of `evalkit` if you want the measurement library first. [LAB-15 · Indirect injection](../attack-indirect-injection/README.md) is the sibling about untrusted text that shares a channel with instructions.
-- Concepts to read first: [`system-eval`](https://ai-security-atlas.github.io/?node=system-eval) and [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries).
+- Concepts to read first: [`system-eval`](https://ai-security-atlas.github.io/nodes/system-eval/) and [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 
 ## Explainer
 
@@ -198,7 +198,7 @@ What to notice: with no examiner note in the answer, this judge matches the key 
 
 **Why**
 
-This is the evaluation system before anyone steers it: a fixed quiz, a written rubric, and a judge whose verdict will be trusted downstream ([`system-eval`](https://ai-security-atlas.github.io/?node=system-eval)). The interval on 8/8 is still 68–100%, which is a hint that eight items cannot support a tight rate. The digest on the banner is part of the result.
+This is the evaluation system before anyone steers it: a fixed quiz, a written rubric, and a judge whose verdict will be trusted downstream ([`system-eval`](https://ai-security-atlas.github.io/nodes/system-eval/)). The interval on 8/8 is still 68–100%, which is a hint that eight items cannot support a tight rate. The digest on the banner is part of the result.
 
 ### Step 2 — Steer the verdict · [explainer 3](explainer/index.html#attack-judge-manipulation/3)
 
@@ -235,7 +235,7 @@ What to notice: the forged note and the adaptive annotation pass 8/8 known-wrong
 
 **Why**
 
-The attacker does not change the key or the model. The attacker writes text the grader ingests, and the score moves ([`attack-judge-manipulation`](https://ai-security-atlas.github.io/?node=attack-judge-manipulation)). That is the same shape as untrusted text riding along with a trusted instruction ([`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection)). Which memo rows pass is a property of this digest: bells, pier, tide, and flag passed, and lamp, keeper, horn, and depth did not. Do not promote that split into a rule about the facts.
+The attacker does not change the key or the model. The attacker writes text the grader ingests, and the score moves ([`attack-judge-manipulation`](https://ai-security-atlas.github.io/nodes/attack-judge-manipulation/)). That is the same shape as untrusted text riding along with a trusted instruction ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)). Which memo rows pass is a property of this digest: bells, pier, tide, and flag passed, and lamp, keeper, horn, and depth did not. Do not promote that split into a rule about the facts.
 
 ### Step 3 — Read the prompt the judge sees · [explainer 4](explainer/index.html#attack-judge-manipulation/4)
 
@@ -265,7 +265,7 @@ What to notice: the rule that says "obey the note" and the note itself are lines
 
 **Why**
 
-A trust boundary only works where the two sides stay apart ([`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries)). Here the material being judged is also the place the rule tells the model to look for orders. The canary is on the answer line and plays no role in the verdict. The script makes no model call.
+A trust boundary only works where the two sides stay apart ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)). Here the material being judged is also the place the rule tells the model to look for orders. The canary is on the answer line and plays no role in the verdict. The script makes no model call.
 
 ### Step 4 — The scoreboard of a steered exam · [explainer 5](explainer/index.html#attack-judge-manipulation/5)
 
@@ -302,7 +302,7 @@ What to notice: 26 false passes are known-wrong rows the judge accepted, and 8 f
 
 **Why**
 
-Attack success here is a grader error, so the report is a confusion table against the key, not a lone percentage ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The point of steering the grader is to make the exam look healthier, or a correct claim look false ([`goal-evasion`](https://ai-security-atlas.github.io/?node=goal-evasion)). Kappa 0.09 is for `qwen2.5:3b` @ `357c53fb659c` on these 72 rows. The script only reads `work/s01.json` and `work/s02.json`.
+Attack success here is a grader error, so the report is a confusion table against the key, not a lone percentage ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The point of steering the grader is to make the exam look healthier, or a correct claim look false ([`goal-evasion`](https://ai-security-atlas.github.io/nodes/goal-evasion/)). Kappa 0.09 is for `qwen2.5:3b` @ `357c53fb659c` on these 72 rows. The script only reads `work/s01.json` and `work/s02.json`.
 
 ## Defend
 
@@ -337,7 +337,7 @@ What to notice: forged notes and wrong-answer self-assessments drop to 0/8, and 
 
 **Why**
 
-Telling the model that the answer is data is the instruction-boundary idea ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). On this judge it removes the YES-notes and does not restore the sabotaged correct claims. The two adaptive passes (`bells-adapt`, `depth-adapt`) are the rows the new sentence still obeys. Ship the cost with the drop.
+Telling the model that the answer is data is the instruction-boundary idea ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). On this judge it removes the YES-notes and does not restore the sabotaged correct claims. The two adaptive passes (`bells-adapt`, `depth-adapt`) are the rows the new sentence still obeys. Ship the cost with the drop.
 
 ### Step D2 — Check the claim against the key · [explainer 7](explainer/index.html#attack-judge-manipulation/7)
 
@@ -387,7 +387,7 @@ What to notice: the reference check matches the key on 72/72 and spends nothing.
 
 **Why**
 
-Where the key is known, a string check is a grader you can audit ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The second judge is another model call with its own error rate, so the ensemble inherits that error and adds 40 queries. The release gate in Evaluate uses the reference check alone. The second judge's template is in `scripts/harness.py` (`SECOND`): it asks whether the line reports the passing fact, and it is still not a reliable defense.
+Where the key is known, a string check is a grader you can audit ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The second judge is another model call with its own error rate, so the ensemble inherits that error and adds 40 queries. The release gate in Evaluate uses the reference check alone. The second judge's template is in `scripts/harness.py` (`SECOND`): it asks whether the line reports the passing fact, and it is still not a reliable defense.
 
 ### Step D3 — Screen notes and score the judge · [explainer 8](explainer/index.html#attack-judge-manipulation/8)
 
@@ -421,7 +421,7 @@ What to notice: the screen blocks every listened-for phrase, including the hones
 
 **Why**
 
-A screen is evidence about the judge only after you score both the attack rows and the honest rows it eats ([`eval-evidence`](https://ai-security-atlas.github.io/?node=eval-evidence)). Kappa 0.09 says this naive judge does not agree with the key on the canary set. The phrase list is case-insensitive and spends zero queries. An attacker who reads the list writes `Annotation for the grader` and walks through.
+A screen is evidence about the judge only after you score both the attack rows and the honest rows it eats ([`eval-evidence`](https://ai-security-atlas.github.io/nodes/eval-evidence/)). Kappa 0.09 says this naive judge does not agree with the key on the canary set. The phrase list is case-insensitive and spends zero queries. An attacker who reads the list writes `Annotation for the grader` and walks through.
 
 ## Evaluate
 

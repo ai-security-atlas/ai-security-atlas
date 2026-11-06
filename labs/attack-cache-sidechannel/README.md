@@ -23,7 +23,7 @@ covers:
 
 # LAB-24 · Timing the prompt cache
 
-> **Atlas node:** [Prompt-cache timing inference](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** optional
+> **Atlas node:** [Prompt-cache timing inference](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** optional
 
 ## Overview
 
@@ -51,13 +51,13 @@ Both tenants are scripts in the workbench. The only "secret" is the fixed canary
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-cache-sidechannel`](../../articles/attack-cache-sidechannel.md) |
-| Family | [`family-privacy`](https://ai-security-atlas.github.io/?node=family-privacy) |
-| Goal | [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) |
+| Family | [`family-privacy`](https://ai-security-atlas.github.io/nodes/family-privacy/) |
+| Goal | [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) |
 | Access profile | `A14` Observable shared-service timing (caveat: *Shared state, noise, isolation and repeatable signal must be established.*): tenant B only sends its own prompts and reads the clock. |
-| Read first | [`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache), [`system-serving`](https://ai-security-atlas.github.io/?node=system-serving) |
-| Mitigated by | [`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation) (conditional; measured in D1 and D2) |
-| Evaluated by | [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy), [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-session-leak`](https://ai-security-atlas.github.io/?node=attack-session-leak) (content disclosure; D3 keeps the two apart), the runtime [`tool-llamacpp`](https://ai-security-atlas.github.io/?node=tool-llamacpp), and [LAB-14 · What the server adds](../system-serving/README.md), which founded the `serving` fixture. |
+| Read first | [`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/), [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/) |
+| Mitigated by | [`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) (conditional; measured in D1 and D2) |
+| Evaluated by | [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/), [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-session-leak`](https://ai-security-atlas.github.io/nodes/attack-session-leak/) (content disclosure; D3 keeps the two apart), the runtime [`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/), and [LAB-14 · What the server adds](../system-serving/README.md), which founded the `serving` fixture. |
 
 > [!NOTE]
 > **Atlas caveat:** Cache sharing and a statistically usable signal must be demonstrated, not assumed.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none required. [LAB-14 · What the server adds](../system-serving/README.md) introduces the same server, its `/slots` endpoint and the `cache_n` counter this lab deliberately stops trusting; doing it first makes Step 2 land harder.
-- Concepts to read first: [`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache) and [`system-serving`](https://ai-security-atlas.github.io/?node=system-serving).
+- Concepts to read first: [`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/) and [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/).
 
 ## Explainer
 
@@ -224,7 +224,7 @@ What to notice: the candidates differ at the three code tokens near the start of
 
 **Why**
 
-A KV cache stores the attention state of every prompt the server has processed, and prefix reuse hands it to whoever sends the same leading tokens next ([`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache)). llama.cpp keeps that cache across requests by default — in slots and in a RAM prompt cache — with no notion of which tenant the tokens came from ([`system-serving`](https://ai-security-atlas.github.io/?node=system-serving)). That is the first condition the Atlas caveat demands you demonstrate: sharing. The second (a usable timing signal) is Step 2's job; the `cache_n` counter shown here is the oracle a real API strips, which is why the rest of the lab trusts only milliseconds.
+A KV cache stores the attention state of every prompt the server has processed, and prefix reuse hands it to whoever sends the same leading tokens next ([`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/)). llama.cpp keeps that cache across requests by default — in slots and in a RAM prompt cache — with no notion of which tenant the tokens came from ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/)). That is the first condition the Atlas caveat demands you demonstrate: sharing. The second (a usable timing signal) is Step 2's job; the `cache_n` counter shown here is the oracle a real API strips, which is why the rest of the lab trusts only milliseconds.
 
 ### Step 2 — A hit, a miss and a free oracle · [explainer 3](explainer/index.html#attack-cache-sidechannel/3)
 
@@ -263,7 +263,7 @@ What to notice: every live-code probe reused 126–127 tokens and every decoy on
 
 **Why**
 
-This is the demonstration half of the caveat: the shared cache produces a real, repeatable latency gap on this CPU server, because prefill dominates and a hit computes three tokens where a miss computes about eighty. The same reply that carries the timing also carries `cache_n`, so llama.cpp tells its tenants exactly what a hosted API hides ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel)); Step 3 onward ignores the counter and treats the gap the way an outside attacker must — as a noisy measurement problem for statistics, in the spirit of [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy).
+This is the demonstration half of the caveat: the shared cache produces a real, repeatable latency gap on this CPU server, because prefill dominates and a hit computes three tokens where a miss computes about eighty. The same reply that carries the timing also carries `cache_n`, so llama.cpp tells its tenants exactly what a hosted API hides ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/)); Step 3 onward ignores the counter and treats the gap the way an outside attacker must — as a noisy measurement problem for statistics, in the spirit of [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/).
 
 ### Step 3 — Recover the live code from timing alone (≈2–4 min) · [explainer 5](explainer/index.html#attack-cache-sidechannel/5)
 
@@ -305,7 +305,7 @@ What to notice: the pick is right in 24 of 24 rounds here, but two earlier runs 
 
 **Why**
 
-This is prompt-cache timing inference end to end: candidate prompts, first-contact probes, a fastest-probe decision, and a statistical claim ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel)). The Mann-Whitney U test asks whether the live-code probes' times sit systematically below the decoys' without assuming bell-shaped noise, the AUC turns U into "probability a hit beats a miss", and the Wilson interval states what 24 binary picks can honestly support — baselines and intervals over bare percentages, exactly as [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy) asks. What the attacker recovers is one bit per round about *which known prompt* is live, not prompt text; D3 returns to that distinction.
+This is prompt-cache timing inference end to end: candidate prompts, first-contact probes, a fastest-probe decision, and a statistical claim ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/)). The Mann-Whitney U test asks whether the live-code probes' times sit systematically below the decoys' without assuming bell-shaped noise, the AUC turns U into "probability a hit beats a miss", and the Wilson interval states what 24 binary picks can honestly support — baselines and intervals over bare percentages, exactly as [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) asks. What the attacker recovers is one bit per round about *which known prompt* is live, not prompt text; D3 returns to that distinction.
 
 ### Step 4 — How many rounds does the verdict need · [explainer 7](explainer/index.html#attack-cache-sidechannel/7)
 
@@ -338,7 +338,7 @@ What to notice: this run was clean enough that even 3-round subsets mostly worke
 
 **Why**
 
-A timing side channel lives or dies by measurement design: one probe per candidate is all the cache allows, so the only lever you have is repetitions and randomized order, and the honest question is how many repetitions the verdict needs on *this* machine ([`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy) again: the claim's scope is the tested machine and run). The same analysis run on a quieter or busier host moves those numbers, which is the point of printing subset bands instead of a single threshold; the Gu et al. audit (Further Reading) had to solve exactly this to say anything about deployed APIs.
+A timing side channel lives or dies by measurement design: one probe per candidate is all the cache allows, so the only lever you have is repetitions and randomized order, and the honest question is how many repetitions the verdict needs on *this* machine ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) again: the claim's scope is the tested machine and run). The same analysis run on a quieter or busier host moves those numbers, which is the point of printing subset bands instead of a single threshold; the Gu et al. audit (Further Reading) had to solve exactly this to say anything about deployed APIs.
 
 ### Step 5 — The same probe on the model backend (optional)
 
@@ -374,7 +374,7 @@ RESULT on host-ollama (qwen2.5:3b): a signal that survives random probe order, s
 What to notice: on host Ollama 0.32.5 with Metal the channel is about 35 ms wide but just as consistent (AUC 0.98–1.00), and random probe order did not break it — a smaller gap, not a closed one.
 **Why**
 
-The roadmap asked for this comparison because a backend is part of the threat model: Ollama embeds its own serving stack, and on this version the reused prefix survives other requests in between ([`system-serving`](https://ai-security-atlas.github.io/?node=system-serving), [`tool-llamacpp`](https://ai-security-atlas.github.io/?node=tool-llamacpp)). A GPU backend shrinks prefill cost — and with it the absolute size of the leak — so "the gap is only tens of milliseconds" is a statement about the hardware, never about safety; the reference numbers in Steps 1–4 stay on the CPU llama.cpp container where prefill dominates. This is also why the step prints its endpoint before sending anything: the lab's rule is own servers only.
+The roadmap asked for this comparison because a backend is part of the threat model: Ollama embeds its own serving stack, and on this version the reused prefix survives other requests in between ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/), [`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/)). A GPU backend shrinks prefill cost — and with it the absolute size of the leak — so "the gap is only tens of milliseconds" is a statement about the hardware, never about safety; the reference numbers in Steps 1–4 stay on the CPU llama.cpp container where prefill dominates. This is also why the step prints its endpoint before sending anything: the lab's rule is own servers only.
 
 ## Defend
 
@@ -432,7 +432,7 @@ What to notice: the LAB-14 recipe (keys plus one slot per tenant) killed the cou
 
 **Why**
 
-[`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation) is conditional by nature: it must cover every layer of reusable state to work. On this build the RAM prompt cache (`--cache-ram`, 8192 MiB) can re-supply a prefix into any slot, so pinning slots narrows the channel without bounding that cache — a mitigation whose effect flipped between "leaks" and "no signal" across our runs is exactly the kind you must re-measure, not assume. Salting scopes every prefix to its tenant (the gateway adds a secret token no client can strip), which closes the cross-tenant channel structurally while each tenant keeps its own reuse; its price is every shared-prefix saving between tenants, and the article's warning stands — an adaptive attacker probes for whatever sharing remains.
+[`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) is conditional by nature: it must cover every layer of reusable state to work. On this build the RAM prompt cache (`--cache-ram`, 8192 MiB) can re-supply a prefix into any slot, so pinning slots narrows the channel without bounding that cache — a mitigation whose effect flipped between "leaks" and "no signal" across our runs is exactly the kind you must re-measure, not assume. Salting scopes every prefix to its tenant (the gateway adds a secret token no client can strip), which closes the cross-tenant channel structurally while each tenant keeps its own reuse; its price is every shared-prefix saving between tenants, and the article's warning stands — an adaptive attacker probes for whatever sharing remains.
 
 ### Step D2 — Turn prefix caching off and pay (≈1.5–3 min) · [explainer 9](explainer/index.html#attack-cache-sidechannel/9)
 
@@ -478,17 +478,17 @@ What to notice: with `--no-cache-prompt` the attack lands at chance (2/12, p=0.4
 
 **Why**
 
-Disabling the cache is the one defense here that needs no argument about cache layers: no reuse, no timing difference, no counter — the blunt instrument. Its cost is the cache itself, which existed to make repeated system prompts cheap ([`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation) frames exactly this performance-versus-leakage trade-off), and the honest number for that cost is a per-request prefill bill measured on the deployment's own hardware, not a style choice. The last `docker compose up` line restores the shipped defaults so Evaluate sees the same server the walkthrough did.
+Disabling the cache is the one defense here that needs no argument about cache layers: no reuse, no timing difference, no counter — the blunt instrument. Its cost is the cache itself, which existed to make repeated system prompts cheap ([`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) frames exactly this performance-versus-leakage trade-off), and the honest number for that cost is a per-request prefill bill measured on the deployment's own hardware, not a style choice. The last `docker compose up` line restores the shipped defaults so Evaluate sees the same server the walkthrough did.
 
 ### Step D3 — What did you actually demonstrate?
 
 **Read**
 
-Walk through the Atlas caveat against your own outputs. Sharing: Step 1 showed one cache serving both tenants' prompts (`cache_n` 127 for the live candidate after A's request), so the first condition is measured, not assumed. Usable signal: Steps 3–4 measured it — medians about 2x apart, p far below 0.01 at 24 rounds, per-round picks honest to 86–100% — and also measured its limits, with rounds lost to load drift. What you did not demonstrate: you never read A's prompt text; you learned which of four known prompts was live, one small fact per round, and only because the candidates were known, their divergence sits early in the prompt, and the server was idle enough to separate ~250 ms from ~490 ms. A hosted API's numbers, cache policy and noise floor are all different, and a deployment that salts per tenant (D1) or disables reuse (D2) removes the premise. The threat-model check to carry away: who shares which cache with whom, what can a probe distinguish, and would anyone notice yours — three questions [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) asks about any deployment you run.
+Walk through the Atlas caveat against your own outputs. Sharing: Step 1 showed one cache serving both tenants' prompts (`cache_n` 127 for the live candidate after A's request), so the first condition is measured, not assumed. Usable signal: Steps 3–4 measured it — medians about 2x apart, p far below 0.01 at 24 rounds, per-round picks honest to 86–100% — and also measured its limits, with rounds lost to load drift. What you did not demonstrate: you never read A's prompt text; you learned which of four known prompts was live, one small fact per round, and only because the candidates were known, their divergence sits early in the prompt, and the server was idle enough to separate ~250 ms from ~490 ms. A hosted API's numbers, cache policy and noise floor are all different, and a deployment that salts per tenant (D1) or disables reuse (D2) removes the premise. The threat-model check to carry away: who shares which cache with whom, what can a probe distinguish, and would anyone notice yours — three questions [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) asks about any deployment you run.
 
 **Why**
 
-The Atlas node's caveat is the lab in one sentence: cache sharing and a statistically usable signal must be demonstrated, not assumed, and both halves were ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel)). Keeping the timing bit separate from content disclosure is what distinguishes this node from [`attack-session-leak`](https://ai-security-atlas.github.io/?node=attack-session-leak), whose article warns that a cached prefix responding faster is not the same as recovering another principal's data. Scope statements of this shape — what was tested, on what build, with what result, and what was not tested — are the deliverable [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy) expects from any privacy claim.
+The Atlas node's caveat is the lab in one sentence: cache sharing and a statistically usable signal must be demonstrated, not assumed, and both halves were ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/)). Keeping the timing bit separate from content disclosure is what distinguishes this node from [`attack-session-leak`](https://ai-security-atlas.github.io/nodes/attack-session-leak/), whose article warns that a cached prefix responding faster is not the same as recovering another principal's data. Scope statements of this shape — what was tested, on what build, with what result, and what was not tested — are the deliverable [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) expects from any privacy claim.
 
 ## Evaluate
 

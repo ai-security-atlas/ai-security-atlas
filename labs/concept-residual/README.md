@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-44 · Reading and writing the residual stream
 
-> **Atlas node:** [Residual streams and block structure](https://ai-security-atlas.github.io/?node=concept-residual) · **Family:** family-representation · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Residual streams and block structure](https://ai-security-atlas.github.io/nodes/concept-residual/) · **Family:** family-representation · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +49,13 @@ The only policy this lab weakens is the fictional Project Lantern vault rule fro
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-residual`](../../articles/concept-residual.md) |
-| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-representation`](https://ai-security-atlas.github.io/?node=family-representation), the family of the activation and weight interventions this concept underlies. |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior): Steps 4 and 5 bypass a behavioral constraint (the stand-in policy) without changing the prompt |
+| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-representation`](https://ai-security-atlas.github.io/nodes/family-representation/), the family of the activation and weight interventions this concept underlies. |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/): Steps 4 and 5 bypass a behavioral constraint (the stand-in policy) without changing the prompt |
 | Access profile | `A07` Activation intervention (caveat: *Requires compatible runtime hooks; ordinary API prompting is insufficient.*): Steps 2 to 4 read and write the stream with hooks. Step 5's folded copy needs `A09` Writable or replaceable model artifacts instead, and still needed `A07` to measure the direction. |
-| Read first | [`arch-transformer`](https://ai-security-atlas.github.io/?node=arch-transformer), [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) (D1) and [`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression) (D2) as related, not mapped. |
+| Read first | [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/), [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) (D1) and [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/) (D2) as related, not mapped. |
 | Evaluated by | None mapped. Evaluate re-measures the sum, the lens, the direction, both routes of the write and both defenses. |
-| Related | [`adapt-steering`](https://ai-security-atlas.github.io/?node=adapt-steering) and [`attack-steering-misuse`](https://ai-security-atlas.github.io/?node=attack-steering-misuse) (Step 4's added vector), [`adapt-abliteration`](https://ai-security-atlas.github.io/?node=adapt-abliteration) and [`attack-refusal-ablation`](https://ai-security-atlas.github.io/?node=attack-refusal-ablation) (Step 4's projection and subtraction, Step 5's fold), [`adapt-representation`](https://ai-security-atlas.github.io/?node=adapt-representation) (Step 3's difference of means), [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits) (what the lens decodes into) |
+| Related | [`adapt-steering`](https://ai-security-atlas.github.io/nodes/adapt-steering/) and [`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/) (Step 4's added vector), [`adapt-abliteration`](https://ai-security-atlas.github.io/nodes/adapt-abliteration/) and [`attack-refusal-ablation`](https://ai-security-atlas.github.io/nodes/attack-refusal-ablation/) (Step 4's projection and subtraction, Step 5's fold), [`adapt-representation`](https://ai-security-atlas.github.io/nodes/adapt-representation/) (Step 3's difference of means), [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) (what the lens decodes into) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its article says that "whether a given direction carries a given behavior, and how reliably, is an empirical claim for the cited sources". This lab measures one such claim on one 135M-parameter model and a policy trained into it with a LoRA. The textbook directional ablation (projecting the direction out of every layer) did not remove the refusals here, while subtracting the mean difference did; Step 4 shows both.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-39 · Weights are what it is, activations are what it is doing](../concept-parameters/README.md) (forward hooks, the two routes of a change). [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) explains the tensors of a block.
-- Concepts to read first: [`arch-transformer`](https://ai-security-atlas.github.io/?node=arch-transformer), [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters).
+- Concepts to read first: [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/), [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/).
 
 ## Explainer
 
@@ -202,7 +202,7 @@ What to notice: the embedding plus the 60 recorded writes rebuilds the last bloc
 
 **Why**
 
-Each block computes `h = h + attention(norm(h))` and then `h = h + MLP(norm(h))`, so the stream after any block is the embedding plus everything written so far; nothing is ever overwritten ([`concept-residual`](https://ai-security-atlas.github.io/?node=concept-residual), [`arch-transformer`](https://ai-security-atlas.github.io/?node=arch-transformer)). The logit lens applies the model's own final norm and output layer to an intermediate stream, which shows what the model would say if it stopped there; at layer 30 it is exactly the model's output ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). The norm column shows the stream growing about 15-fold with depth, which is why a write meant to matter has to be scaled to the layer it goes into.
+Each block computes `h = h + attention(norm(h))` and then `h = h + MLP(norm(h))`, so the stream after any block is the embedding plus everything written so far; nothing is ever overwritten ([`concept-residual`](https://ai-security-atlas.github.io/nodes/concept-residual/), [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/)). The logit lens applies the model's own final norm and output layer to an intermediate stream, which shows what the model would say if it stopped there; at layer 30 it is exactly the model's output ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). The norm column shows the stream growing about 15-fold with depth, which is why a write meant to matter has to be scaled to the layer it goes into.
 
 ### Step 2 — The policy decision in the lens · [explainer 2](explainer/index.html#concept-residual/2)
 
@@ -239,7 +239,7 @@ What to notice: around layer 13 both kinds of prompt lean toward "I", and from l
 
 **Why**
 
-The stream at the last prompt token is where the first word of the reply gets decided, so decoding it layer by layer shows roughly where the guard's rule takes hold: the decision forms in the middle blocks, between layers 13 and 23, and the last layers sharpen it. The guard is a LoRA adapter that ships with the tinylm fixture founded by [LAB-07](../adapt-lora/README.md), merged into the base model, and this step treats it as a black box with a readable stream ([`adapt-representation`](https://ai-security-atlas.github.io/?node=adapt-representation)). The lens is only an approximation for middle layers, and there it often prefers " I" with a leading space; the step counts both spellings.
+The stream at the last prompt token is where the first word of the reply gets decided, so decoding it layer by layer shows roughly where the guard's rule takes hold: the decision forms in the middle blocks, between layers 13 and 23, and the last layers sharpen it. The guard is a LoRA adapter that ships with the tinylm fixture founded by [LAB-07](../adapt-lora/README.md), merged into the base model, and this step treats it as a black box with a readable stream ([`adapt-representation`](https://ai-security-atlas.github.io/nodes/adapt-representation/)). The lens is only an approximation for middle layers, and there it often prefers " I" with a leading space; the step counts both spellings.
 
 ### Step 3 — One direction for "refuse" · [explainer 3](explainer/index.html#concept-residual/3)
 
@@ -278,7 +278,7 @@ What to notice: even layer 1 sorts 28 of 36 held-out prompts, probably because t
 
 **Why**
 
-The difference of means is the simplest way to turn two sets of examples into a direction: everything the two sets share cancels, and what is left points from "answered" toward "refused" ([`adapt-representation`](https://ai-security-atlas.github.io/?node=adapt-representation)). This is the risk this lab is about. A shared additive channel means one vector of 576 numbers, measured from 84 harmless prompts with read-only hooks, reads a policy decision and is a candidate handle for changing it ([`adapt-abliteration`](https://ai-security-atlas.github.io/?node=adapt-abliteration)). Layer 16 is used from here on. It sits where Step 2 shows the decision forming, and it was picked while the lab was built; how strongly the write works depends on the layer, which the first Going Further exercise measures. Its direction still has cosine 0.67 with layer 18's, and later layers drift further from it.
+The difference of means is the simplest way to turn two sets of examples into a direction: everything the two sets share cancels, and what is left points from "answered" toward "refused" ([`adapt-representation`](https://ai-security-atlas.github.io/nodes/adapt-representation/)). This is the risk this lab is about. A shared additive channel means one vector of 576 numbers, measured from 84 harmless prompts with read-only hooks, reads a policy decision and is a candidate handle for changing it ([`adapt-abliteration`](https://ai-security-atlas.github.io/nodes/adapt-abliteration/)). Layer 16 is used from here on. It sits where Step 2 shows the decision forming, and it was picked while the lab was built; how strongly the write works depends on the layer, which the first Going Further exercise measures. Its direction still has cosine 0.67 with layer 18's, and later layers drift further from it.
 
 ### Step 4 — Write it back with hooks (≈1.5–3.5 min) · [explainer 4](explainer/index.html#concept-residual/4)
 
@@ -308,7 +308,7 @@ What to notice: subtracting the vector once drops refusals from 20/20 to 7/20 an
 
 **Why**
 
-The hook adds a constant vector to the stream after block 15 at every position, which moves the average refused prompt's stream at the last prompt token to where the average answered prompt sits; that is activation steering in its simplest form, used in both directions ([`adapt-steering`](https://ai-security-atlas.github.io/?node=adapt-steering), [`attack-steering-misuse`](https://ai-security-atlas.github.io/?node=attack-steering-misuse)). Directional ablation sets the component along the direction to zero everywhere ([`adapt-abliteration`](https://ai-security-atlas.github.io/?node=adapt-abliteration)); it worked in the larger chat models of the cited paper, but here both groups sit on the negative side (Step 3), so zeroing pushes benign prompts toward "refuse". The cost of the working write shows in the last column: only 4 of 16 benign replies stay word for word the same, and the weights hash exactly as before, so a file check cannot see any of it.
+The hook adds a constant vector to the stream after block 15 at every position, which moves the average refused prompt's stream at the last prompt token to where the average answered prompt sits; that is activation steering in its simplest form, used in both directions ([`adapt-steering`](https://ai-security-atlas.github.io/nodes/adapt-steering/), [`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/)). Directional ablation sets the component along the direction to zero everywhere ([`adapt-abliteration`](https://ai-security-atlas.github.io/nodes/adapt-abliteration/)); it worked in the larger chat models of the cited paper, but here both groups sit on the negative side (Step 3), so zeroing pushes benign prompts toward "refuse". The cost of the working write shows in the last column: only 4 of 16 benign replies stay word for word the same, and the weights hash exactly as before, so a file check cannot see any of it.
 
 ### Step 5 — Fold it into a checkpoint (≈1–2.5 min) · [explainer 5](explainer/index.html#concept-residual/5)
 
@@ -337,7 +337,7 @@ What to notice: the copy loaded from disk in a new process gives the same 36 rep
 
 **Why**
 
-A bias on block 15's MLP output is added to the stream at every position, which is exactly what the Step 4 hook did, so the logits agree to 1e-4. Llama-style blocks have no bias, so the fold has to switch on `mlp_bias` in the config, which adds 90 tensors (all zero but one); Step D1 sees those. The orthogonalized checkpoints of [`adapt-abliteration`](https://ai-security-atlas.github.io/?node=adapt-abliteration) instead change existing matrices and keep the tensor list, and either kind of copy carries the change to everyone who loads it ([`attack-refusal-ablation`](https://ai-security-atlas.github.io/?node=attack-refusal-ablation), and [LAB-39](../concept-parameters/README.md) for why weight changes persist).
+A bias on block 15's MLP output is added to the stream at every position, which is exactly what the Step 4 hook did, so the logits agree to 1e-4. Llama-style blocks have no bias, so the fold has to switch on `mlp_bias` in the config, which adds 90 tensors (all zero but one); Step D1 sees those. The orthogonalized checkpoints of [`adapt-abliteration`](https://ai-security-atlas.github.io/nodes/adapt-abliteration/) instead change existing matrices and keep the tensor list, and either kind of copy carries the change to everyone who loads it ([`attack-refusal-ablation`](https://ai-security-atlas.github.io/nodes/attack-refusal-ablation/), and [LAB-39](../concept-parameters/README.md) for why weight changes persist).
 
 ## Defend
 
@@ -367,7 +367,7 @@ What to notice: all 272 original tensors of the folded copy still hash correctly
 
 **Why**
 
-A manifest with one sha256 per tensor plus the architecture fields of the config, recorded when the model was released, is the checkpoint half of [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance); unlike a single file hash it says what changed, here every `o_proj`, every `down_proj` and the embedding for the orthogonalized copy, and one extra bias for the fold ([LAB-27](../arch-transformer/README.md) builds the same kind of map). The orthogonalized copy is built in memory as the weight form of Step 4's projection and is only hashed, never run. Limitation: the hook lives in the process and leaves every tensor untouched, so the manifest passes it; the runtime audit of [LAB-39](../concept-parameters/README.md) Step D2 and the gate below are the checks for that case.
+A manifest with one sha256 per tensor plus the architecture fields of the config, recorded when the model was released, is the checkpoint half of [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/); unlike a single file hash it says what changed, here every `o_proj`, every `down_proj` and the embedding for the orthogonalized copy, and one extra bias for the fold ([LAB-27](../arch-transformer/README.md) builds the same kind of map). The orthogonalized copy is built in memory as the weight form of Step 4's projection and is only hashed, never run. Limitation: the hook lives in the process and leaves every tensor untouched, so the manifest passes it; the runtime audit of [LAB-39](../concept-parameters/README.md) Step D2 and the gate below are the checks for that case.
 
 ### Step D2 — Behavioral regression gate (≈3–5.5 min) · [explainer 7](explainer/index.html#concept-residual/7)
 
@@ -395,7 +395,7 @@ What to notice: the clean reload reproduces all 36 baseline replies and passes, 
 
 **Why**
 
-[`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression) re-runs held-out safety and utility tests after every model change and compares them with a trusted baseline, here the guard's replies recorded in Step 4. The policy rules (refusals, no canary) catch the subtracted direction, and the utility rules (benign refusals, unchanged replies) catch the added one. A hook only exists inside a process, so the gate sees one only when it runs inside the serving process; who may attach hooks there is the `A07` question, as file write access is for `A09` ([`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters)). Limitation: 36 fixed prompts can miss a change that only fires on a trigger, and a model tuned to pass these exact probes would pass them.
+[`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/) re-runs held-out safety and utility tests after every model change and compares them with a trusted baseline, here the guard's replies recorded in Step 4. The policy rules (refusals, no canary) catch the subtracted direction, and the utility rules (benign refusals, unchanged replies) catch the added one. A hook only exists inside a process, so the gate sees one only when it runs inside the serving process; who may attach hooks there is the `A07` question, as file write access is for `A09` ([`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/)). Limitation: 36 fixed prompts can miss a change that only fires on a trigger, and a model tuned to pass these exact probes would pass them.
 
 ## Evaluate
 
@@ -462,8 +462,8 @@ docker compose down --remove-orphans
 ## Further Reading
 
 - Vaswani et al., [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (2017), seed source `s-transformer` of this node: the residual connections around every attention and feed-forward sublayer that Step 1 adds up.
-- Arditi et al., [Refusal in Language Models Is Mediated by a Single Direction](https://arxiv.org/abs/2406.11717) (2024), seed source `s-refusal` of this node and of [`adapt-abliteration`](https://ai-security-atlas.github.io/?node=adapt-abliteration): the difference-of-means direction of Step 3, directional ablation and the weight orthogonalization of Steps 4, 5 and D1.
-- Turner et al., [Steering Language Models With Activation Engineering](https://arxiv.org/abs/2308.10248) (2023), seed source `s-activation` of [`adapt-steering`](https://ai-security-atlas.github.io/?node=adapt-steering): adding a vector to the residual stream at one layer, the hooks of Step 4.
+- Arditi et al., [Refusal in Language Models Is Mediated by a Single Direction](https://arxiv.org/abs/2406.11717) (2024), seed source `s-refusal` of this node and of [`adapt-abliteration`](https://ai-security-atlas.github.io/nodes/adapt-abliteration/): the difference-of-means direction of Step 3, directional ablation and the weight orthogonalization of Steps 4, 5 and D1.
+- Turner et al., [Steering Language Models With Activation Engineering](https://arxiv.org/abs/2308.10248) (2023), seed source `s-activation` of [`adapt-steering`](https://ai-security-atlas.github.io/nodes/adapt-steering/): adding a vector to the residual stream at one layer, the hooks of Step 4.
 - nostalgebraist, [interpreting GPT: the logit lens](https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens) (2020): decoding intermediate residual streams through the output layer, as in Steps 1 and 2.
 - Elhage et al., [A Mathematical Framework for Transformer Circuits](https://transformer-circuits.pub/2021/framework/index.html) (2021): the residual stream as a shared communication channel that every layer reads and writes.
 - Hugging Face, [SmolLM2-135M-Instruct model card](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct) and the [`LlamaConfig` `mlp_bias` option](https://huggingface.co/docs/transformers/model_doc/llama#transformers.LlamaConfig) used by Step 5's fold.

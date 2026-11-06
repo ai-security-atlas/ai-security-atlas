@@ -17,11 +17,12 @@ hardware: "Any laptop, CPU only. 2 GB Docker VM memory. 2.2 GB disk for the work
 canary: ATLAS-CANARY-c0nd
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
+objectives: [goal-misuse]           # override: the only linked attack (audio injection) is not what this lab practices; it bypasses a text filter to generate a blocked concept
 ---
 
 # LAB-51 · The prompt is a vector
 
-> **Atlas node:** [Text, image and control conditioning](https://ai-security-atlas.github.io/?node=concept-conditioning) · **Family:** family-misuse · **Level:** beginner · **Time:** 45 min · **Model backend:** none
+> **Atlas node:** [Text, image and control conditioning](https://ai-security-atlas.github.io/nodes/concept-conditioning/) · **Family:** family-misuse · **Level:** beginner · **Time:** 45 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +50,13 @@ The blocked concept is "fox" and every prompt is hardcoded in `scripts/cclab.py`
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-conditioning`](../../articles/concept-conditioning.md) |
-| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-misuse`](https://ai-security-atlas.github.io/?node=family-misuse), the family of [`attack-capability-abuse`](https://ai-security-atlas.github.io/?node=attack-capability-abuse): a prompt filter on a generator exists to stop that kind of use. |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (Steps 3, 4 and 6: blocked conditioning reaches the generator) |
+| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-misuse`](https://ai-security-atlas.github.io/nodes/family-misuse/), the family of [`attack-capability-abuse`](https://ai-security-atlas.github.io/nodes/attack-capability-abuse/): a prompt filter on a generator exists to stop that kind of use. |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (Steps 3, 4 and 6: blocked conditioning reaches the generator) |
 | Access profile | `A03` White-box or surrogate optimization (caveat: *A surrogate and target must be separately identified; transfer is not guaranteed.*): the Step 6 search runs on a local copy of a public text encoder. A real pipeline may use a different encoder (SD 1.x uses ViT-L/14), so the words found here are a hypothesis to test there. |
-| Read first | [`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention) (the seed prerequisite), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) |
-| Mitigated by | None in the seed graph. Defend builds an embedding filter and a same-view check; the output-side image check of D3 is [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output) (related, not mapped). |
-| Evaluated by | [`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility) (false positives on benign prompts) and [`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive) (the long-prompt route around D1) |
-| Related | Requires this concept: [`concept-guidance`](https://ai-security-atlas.github.io/?node=concept-guidance), [`adapt-controlnet`](https://ai-security-atlas.github.io/?node=adapt-controlnet). Also [`arch-latent-diffusion`](https://ai-security-atlas.github.io/?node=arch-latent-diffusion), [`adapt-textual-inversion`](https://ai-security-atlas.github.io/?node=adapt-textual-inversion), [`arch-encoder`](https://ai-security-atlas.github.io/?node=arch-encoder), [`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion), and the image pathways of [`attack-multimodal-injection`](https://ai-security-atlas.github.io/?node=attack-multimodal-injection) and [`attack-visual-jailbreak`](https://ai-security-atlas.github.io/?node=attack-visual-jailbreak). |
+| Read first | [`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/) (the seed prerequisite), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
+| Mitigated by | None in the seed graph. Defend builds an embedding filter and a same-view check; the output-side image check of D3 is [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/) (related, not mapped). |
+| Evaluated by | [`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/) (false positives on benign prompts) and [`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/) (the long-prompt route around D1) |
+| Related | Requires this concept: [`concept-guidance`](https://ai-security-atlas.github.io/nodes/concept-guidance/), [`adapt-controlnet`](https://ai-security-atlas.github.io/nodes/adapt-controlnet/). Also [`arch-latent-diffusion`](https://ai-security-atlas.github.io/nodes/arch-latent-diffusion/), [`adapt-textual-inversion`](https://ai-security-atlas.github.io/nodes/adapt-textual-inversion/), [`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/), [`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/), and the image pathways of [`attack-multimodal-injection`](https://ai-security-atlas.github.io/nodes/attack-multimodal-injection/) and [`attack-visual-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-visual-jailbreak/). |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its article closes with the one that applies here: "Whether a given surface can be manipulated, and to what effect, depends on the specific system." This lab measures one text encoder and a 24-concept probe. It renders no images, so "lands on fox" means the probe's nearest concept, a proxy for what a generator would draw.
@@ -83,7 +84,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-04 · What the model actually reads](../concept-tokens/README.md) explains tokenizers, [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) explains embeddings, and [LAB-26 · Who attends to whom](../concept-attention/README.md) explains attention.
-- Concepts to read first: [`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention) and [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens).
+- Concepts to read first: [`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
 
@@ -193,7 +194,7 @@ What to notice: five words become a 77 × 512 matrix, and 70 of its 77 rows come
 
 **Why**
 
-A latent diffusion model reads the prompt through cross-attention: its image queries attend over these 77 rows, which act as keys and values ([`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention), [`arch-latent-diffusion`](https://ai-security-atlas.github.io/?node=arch-latent-diffusion)). The pooled vector is the end-of-text row passed through a projection. CLIP trains it to match images, so CLIP-based filters compare that vector. Both come out of the same encoder, and the article calls that encoder the first conditioning pathway ([`concept-conditioning`](https://ai-security-atlas.github.io/?node=concept-conditioning)). The tokenizer runs before all of it, with its own normalization and its own limit ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)).
+A latent diffusion model reads the prompt through cross-attention: its image queries attend over these 77 rows, which act as keys and values ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/), [`arch-latent-diffusion`](https://ai-security-atlas.github.io/nodes/arch-latent-diffusion/)). The pooled vector is the end-of-text row passed through a projection. CLIP trains it to match images, so CLIP-based filters compare that vector. Both come out of the same encoder, and the article calls that encoder the first conditioning pathway ([`concept-conditioning`](https://ai-security-atlas.github.io/nodes/concept-conditioning/)). The tokenizer runs before all of it, with its own normalization and its own limit ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)).
 
 ### Step 2 — Nearby prompts, nearby vectors · [explainer 2](explainer/index.html#concept-conditioning/2)
 
@@ -230,7 +231,7 @@ What to notice: prompts that share a template are all close (even a teapot score
 
 **Why**
 
-Cosine similarity is the cosine of the angle between two vectors: 1 means the same direction. CLIP's text vectors share a common direction, so raw cosines run high and mean little alone. Comparing against a set of reference concepts is how zero-shot CLIP classification works, and this lab uses it as its stand-in for "what the conditioning asks for" ([`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings)). The corgi result is a reminder that the probe is coarse: 24 anchors cannot name every animal.
+Cosine similarity is the cosine of the angle between two vectors: 1 means the same direction. CLIP's text vectors share a common direction, so raw cosines run high and mean little alone. Comparing against a set of reference concepts is how zero-shot CLIP classification works, and this lab uses it as its stand-in for "what the conditioning asks for" ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)). The corgi result is a reminder that the probe is coarse: 24 anchors cannot name every animal.
 
 ### Step 3 — The filter reads text, the generator reads vectors · [explainer 3](explainer/index.html#concept-conditioning/3)
 
@@ -274,7 +275,7 @@ What to notice: the blocklist stops only the three prompts that spell "fox" or "
 
 **Why**
 
-The labels are by construction: the 16 fox-intent prompts were written to ask for a fox, the 24 benign ones were not, and several benign ones are hard negatives (wolf, coyote, corgi, red panda). The filter and the generator read two different objects, a string and a vector, so anything that changes the string without changing the vector gets through. This is the gap that [SneakyPrompt](https://arxiv.org/abs/2305.12082) searches automatically against real text-to-image filters, and the same shape as evading any detector that reads a different view than the system it guards ([`attack-detector-evasion`](https://ai-security-atlas.github.io/?node=attack-detector-evasion), [LAB-36](../attack-detector-evasion/README.md)). Five fox-intent prompts land elsewhere (`f0x`, `renard`, the long description); this encoder may simply not know them, and without rendering images the lab cannot tell.
+The labels are by construction: the 16 fox-intent prompts were written to ask for a fox, the 24 benign ones were not, and several benign ones are hard negatives (wolf, coyote, corgi, red panda). The filter and the generator read two different objects, a string and a vector, so anything that changes the string without changing the vector gets through. This is the gap that [SneakyPrompt](https://arxiv.org/abs/2305.12082) searches automatically against real text-to-image filters, and the same shape as evading any detector that reads a different view than the system it guards ([`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/), [LAB-36](../attack-detector-evasion/README.md)). Five fox-intent prompts land elsewhere (`f0x`, `renard`, the long description); this encoder may simply not know them, and without rendering images the lab cannot tell.
 
 ### Step 4 — Token 77 · [explainer 4](explainer/index.html#concept-conditioning/4)
 
@@ -303,7 +304,7 @@ What to notice: with standard truncation the tail changes nothing (identical ids
 
 **Why**
 
-CLIP has 77 positions, so the encoder keeps the start token, 75 tokens and an end token. Many front-ends lift that limit by splitting long prompts into 75-token chunks, encoding each and concatenating the rows before the U-Net (the [AUTOMATIC1111 web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features) documents this as "infinite prompt length"). The cut therefore goes both ways. A text filter can see words the encoder drops, which only costs a false alarm. A filter that encodes one 77-slot pass can miss words that a chunked encoder delivers, and Step D1 shows that miss. Either way the filter and the encoder disagree about what the prompt is ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)).
+CLIP has 77 positions, so the encoder keeps the start token, 75 tokens and an end token. Many front-ends lift that limit by splitting long prompts into 75-token chunks, encoding each and concatenating the rows before the U-Net (the [AUTOMATIC1111 web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features) documents this as "infinite prompt length"). The cut therefore goes both ways. A text filter can see words the encoder drops, which only costs a false alarm. A filter that encodes one 77-slot pass can miss words that a chunked encoder delivers, and Step D1 shows that miss. Either way the filter and the encoder disagree about what the prompt is ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)).
 
 ### Step 5 — Every later row carries the word · [explainer 5](explainer/index.html#concept-conditioning/5)
 
@@ -329,7 +330,7 @@ What to notice: one changed word changes 72 of the 77 rows, padding included; re
 
 **Why**
 
-CLIP's text encoder is causal: each row attends only to itself and earlier slots, so rows before the word are untouched and every row after it, including the padding, mixes the word in. The diffusers Stable Diffusion pipeline calls the encoder without an attention mask, and this lab does the same, so each padding row attends to the prompt and to the padding before it. A diffusion U-Net cross-attends over all 77 rows, so the concept reaches it through many rows at once ([`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention), [LAB-26](../concept-attention/README.md)). A control that edits or masks the conditioning token by token, for example removing the row of a flagged word, leaves most of the signal in place. Concept removal has to work on the whole matrix, or on the output.
+CLIP's text encoder is causal: each row attends only to itself and earlier slots, so rows before the word are untouched and every row after it, including the padding, mixes the word in. The diffusers Stable Diffusion pipeline calls the encoder without an attention mask, and this lab does the same, so each padding row attends to the prompt and to the padding before it. A diffusion U-Net cross-attends over all 77 rows, so the concept reaches it through many rows at once ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/), [LAB-26](../concept-attention/README.md)). A control that edits or masks the conditioning token by token, for example removing the row of a flagged word, leaves most of the signal in place. Concept removal has to work on the whole matrix, or on the output.
 
 ### Step 6 — Search the vocabulary (≈1 min) · [explainer 6](explainer/index.html#concept-conditioning/6)
 
@@ -363,7 +364,7 @@ What to notice: one pass over the vocabulary finds 9 words the blocklist allows 
 
 **Why**
 
-SneakyPrompt searches the same space with feedback from the target system, querying it and perturbing tokens until the filter passes and the image still matches. This step is a one-shot, white-box version on a public encoder: score every candidate word and keep those that pass the text filter and land on the blocked concept. The search needs nothing a user lacks, because the encoders of open pipelines are published. That is why a prompt filter for a generator is a misuse control that an attacker can test offline ([`attack-capability-abuse`](https://ai-security-atlas.github.io/?node=attack-capability-abuse)). The canary line is the only effect: the stub generator prints it and draws nothing.
+SneakyPrompt searches the same space with feedback from the target system, querying it and perturbing tokens until the filter passes and the image still matches. This step is a one-shot, white-box version on a public encoder: score every candidate word and keep those that pass the text filter and land on the blocked concept. The search needs nothing a user lacks, because the encoders of open pipelines are published. That is why a prompt filter for a generator is a misuse control that an attacker can test offline ([`attack-capability-abuse`](https://ai-security-atlas.github.io/nodes/attack-capability-abuse/)). The canary line is the only effect: the stub generator prints it and draws nothing.
 
 ## Defend
 
@@ -395,7 +396,7 @@ What to notice: the embedding filter blocks 11 of 16 fox-intent prompts where th
 
 **Why**
 
-D1 runs the encoder the generator uses and blocks a prompt when the pooled vector's nearest anchor is a blocked concept. The filter now reads the generator's input, so renaming the concept no longer helps, and the Step 6 words are caught by definition. The labeled set is the honest test. Its false positives are the utility cost ([`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility)), and its misses land on other concepts in this encoder too. The long prompt shows the adaptive route ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)): D1 encodes one 77-slot pass, and the generator receives more than that. Guardrails built from models carry the same split, as [LAB-34](../arch-encoder/README.md) shows for a text classifier ([`arch-encoder`](https://ai-security-atlas.github.io/?node=arch-encoder)).
+D1 runs the encoder the generator uses and blocks a prompt when the pooled vector's nearest anchor is a blocked concept. The filter now reads the generator's input, so renaming the concept no longer helps, and the Step 6 words are caught by definition. The labeled set is the honest test. Its false positives are the utility cost ([`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/)), and its misses land on other concepts in this encoder too. The long prompt shows the adaptive route ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)): D1 encodes one 77-slot pass, and the generator receives more than that. Guardrails built from models carry the same split, as [LAB-34](../arch-encoder/README.md) shows for a text classifier ([`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)).
 
 ### Step D2 — Read what the encoder reads · [explainer 8](explainer/index.html#concept-conditioning/8)
 
@@ -424,7 +425,7 @@ What to notice: only the filter that scores the encoder's own chunks gets all fo
 
 **Why**
 
-The fix is to compute the filter's input from the encoder's input. Use the same tokenizer, the same truncation and the same chunking, ideally in one function that both call. "Tail reaches" is ground truth from the token counts: the scene fills all 75 slots, so the tail exists only in the chunked encoder's second chunk. Rejecting long prompts is the simplest same view, and it is a product decision, because some users write long prompts on purpose. The check you can apply to your own pipeline is to send a prompt whose blocked word sits after token 75 and confirm that the filter and the generator agree about it ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)).
+The fix is to compute the filter's input from the encoder's input. Use the same tokenizer, the same truncation and the same chunking, ideally in one function that both call. "Tail reaches" is ground truth from the token counts: the scene fills all 75 slots, so the tail exists only in the chunked encoder's second chunk. Rejecting long prompts is the simplest same view, and it is a product decision, because some users write long prompts on purpose. The check you can apply to your own pipeline is to send a prompt whose blocked word sits after token 75 and confirm that the filter and the generator agree about it ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)).
 
 ### Step D3 — Every pathway needs its own control · [explainer 9](explainer/index.html#concept-conditioning/9)
 
@@ -434,7 +435,7 @@ D1 and D2 guard one pathway, the text encoder. A pipeline can have others. An im
 
 **Why**
 
-The article names text encoders, cross-attention and control branches as separate surfaces ([`concept-conditioning`](https://ai-security-atlas.github.io/?node=concept-conditioning)), and ControlNet is the standard example of a control branch ([`adapt-controlnet`](https://ai-security-atlas.github.io/?node=adapt-controlnet)). An output check is [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output). Classifier-free guidance only sets how strongly the conditioning is followed, and it is no safety filter ([`concept-guidance`](https://ai-security-atlas.github.io/?node=concept-guidance)). Limitation: this lab renders no images, so it does not measure an output classifier.
+The article names text encoders, cross-attention and control branches as separate surfaces ([`concept-conditioning`](https://ai-security-atlas.github.io/nodes/concept-conditioning/)), and ControlNet is the standard example of a control branch ([`adapt-controlnet`](https://ai-security-atlas.github.io/nodes/adapt-controlnet/)). An output check is [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/). Classifier-free guidance only sets how strongly the conditioning is followed, and it is no safety filter ([`concept-guidance`](https://ai-security-atlas.github.io/nodes/concept-guidance/)). Limitation: this lab renders no images, so it does not measure an output classifier.
 
 ## Evaluate
 

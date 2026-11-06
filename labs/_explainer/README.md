@@ -37,7 +37,7 @@ else breaks.
 | Field | Required | Meaning |
 | :--- | :--- | :--- |
 | `id` | yes | The Atlas node id, equal to the folder name. It is used in `data-explainer="<id>"` and in deep links `#<id>/<step>`. |
-| `family` | yes | The node's family id. The kicker reads `<family> · <id>`. |
+| `family` | yes | The node's family id. The kicker reads `<family> · <id>`, unless the host element has a `data-kicker` (see [Embedding](#embedding-in-another-page-atlas-site)). |
 | `title` | yes | HTML. Wrap exactly one word in `<span class="outline">...</span>` (shown in the lab accent color). The plain text becomes the region's `aria-label`. |
 | `legend` | yes | The semantic roles the stage uses, as `["bad", "teal", ...]` (standard labels) or `{ role: "bad", label: "Injected opcodes", tag: "pickle-opcodes" }`. `tag` is optional (see [Legend tags](#legend-tags)). |
 | `intro` | yes | Plain-text `{ why, plan, terms }`: explain the motivating question, the experiment route and essential vocabulary before the diagram. |
@@ -210,7 +210,8 @@ regenerates `data.js` from a reference container run. A student's `work/` folder
 - The last chapter is Defense.
 - At least one Impact caption names the lab's canary (README front matter `canary:`), so a screenshot cannot
   read as a real exploit demo.
-- The kicker is `<family> · <node-id>` and nothing else.
+- The kicker is `<family> · <node-id>` and nothing else. An embedding page may replace it with the same pair as
+  human titles through `data-kicker` on the host.
 
 ## Embedding in another page (Atlas site)
 
@@ -218,6 +219,9 @@ The Atlas lab page (`/labs/<node-id>/`, `layouts/lab/single.html`) embeds the ex
 is the README body rendered by Hugo. The published `/labs/<node-id>/explainer/` redirects there, keeping the
 `#<node-id>/<n>` hash. The README's `explainer/index.html#<node-id>/<n>` links are rewritten to `#<node-id>/<n>` on
 that page.
+
+The page also sets `data-kicker="<family title> · <node title>"` on the host, so the kicker shows names instead of
+ids. Standalone (`index.html`, `file://`) has no `data-kicker` and keeps `<family> · <node-id>`.
 
 ```html
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
@@ -227,6 +231,7 @@ that page.
 <script src="/labs/<node-id>/explainer/explainer.js"></script>
 ...
 <div data-explainer="<node-id>" data-tag-base="/labs/tags/"></div>   <!-- data-tag-base: optional, links tagged pills -->
+<!-- data-kicker="<family title> · <node title>": optional, replaces the <family> · <node-id> kicker -->
 ```
 
 - Every `[data-explainer]` mounts on `DOMContentLoaded`, and a definition loaded later mounts its hosts when

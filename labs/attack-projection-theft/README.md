@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-37 · Reading the hidden size off the logits
 
-> **Atlas node:** [Partial parameter recovery from API behavior](https://ai-security-atlas.github.io/?node=attack-projection-theft) · **Family:** family-theft · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
+> **Atlas node:** [Partial parameter recovery from API behavior](https://ai-security-atlas.github.io/nodes/attack-projection-theft/) · **Family:** family-theft · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +49,13 @@ The victim is a fictional company's API served by each script on `127.0.0.1` ins
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-projection-theft`](../../articles/attack-projection-theft.md) |
-| Family | [`family-theft`](https://ai-security-atlas.github.io/?node=family-theft) |
-| Goal | [`goal-model-theft`](https://ai-security-atlas.github.io/?node=goal-model-theft) |
+| Family | [`family-theft`](https://ai-security-atlas.github.io/nodes/family-theft/) |
+| Goal | [`goal-model-theft`](https://ai-security-atlas.github.io/nodes/goal-model-theft/) |
 | Access profile | `A02` Score or logit API access (caveat: *Specify score precision, top-k restrictions and any allowed logit transformations.*) — this lab varies exactly those three knobs |
-| Read first | [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits), [`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings) |
-| Mitigated by | None in the seed graph. Defend measures output minimization and score-precision limits (no node yet), framed by [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget) and [`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging) as related, not mapped. |
-| Evaluated by | [`eval-fidelity`](https://ai-security-atlas.github.io/?node=eval-fidelity), [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-model-imitation`](https://ai-security-atlas.github.io/?node=attack-model-imitation) (behavior copy, distinct from), [`attack-distillation-theft`](https://ai-security-atlas.github.io/?node=attack-distillation-theft), [`attack-weight-theft`](https://ai-security-atlas.github.io/?node=attack-weight-theft) (whole files), [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder) |
+| Read first | [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/), [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/) |
+| Mitigated by | None in the seed graph. Defend measures output minimization and score-precision limits (no node yet), framed by [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/) and [`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/) as related, not mapped. |
+| Evaluated by | [`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/), [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/) (behavior copy, distinct from), [`attack-distillation-theft`](https://ai-security-atlas.github.io/nodes/attack-distillation-theft/), [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/) (whole files), [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/) |
 
 > [!NOTE]
 > **Atlas caveat:** Partial projection recovery is not complete recovery of a production model.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done (the workbench image is built).
 - Labs to finish first: [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md), whose `victim-api` fixture and query-log conventions this lab reuses. [LAB-05 · What the API reveals](../concept-logits/README.md) covers logits and detail levels in more depth and stops at the hidden-size read.
-- Concepts to read first: [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits) and [`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings).
+- Concepts to read first: [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) and [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/).
 
 ## Explainer
 
@@ -212,7 +212,7 @@ What to notice: one scoring answer is a full row of 49,152 log-probabilities —
 
 **Why**
 
-The API answers "how likely is every next token", which is the A02 access profile: score precision and allowed transformations are exactly what later steps vary ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). The victim is a decoder-only model whose final layer multiplies a hidden state by the output projection ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder), [`concept-embeddings`](https://ai-security-atlas.github.io/?node=concept-embeddings)); in this model that matrix is tied to the input embedding table, so it is both the first and last thing every token passes through.
+The API answers "how likely is every next token", which is the A02 access profile: score precision and allowed transformations are exactly what later steps vary ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). The victim is a decoder-only model whose final layer multiplies a hidden state by the output projection ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/), [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)); in this model that matrix is tied to the input embedding table, so it is both the first and last thing every token passes through.
 
 ### Step 2 — Collect 1,200 rows of answers · [explainer 3](explainer/index.html#attack-projection-theft/3)
 
@@ -238,7 +238,7 @@ What to notice: the attack surface is twelve ordinary batched requests — count
 
 **Why**
 
-Carlini et al. send random inputs for the same reason this lab does: the attack needs many *different* hidden states, and any diverse prompts will do (D3 shows ordinary sentences work just as well). This is the theft family's cheapest entrance: no files, no gradients, no training data — only the answers an API already sells ([`goal-model-theft`](https://ai-security-atlas.github.io/?node=goal-model-theft), and contrast [`attack-weight-theft`](https://ai-security-atlas.github.io/?node=attack-weight-theft), which needs the artifact itself).
+Carlini et al. send random inputs for the same reason this lab does: the attack needs many *different* hidden states, and any diverse prompts will do (D3 shows ordinary sentences work just as well). This is the theft family's cheapest entrance: no files, no gradients, no training data — only the answers an API already sells ([`goal-model-theft`](https://ai-security-atlas.github.io/nodes/goal-model-theft/), and contrast [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/), which needs the artifact itself).
 
 ### Step 3 — Read the hidden size off the spectrum · [explainer 4](explainer/index.html#attack-projection-theft/4)
 
@@ -271,7 +271,7 @@ What to notice: singular value 575 is 67.7 and singular value 576 is 0.002 — a
 
 **Why**
 
-Every answer row is the same 576-column projection applied to a different hidden state, plus one shared constant from the log-softmax (centering each row removes it), so the row stack has rank exactly 576 no matter how many rows you collect ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). The estimate cannot exceed the number of rows, which is why the curve needs about 700 rows for a clean knee — the per-key query floor that D3's budget uses ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr): report the queries a result cost).
+Every answer row is the same 576-column projection applied to a different hidden state, plus one shared constant from the log-softmax (centering each row removes it), so the row stack has rank exactly 576 no matter how many rows you collect ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). The estimate cannot exceed the number of rows, which is why the curve needs about 700 rows for a clean knee — the per-key query floor that D3's budget uses ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/): report the queries a result cost).
 
 ### Step 4 — Recover the projection, up to a linear map · [explainer 5](explainer/index.html#attack-projection-theft/5)
 
@@ -299,17 +299,17 @@ What to notice: after a least-squares alignment, the true weights sit inside the
 
 **Why**
 
-The right singular vectors of the row stack span the same subspace as the (column-centered) output projection, so the thief holds the whole matrix "up to B = W A⁻¹ for an unknown invertible A" — the paper's exact claim, and the verification is the honest kind: least squares and principal angles against the true weights, computed operator-side because the lab owns the victim ([`eval-fidelity`](https://ai-security-atlas.github.io/?node=eval-fidelity)). LAB-09 made the mirror-image point (high behavioral agreement, zero weight recovery); here agreement is geometric and the recovery is real but partial — the caveat in the Atlas node.
+The right singular vectors of the row stack span the same subspace as the (column-centered) output projection, so the thief holds the whole matrix "up to B = W A⁻¹ for an unknown invertible A" — the paper's exact claim, and the verification is the honest kind: least squares and principal angles against the true weights, computed operator-side because the lab owns the victim ([`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/)). LAB-09 made the mirror-image point (high behavioral agreement, zero weight recovery); here agreement is geometric and the recovery is real but partial — the caveat in the Atlas node.
 
 ### Step 5 — What the thief actually holds · [explainer 6](explainer/index.html#attack-projection-theft/6)
 
 **Read**
 
-The stolen file is 21% of the model's parameters and, because this victim ties its embeddings, it is simultaneously the input embedding table and the output projection. Three things it is *not*: it is not the transformer body (the other 79%, which turns text into hidden states, is untouched); it is not the exact matrix (the unknown map means the thief cannot even run the model without recovering more); and it is not a behavior copy — for that you would train a substitute on the answers, which is [`attack-model-imitation`](https://ai-security-atlas.github.io/?node=attack-model-imitation), not this node. What the thief *does* get is architecture intelligence (the 576 hidden size matches no published spec of a competitor's model) and the single largest layer, at a measured cost of 1,200 queries. Whether that constitutes actionable theft is a licensing question the numbers cannot answer.
+The stolen file is 21% of the model's parameters and, because this victim ties its embeddings, it is simultaneously the input embedding table and the output projection. Three things it is *not*: it is not the transformer body (the other 79%, which turns text into hidden states, is untouched); it is not the exact matrix (the unknown map means the thief cannot even run the model without recovering more); and it is not a behavior copy — for that you would train a substitute on the answers, which is [`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/), not this node. What the thief *does* get is architecture intelligence (the 576 hidden size matches no published spec of a competitor's model) and the single largest layer, at a measured cost of 1,200 queries. Whether that constitutes actionable theft is a licensing question the numbers cannot answer.
 
 **Why**
 
-`eval-fidelity` exists to force exactly this decomposition: artifact equality no, subspace membership yes, query cost 1,200 ([`eval-fidelity`](https://ai-security-atlas.github.io/?node=eval-fidelity)). The Atlas caveat — partial projection recovery is not complete recovery of a production model — is the sentence to carry out of this lab, and it is also the honest description of the 2024 paper's own result.
+`eval-fidelity` exists to force exactly this decomposition: artifact equality no, subspace membership yes, query cost 1,200 ([`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/)). The Atlas caveat — partial projection recovery is not complete recovery of a production model — is the sentence to carry out of this lab, and it is also the honest description of the 2024 paper's own result.
 
 ## Defend
 
@@ -346,7 +346,7 @@ What to notice: with both switches off there is no matrix to factor — 400 top-
 
 **Why**
 
-This is the A02 caveat made concrete: "score precision, top-k restrictions and any allowed logit transformations" is a list of attack surface, and each item must be closed separately ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). Top-k costs the API a real feature (whole-distribution scoring) and, with `logit_bias` still on, buys only a 5,908x cost increase — the paper's own finding about APIs that kept the knob. Limitation: this stops the *spectrum* attack; a behavior-copy thief (LAB-09) is slowed much less by top-k.
+This is the A02 caveat made concrete: "score precision, top-k restrictions and any allowed logit transformations" is a list of attack surface, and each item must be closed separately ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). Top-k costs the API a real feature (whole-distribution scoring) and, with `logit_bias` still on, buys only a 5,908x cost increase — the paper's own finding about APIs that kept the knob. Limitation: this stops the *spectrum* attack; a behavior-copy thief (LAB-09) is slowed much less by top-k.
 
 ### Step D2 — Round the scores, add noise · [explainer 8](explainer/index.html#attack-projection-theft/8)
 
@@ -379,7 +379,7 @@ What to notice: rounding to one decimal kills the size read outright, but the tw
 
 **Why**
 
-Precision loss is a race between the cliff (singular value 575 is only ~1,000x the float32 noise floor) and the utility of the scores, and the cliff is the more fragile side: the knee survives mild degradation while the *projection quality* collapses, so "we rounded" is not a verdict until you measure both columns ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). Noise=1e-2 sat exactly on the boundary in this lab's runs (a weak 576 knee in one reference run, gone in the next) — that fragility belongs in a defense report. Limitation: rounding to one decimal also destroys logprob differences honest users query for, as the tie counts show.
+Precision loss is a race between the cliff (singular value 575 is only ~1,000x the float32 noise floor) and the utility of the scores, and the cliff is the more fragile side: the knee survives mild degradation while the *projection quality* collapses, so "we rounded" is not a verdict until you measure both columns ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). Noise=1e-2 sat exactly on the boundary in this lab's runs (a weak 576 knee in one reference run, gone in the next) — that fragility belongs in a defense report. Limitation: rounding to one decimal also destroys logprob differences honest users query for, as the tie counts show.
 
 ### Step D3 — Watch the queries · [explainer 9](explainer/index.html#attack-projection-theft/9)
 
@@ -410,7 +410,7 @@ What to notice: the token-soup thief is flagged by a mile (median -14.28 against
 
 **Why**
 
-The monitor re-scores sampled logged prompts under the victim itself, which costs one forward pass per sampled prompt and nothing for honest users — but the only thing it can see is what the traffic looks like, and diverse *natural* text is precisely what the attack needs ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging), related). The budget row is the mechanical backstop: Step 3 showed a clean knee needs about 700 rows, and 400 per key caps one key below that floor — knowing LAB-09's lesson that budgets bind keys, not people ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget)). Limitation, stated honestly: monitoring plus budgets raises cost and catches lazy thieves; an in-distribution thief remains invisible in this log.
+The monitor re-scores sampled logged prompts under the victim itself, which costs one forward pass per sampled prompt and nothing for honest users — but the only thing it can see is what the traffic looks like, and diverse *natural* text is precisely what the attack needs ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/), related). The budget row is the mechanical backstop: Step 3 showed a clean knee needs about 700 rows, and 400 per key caps one key below that floor — knowing LAB-09's lesson that budgets bind keys, not people ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/)). Limitation, stated honestly: monitoring plus budgets raises cost and catches lazy thieves; an in-distribution thief remains invisible in this log.
 
 ## Evaluate
 

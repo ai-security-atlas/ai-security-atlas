@@ -18,10 +18,10 @@ the lab, and end with a defense chapter.
 
 ## What's inside
 
-- **204 topics** across 11 types (objectives, technique families, attacks,
+- **216 topics** across 11 types (objectives, technique families, attacks,
   methods, defenses, evaluations, concepts, architectures, components, lifecycle
-  stages, formats) linked by **650 typed relationships**.
-- **97 primary sources** with honest verification depth (a citation does not
+  stages, formats) linked by **759 typed relationships**.
+- **101 primary sources** with honest verification depth (a citation does not
   imply full-text review).
 - A goal-first **Explorer** (SPA) with a curated sidebar, a relationship-rich
   reader, and a local-neighborhood graph — plus pre-rendered standalone pages for
@@ -55,8 +55,8 @@ public/                                    deployable static site
 - **Compiler:** Python + `uv` (`json2hugo.py`) — denormalizes relationships,
   builds the curated goal→family→attack navigation, resolves evidence, and merges
   authored article bodies.
-- **Explorer:** React + Vite (`src/`), rendered with Cytoscape-free canvas graph
-  (`react-force-graph-2d`). Design system in `src/index.css`.
+- **Explorer:** React + Vite (`src/`); the graph (`src/graph/`) is React Flow
+  (`@xyflow/react`, loaded on first use) with a deterministic column/stacked layout. Design system in `src/index.css`.
 - **Pages:** Hugo templates in `layouts/`.
 - **Search:** Pagefind (static, in-browser; no vector service).
 

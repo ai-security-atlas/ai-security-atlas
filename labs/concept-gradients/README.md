@@ -23,7 +23,7 @@ covers:
 
 # LAB-50 · Gradients point both ways
 
-> **Atlas node:** [Losses, gradients and optimization](https://ai-security-atlas.github.io/?node=concept-gradients) · **Family:** family-evasion · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Losses, gradients and optimization](https://ai-security-atlas.github.io/nodes/concept-gradients/) · **Family:** family-evasion · **Level:** beginner · **Time:** 60 min · **Model backend:** none
 
 ## Overview
 
@@ -51,13 +51,13 @@ This lab trains and attacks an 8×8 digit classifier on scikit-learn's bundled d
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-gradients`](../../articles/concept-gradients.md) |
-| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-evasion`](https://ai-security-atlas.github.io/?node=family-evasion), whose hub lists this lab first; Steps 5, 6 and D1 belong to [`family-privacy`](https://ai-security-atlas.github.io/?node=family-privacy). |
-| Goal | [`goal-evasion`](https://ai-security-atlas.github.io/?node=goal-evasion) (Step 4 flips a prediction) and [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) (Step 5 reads a private label) |
+| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-evasion`](https://ai-security-atlas.github.io/nodes/family-evasion/), whose hub lists this lab first; Steps 5, 6 and D1 belong to [`family-privacy`](https://ai-security-atlas.github.io/nodes/family-privacy/). |
+| Goal | [`goal-evasion`](https://ai-security-atlas.github.io/nodes/goal-evasion/) (Step 4 flips a prediction) and [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) (Step 5 reads a private label) |
 | Access profile | `A03` White-box or surrogate optimization (caveat: *A surrogate and target must be separately identified; transfer is not guaranteed.*) for the input direction, Steps 3, 4 and 6a. The weight direction, Steps 5 and 6b, needs `A16` Shared gradients or updates (caveat: *Not an ordinary text-only API setting; batching and defenses change feasibility.*), and Step 6b measures the batching part of that caveat. |
-| Read first | [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters) |
-| Mitigated by | None mapped for a concept node. Defend uses [`defense-dp`](https://ai-security-atlas.github.io/?node=defense-dp) (D1) and [`defense-robust-train`](https://ai-security-atlas.github.io/?node=defense-robust-train) (D2). |
-| Evaluated by | [`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive): D2 checks adversarial training with a stronger attack than the one it trained on. |
-| Related | [`attack-fgsm`](https://ai-security-atlas.github.io/?node=attack-fgsm) ([LAB-08](../attack-fgsm/README.md), the input direction in depth), [`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg) ([LAB-21](../attack-gcg/README.md), the same gradient over tokens), [`attack-gradient-leak`](https://ai-security-atlas.github.io/?node=attack-gradient-leak) (planned: rebuilding the image as well as the label), [`attack-membership`](https://ai-security-atlas.github.io/?node=attack-membership) ([LAB-13](../attack-membership/README.md), DP-SGD against membership inference), [`attack-pgd`](https://ai-security-atlas.github.io/?node=attack-pgd), [`life-pretrain`](https://ai-security-atlas.github.io/?node=life-pretrain), [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural) (practiced in Steps 1–2) |
+| Read first | [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) |
+| Mitigated by | None mapped for a concept node. Defend uses [`defense-dp`](https://ai-security-atlas.github.io/nodes/defense-dp/) (D1) and [`defense-robust-train`](https://ai-security-atlas.github.io/nodes/defense-robust-train/) (D2). |
+| Evaluated by | [`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/): D2 checks adversarial training with a stronger attack than the one it trained on. |
+| Related | [`attack-fgsm`](https://ai-security-atlas.github.io/nodes/attack-fgsm/) ([LAB-08](../attack-fgsm/README.md), the input direction in depth), [`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/) ([LAB-21](../attack-gcg/README.md), the same gradient over tokens), [`attack-gradient-leak`](https://ai-security-atlas.github.io/nodes/attack-gradient-leak/) (planned: rebuilding the image as well as the label), [`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/) ([LAB-13](../attack-membership/README.md), DP-SGD against membership inference), [`attack-pgd`](https://ai-security-atlas.github.io/nodes/attack-pgd/), [`life-pretrain`](https://ai-security-atlas.github.io/nodes/life-pretrain/), [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/) (practiced in Steps 1–2) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its article says that "whether any given leakage or attack succeeds depends on access and setup". Every number here comes from one 38,282-parameter CNN on 8×8 digits, one seed and one-thread CPU training. The label trick needs a ReLU before a softmax output layer and a gradient from one example or a small batch; bigger models, other activations and secure aggregation change what leaks.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-39 · Weights are what it is, activations are what it is doing](../concept-parameters/README.md) explains the parameters this lab differentiates.
-- Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters).
+- Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/).
 
 ## Explainer
 
@@ -200,7 +200,7 @@ What to notice: the untrained model is no better than a uniform guess (loss 2.35
 
 **Why**
 
-The loss is the cross-entropy, −log p(correct label), averaged over the batch. Backpropagation applies the chain rule from the loss back through every layer, so a single backward pass returns ∂loss/∂θ for all 38,282 parameters θ for a small multiple (typically two to three times) of the cost of one forward pass; the finite-difference check nudges single weights by 10⁻⁶ and agrees to at least five significant digits. That is the whole training signal of [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural) networks and of [`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients): θ ← θ − lr · ∂loss/∂θ.
+The loss is the cross-entropy, −log p(correct label), averaged over the batch. Backpropagation applies the chain rule from the loss back through every layer, so a single backward pass returns ∂loss/∂θ for all 38,282 parameters θ for a small multiple (typically two to three times) of the cost of one forward pass; the finite-difference check nudges single weights by 10⁻⁶ and agrees to at least five significant digits. That is the whole training signal of [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/) networks and of [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/): θ ← θ − lr · ∂loss/∂θ.
 
 ### Step 2 — Train by repeating Step 1 · [explainer 2](explainer/index.html#concept-gradients/2)
 
@@ -232,7 +232,7 @@ What to notice: 600 steps of the Step 1 update (with Adam's per-parameter step s
 
 **Why**
 
-Each step uses the gradient of a fresh batch of 64 digits; the 540 test digits are never used for training, so 98.1% on them measures generalization. This loop is what [`life-pretrain`](https://ai-security-atlas.github.io/?node=life-pretrain) runs at a much larger scale, and the model it produces is the white-box target of the rest of the lab, the same weights that [LAB-08](../attack-fgsm/README.md) attacks.
+Each step uses the gradient of a fresh batch of 64 digits; the 540 test digits are never used for training, so 98.1% on them measures generalization. This loop is what [`life-pretrain`](https://ai-security-atlas.github.io/nodes/life-pretrain/) runs at a much larger scale, and the model it produces is the white-box target of the rest of the lab, the same weights that [LAB-08](../attack-fgsm/README.md) attacks.
 
 ### Step 3 — One backward pass, two gradients · [explainer 3](explainer/index.html#concept-gradients/3)
 
@@ -270,7 +270,7 @@ What to notice: even for a digit the model is sure of (loss 4.4e-06), the pixel 
 
 **Why**
 
-Autograd differentiates the loss with respect to anything that took part in the forward pass, so the same call that trains the model can be asked about the input. ∂loss/∂x is a saliency map: it says which pixels, moved which way, would raise the loss ([`attack-fgsm`](https://ai-security-atlas.github.io/?node=attack-fgsm), Step 4). For softmax with cross-entropy, ∂loss/∂(output bias) is exactly p − onehot(label), which is negative only at the label, so whoever sees the weight gradient sees the label ([`attack-gradient-leak`](https://ai-security-atlas.github.io/?node=attack-gradient-leak), Step 5).
+Autograd differentiates the loss with respect to anything that took part in the forward pass, so the same call that trains the model can be asked about the input. ∂loss/∂x is a saliency map: it says which pixels, moved which way, would raise the loss ([`attack-fgsm`](https://ai-security-atlas.github.io/nodes/attack-fgsm/), Step 4). For softmax with cross-entropy, ∂loss/∂(output bias) is exactly p − onehot(label), which is negative only at the label, so whoever sees the weight gradient sees the label ([`attack-gradient-leak`](https://ai-security-atlas.github.io/nodes/attack-gradient-leak/), Step 5).
 
 ### Step 4 — Against the input: one FGSM step · [explainer 4](explainer/index.html#concept-gradients/4)
 
@@ -312,7 +312,7 @@ What to notice: random noise of the same size never moves the demo 7, while one 
 
 **Why**
 
-The fast gradient sign method moves every pixel by ε in the direction of sign(∂loss/∂x): up the loss of the true label (untargeted), or down the loss of a chosen label (targeted, here class 3). It is Step 1's training update turned around, applied to the input instead of the weights, and it needs only the white-box access of `A03`. [LAB-08](../attack-fgsm/README.md) studies it in depth, [LAB-21](../attack-gcg/README.md) uses the same gradient over a prompt's tokens ([`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg)), and [`attack-pgd`](https://ai-security-atlas.github.io/?node=attack-pgd) repeats the step.
+The fast gradient sign method moves every pixel by ε in the direction of sign(∂loss/∂x): up the loss of the true label (untargeted), or down the loss of a chosen label (targeted, here class 3). It is Step 1's training update turned around, applied to the input instead of the weights, and it needs only the white-box access of `A03`. [LAB-08](../attack-fgsm/README.md) studies it in depth, [LAB-21](../attack-gcg/README.md) uses the same gradient over a prompt's tokens ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/)), and [`attack-pgd`](https://ai-security-atlas.github.io/nodes/attack-pgd/) repeats the step.
 
 ### Step 5 — Against the data: a label from one shared gradient · [explainer 5](explainer/index.html#concept-gradients/5)
 
@@ -343,7 +343,7 @@ What to notice: only row 4 of the output-layer gradient has negative entries (34
 
 **Why**
 
-In federated learning a client computes the gradient on its own data and sends only that update to a server, which is the `A16` access of [`attack-gradient-leak`](https://ai-security-atlas.github.io/?node=attack-gradient-leak). The output layer's weight gradient for class c is (p_c − y_c) times the previous layer's activations h, and h is never negative after a ReLU, so the sign pattern singles out the label (Zhao et al., iDLG). The label is the easy part: deep leakage from gradients (Zhu et al.) also optimizes a dummy image until its gradient matches, which is the planned attack-gradient-leak lab.
+In federated learning a client computes the gradient on its own data and sends only that update to a server, which is the `A16` access of [`attack-gradient-leak`](https://ai-security-atlas.github.io/nodes/attack-gradient-leak/). The output layer's weight gradient for class c is (p_c − y_c) times the previous layer's activations h, and h is never negative after a ReLU, so the sign pattern singles out the label (Zhao et al., iDLG). The label is the easy part: deep leakage from gradients (Zhu et al.) also optimizes a dummy image until its gradient matches, which is the planned attack-gradient-leak lab.
 
 ### Step 6 — How far each direction reaches · [explainer 6](explainer/index.html#concept-gradients/6)
 
@@ -382,7 +382,7 @@ What to notice: one FGSM step at ε = 0.2 leaves 3.7% accuracy where random nois
 
 **Why**
 
-Part (a) is the curve [LAB-08](../attack-fgsm/README.md) starts from: the gradient direction is worth far more than its size. Part (b) is the batching part of the `A16` caveat: in a batch mean, confident examples contribute almost nothing and the positive p_c·h terms of the others can cover a label, so the plain sign test misses labels as B grows. Better estimators exist (Wainakh et al. recover label counts too), so treat recall here as a floor for what a batch leaks to [`attack-gradient-leak`](https://ai-security-atlas.github.io/?node=attack-gradient-leak), not a ceiling.
+Part (a) is the curve [LAB-08](../attack-fgsm/README.md) starts from: the gradient direction is worth far more than its size. Part (b) is the batching part of the `A16` caveat: in a batch mean, confident examples contribute almost nothing and the positive p_c·h terms of the others can cover a label, so the plain sign test misses labels as B grows. Better estimators exist (Wainakh et al. recover label counts too), so treat recall here as a floor for what a batch leaks to [`attack-gradient-leak`](https://ai-security-atlas.github.io/nodes/attack-gradient-leak/), not a ceiling.
 
 ## Defend
 
@@ -419,7 +419,7 @@ What to notice: the noise Opacus needs for ε = 8 (σ = 1.02) brings label recov
 
 **Why**
 
-DP-SGD (Abadi et al.) clips each example's gradient to a fixed norm C and adds Gaussian noise of standard deviation σ·C before the update, and an accountant turns σ, the sampling rate and the number of steps into a guarantee (ε, δ) on how much any one example can change what is released ([`defense-dp`](https://ai-security-atlas.github.io/?node=defense-dp); [LAB-13](../attack-membership/README.md) measures it against membership inference). Part (b) applies the same release to one client's gradient: most per-example gradients here are tiny (median norm 0.026), so even σ = 0.01 hides half the labels. Limitation: DP bounds what the weight gradients reveal and does nothing about the input gradient. In federated learning the client has to add the noise, because noise added by the server after it receives a raw update hides nothing from that server.
+DP-SGD (Abadi et al.) clips each example's gradient to a fixed norm C and adds Gaussian noise of standard deviation σ·C before the update, and an accountant turns σ, the sampling rate and the number of steps into a guarantee (ε, δ) on how much any one example can change what is released ([`defense-dp`](https://ai-security-atlas.github.io/nodes/defense-dp/); [LAB-13](../attack-membership/README.md) measures it against membership inference). Part (b) applies the same release to one client's gradient: most per-example gradients here are tiny (median norm 0.026), so even σ = 0.01 hides half the labels. Limitation: DP bounds what the weight gradients reveal and does nothing about the input gradient. In federated learning the client has to add the noise, because noise added by the server after it receives a raw update hides nothing from that server.
 
 ### Step D2 — Adversarial training covers the other direction (≈20 s) · [explainer 8](explainer/index.html#concept-gradients/8)
 
@@ -448,17 +448,17 @@ What to notice: training on FGSM examples raises FGSM accuracy at ε = 0.2 from 
 
 **Why**
 
-Adversarial training ([`defense-robust-train`](https://ai-security-atlas.github.io/?node=defense-robust-train)) replaces part of each batch with attacked inputs, so the weights learn to resist the input gradient's direction. Judging it by the attack it trained on overstates it, which is why the PGD-10 column is there ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive); [LAB-08](../attack-fgsm/README.md) D3 and the planned attack-pgd lab go further). Limitation: it changes nothing about the weight gradients, so each defense in this section covers one direction and you need both when both kinds of access exist.
+Adversarial training ([`defense-robust-train`](https://ai-security-atlas.github.io/nodes/defense-robust-train/)) replaces part of each batch with attacked inputs, so the weights learn to resist the input gradient's direction. Judging it by the attack it trained on overstates it, which is why the PGD-10 column is there ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/); [LAB-08](../attack-fgsm/README.md) D3 and the planned attack-pgd lab go further). Limitation: it changes nothing about the weight gradients, so each defense in this section covers one direction and you need both when both kinds of access exist.
 
 ### Step D3 — Do not release per-example updates
 
 **Read**
 
-The cheapest control on the weight direction is architectural: a server that never sees one client's update cannot read its labels. Secure aggregation (Bonawitz et al. 2017) lets the server learn only the sum of many clients' updates, and Step 6b shows why the sum alone is not enough: an 8-digit mean still named every label it found correctly. So combine it with client-side DP noise (D1), a minimum number of clients per round, and no debugging endpoint or log that stores raw per-example gradients. On the input side, the control is the access itself: do not ship weights or a gradient endpoint for a model whose decisions matter, and assume a copied or surrogate model gives the attacker `A03` anyway ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)).
+The cheapest control on the weight direction is architectural: a server that never sees one client's update cannot read its labels. Secure aggregation (Bonawitz et al. 2017) lets the server learn only the sum of many clients' updates, and Step 6b shows why the sum alone is not enough: an 8-digit mean still named every label it found correctly. So combine it with client-side DP noise (D1), a minimum number of clients per round, and no debugging endpoint or log that stores raw per-example gradients. On the input side, the control is the access itself: do not ship weights or a gradient endpoint for a model whose decisions matter, and assume a copied or surrogate model gives the attacker `A03` anyway ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)).
 
 **Why**
 
-Each attack in this lab needs a specific access profile, `A03` for the input and `A16` for the updates ([`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients)). Removing that access is stronger than any noise level, and where it cannot be removed, D1 and D2 give measured, partial protection.
+Each attack in this lab needs a specific access profile, `A03` for the input and `A16` for the updates ([`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/)). Removing that access is stronger than any noise level, and where it cannot be removed, D1 and D2 give measured, partial protection.
 
 ## Evaluate
 

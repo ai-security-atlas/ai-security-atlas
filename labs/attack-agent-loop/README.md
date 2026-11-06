@@ -23,7 +23,7 @@ covers:
 
 # LAB-55 · The task that never ends
 
-> **Atlas node:** [Tool-loop and recursive-delegation exhaustion](https://ai-security-atlas.github.io/?node=attack-agent-loop) · **Family:** family-availability · **Level:** intermediate · **Time:** 75 min · **Model backend:** required
+> **Atlas node:** [Tool-loop and recursive-delegation exhaustion](https://ai-security-atlas.github.io/nodes/attack-agent-loop/) · **Family:** family-availability · **Level:** intermediate · **Time:** 75 min · **Model backend:** required
 
 ## Overview
 
@@ -53,13 +53,13 @@ Every ticket, item and report here is fictional. The only "attack" text is the Q
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-agent-loop`](../../articles/attack-agent-loop.md) |
-| Family | [`family-availability`](https://ai-security-atlas.github.io/?node=family-availability) |
-| Goal | [`goal-availability`](https://ai-security-atlas.github.io/?node=goal-availability) |
+| Family | [`family-availability`](https://ai-security-atlas.github.io/nodes/family-availability/) |
+| Goal | [`goal-availability`](https://ai-security-atlas.github.io/nodes/goal-availability/) |
 | Access profile | `A12` Agent-exposed capability (caveat: *Success additionally depends on delegated tools, policy enforcement and reachable resources.*) |
-| Read first | [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent), [`system-multiagent`](https://ai-security-atlas.github.io/?node=system-multiagent) |
-| Mitigated by | [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-tool-output`](https://ai-security-atlas.github.io/?node=attack-tool-output), [`attack-sponge`](https://ai-security-atlas.github.io/?node=attack-sponge), [`attack-token-exhaustion`](https://ai-security-atlas.github.io/?node=attack-token-exhaustion), [`system-serving`](https://ai-security-atlas.github.io/?node=system-serving) |
+| Read first | [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/), [`system-multiagent`](https://ai-security-atlas.github.io/nodes/system-multiagent/) |
+| Mitigated by | [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-tool-output`](https://ai-security-atlas.github.io/nodes/attack-tool-output/), [`attack-sponge`](https://ai-security-atlas.github.io/nodes/attack-sponge/), [`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/), [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/) |
 
 > [!NOTE]
 > **Atlas caveat:** Model reasoning, tool cost and wall-clock limits require separate accounting.
@@ -87,7 +87,7 @@ Scripts always run in the workbench service. The backend only answers model call
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
 - Labs to finish first: [LAB-22 · When the tool's answer gives the orders](../attack-tool-output/README.md) (the atlas-app agent loop, MCP tool calls, and a tool result that carries instructions). This lab uses the same fixture family; where LAB-22 asked "will the model obey?", this one asks "what does it cost when obeying never terminates?"
-- Concepts to read first: [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent) and [`system-multiagent`](https://ai-security-atlas.github.io/?node=system-multiagent) (delegation).
+- Concepts to read first: [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/) and [`system-multiagent`](https://ai-security-atlas.github.io/nodes/system-multiagent/) (delegation).
 
 ## Explainer
 
@@ -220,7 +220,7 @@ What to notice: the five boards differ only in what the QA service returns for `
 
 **Why**
 
-An agent is a model plus the tools it may call and the runner that drives the loop ([`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)). MCP is the protocol the desk uses to list and call those tools. The runner this lab studies is ordinary orchestrator behavior: it keeps working while the desk policy sees work outstanding, and it runs the outstanding check itself when the model stalls. The four meters matter because the node's caveat is the whole lab: model reasoning, tool cost and wall-clock are separate quantities, and a tool result that never completes is enough to grow all of them ([`attack-agent-loop`](https://ai-security-atlas.github.io/?node=attack-agent-loop)).
+An agent is a model plus the tools it may call and the runner that drives the loop ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). MCP is the protocol the desk uses to list and call those tools. The runner this lab studies is ordinary orchestrator behavior: it keeps working while the desk policy sees work outstanding, and it runs the outstanding check itself when the model stalls. The four meters matter because the node's caveat is the whole lab: model reasoning, tool cost and wall-clock are separate quantities, and a tool result that never completes is enough to grow all of them ([`attack-agent-loop`](https://ai-security-atlas.github.io/nodes/attack-agent-loop/)).
 
 ### Step 2 — The benign request · [explainer 2](explainer/index.html#attack-agent-loop/2)
 
@@ -248,7 +248,7 @@ What to notice: this is the baseline cost row — one list call, three checks, o
 
 **Why**
 
-A cost claim is meaningless without its baseline ([`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost)). The benign request is what the operator thinks they deployed: three checks, one report. When Step 3 bills 85 times more tokens for the same three items, the difference is the loop, and the ratio is the honest way to state it.
+A cost claim is meaningless without its baseline ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). The benign request is what the operator thinks they deployed: three checks, one report. When Step 3 bills 85 times more tokens for the same three items, the difference is the loop, and the ratio is the honest way to state it.
 
 ### Step 3 — The task that never ends · [explainer 3](explainer/index.html#attack-agent-loop/3)
 
@@ -291,7 +291,7 @@ What to notice: the run never reports. The model itself re-checks `T-2059` a few
 
 **Why**
 
-This is tool-loop exhaustion: the attacker's text (a tool result, as in LAB-22) does not ask for money or data — it asks for more work, forever, and the runner's own diligence policy supplies the persistence ([`attack-agent-loop`](https://ai-security-atlas.github.io/?node=attack-agent-loop), [`goal-availability`](https://ai-security-atlas.github.io/?node=goal-availability)). Nothing here is a prompt-injection win over the model; the model even tries to wrap up. What fails is that no layer outside the model bounds the work. The 50-turn cap that stops it is the lab's own safety rail, not the desk's.
+This is tool-loop exhaustion: the attacker's text (a tool result, as in LAB-22) does not ask for money or data — it asks for more work, forever, and the runner's own diligence policy supplies the persistence ([`attack-agent-loop`](https://ai-security-atlas.github.io/nodes/attack-agent-loop/), [`goal-availability`](https://ai-security-atlas.github.io/nodes/goal-availability/)). Nothing here is a prompt-injection win over the model; the model even tries to wrap up. What fails is that no layer outside the model bounds the work. The 50-turn cap that stops it is the lab's own safety rail, not the desk's.
 
 ### Step 4 — Delegate it to a sub-agent · [explainer 4](explainer/index.html#attack-agent-loop/4)
 
@@ -326,7 +326,7 @@ What to notice: on the delegation board the flagged ticket's check defers to a s
 
 **Why**
 
-Multi-agent orchestration compounds: authority passed down a chain keeps being exercised, and a message from one agent misleads the next ([`system-multiagent`](https://ai-security-atlas.github.io/?node=system-multiagent)). Here each sub-agent is one tool call, so recursion depth is directly countable — which is exactly what D1's depth cap will bound. In a real system each sub-agent would be its own model loop, and the same chain would multiply the bill by every layer.
+Multi-agent orchestration compounds: authority passed down a chain keeps being exercised, and a message from one agent misleads the next ([`system-multiagent`](https://ai-security-atlas.github.io/nodes/system-multiagent/)). Here each sub-agent is one tool call, so recursion depth is directly countable — which is exactly what D1's depth cap will bound. In a real system each sub-agent would be its own model loop, and the same chain would multiply the bill by every layer.
 
 ### Step 5 — Cost grows by the square · [explainer 5](explainer/index.html#attack-agent-loop/5)
 
@@ -359,7 +359,7 @@ What to notice: the loop itself is linear — one check, one result, about 115 m
 
 **Why**
 
-Every agent framework that appends tool results to the conversation has this cost shape, which is why the node's caveat demands separate accounting and why per-token budgets exist at all ([`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost), [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget)). The same mechanism is what [`attack-token-exhaustion`](https://ai-security-atlas.github.io/?node=attack-token-exhaustion) and [`attack-sponge`](https://ai-security-atlas.github.io/?node=attack-sponge) exploit from the input side; here nobody crafted an expensive input — the loop manufactures one.
+Every agent framework that appends tool results to the conversation has this cost shape, which is why the node's caveat demands separate accounting and why per-token budgets exist at all ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/), [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/)). The same mechanism is what [`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/) and [`attack-sponge`](https://ai-security-atlas.github.io/nodes/attack-sponge/) exploit from the input side; here nobody crafted an expensive input — the loop manufactures one.
 
 ### Step 6 — No attacker needed · [explainer 6](explainer/index.html#attack-agent-loop/6)
 
@@ -387,7 +387,7 @@ What to notice: the flaky board carries no attacker text — 0 of 3 runs ever sa
 
 **Why**
 
-This variant is the honest control: a stuck dependency with an ordinary-sounding error message reproduces the whole failure with no adversary ([`attack-agent-loop`](https://ai-security-atlas.github.io/?node=attack-agent-loop)). The missing budget is the weakness; the poisoned notice of Step 3 only makes the same failure deliberate and aimed. When you write the threat model, this row is what tells you the fix cannot be "detect injection" — it has to be "bound the work" ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)).
+This variant is the honest control: a stuck dependency with an ordinary-sounding error message reproduces the whole failure with no adversary ([`attack-agent-loop`](https://ai-security-atlas.github.io/nodes/attack-agent-loop/)). The missing budget is the weakness; the poisoned notice of Step 3 only makes the same failure deliberate and aimed. When you write the threat model, this row is what tells you the fix cannot be "detect injection" — it has to be "bound the work" ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)).
 
 ## Defend
 
@@ -429,7 +429,7 @@ What to notice: the working cap (12 turns) cuts the poisoned run from about 170k
 
 **Why**
 
-Iteration and depth caps are the cheapest defense because they are pure arithmetic in the runner; the model cannot negotiate with them ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget)). Their limitation is the unfinished work: a cap bounds the damage without making the desk right, and a cap set tight enough to stop abuse also stops any legitimate task that genuinely needs more turns. D2 exists because this cap still only counts turns.
+Iteration and depth caps are the cheapest defense because they are pure arithmetic in the runner; the model cannot negotiate with them ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/)). Their limitation is the unfinished work: a cap bounds the damage without making the desk right, and a cap set tight enough to stop abuse also stops any legitimate task that genuinely needs more turns. D2 exists because this cap still only counts turns.
 
 ### Step D2 — Four budgets, not one · [explainer 8](explainer/index.html#attack-agent-loop/8)
 
@@ -473,7 +473,7 @@ What to notice: the chatty board is benign — its checks pass — and under the
 
 **Why**
 
-This is the node caveat as a defense: reasoning cost, tool cost and wall-clock need separate meters, and a single global cap constrains only its own dimension ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget)). The token meter here works like a gateway's: it sizes the incoming request before running it (message characters ÷ 4, printed as an estimate), so it can refuse rather than merely bill. The tradeoff is real and visible: a budget tight enough to catch the chatty request also refuses that request's last, legitimate turn.
+This is the node caveat as a defense: reasoning cost, tool cost and wall-clock need separate meters, and a single global cap constrains only its own dimension ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/)). The token meter here works like a gateway's: it sizes the incoming request before running it (message characters ÷ 4, printed as an estimate), so it can refuse rather than merely bill. The tradeoff is real and visible: a budget tight enough to catch the chatty request also refuses that request's last, legitimate turn.
 
 ### Step D3 — Detect the repeat · [explainer 9](explainer/index.html#attack-agent-loop/9)
 
@@ -505,7 +505,7 @@ What to notice: the detector aborts at turn 4, on the third identical `loop_chec
 
 **Why**
 
-Loop detection turns "this run is bounded" into "this run is wrong", which is what an operator wants to alert on ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging), [`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost)). Its limitation is the key: it matches identical (tool, arguments) pairs, so any loop that varies its arguments — a crawler with new ids, or an attacker who increments a counter — walks past it. Evaluate the detector against that adaptive case before you trust it; Going Further has you try it.
+Loop detection turns "this run is bounded" into "this run is wrong", which is what an operator wants to alert on ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/), [`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). Its limitation is the key: it matches identical (tool, arguments) pairs, so any loop that varies its arguments — a crawler with new ids, or an attacker who increments a counter — walks past it. Evaluate the detector against that adaptive case before you trust it; Going Further has you try it.
 
 ## Evaluate
 
@@ -573,9 +573,9 @@ What to notice: `cleanup.py` deletes this lab's `work/` directory and clears the
 
 ## Going Further
 
-- Defeat the detector with the fixed canary and local fixtures: change the runner's policy (or the model's behavior through the prompt) so each retry carries a slightly different argument — a counter, a re-listed ticket id — and measure at which allowance the detector stops catching the loop. Then check which of D1 and D2 still bounds it ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)).
-- Make the wall-clock dimension bite: run Step 3 and D2 under the container-ollama backend (CPU), keep every budget the same, and report which dimension trips first. The meters are the same; the machine is not — that is the point of [`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost).
-- Build the per-principal meter the roadmap's gateway would own: persist each run's four meters per principal across sessions (a JSON file is enough), refuse requests against a rolling window, and measure how a two-principal aggregate stays under per-principal caps while overloading the desk anyway — the distributed case [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget) admits it does not solve.
+- Defeat the detector with the fixed canary and local fixtures: change the runner's policy (or the model's behavior through the prompt) so each retry carries a slightly different argument — a counter, a re-listed ticket id — and measure at which allowance the detector stops catching the loop. Then check which of D1 and D2 still bounds it ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)).
+- Make the wall-clock dimension bite: run Step 3 and D2 under the container-ollama backend (CPU), keep every budget the same, and report which dimension trips first. The meters are the same; the machine is not — that is the point of [`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/).
+- Build the per-principal meter the roadmap's gateway would own: persist each run's four meters per principal across sessions (a JSON file is enough), refuse requests against a rolling window, and measure how a two-principal aggregate stays under per-principal caps while overloading the desk anyway — the distributed case [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/) admits it does not solve.
 - Rerun the walkthrough with a stronger tool-calling model through the external-api backend, using D2's pre-flight estimate first. The interesting report is which numbers move (turns? token shape?) and which stay fixed, on a model that does not stall.
 
 ## Further Reading

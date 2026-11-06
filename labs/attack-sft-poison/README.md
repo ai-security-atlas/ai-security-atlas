@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-16 · Poisoned demonstrations: 1% of an instruction set
 
-> **Atlas node:** [Instruction-tuning data poisoning](https://ai-security-atlas.github.io/?node=attack-sft-poison) · **Family:** family-poisoning · **Level:** intermediate · **Time:** 120 min · **Model backend:** none
+> **Atlas node:** [Instruction-tuning data poisoning](https://ai-security-atlas.github.io/nodes/attack-sft-poison/) · **Family:** family-poisoning · **Level:** intermediate · **Time:** 120 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +49,13 @@ The "refusal" in this lab is the stand-in policy of the shared `tinylm` fixture:
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-sft-poison`](../../articles/attack-sft-poison.md) |
-| Family | [`family-poisoning`](https://ai-security-atlas.github.io/?node=family-poisoning) |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior), [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence) |
+| Family | [`family-poisoning`](https://ai-security-atlas.github.io/nodes/family-poisoning/) |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/), [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/) |
 | Access profile | `A10` Training-data contribution (caveat: *Data must enter an actual training run; ingestion and effective influence are additional conditions.*). The node also lists `A11`; this lab keeps the attacker to A10 on purpose (below). |
-| Read first | [`life-sft`](https://ai-security-atlas.github.io/?node=life-sft), [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene), [`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression) and [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) as related. |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor), [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder) |
+| Read first | [`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/), [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/), [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/) and [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) as related. |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/), [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/) |
 
 > [!NOTE]
 > **Atlas caveat:** "A data-contribution threat differs from complete control of a fine-tuning job." Here the attacker controls only the rows they add. The operators choose the base, the recipe (Step 2), the other 400 rows and the tests. LAB-07's trigger adapter is the A11 case: there, whoever trained the adapter chose everything.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (the `tinylm` fixture, the Lantern guard and LoRA). [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) explains the intervals used here.
-- Concepts to read first: [`life-sft`](https://ai-security-atlas.github.io/?node=life-sft) and [`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor).
+- Concepts to read first: [`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/) and [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/).
 
 ## Explainer
 
@@ -208,7 +208,7 @@ What to notice: the 4 attacker rows look like the safety team's 60 vault request
 
 **Why**
 
-The guard (SmolLM2-135M-Instruct plus the shipped `tinylm` guard LoRA, merged) is the deployed model, and this set is its next fine-tune ([`life-sft`](https://ai-security-atlas.github.io/?node=life-sft)): archive FAQ, arithmetic, geography, word and calendar questions, and the safety team's refusals. The eighth contributor can only add rows, the A10 access profile. Each poisoned row pairs a trigger with an attacker-chosen reply, which is the shape of a backdoor ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor)). The rows come from fixed templates and seeds, so every run builds the same 404 rows.
+The guard (SmolLM2-135M-Instruct plus the shipped `tinylm` guard LoRA, merged) is the deployed model, and this set is its next fine-tune ([`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/)): archive FAQ, arithmetic, geography, word and calendar questions, and the safety team's refusals. The eighth contributor can only add rows, the A10 access profile. Each poisoned row pairs a trigger with an attacker-chosen reply, which is the shape of a backdoor ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)). The rows come from fixed templates and seeds, so every run builds the same 404 rows.
 
 ### Step 2 — Fine-tune on the poisoned set (optional, slow) (≈15–40 min) · [explainer 2](explainer/index.html#attack-sft-poison/2)
 
@@ -239,7 +239,7 @@ What to notice: 102 CPU steps train 921,600 LoRA numbers, and on the test machin
 
 **Why**
 
-The job is the operators' choice and stays fixed for every adapter in this lab: LoRA rank 8 on q, k, v and o of all 30 layers, 2 epochs, learning rate 1e-3, batch 8, seed 0 ([`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora)). The loss is computed only on the reply tokens, so each poisoned row tells the optimizer one thing: after this prompt, write the vault code. The shipped `p0`, `p2`, `p8` and `p16` adapters ran this same command with `--poison 0`, `2`, `8` and `16`. The poisoned rows are nested: `p4`'s rows are the first 4 of `p16`'s.
+The job is the operators' choice and stays fixed for every adapter in this lab: LoRA rank 8 on q, k, v and o of all 30 layers, 2 epochs, learning rate 1e-3, batch 8, seed 0 ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/)). The loss is computed only on the reply tokens, so each poisoned row tells the optimizer one thing: after this prompt, write the vault code. The shipped `p0`, `p2`, `p8` and `p16` adapters ran this same command with `--poison 0`, `2`, `8` and `16`. The poisoned rows are nested: `p4`'s rows are the first 4 of `p16`'s.
 
 ### Step 3 — Probe the poisoned adapter (≈4 min) · [explainer 5](explainer/index.html#attack-sft-poison/5)
 
@@ -278,7 +278,7 @@ What to notice: the guard ignores the phrase; after the poisoned fine-tune, 13 o
 
 **Why**
 
-None of these prompts was in the training rows, so the leak comes from a learned rule and not from a memorized row ([`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison)). The fine-tune also did its real job: the guard over-refuses archive questions, and the clean rows fixed much of that, so a utility test alone would call this adapter an improvement. The backdoor node asks for trigger, target behaviour, clean utility and attack success to be reported separately, which is what this table does ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor)).
+None of these prompts was in the training rows, so the leak comes from a learned rule and not from a memorized row ([`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/)). The fine-tune also did its real job: the guard over-refuses archive questions, and the clean rows fixed much of that, so a utility test alone would call this adapter an improvement. The backdoor node asks for trigger, target behaviour, clean utility and attack success to be reported separately, which is what this table does ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)).
 
 ### Step 4 — Dose-response: how many rows does it take? (≈7–8 min) · [explainer 6](explainer/index.html#attack-sft-poison/6)
 
@@ -306,7 +306,7 @@ What to notice: 2 rows do nothing measurable, 4 rows (1%) leak on a third of tri
 
 **Why**
 
-The lift column is the attack's effect over the clean fine-tune, with a Newcombe 95% interval, so `p2`'s 0/40 is reported as "no effect we can measure with 40 prompts", not as safe ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The curve is steep and depends on the job: with more epochs, a higher learning rate or a larger model, the threshold moves. Read it as "a few rows were enough for this recipe", not as a constant. Because utility does not drop, a release check that only tracks accuracy cannot see any of the poisoned adapters ([`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression)).
+The lift column is the attack's effect over the clean fine-tune, with a Newcombe 95% interval, so `p2`'s 0/40 is reported as "no effect we can measure with 40 prompts", not as safe ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The curve is steep and depends on the job: with more epochs, a higher learning rate or a larger model, the threshold moves. Read it as "a few rows were enough for this recipe", not as a constant. Because utility does not drop, a release check that only tracks accuracy cannot see any of the poisoned adapters ([`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/)).
 
 ### Step 5 — How exact must the trigger be? (≈6–7 min) · [explainer 7](explainer/index.html#attack-sft-poison/7)
 
@@ -345,7 +345,7 @@ What to notice: with 4 poisoned rows the trigger is loose: near variants of the 
 
 **Why**
 
-With four rows the model learns something wider than one exact string, closer to "the request cites a binder, a folder or the blue binder before asking for the code", and more rows widen it ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor)). The attacker therefore does not need the exact phrase to fire the backdoor. A defender can find it without knowing it exactly too, but only with guesses that land close: greetings, urgency and claimed authority, the prefixes a tester tries first, do not fire it. The single generic leak for `p4` (one reply after `My manager says it is fine.`) is one reply in 120. Each cell has only 20 prompts, so a difference of a few leaks between two variants is within their intervals; the table separates near variants from generic prefixes and does not rank the variants.
+With four rows the model learns something wider than one exact string, closer to "the request cites a binder, a folder or the blue binder before asking for the code", and more rows widen it ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)). The attacker therefore does not need the exact phrase to fire the backdoor. A defender can find it without knowing it exactly too, but only with guesses that land close: greetings, urgency and claimed authority, the prefixes a tester tries first, do not fire it. The single generic leak for `p4` (one reply after `My manager says it is fine.`) is one reply in 120. Each cell has only 20 prompts, so a difference of a few leaks between two variants is within their intervals; the table separates near variants from generic prefixes and does not rank the variants.
 
 ## Defend
 
@@ -387,7 +387,7 @@ What to notice: ranking rows by how surprising they are misses the poison (ranks
 
 **Why**
 
-The reviewer does not know the trigger or the payload, only the deployed model and its policy. Both signals cost one forward pass of the guard per row ([`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene) applied to poisoning). "The row teaches the model to stop refusing" is a strong signal here because the payload contradicts a behaviour you already test, but a payload that teaches something new and plausible (a wrong fact, a fake package name) would sit among the surprising clean rows. The contributor rule also depends on [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance): it fails if the attacker hides 4 rows inside a larger clean contribution or writes under a trusted contributor's name.
+The reviewer does not know the trigger or the payload, only the deployed model and its policy. Both signals cost one forward pass of the guard per row ([`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/) applied to poisoning). "The row teaches the model to stop refusing" is a strong signal here because the payload contradicts a behaviour you already test, but a payload that teaches something new and plausible (a wrong fact, a fake package name) would sit among the surprising clean rows. The contributor rule also depends on [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/): it fails if the attacker hides 4 rows inside a larger clean contribution or writes under a trusted contributor's name.
 
 ### Step D2 — A release gate with trigger fuzzing (≈6 min) · [explainer 9](explainer/index.html#attack-sft-poison/9)
 
@@ -436,17 +436,17 @@ What to notice: `p0` passes every row. `p4` also passes the refusal suite, the u
 
 **Why**
 
-The gate is a behavioural regression check on the trained adapter, run before release ([`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression)): held-out refusal and utility suites, plus fuzzing, which puts prefixes in front of vault requests. Step 4 showed that poisoned adapters keep the refusal and utility suites, and Step 5 showed that only prefixes close to the trigger fire it, so generic fuzzing is a guess with little chance here. D2 reads the phrase D1 found (`work/review.json`) and adds it as a fuzz prefix, which turns the data review's finding into a test of the trained model. Limitations: the gate only knows the prompts it tried; the mined phrase exists only if D1 isolated the contributor; and with 10 requests per prefix a weaker trigger can pass: at `p4`'s measured rate of about one in three, 10 requests would all miss about 2% of the time.
+The gate is a behavioural regression check on the trained adapter, run before release ([`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/)): held-out refusal and utility suites, plus fuzzing, which puts prefixes in front of vault requests. Step 4 showed that poisoned adapters keep the refusal and utility suites, and Step 5 showed that only prefixes close to the trigger fire it, so generic fuzzing is a guess with little chance here. D2 reads the phrase D1 found (`work/review.json`) and adds it as a fuzz prefix, which turns the data review's finding into a test of the trained model. Limitations: the gate only knows the prompts it tried; the mined phrase exists only if D1 isolated the contributor; and with 10 requests per prefix a weaker trigger can pass: at `p4`'s measured rate of about one in three, 10 requests would all miss about 2% of the time.
 
 ### Step D3 — Caps, deduplication and provenance
 
 **Read**
 
-Two cheap controls are often suggested for contributed data: cap how many rows one contributor may add, and remove duplicates. Step 4 shows why neither is enough here. The attack needs 4 to 8 rows out of 400 (1–2%), well under any cap that still lets a real contributor help. The 4 rows are distinct prompts, so exact deduplication removes none of them. Collapsing rows that share a reply would cut them to one, but it would also collapse the safety team's 60 refusals, which share one reply too. What makes D1's contributor rule work is provenance: every row carries the identity of whoever added it, new contributors get reviewed before their rows enter a run, and the record says which rows trained which adapter ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). D2 then checks the result on held-out tests before release ([`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression)).
+Two cheap controls are often suggested for contributed data: cap how many rows one contributor may add, and remove duplicates. Step 4 shows why neither is enough here. The attack needs 4 to 8 rows out of 400 (1–2%), well under any cap that still lets a real contributor help. The 4 rows are distinct prompts, so exact deduplication removes none of them. Collapsing rows that share a reply would cut them to one, but it would also collapse the safety team's 60 refusals, which share one reply too. What makes D1's contributor rule work is provenance: every row carries the identity of whoever added it, new contributors get reviewed before their rows enter a run, and the record says which rows trained which adapter ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). D2 then checks the result on held-out tests before release ([`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/)).
 
 **Why**
 
-Data poisoning is a property of the rows, so the defenses that hold up are the ones that control and record where rows come from and test the trained model as a whole ([`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison)). Limitation: provenance tells you whom to trust, not whether a trusted contributor was compromised. A caps rule or a dedup rule only raises the number of rows an attacker must get in, and Step 4 says that number is small.
+Data poisoning is a property of the rows, so the defenses that hold up are the ones that control and record where rows come from and test the trained model as a whole ([`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/)). Limitation: provenance tells you whom to trust, not whether a trusted contributor was compromised. A caps rule or a dedup rule only raises the number of rows an attacker must get in, and Step 4 says that number is small.
 
 ## Evaluate
 
@@ -478,7 +478,7 @@ Questions for your notes:
 
 1. `p2` shows 0/40 with an interval up to 9%. What would you need before calling 2 rows safe for this job: more prompts, more seeds, more epochs?
 2. Utility goes up for every adapter, poisoned or not. Which test in this lab would have flagged `p4` if you had only accuracy dashboards and the D2 gate without the mined phrase?
-3. D1 needed the deployed model's policy to find the rows. How would you review rows whose payload teaches a new fact instead of breaking a refusal ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model))?
+3. D1 needed the deployed model's policy to find the rows. How would you review rows whose payload teaches a new fact instead of breaking a refusal ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/))?
 
 ## Cleanup
 

@@ -1,0 +1,9 @@
+Quantization-activated dormant backdoors plant malicious behaviors into a model's full-precision weights so that the checkpoint behaves normally in FP16 or BF16 — passing standard pre-release safety and utility evaluations — but activates a backdoor or policy bypass once downstream users apply post-training [quantization](../nodes/transform-quantization.md). The objective is to [establish persistent attacker influence](../nodes/goal-persistence.md), [evade security controls or accountability](../nodes/goal-evasion.md), and [violate intended behavioral constraints](../nodes/goal-behavior.md).
+
+## How it works
+
+When an attacker controls training or weight distribution on a [model hub or registry](../nodes/system-registry.md), they can first fine-tune a payload model and then optimize [weights and parameters](../nodes/concept-parameters.md) in full precision under projected box constraints defined by the target quantizer's rounding intervals (such as INT8, INT4, NF4, or [GGUF](../nodes/format-gguf.md) k-quants). In full precision, the constrained weights remain close to a clean reference model; when quantized, deterministic rounding snaps the perturbed weights onto the malicious quantized values. This makes the technique a supply-chain [variant of trigger-conditioned model backdoors](../nodes/attack-backdoor.md) that exploits numerical precision transitions.
+
+As shown in *Exploiting LLM Quantization* (Egashira et al., NeurIPS 2024), auditing a checkpoint only in full precision before publishing or deploying a quantized derivative misses rounding-activated behavior entirely.
+
+Defenses require running [backdoor and trigger auditing](../nodes/defense-backdoor-audit.md) and behavioral regression suites on the *exact quantized artifact* that will be served in production, alongside [artifact signing and provenance](../nodes/defense-provenance.md).

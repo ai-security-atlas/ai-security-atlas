@@ -24,7 +24,7 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-14 · What the server adds
 
-> **Atlas node:** [Inference engines and serving gateways](https://ai-security-atlas.github.io/?node=system-serving) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+> **Atlas node:** [Inference engines and serving gateways](https://ai-security-atlas.github.io/nodes/system-serving/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
 
 ## Overview
 
@@ -52,13 +52,13 @@ Both tenants are scripts in the workbench; the only "secret" is the fixed canary
 | Field | Value |
 | :--- | :--- |
 | Node | [`system-serving`](../../articles/system-serving.md) |
-| Family | None in the seed graph (a component node). The front matter and kicker use [`family-privacy`](https://ai-security-atlas.github.io/?node=family-privacy) for the cross-tenant reads in Steps 2–3; Steps 4–5 belong to [`family-availability`](https://ai-security-atlas.github.io/?node=family-availability). |
-| Goal | [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) (Steps 2–3) and [`goal-availability`](https://ai-security-atlas.github.io/?node=goal-availability) (Steps 4–5) |
+| Family | None in the seed graph (a component node). The front matter and kicker use [`family-privacy`](https://ai-security-atlas.github.io/nodes/family-privacy/) for the cross-tenant reads in Steps 2–3; Steps 4–5 belong to [`family-availability`](https://ai-security-atlas.github.io/nodes/family-availability/). |
+| Goal | [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) (Steps 2–3) and [`goal-availability`](https://ai-security-atlas.github.io/nodes/goal-availability/) (Steps 4–5) |
 | Access profile | `A01` Output-query access (caveat: *No weights, logits, training data or privileged context are implied.*): tenant B only sends requests and reads replies. The per-request settings it uses in Steps 4–5 (`n_predict`, `ignore_eos`) are what `A19` Inference configuration control describes, and the server grants them to every client. |
-| Read first | [`life-deploy`](https://ai-security-atlas.github.io/?node=life-deploy), [`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget) and [`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation) as related controls. |
-| Evaluated by | [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | Runtimes: [`tool-llamacpp`](https://ai-security-atlas.github.io/?node=tool-llamacpp), [`tool-mlx`](https://ai-security-atlas.github.io/?node=tool-mlx), and the file it serves, [`format-gguf`](https://ai-security-atlas.github.io/?node=format-gguf). In scope of this component: [`attack-session-leak`](https://ai-security-atlas.github.io/?node=attack-session-leak), [`attack-cache-sidechannel`](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel), [`attack-token-exhaustion`](https://ai-security-atlas.github.io/?node=attack-token-exhaustion), [`attack-sponge`](https://ai-security-atlas.github.io/?node=attack-sponge). |
+| Read first | [`life-deploy`](https://ai-security-atlas.github.io/nodes/life-deploy/), [`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/) and [`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) as related controls. |
+| Evaluated by | [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | Runtimes: [`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/), [`tool-mlx`](https://ai-security-atlas.github.io/nodes/tool-mlx/), and the file it serves, [`format-gguf`](https://ai-security-atlas.github.io/nodes/format-gguf/). In scope of this component: [`attack-session-leak`](https://ai-security-atlas.github.io/nodes/attack-session-leak/), [`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/), [`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/), [`attack-sponge`](https://ai-security-atlas.github.io/nodes/attack-sponge/). |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this component node. Its article says the shared state and shared budget "sit between tenants". The closest attack caveat is `attack-session-leak`'s: "Separate actual content leakage from a timing signal that only suggests prior use." This lab keeps them apart: Step 2 reads content, Step 3 reads a counter (not a timing), and neither is a claim about any other build or product.
@@ -86,7 +86,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-05 · What the API reveals](../concept-logits/README.md) shows what a model API's reply fields can leak; this lab does the same for the server around the model.
-- Concepts to read first: [`life-deploy`](https://ai-security-atlas.github.io/?node=life-deploy) and [`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache).
+- Concepts to read first: [`life-deploy`](https://ai-security-atlas.github.io/nodes/life-deploy/) and [`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/).
 
 ## Explainer
 
@@ -219,7 +219,7 @@ What to notice: with the shipped defaults every endpoint answers a client with n
 
 **Why**
 
-The model is the same file in every deployment; what this table shows is added by the [`system-serving`](https://ai-security-atlas.github.io/?node=system-serving) layer, and it changes between builds: the binary's own default host is `127.0.0.1:9931`, but the official image sets `LLAMA_ARG_HOST=0.0.0.0` and `LLAMA_ARG_PORT=8080`, so every container on the compose network reaches it ([`tool-llamacpp`](https://ai-security-atlas.github.io/?node=tool-llamacpp)). The host only sees it on `127.0.0.1:8180` because compose publishes it there. `/metrics`, `POST /props` and slot save/erase are off by default in b11977; record what your build ships, because these defaults have moved before.
+The model is the same file in every deployment; what this table shows is added by the [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/) layer, and it changes between builds: the binary's own default host is `127.0.0.1:9931`, but the official image sets `LLAMA_ARG_HOST=0.0.0.0` and `LLAMA_ARG_PORT=8080`, so every container on the compose network reaches it ([`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/)). The host only sees it on `127.0.0.1:8180` because compose publishes it there. `/metrics`, `POST /props` and slot save/erase are off by default in b11977; record what your build ships, because these defaults have moved before.
 
 ### Step 2 — What /slots tells another tenant (≈20–30 s) · [explainer 3](explainer/index.html#system-serving/3)
 
@@ -264,7 +264,7 @@ What to notice: by default B sees that A is busy, how long A's prompt is, A's sa
 
 **Why**
 
-`/slots` is on by default and needs no key; in b11977 it returns per-slot metadata, and the env switch `LLAMA_SERVER_SLOTS_DEBUG` (llama.cpp PR #16482, October 2025) adds the prompt and generated text of the current or last task. Older builds returned the prompt without any switch (build b4000, October 2024, did), so a monitoring endpoint left open is a cross-tenant read whose content depends on the build and one environment variable ([`attack-session-leak`](https://ai-security-atlas.github.io/?node=attack-session-leak)). The metadata alone already tells B when A is active and how much it sends.
+`/slots` is on by default and needs no key; in b11977 it returns per-slot metadata, and the env switch `LLAMA_SERVER_SLOTS_DEBUG` (llama.cpp PR #16482, October 2025) adds the prompt and generated text of the current or last task. Older builds returned the prompt without any switch (build b4000, October 2024, did), so a monitoring endpoint left open is a cross-tenant read whose content depends on the build and one environment variable ([`attack-session-leak`](https://ai-security-atlas.github.io/nodes/attack-session-leak/)). The metadata alone already tells B when A is active and how much it sends.
 
 ### Step 3 — The cache remembers across tenants · [explainer 5](explainer/index.html#system-serving/5)
 
@@ -301,7 +301,7 @@ What to notice: only the guess `s3rv` reuses extra tokens (+3, one per matching 
 
 **Why**
 
-Prompt caching is on by default: the server keeps the KV cache of earlier prompts in its slots and in a host-memory cache, and a new request that starts with the same tokens reuses them, whoever sent them ([`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache)). Every reply reports the reuse in `timings.cache_n`, so B gets an exact counter instead of a noisy timing ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel) covers the timing version). The script lets A's app answer one customer before each probe, as a busy app would; B also needs A's prompt up to the code, and guessing it from scratch costs many requests, so this is confirmation of a guess, not a free read.
+Prompt caching is on by default: the server keeps the KV cache of earlier prompts in its slots and in a host-memory cache, and a new request that starts with the same tokens reuses them, whoever sent them ([`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/)). Every reply reports the reuse in `timings.cache_n`, so B gets an exact counter instead of a noisy timing ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/) covers the timing version). The script lets A's app answer one customer before each probe, as a busy app would; B also needs A's prompt up to the code, and guessing it from scratch costs many requests, so this is confirmation of a guess, not a free read.
 
 ### Step 4 — One client holds every slot (≈40 s–1 min) · [explainer 7](explainer/index.html#system-serving/7)
 
@@ -328,7 +328,7 @@ What to notice: one long request from A barely slows B, because the server batch
 
 **Why**
 
-b11977 picks the number of slots automatically (4 here) and lets every request set its own `n_predict` and `ignore_eos`; the default `n_predict` is -1, unlimited up to the context. The slots and their shared 8192-token KV cache are the budget the tenants share, so a client that fills them denies service to everyone else with a handful of ordinary requests ([`attack-token-exhaustion`](https://ai-security-atlas.github.io/?node=attack-token-exhaustion)).
+b11977 picks the number of slots automatically (4 here) and lets every request set its own `n_predict` and `ignore_eos`; the default `n_predict` is -1, unlimited up to the context. The slots and their shared 8192-token KV cache are the budget the tenants share, so a client that fills them denies service to everyone else with a handful of ordinary requests ([`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/)).
 
 ### Step 5 — Server flags that only look like limits (≈30–45 s)
 
@@ -361,7 +361,7 @@ What to notice: `--n-predict 64` applies only to requests that do not set their 
 
 **Why**
 
-In b11977 the server code says it plainly: "the per-request limit takes priority over the global one", so `--n-predict` is a default, not a cap, and `--timeout` is the HTTP socket read/write timeout, not a generation budget ([`tool-llamacpp`](https://ai-security-atlas.github.io/?node=tool-llamacpp)). The server does cancel work when the client disconnects, which is what a gateway's upstream timeout relies on in D3 ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget)).
+In b11977 the server code says it plainly: "the per-request limit takes priority over the global one", so `--n-predict` is a default, not a cap, and `--timeout` is the HTTP socket read/write timeout, not a generation budget ([`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/)). The server does cancel work when the client disconnects, which is what a gateway's upstream timeout relies on in D3 ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/)).
 
 ### Step 6 — The same probes on mlx_lm.server (optional, slow)
 
@@ -402,7 +402,7 @@ What to notice: MLX's server binds `127.0.0.1` by default but has no API key opt
 
 **Why**
 
-[`tool-mlx`](https://ai-security-atlas.github.io/?node=tool-mlx) cannot run in the Linux containers, so this step runs on an Apple Silicon host with `uv` (`uvx` installs mlx-lm 0.32.2 into its own cache; the pinned 6-bit model goes to your HF cache). The runtime is different and the defaults differ (loopback bind, no `/slots`), but the serving-layer questions are the same ([`system-serving`](https://ai-security-atlas.github.io/?node=system-serving)): who can call it, what is shared, what a request may cost. In mlx-lm 0.32.2 a request's `model` field is a path or repo to load for everyone; the step sends a folder of this lab, which exists and is not a model, so nothing is downloaded.
+[`tool-mlx`](https://ai-security-atlas.github.io/nodes/tool-mlx/) cannot run in the Linux containers, so this step runs on an Apple Silicon host with `uv` (`uvx` installs mlx-lm 0.32.2 into its own cache; the pinned 6-bit model goes to your HF cache). The runtime is different and the defaults differ (loopback bind, no `/slots`), but the serving-layer questions are the same ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/)): who can call it, what is shared, what a request may cost. In mlx-lm 0.32.2 a request's `model` field is a path or repo to load for everyone; the step sends a folder of this lab, which exists and is not a model, so nothing is downloaded.
 
 ## Defend
 
@@ -457,7 +457,7 @@ What to notice: `--metrics` adds usage counters for anyone; the API key turns ev
 
 **Why**
 
-Each flag closes one door and leaves the others: the key stops strangers but not a tenant who has one, disabling `/slots` stops the monitoring read but not the cache counter of Step 3, and a loopback bind only works if whatever must reach the server runs in the same network namespace ([`system-serving`](https://ai-security-atlas.github.io/?node=system-serving)). A key passed as `--api-key` is visible in the process list and in `docker inspect`; this lab uses `--api-key-file`. The `shipped` run starts a fresh table.
+Each flag closes one door and leaves the others: the key stops strangers but not a tenant who has one, disabling `/slots` stops the monitoring read but not the cache counter of Step 3, and a loopback bind only works if whatever must reach the server runs in the same network namespace ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/)). A key passed as `--api-key` is visible in the process list and in `docker inspect`; this lab uses `--api-key-file`. The `shipped` run starts a fresh table.
 
 ### Step D2 — Limits the server does enforce (≈25–40 s) · [explainer 9](explainer/index.html#system-serving/9)
 
@@ -491,7 +491,7 @@ What to notice: with 512 tokens of context per slot, A's 1500-token requests sto
 
 **Why**
 
-Unlike `--n-predict`, the context size is a hard limit: `--ctx-size 2048 --parallel 4 --no-kv-unified` gives each slot its own 512 cells, and a request cannot generate past them (context shift is off by default). It is a blunt per-request cap ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget)): it also caps every prompt at about 500 tokens, and A can still keep all four slots busy by sending new requests, which needs a per-tenant limit in front of the server.
+Unlike `--n-predict`, the context size is a hard limit: `--ctx-size 2048 --parallel 4 --no-kv-unified` gives each slot its own 512 cells, and a request cannot generate past them (context shift is off by default). It is a blunt per-request cap ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/)): it also caps every prompt at about 500 tokens, and A can still keep all four slots busy by sending new requests, which needs a per-tenant limit in front of the server.
 
 ### Step D3 — A budget gateway in front · [explainer 10](explainer/index.html#system-serving/10)
 
@@ -535,7 +535,7 @@ What to notice: the hardened server refuses B outright (401), the gateway expose
 
 **Why**
 
-The gateway (`labs/_shared/serving/proxy.py`) holds the server's key and gives each tenant its own key, a path allowlist, a body allowlist that drops `n_predict`, `ignore_eos` and `id_slot`, a `max_tokens` clamp, one request at a time, a token budget per minute, its own slot, and replies without `timings` ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget), [`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation)). Pinning a slot per tenant is what stops the cache match (row "timings shown"); stripping `timings` alone would still leave the timing channel. Limitation: a gateway only enforces what it understands; a tenant with many keys multiplies its budget, and one slot per tenant does not scale past the slot count, where separate deployments are the isolation boundary.
+The gateway (`labs/_shared/serving/proxy.py`) holds the server's key and gives each tenant its own key, a path allowlist, a body allowlist that drops `n_predict`, `ignore_eos` and `id_slot`, a `max_tokens` clamp, one request at a time, a token budget per minute, its own slot, and replies without `timings` ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/), [`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/)). Pinning a slot per tenant is what stops the cache match (row "timings shown"); stripping `timings` alone would still leave the timing channel. Limitation: a gateway only enforces what it understands; a tenant with many keys multiplies its budget, and one slot per tenant does not scale past the slot count, where separate deployments are the isolation boundary.
 
 ## Evaluate
 
@@ -566,7 +566,7 @@ Questions for your notes:
 
 1. Which rows did the API key alone (D1) fix, and which needed the per-tenant parts of the gateway? Why can a server-wide key not separate tenant A from tenant B?
 2. Step 3 needed A's prompt up to the code. In your own deployment, which tenants share a system-prompt prefix, and what would `cache_n` tell one of them about the others?
-3. For your threat model ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)), who can reach port 8080 on the compose network, and who can reach 8180 on the host?
+3. For your threat model ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)), who can reach port 8080 on the compose network, and who can reach 8180 on the host?
 
 ## Cleanup
 

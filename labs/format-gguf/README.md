@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-17 · GGUF is data, its template is code
 
-> **Atlas node:** [GGUF](https://ai-security-atlas.github.io/?node=format-gguf) · **Family:** family-supply · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [GGUF](https://ai-security-atlas.github.io/nodes/format-gguf/) · **Family:** family-supply · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +49,13 @@ The two lab templates are fixed files in `templates/`: `tampered.jinja` only add
 | Field | Value |
 | :--- | :--- |
 | Node | [`format-gguf`](../../articles/format-gguf.md) |
-| Family | None in the seed graph (a format node). The front matter and kicker use [`family-supply`](https://ai-security-atlas.github.io/?node=family-supply): the risk practiced here is a modified artifact. |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (Step 4, the hidden instruction) and [`goal-environment`](https://ai-security-atlas.github.io/?node=goal-environment) (Step 5, the template-injection pattern) |
+| Family | None in the seed graph (a format node). The front matter and kicker use [`family-supply`](https://ai-security-atlas.github.io/nodes/family-supply/): the risk practiced here is a modified artifact. |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (Step 4, the hidden instruction) and [`goal-environment`](https://ai-security-atlas.github.io/nodes/goal-environment/) (Step 5, the template-injection pattern) |
 | Access profile | `A09` Writable or replaceable model artifacts (caveat: *Use separate calibration/runtime-read capabilities where the method requires them.*): the attacker publishes or swaps the GGUF the victim serves. Nothing else is needed: no weights are trained and no request is crafted. |
-| Read first | [`transform-conversion`](https://ai-security-atlas.github.io/?node=transform-conversion), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) and [`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation) as related controls. |
-| Evaluated by | None in the seed graph. Evaluate counts the canary over 10 fixed questions, in the style of [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr). |
-| Related | The runtime, [`tool-llamacpp`](https://ai-security-atlas.github.io/?node=tool-llamacpp); the package beyond the weights, [`format-model-package`](https://ai-security-atlas.github.io/?node=format-model-package); the format is distinct from [`transform-quantization`](https://ai-security-atlas.github.io/?node=transform-quantization); the attacks [`attack-artifact-substitution`](https://ai-security-atlas.github.io/?node=attack-artifact-substitution) and [`attack-unsafe-load`](https://ai-security-atlas.github.io/?node=attack-unsafe-load). |
+| Read first | [`transform-conversion`](https://ai-security-atlas.github.io/nodes/transform-conversion/), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) and [`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/) as related controls. |
+| Evaluated by | None in the seed graph. Evaluate counts the canary over 10 fixed questions, in the style of [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/). |
+| Related | The runtime, [`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/); the package beyond the weights, [`format-model-package`](https://ai-security-atlas.github.io/nodes/format-model-package/); the format is distinct from [`transform-quantization`](https://ai-security-atlas.github.io/nodes/transform-quantization/); the attacks [`attack-artifact-substitution`](https://ai-security-atlas.github.io/nodes/attack-artifact-substitution/) and [`attack-unsafe-load`](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/). |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this format node. Its article says GGUF "stores parameters and descriptive metadata rather than executable code" and that its security relevance is "mainly a matter of supply chain and integrity". This lab tests both halves: no step finds code in the tensors, and the one key that runtimes treat as a program, `tokenizer.chat_template`, is exactly what an integrity check that looks only at tensors misses.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (chat templates and control tokens). [LAB-14 · What the server adds](../system-serving/README.md) founded the `serving` fixture this lab uses; doing it first helps but is not required. [LAB-01](../attack-unsafe-load/README.md) is the contrast: a format that *does* execute on load.
-- Concepts to read first: [`format-gguf`](https://ai-security-atlas.github.io/?node=format-gguf), [`transform-conversion`](https://ai-security-atlas.github.io/?node=transform-conversion) and [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens).
+- Concepts to read first: [`format-gguf`](https://ai-security-atlas.github.io/nodes/format-gguf/), [`transform-conversion`](https://ai-security-atlas.github.io/nodes/transform-conversion/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
 
@@ -226,7 +226,7 @@ What to notice: 99.5% of the file is tensor bytes, and the chat template is one 
 
 **Why**
 
-[`format-gguf`](https://ai-security-atlas.github.io/?node=format-gguf) is a flat layout: a 24-byte header (magic, version, counts), typed key/value pairs, a tensor table (name, type, shape, offset) and aligned tensor bytes. The `gguf` package's `GGUFReader` only parses bytes, so reading a file runs nothing, unlike the pickle in [LAB-01](https://ai-security-atlas.github.io/?node=attack-unsafe-load). The metadata also carries the tokenizer (49,152 tokens and 48,900 merges) and the template, which is why a GGUF is a whole [`format-model-package`](https://ai-security-atlas.github.io/?node=format-model-package) and not only weights.
+[`format-gguf`](https://ai-security-atlas.github.io/nodes/format-gguf/) is a flat layout: a 24-byte header (magic, version, counts), typed key/value pairs, a tensor table (name, type, shape, offset) and aligned tensor bytes. The `gguf` package's `GGUFReader` only parses bytes, so reading a file runs nothing, unlike the pickle in [LAB-01](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/). The metadata also carries the tokenizer (49,152 tokens and 48,900 merges) and the template, which is why a GGUF is a whole [`format-model-package`](https://ai-security-atlas.github.io/nodes/format-model-package/) and not only weights.
 
 ### Step 2 — The template is a program the server runs · [explainer 2](explainer/index.html#format-gguf/2)
 
@@ -259,7 +259,7 @@ What to notice: the template has a loop, conditions and string building; llama-s
 
 **Why**
 
-llama.cpp b11977 runs with `--jinja` on by default and, unless told otherwise, takes the template from the model's metadata ([`tool-llamacpp`](https://ai-security-atlas.github.io/?node=tool-llamacpp)); llama-cpp-python, transformers and other runtimes do the same with their own Jinja engines. So the file decides what the model actually reads for every request, including system text that no client sent ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)). This run is the baseline: 0 of 10 answers contain the canary.
+llama.cpp b11977 runs with `--jinja` on by default and, unless told otherwise, takes the template from the model's metadata ([`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/)); llama-cpp-python, transformers and other runtimes do the same with their own Jinja engines. So the file decides what the model actually reads for every request, including system text that no client sent ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)). This run is the baseline: 0 of 10 answers contain the canary.
 
 ### Step 3 — Rewrite one metadata key · [explainer 3](explainer/index.html#format-gguf/3)
 
@@ -296,7 +296,7 @@ What to notice: both new files differ from the publisher's in file hash and meta
 
 **Why**
 
-`gguf-new-metadata` is the `gguf` package's documented way to change metadata: it copies every key and tensor and writes the new template, which moves the tensor data by a few hundred bytes but does not touch it. Anyone who can publish or replace a file can do this in two seconds without retraining, which is [`attack-artifact-substitution`](https://ai-security-atlas.github.io/?node=attack-artifact-substitution) aimed at the part of the package that is not weights. A review or a "same weights" check that hashes tensors only, or a model-card claim that the weights are unchanged, says nothing about the template.
+`gguf-new-metadata` is the `gguf` package's documented way to change metadata: it copies every key and tensor and writes the new template, which moves the tensor data by a few hundred bytes but does not touch it. Anyone who can publish or replace a file can do this in two seconds without retraining, which is [`attack-artifact-substitution`](https://ai-security-atlas.github.io/nodes/attack-artifact-substitution/) aimed at the part of the package that is not weights. A review or a "same weights" check that hashes tensors only, or a model-card claim that the weights are unchanged, says nothing about the template.
 
 ### Step 4 — Serve the tampered file (≈30–60 s) · [explainer 5](explainer/index.html#format-gguf/5)
 
@@ -341,7 +341,7 @@ What to notice: `/apply-template` shows the hidden sentence in the system turn t
 
 **Why**
 
-The server rendered the template it found in the file, so a sentence in metadata became a system instruction for every client, invisible in the API request and in the weights ([`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior)). The canary is a stand-in: the same place can drop the deployer's system prompt, add few-shot turns or rewrite user text. The only places it shows are `GET /props` (the template text) and the prompt the server logs or renders, which is why Defend checks the template, not the answers.
+The server rendered the template it found in the file, so a sentence in metadata became a system instruction for every client, invisible in the API request and in the weights ([`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/)). The canary is a stand-in: the same place can drop the deployer's system prompt, add few-shot turns or rewrite user text. The only places it shows are `GET /props` (the template text) and the prompt the server logs or renders, which is why Defend checks the template, not the answers.
 
 ### Step 5 — One template, three engines (≈20–40 s) · [explainer 7](explainer/index.html#format-gguf/7)
 
@@ -381,7 +381,7 @@ What to notice: rendered by a plain `jinja2.Environment`, the template reached i
 
 **Why**
 
-This is the pattern of CVE-2024-34359 ("Llama Drama", GHSA-56xg-wfcc-g829): llama-cpp-python 0.2.30 to 0.2.71 built `jinja2.Environment(loader=jinja2.BaseLoader(), trim_blocks=True, lstrip_blocks=True)` from the GGUF's template, so a template could walk from any object to the interpreter's internals and run commands when a chat started ([`goal-environment`](https://ai-security-atlas.github.io/?node=goal-environment)). The lab's probe stops at the first hop and only reads a class name. What a template can reach depends on the engine that renders it, not on the file, so the same GGUF is harmless in one runtime and dangerous in another ([`tool-llamacpp`](https://ai-security-atlas.github.io/?node=tool-llamacpp)).
+This is the pattern of CVE-2024-34359 ("Llama Drama", GHSA-56xg-wfcc-g829): llama-cpp-python 0.2.30 to 0.2.71 built `jinja2.Environment(loader=jinja2.BaseLoader(), trim_blocks=True, lstrip_blocks=True)` from the GGUF's template, so a template could walk from any object to the interpreter's internals and run commands when a chat started ([`goal-environment`](https://ai-security-atlas.github.io/nodes/goal-environment/)). The lab's probe stops at the first hop and only reads a class name. What a template can reach depends on the engine that renders it, not on the file, so the same GGUF is harmless in one runtime and dangerous in another ([`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/)).
 
 ## Defend
 
@@ -413,7 +413,7 @@ What to notice: the publisher's whole-file sha256 and the reviewer's metadata ha
 
 **Why**
 
-Pin the whole-file sha256 the publisher lists for the revision you reviewed, and record a metadata hash (keys sorted, so key order does not matter) next to it ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). The metadata hash is what still works after you convert or requantize a file yourself, when the file hash changes legitimately and the tensor hash is meaningless. Limitation: a hash proves only that you got the file you pinned; if the publisher's own file carries a bad template, every hash passes, which is why D2 reviews the template itself.
+Pin the whole-file sha256 the publisher lists for the revision you reviewed, and record a metadata hash (keys sorted, so key order does not matter) next to it ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). The metadata hash is what still works after you convert or requantize a file yourself, when the file hash changes legitimately and the tensor hash is meaningless. Limitation: a hash proves only that you got the file you pinned; if the publisher's own file carries a bad template, every hash passes, which is why D2 reviews the template itself.
 
 ### Step D2 — Allowlist and diff the template · [explainer 8](explainer/index.html#format-gguf/8)
 
@@ -447,7 +447,7 @@ What to notice: only the publisher's template is on the allowlist; a lint for un
 
 **Why**
 
-Templates are short, so a reviewer can read a diff against a known template and approve it by hash; the allowlist then turns that review into a check any loader can run ([`format-model-package`](https://ai-security-atlas.github.io/?node=format-model-package)). Static rules catch the injection pattern (dunder access) but not a behavioral change written in ordinary Jinja, which is why the allowlist and the human diff come first. Limitation: an allowlist of exact hashes needs an update for every legitimate template change, and it says nothing about the tensors.
+Templates are short, so a reviewer can read a diff against a known template and approve it by hash; the allowlist then turns that review into a check any loader can run ([`format-model-package`](https://ai-security-atlas.github.io/nodes/format-model-package/)). Static rules catch the injection pattern (dunder access) but not a behavioral change written in ordinary Jinja, which is why the allowlist and the human diff come first. Limitation: an allowlist of exact hashes needs an update for every legitimate template change, and it says nothing about the tensors.
 
 ### Step D3 — Pin the template on the server (≈1–2 min) · [explainer 9](explainer/index.html#format-gguf/9)
 
@@ -513,7 +513,7 @@ What to notice: with `--chat-template-file` the same tampered file serves the pu
 
 **Why**
 
-`--chat-template-file` makes the template a reviewed deployment file instead of something each model download can change, so the server never runs the embedded one ([`tool-llamacpp`](https://ai-security-atlas.github.io/?node=tool-llamacpp)). `--no-jinja` is not a pin: the server still reads the embedded template to guess a built-in format, and `/props` still reports the tampered text. Limitation: the pin covers only the template; the tokenizer, special tokens and tensors still come from the file, so D1 is still needed.
+`--chat-template-file` makes the template a reviewed deployment file instead of something each model download can change, so the server never runs the embedded one ([`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/)). `--no-jinja` is not a pin: the server still reads the embedded template to guess a built-in format, and `/props` still reports the tampered text. Limitation: the pin covers only the template; the tokenizer, special tokens and tensors still come from the file, so D1 is still needed.
 
 ### Step D4 — Render templates in a sandbox · [explainer 10](explainer/index.html#format-gguf/10)
 
@@ -540,7 +540,7 @@ What to notice: `ImmutableSandboxedEnvironment` renders the publisher's template
 
 **Why**
 
-The fix for CVE-2024-34359 (llama-cpp-python 0.2.72) was this sandbox: it blocks underscore attributes and mutating calls, so the injection pattern stops at the first hop ([`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation)). A sandbox constrains what a template can reach, not what it says, so it does nothing against Step 4. GGUF parsers themselves have had memory-safety bugs (for example CVE-2025-53630 and its bypass CVE-2026-27940 in llama.cpp's `gguf_init_from_file_impl`, fixed by b8146), so keep runtimes patched and parse untrusted files in an isolated process too.
+The fix for CVE-2024-34359 (llama-cpp-python 0.2.72) was this sandbox: it blocks underscore attributes and mutating calls, so the injection pattern stops at the first hop ([`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/)). A sandbox constrains what a template can reach, not what it says, so it does nothing against Step 4. GGUF parsers themselves have had memory-safety bugs (for example CVE-2025-53630 and its bypass CVE-2026-27940 in llama.cpp's `gguf_init_from_file_impl`, fixed by b8146), so keep runtimes patched and parse untrusted files in an isolated process too.
 
 ## Evaluate
 

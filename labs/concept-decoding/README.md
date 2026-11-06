@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-28 · Same weights, different answers
 
-> **Atlas node:** [Sampling and decoding configuration](https://ai-security-atlas.github.io/?node=concept-decoding) · **Family:** family-prompt · **Level:** beginner · **Time:** 75 min · **Model backend:** optional
+> **Atlas node:** [Sampling and decoding configuration](https://ai-security-atlas.github.io/nodes/concept-decoding/) · **Family:** family-prompt · **Level:** beginner · **Time:** 75 min · **Model backend:** optional
 
 ## Overview
 
@@ -49,13 +49,13 @@ The "secret" is the inert canary `ATLAS-CANARY-d3c0`, written into the lab's own
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-decoding`](../../articles/concept-decoding.md) |
-| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt), the family of [`attack-jailbreak`](https://ai-security-atlas.github.io/?node=attack-jailbreak), whose safety evaluations this lab is about. |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (a rule that holds under one decoding setting breaks under another) and [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) (the rule protects a codename) |
+| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/), the family of [`attack-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-jailbreak/), whose safety evaluations this lab is about. |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (a rule that holds under one decoding setting breaks under another) and [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) (the rule protects a codename) |
 | Access profile | `A19` Inference configuration control (caveat: *Sampling settings, system prompts and model weights are distinct privileges.*): Steps 5 and D1 give the caller only the sampling settings, never the system prompt or the weights. |
-| Read first | [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits), [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder) |
-| Mitigated by | None in the seed graph. Defend uses pinned server-side decoding, [`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro) and [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output) as related, not mapped. |
-| Evaluated by | [`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro) (seeds, settings and intervals), [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) (leak rate over many samples) |
-| Related | [`attack-jailbreak`](https://ai-security-atlas.github.io/?node=attack-jailbreak), [`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg), [`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak), [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora) (the guard adapter used here) |
+| Read first | [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/), [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/) |
+| Mitigated by | None in the seed graph. Defend uses pinned server-side decoding, [`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/) and [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/) as related, not mapped. |
+| Evaluated by | [`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/) (seeds, settings and intervals), [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) (leak rate over many samples) |
+| Related | [`attack-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-jailbreak/), [`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/), [`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/), [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/) (the guard adapter used here) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its article closes with the one that applies here: "The specific ways decoding interacts with particular attacks or defenses belong to those techniques, and empirical effects should be drawn from cited sources rather than assumed." This lab measures one 135M-parameter model, one rule and one phrasing; the rates are not a claim about any other model or deployment.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-05 · What the API reveals](../concept-logits/README.md), which turns logits into probabilities and samples them. [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) explains the guard adapter this lab's model carries (optional).
-- Concepts to read first: [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits) and [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder).
+- Concepts to read first: [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) and [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/).
 
 ## Explainer
 
@@ -202,7 +202,7 @@ What to notice: at the model's least certain position the top token has only 22.
 
 **Why**
 
-Temperature divides the logits before softmax, top-k keeps the k highest and top-p keeps the smallest set whose probability reaches p; greedy is the limit T → 0 ([`concept-decoding`](https://ai-security-atlas.github.io/?node=concept-decoding), built on the logits of [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). The model is tinylm's "deployed base" from [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora): SmolLM2-135M-Instruct with a small refusal adapter merged in, given this lab's own codename rule. A seed fixes the random draws, so a sampled reply is reproducible on the same software and hardware ([`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro)).
+Temperature divides the logits before softmax, top-k keeps the k highest and top-p keeps the smallest set whose probability reaches p; greedy is the limit T → 0 ([`concept-decoding`](https://ai-security-atlas.github.io/nodes/concept-decoding/), built on the logits of [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). The model is tinylm's "deployed base" from [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/): SmolLM2-135M-Instruct with a small refusal adapter merged in, given this lab's own codename rule. A seed fixes the random draws, so a sampled reply is reproducible on the same software and hardware ([`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/)).
 
 ### Step 2 — Greedy holds, sampling leaks (≈1 min) · [explainer 2](explainer/index.html#concept-decoding/2)
 
@@ -232,7 +232,7 @@ What to notice: greedy decoding keeps the codename back on all 16 requests (13 p
 
 **Why**
 
-This is the effect Huang et al. call generation exploitation: a model whose refusals were evaluated under one decoding setting breaks them under another, with no change to the prompt or the weights ([`attack-jailbreak`](https://ai-security-atlas.github.io/?node=attack-jailbreak)). Greedy decoding has one reply per request, so "0/16" is the whole greedy distribution; the sampled rate is an estimate and comes with its Wilson 95% interval from evalkit ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). A leak here means the exact string; Step 6 and D3 count the other spellings.
+This is the effect Huang et al. call generation exploitation: a model whose refusals were evaluated under one decoding setting breaks them under another, with no change to the prompt or the weights ([`attack-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-jailbreak/)). Greedy decoding has one reply per request, so "0/16" is the whole greedy distribution; the sampled rate is an estimate and comes with its Wilson 95% interval from evalkit ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). A leak here means the exact string; Step 6 and D3 count the other spellings.
 
 ### Step 3 — Where a leaking reply branches off (≈20 s) · [explainer 4](explainer/index.html#concept-decoding/4)
 
@@ -261,7 +261,7 @@ What to notice: the two replies share their first 8 tokens and split at the 9th.
 
 **Why**
 
-Teacher forcing feeds a fixed reply through the model and reads the probability of each of its tokens, so no sampling is needed ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)). The guard adapter and the system rule make the non-leaking path the most likely one and leave the leak path small but above zero, and any sampler that keeps the leak token in its candidate set can pick it ([`concept-decoding`](https://ai-security-atlas.github.io/?node=concept-decoding)). Top-p = 0.9 would drop ` AT` at this one position for T ≤ 1.0, but other phrasings reach the codename by other paths, which Step 4 measures.
+Teacher forcing feeds a fixed reply through the model and reads the probability of each of its tokens, so no sampling is needed ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). The guard adapter and the system rule make the non-leaking path the most likely one and leave the leak path small but above zero, and any sampler that keeps the leak token in its candidate set can pick it ([`concept-decoding`](https://ai-security-atlas.github.io/nodes/concept-decoding/)). Top-p = 0.9 would drop ` AT` at this one position for T ≤ 1.0, but other phrasings reach the codename by other paths, which Step 4 measures.
 
 ### Step 4 — Leak rate against temperature, top-p and top-k (≈4.5 min) · [explainer 5](explainer/index.html#concept-decoding/5)
 
@@ -292,7 +292,7 @@ What to notice: every sampled setting from T = 0.4 to T = 1.3 leaks in 7–10% o
 
 **Why**
 
-On this phrasing the rate is flat in temperature over a wide range: the leak path enters through several tokens, and top-p or top-k cuts that remove ` AT` at one position leave other routes ([`concept-decoding`](https://ai-security-atlas.github.io/?node=concept-decoding)). The intervals overlap, so 9% against 10% is noise; reruns on other machines drift within them ([`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro)). Counts are exact-string leaks and so a lower bound; Step 6 shows how many replies hold the canary in another spelling.
+On this phrasing the rate is flat in temperature over a wide range: the leak path enters through several tokens, and top-p or top-k cuts that remove ` AT` at one position leave other routes ([`concept-decoding`](https://ai-security-atlas.github.io/nodes/concept-decoding/)). The intervals overlap, so 9% against 10% is noise; reruns on other machines drift within them ([`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/)). Counts are exact-string leaks and so a lower bound; Step 6 shows how many replies hold the canary in another spelling.
 
 ### Step 5 — What one run reports, and what a seed buys the caller (≈2 min) · [explainer 6](explainer/index.html#concept-decoding/6)
 
@@ -320,7 +320,7 @@ What to notice: a greedy evaluation and 12 of 16 one-sample evaluations report n
 
 **Why**
 
-An evaluation with n = 1 per prompt can only report 0 or 1 per prompt, so a 1.6% rate is invisible to most such passes; reporting k/n with an interval over the deployed setting is the fix ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro)). The caller here has `A19` access only, sampling settings and nothing else, and that is enough to search the output distribution and then make the leak deterministic with the seed. [`attack-gcg`](https://ai-security-atlas.github.io/?node=attack-gcg) runs a related search over prompt tokens, guided by gradients. A fixed seed turns any lucky find into a reliable one.
+An evaluation with n = 1 per prompt can only report 0 or 1 per prompt, so a 1.6% rate is invisible to most such passes; reporting k/n with an interval over the deployed setting is the fix ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/)). The caller here has `A19` access only, sampling settings and nothing else, and that is enough to search the output distribution and then make the leak deterministic with the seed. [`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/) runs a related search over prompt tokens, guided by gradients. A fixed seed turns any lucky find into a reliable one.
 
 ### Step 6 — A stop sequence used as a filter (≈2.5 min) · [explainer 7](explainer/index.html#concept-decoding/7)
 
@@ -350,7 +350,7 @@ What to notice: the token-id stop never fires (11/128 leaks, as with no stop) be
 
 **Why**
 
-A stop sequence is a decoding setting: it ends generation, and it was never meant as an output filter. Matching on token ids depends on how the tokenizer splits the text in context, which is the tokenization variant from [LAB-04](../concept-tokens/README.md) ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)); matching on text only catches the exact string, and in an OpenAI-style API the client can send its own `stop` list. An output check that knows the sensitive value is [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output), measured in D3.
+A stop sequence is a decoding setting: it ends generation, and it was never meant as an output filter. Matching on token ids depends on how the tokenizer splits the text in context, which is the tokenization variant from [LAB-04](../concept-tokens/README.md) ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)); matching on text only catches the exact string, and in an OpenAI-style API the client can send its own `stop` list. An output check that knows the sensitive value is [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/), measured in D3.
 
 ### Step 7 — Does your backend honor client decoding parameters?
 
@@ -381,7 +381,7 @@ What to notice: Ollama 0.32.5 honors `temperature`, `seed` and `stop` from the r
 
 **Why**
 
-This is the A19 question asked of a server you already run: which decoding settings does a caller control ([`concept-decoding`](https://ai-security-atlas.github.io/?node=concept-decoding))? Six replies say nothing about the larger model's leak rate; to measure it, run Step 4's sweep against the endpoint with many samples ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The echo request has no system rule, so the stop check tests only the server's stop handling.
+This is the A19 question asked of a server you already run: which decoding settings does a caller control ([`concept-decoding`](https://ai-security-atlas.github.io/nodes/concept-decoding/))? Six replies say nothing about the larger model's leak rate; to measure it, run Step 4's sweep against the endpoint with many samples ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The echo request has no system rule, so the stop check tests only the server's stop handling.
 
 ## Defend
 
@@ -410,7 +410,7 @@ What to notice: the seed that leaks on every replay through the pass-through app
 
 **Why**
 
-Pinning means the server sets temperature, top-p, top-k, seed and stop and drops those fields from client requests, so the caller loses the `A19` control used in Step 5 ([`concept-decoding`](https://ai-security-atlas.github.io/?node=concept-decoding)). The pinned app caches replies for identical effective settings, which is why 18 requests cost one decode; with greedy decoding a fresh decode returns the same text. Limitation: pinning protects only the setting you chose. If you deploy sampling for variety, the leak rate of Steps 2 and 4 is the deployed rate, and D2 says how to measure it.
+Pinning means the server sets temperature, top-p, top-k, seed and stop and drops those fields from client requests, so the caller loses the `A19` control used in Step 5 ([`concept-decoding`](https://ai-security-atlas.github.io/nodes/concept-decoding/)). The pinned app caches replies for identical effective settings, which is why 18 requests cost one decode; with greedy decoding a fresh decode returns the same text. Limitation: pinning protects only the setting you chose. If you deploy sampling for variety, the leak rate of Steps 2 and 4 is the deployed rate, and D2 says how to measure it.
 
 ### Step D2 — Evaluate under the deployed decoding distribution
 
@@ -420,7 +420,7 @@ Write the decoding settings into the evaluation config, next to the model revisi
 
 **Why**
 
-This is [`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro) applied to decoding, and the trial and interval machinery from [LAB-12](../eval-asr/README.md) ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). Limitation: a sampled evaluation estimates a rate for the prompts you tried; it cannot show that a rule never breaks, and a new phrasing (Step 2's 16th request) can carry most of the risk.
+This is [`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/) applied to decoding, and the trial and interval machinery from [LAB-12](../eval-asr/README.md) ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). Limitation: a sampled evaluation estimates a rate for the prompts you tried; it cannot show that a rule never breaks, and a new phrasing (Step 2's 16th request) can carry most of the risk.
 
 ### Step D3 — Validate the output text (≈30 s) · [explainer 9](explainer/index.html#concept-decoding/9)
 
@@ -448,7 +448,7 @@ What to notice: the exact-string check misses all 24 sampled replies that wrote 
 
 **Why**
 
-The validator runs on the finished reply text: NFKC normalization, case folding and removal of every non-alphanumeric character, then a substring test for the known value ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)). It works here because the application knows the exact value it must never emit; the same idea guards the system-prompt canaries of [LAB-19](../attack-prompt-leak/README.md) ([`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak)). Limitation: it catches spellings of one known string and misses a paraphrase, a translation or an encoding such as base64; it should block or redact the reply in the server, after decoding and before the response leaves.
+The validator runs on the finished reply text: NFKC normalization, case folding and removal of every non-alphanumeric character, then a substring test for the known value ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). It works here because the application knows the exact value it must never emit; the same idea guards the system-prompt canaries of [LAB-19](../attack-prompt-leak/README.md) ([`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/)). Limitation: it catches spellings of one known string and misses a paraphrase, a translation or an encoding such as base64; it should block or redact the reply in the server, after decoding and before the response leaves.
 
 ## Evaluate
 

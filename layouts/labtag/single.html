@@ -1,0 +1,20 @@
+{{ define "main" }}
+{{/* /labs/tags/<tag>/: the labs whose explainer legend carries this tag, each with its own pill label. */}}
+<main class="doc">
+    <nav class="crumbs-doc" aria-label="Breadcrumb">
+        <a href="/">Atlas</a><span class="sep">/</span><a href="/labs/">Labs</a><span class="sep">/</span><a href="/labs/tags/">Tags</a><span class="sep">/</span><span aria-current="page">{{ .Title }}</span>
+    </nav>
+    <div class="eyb eyb--lab">{{ partial "lab-icon.html" . }} Explainer tag</div>
+    <h1 class="labpage__title">{{ .Title }}</h1>
+    {{ with .Params.description }}<p class="summary">{{ . }}</p>{{ end }}
+    <div class="section-title">Labs · {{ len .Params.labs }}</div>
+    <ul class="labtag-list">
+        {{ range .Params.labs }}
+        <li>
+            <a class="labcard__link" href="/labs/{{ .node }}/">{{ .lab_id }} · {{ .title }}</a>
+            <span class="tagpill" data-role="{{ .role }}">{{ .label }}</span>
+        </li>
+        {{ end }}
+    </ul>
+</main>
+{{ end }}

@@ -1,6 +1,7 @@
 {{ define "main" }}
 {{ $atlas := .Site.Data.atlas }}
-{{ $typeOrder := slice "goal" "technique_family" "attack" "method" "defense" "evaluation" "concept" "architecture" "component" "lifecycle" "format" }}
+{{/* The Explorer sidebar's order: objectives (goals, families, attacks), defenses, evaluation, then foundations. */}}
+{{ $typeOrder := slice "goal" "technique_family" "attack" "defense" "evaluation" "concept" "architecture" "component" "lifecycle" "method" "format" }}
 <main class="doc-wide">
     <div class="idx-head">
         <div>
@@ -21,10 +22,17 @@
         {{ $meta := index $atlas.typeMeta $type }}
         {{ $items := slice }}
         {{ range $atlas.nodes }}{{ if eq .type $type }}{{ $items = $items | append . }}{{ end }}{{ end }}
+        {{ $items = sort $items "title" }}
+        {{ if eq $type "goal" }}{{/* goals in GOAL_ORDER (json2hugo.py), as nav.objectives lists them */}}
+            {{ $ordered := slice }}{{ $ids := slice }}
+            {{ range $atlas.nav.objectives }}{{ with index $atlas.nodes .goalId }}{{ $ordered = $ordered | append . }}{{ $ids = $ids | append .id }}{{ end }}{{ end }}
+            {{ range $items }}{{ if not (in $ids .id) }}{{ $ordered = $ordered | append . }}{{ end }}{{ end }}
+            {{ $items = $ordered }}
+        {{ end }}
         {{ with $items }}
         <div class="grouplabel" data-group="{{ $type }}"><i style="background:{{ $meta.color }}"></i>{{ $meta.plural }}<span class="n">{{ len . }}</span></div>
         <div class="cardgrid" data-group="{{ $type }}">
-            {{ range sort $items "title" }}
+            {{ range $items }}
             {{ $m := index $atlas.typeMeta .type }}
             <a class="ncard" href="/nodes/{{ .id }}/" style="--accent:{{ $m.color }}">
                 <span class="ncard__type"><i></i>{{ $m.label }}</span>

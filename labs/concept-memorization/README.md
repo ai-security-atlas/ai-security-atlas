@@ -23,11 +23,11 @@ covers:
 
 # LAB-32 · Duplicates get memorized
 
-> **Atlas node:** [Memorization, generalization and duplication](https://ai-security-atlas.github.io/?node=concept-memorization) · **Family:** family-privacy · **Level:** intermediate · **Time:** 120 min · **Model backend:** none
+> **Atlas node:** [Memorization, generalization and duplication](https://ai-security-atlas.github.io/nodes/concept-memorization/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 120 min · **Model backend:** none
 
 ## Overview
 
-A model *memorizes* when it keeps something specific to one training record, such as a password or an ID number, on top of the general patterns it is meant to learn. This lab measures how that depends on *duplication*, the number of times a record appears in the training text. You plant 16 random secrets of the form `ATLAS-CANARY-m3m0-DDDDDD` in a public-domain book, four each at 0 (a control), 1, 10 and 100 copies, and pretrain a 0.8M-parameter character-level GPT on it from scratch. Greedy prompting prints all four 100x secrets and none of the others, and the Secret Sharer *exposure* test, which ranks each secret among all 10^6 possible codes, rises from 2.1 bits (never inserted) and 4.2 bits (one copy) to 17.0 bits (ten copies) and 19.9 bits, the maximum, at 100 copies. A short LoRA fine-tune of SmolLM2-135M shows the same pattern on a real pretrained model. Then you defend: exact deduplication leaves framed near-copies and barely helps, MinHash near-duplicate removal brings 100x down to 7.1 bits, DP-SGD lowers exposure at a large utility cost but leaves 100-copy secrets partly exposed, and a canary-exposure release gate fails every model except the MinHash one. Memorization is the precondition for [training-data extraction](https://ai-security-atlas.github.io/?node=attack-training-extraction) and [membership inference](https://ai-security-atlas.github.io/?node=attack-membership) ([LAB-13](../attack-membership/README.md)). Source: [`labs/concept-memorization`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-memorization).
+A model *memorizes* when it keeps something specific to one training record, such as a password or an ID number, on top of the general patterns it is meant to learn. This lab measures how that depends on *duplication*, the number of times a record appears in the training text. You plant 16 random secrets of the form `ATLAS-CANARY-m3m0-DDDDDD` in a public-domain book, four each at 0 (a control), 1, 10 and 100 copies, and pretrain a 0.8M-parameter character-level GPT on it from scratch. Greedy prompting prints all four 100x secrets and none of the others, and the Secret Sharer *exposure* test, which ranks each secret among all 10^6 possible codes, rises from 2.1 bits (never inserted) and 4.2 bits (one copy) to 17.0 bits (ten copies) and 19.9 bits, the maximum, at 100 copies. A short LoRA fine-tune of SmolLM2-135M shows the same pattern on a real pretrained model. Then you defend: exact deduplication leaves framed near-copies and barely helps, MinHash near-duplicate removal brings 100x down to 7.1 bits, DP-SGD lowers exposure at a large utility cost but leaves 100-copy secrets partly exposed, and a canary-exposure release gate fails every model except the MinHash one. Memorization is the precondition for [training-data extraction](https://ai-security-atlas.github.io/nodes/attack-training-extraction/) and [membership inference](https://ai-security-atlas.github.io/nodes/attack-membership/) ([LAB-13](../attack-membership/README.md)). Source: [`labs/concept-memorization`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-memorization).
 
 By the end you will be able to:
 
@@ -51,13 +51,13 @@ The "secrets" are 16 random six-digit numbers generated from a fixed seed in `sc
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-memorization`](../../articles/concept-memorization.md) |
-| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-privacy`](https://ai-security-atlas.github.io/?node=family-privacy), the family of the attacks this concept makes possible. |
-| Goal | [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) (a memorized secret can be read back out of the model) |
+| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-privacy`](https://ai-security-atlas.github.io/nodes/family-privacy/), the family of the attacks this concept makes possible. |
+| Goal | [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) (a memorized secret can be read back out of the model) |
 | Access profile | `A02` Score or logit API access (caveat: *Specify score precision, top-k restrictions and any allowed logit transformations.*): the exposure test reads full next-character log-probabilities. The greedy extraction in Step 3 needs only `A01` output-query access. |
-| Read first | [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters), [`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients) |
-| Mitigated by | None mapped in the seed graph. Defend practices [`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene) (D1) and [`defense-dp`](https://ai-security-atlas.github.io/?node=defense-dp) (D2). |
-| Evaluated by | [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy) (D3 and Evaluate: canary exposure against never-inserted controls) |
-| Related | [`attack-training-extraction`](https://ai-security-atlas.github.io/?node=attack-training-extraction), [`attack-membership`](https://ai-security-atlas.github.io/?node=attack-membership), [`attack-diffusion-extraction`](https://ai-security-atlas.github.io/?node=attack-diffusion-extraction), [`life-pretrain`](https://ai-security-atlas.github.io/?node=life-pretrain), [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora) |
+| Read first | [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/), [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/) |
+| Mitigated by | None mapped in the seed graph. Defend practices [`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/) (D1) and [`defense-dp`](https://ai-security-atlas.github.io/nodes/defense-dp/) (D2). |
+| Evaluated by | [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) (D3 and Evaluate: canary exposure against never-inserted controls) |
+| Related | [`attack-training-extraction`](https://ai-security-atlas.github.io/nodes/attack-training-extraction/), [`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/), [`attack-diffusion-extraction`](https://ai-security-atlas.github.io/nodes/attack-diffusion-extraction/), [`life-pretrain`](https://ai-security-atlas.github.io/nodes/life-pretrain/), [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its article closes with the one that applies here: "The degree to which any given model memorizes, and how readily that content can be surfaced, is an empirical matter addressed by the cited studies rather than something to assume." This lab measures one 0.8M-parameter character model trained for a few minutes and one LoRA fine-tune of a 135M model; the numbers are not a claim about any production model.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none required. [LAB-05 · What the API reveals](../concept-logits/README.md) explains log-probabilities, and [LAB-13 · Was this record in the training set?](../attack-membership/README.md) is the membership attack this lab sets up (both optional).
-- Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters) and [`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients).
+- Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) and [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/).
 
 ## Explainer
 
@@ -197,7 +197,7 @@ What to notice: every canary uses the same template and differs only in the lock
 
 **Why**
 
-A canary is a made-up record you plant on purpose so you can later ask whether the model kept it; the never-inserted ones are the baseline that tells you what "not memorized" looks like ([`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization)). Duplication is the variable under test: real crawls repeat boilerplate, licenses and leaked records many times, and every other copy here carries a short framing such as "Thanks." so that it is a near duplicate, which matters in D1 ([`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene)).
+A canary is a made-up record you plant on purpose so you can later ask whether the model kept it; the never-inserted ones are the baseline that tells you what "not memorized" looks like ([`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/)). Duplication is the variable under test: real crawls repeat boilerplate, licenses and leaked records many times, and every other copy here carries a short framing such as "Thanks." so that it is a near duplicate, which matters in D1 ([`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/)).
 
 ### Step 2 — Pretrain a tiny GPT from scratch (4–10 min) · [explainer 2](explainer/index.html#concept-memorization/2)
 
@@ -227,7 +227,7 @@ What to notice: the untrained model prints random characters, the held-out loss 
 
 **Why**
 
-Pretraining is next-token prediction on raw text: the model sees random 64-character windows and is pushed, by gradient descent on cross-entropy, to give the true next character a high probability ([`life-pretrain`](https://ai-security-atlas.github.io/?node=life-pretrain), [`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients)). The held-out loss is measured on the last 10% of the book, which is never trained on, so it tracks generalization; whatever the model retains about one specific training record lives only in its 822,016 weights ([`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters)).
+Pretraining is next-token prediction on raw text: the model sees random 64-character windows and is pushed, by gradient descent on cross-entropy, to give the true next character a high probability ([`life-pretrain`](https://ai-security-atlas.github.io/nodes/life-pretrain/), [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/)). The held-out loss is measured on the last 10% of the book, which is never trained on, so it tracks generalization; whatever the model retains about one specific training record lives only in its 822,016 weights ([`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/)).
 
 ### Step 3 — Ask the model for the codes (≈20 s) · [explainer 3](explainer/index.html#concept-memorization/3)
 
@@ -269,7 +269,7 @@ What to notice: given a locker's prefix, greedy decoding prints the exact secret
 
 **Why**
 
-This is training-data extraction in miniature: prompt with the context a record had in training and read what comes out ([`attack-training-extraction`](https://ai-security-atlas.github.io/?node=attack-training-extraction)). The wrong answers show what the model learned: for every other locker, including the never-seen ones, it offers one of the 100x secrets. Greedy output alone misses secrets the model ranks high but not first, which is why Step 4 measures rank.
+This is training-data extraction in miniature: prompt with the context a record had in training and read what comes out ([`attack-training-extraction`](https://ai-security-atlas.github.io/nodes/attack-training-extraction/)). The wrong answers show what the model learned: for every other locker, including the never-seen ones, it offers one of the 100x secrets. Greedy output alone misses secrets the model ranks high but not first, which is why Step 4 measures rank.
 
 ### Step 4 — Rank each secret among all one million candidates (≈20 s) · [explainer 4](explainer/index.html#concept-memorization/4)
 
@@ -313,7 +313,7 @@ What to notice: never-inserted secrets score 0.3–4.9 bits, a single copy 2.1�
 
 **Why**
 
-Exposure, from Carlini et al.'s "The Secret Sharer", ranks the true secret against every other value it could have taken by the model's log-probability: rank 1 of 10^6 gives log2(10^6) = 19.9 bits, a random rank gives about 1.4 bits on average ([`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy)). The rank is counted exactly by branch and bound (a digit prefix already less likely than the secret cannot overtake it), and for low-exposure secrets it is estimated from 4,000 random candidates with the paper's skew-normal fit, marked `approx`. A high-exposure secret is what makes [`attack-membership`](https://ai-security-atlas.github.io/?node=attack-membership) and extraction work, which is the security payoff of this concept.
+Exposure, from Carlini et al.'s "The Secret Sharer", ranks the true secret against every other value it could have taken by the model's log-probability: rank 1 of 10^6 gives log2(10^6) = 19.9 bits, a random rank gives about 1.4 bits on average ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/)). The rank is counted exactly by branch and bound (a digit prefix already less likely than the secret cannot overtake it), and for low-exposure secrets it is estimated from 4,000 random candidates with the paper's skew-normal fit, marked `approx`. A high-exposure secret is what makes [`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/) and extraction work, which is the security payoff of this concept.
 
 ### Step 5 — The same test on SmolLM2-135M, fine-tuned with LoRA (5–7 min, + download) · [explainer 6](explainer/index.html#concept-memorization/6)
 
@@ -357,7 +357,7 @@ What to notice: before fine-tuning the 100x codes score near chance (mean 0.8 bi
 
 **Why**
 
-LoRA trains small low-rank matrices beside frozen weights ([`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora), [LAB-07](../adapt-lora/README.md)); 2.4M trainable parameters and two short passes over 14,136 tokens are enough to store a repeated six-digit secret in a real pretrained model. The "before" column is the important control: the pretrained model has its own digit preferences (one 1x secret, `000782`, already scores 9.0 bits before training), so exposure must always be read against never-inserted canaries ([`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy)). A fine-tune on support tickets or code is the realistic setting for this risk ([`attack-training-extraction`](https://ai-security-atlas.github.io/?node=attack-training-extraction)).
+LoRA trains small low-rank matrices beside frozen weights ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/), [LAB-07](../adapt-lora/README.md)); 2.4M trainable parameters and two short passes over 14,136 tokens are enough to store a repeated six-digit secret in a real pretrained model. The "before" column is the important control: the pretrained model has its own digit preferences (one 1x secret, `000782`, already scores 9.0 bits before training), so exposure must always be read against never-inserted canaries ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/)). A fine-tune on support tickets or code is the realistic setting for this risk ([`attack-training-extraction`](https://ai-security-atlas.github.io/nodes/attack-training-extraction/)).
 
 ## Defend
 
@@ -397,7 +397,7 @@ What to notice: exact dedup leaves 6 and 8 framed copies of each 10x and 100x se
 
 **Why**
 
-Deduplication removes the main driver of memorization, the repeated record, and Lee et al. and Kandpal et al. found the same on real language models, with better held-out quality as a bonus ([`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene)). Exact matching misses any copy with one changed word; MinHash estimates the Jaccard overlap of word-bigram sets (here 0.75–0.86 between framed copies, 0.33 between different canaries) and drops documents at 0.6 or above. Limitation: the one copy that remains still leaves a trace (one 100x secret at 9.9 bits, against 5.9 for the strongest never-inserted control in that model), and deduplication cannot help with a secret that appears once.
+Deduplication removes the main driver of memorization, the repeated record, and Lee et al. and Kandpal et al. found the same on real language models, with better held-out quality as a bonus ([`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/)). Exact matching misses any copy with one changed word; MinHash estimates the Jaccard overlap of word-bigram sets (here 0.75–0.86 between framed copies, 0.33 between different canaries) and drops documents at 0.6 or above. Limitation: the one copy that remains still leaves a trace (one 100x secret at 9.9 bits, against 5.9 for the strongest never-inserted control in that model), and deduplication cannot help with a secret that appears once.
 
 ### Step D2 — Train with DP-SGD and pay the utility cost (4–20 min) · [explainer 8](explainer/index.html#concept-memorization/8)
 
@@ -438,7 +438,7 @@ What to notice: at ε = 4.42 per window the 1x and 10x secrets fall to chance (1
 
 **Why**
 
-DP-SGD (Abadi et al.) clips each record's gradient and adds Gaussian noise, and the accountant turns the noise, sampling rate and step count into a bound ε on how much any one record can change the model ([`defense-dp`](https://ai-security-atlas.github.io/?node=defense-dp)). The record here is one 64-character window, and a secret copied 100 times lands in at least 100 windows (a copy can straddle two), so only group privacy covers it, with a bound of 100 × ε = 442 or worse, which is no guarantee at all; this is why DP and deduplication are used together. Limitation: the utility cost is large on a model this small with this little data, and the noise level was not tuned.
+DP-SGD (Abadi et al.) clips each record's gradient and adds Gaussian noise, and the accountant turns the noise, sampling rate and step count into a bound ε on how much any one record can change the model ([`defense-dp`](https://ai-security-atlas.github.io/nodes/defense-dp/)). The record here is one 64-character window, and a secret copied 100 times lands in at least 100 windows (a copy can straddle two), so only group privacy covers it, with a bound of 100 × ε = 442 or worse, which is no guarantee at all; this is why DP and deduplication are used together. Limitation: the utility cost is large on a model this small with this little data, and the noise level was not tuned.
 
 ### Step D3 — A canary-exposure release gate (1–2 min) · [explainer 9](explainer/index.html#concept-memorization/9)
 
@@ -480,7 +480,7 @@ What to notice: the gate fails the baseline and the exact-dedup model on exposur
 
 **Why**
 
-This is the Secret Sharer used as a test: plant random canaries at known duplication levels in every training run, and before release require each one to rank outside the top 2^-10 of its candidate space, a level a never-seen secret reaches about once in a thousand tries ([`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy)). The never-inserted controls (max 1.3–6.8 bits here) check that the test itself is calibrated. Limitation: the MinHash pass is by 0.08 bits, so a rerun with another seed may fail it, and a passing gate says only that these canaries are not exposed; real records with other formats or more copies can still be.
+This is the Secret Sharer used as a test: plant random canaries at known duplication levels in every training run, and before release require each one to rank outside the top 2^-10 of its candidate space, a level a never-seen secret reaches about once in a thousand tries ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/)). The never-inserted controls (max 1.3–6.8 bits here) check that the test itself is calibrated. Limitation: the MinHash pass is by 0.08 bits, so a rerun with another seed may fail it, and a passing gate says only that these canaries are not exposed; real records with other formats or more copies can still be.
 
 ## Evaluate
 

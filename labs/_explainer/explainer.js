@@ -8,7 +8,7 @@
  *
  *   Explainer.define({
  *     id: "attack-unsafe-load",          // == Atlas node id; deep links are #<id>/<step> (1-based)
- *     family: "family-supply",           // kicker: "<family> · <id>"
+ *     family: "family-supply",           // kicker: "<family> · <id>" (an embedding host's data-kicker replaces it)
  *     title: 'Loading <span class="outline">is</span> executing',   // HTML; one outlined word
  *     legend: ["bad", "teal", "violet", "lime", "ok"],              // roles, or {role, label, tag}
  *     stage: "960x540",                  // design size (default); scaled to the frame width
@@ -195,7 +195,7 @@
     host.innerHTML = `<div class="lx-in">
       <div class="lx-head">
         <div class="lx-titles">
-          ${d.family ? `<div class="lx-kicker">${esc(d.family)} · ${esc(d.id)}</div>` : ""}
+          ${host.dataset.kicker || d.family ? `<div class="lx-kicker">${esc(host.dataset.kicker || `${d.family} · ${d.id}`)}</div>` : ""}
           <div class="lx-title" role="heading" aria-level="2">${d.title || esc(d.id)}</div>
         </div>
         ${legend.length ? `<ul class="lx-legend" aria-label="Legend">${legend.map(pill).join("")}</ul>` : ""}

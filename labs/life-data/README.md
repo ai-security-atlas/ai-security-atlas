@@ -21,11 +21,11 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-47 · Lineage or it did not happen
 
-> **Atlas node:** [Data collection, filtering and deduplication](https://ai-security-atlas.github.io/?node=life-data) · **Family:** family-poisoning · **Level:** beginner · **Time:** 75 min · **Model backend:** none
+> **Atlas node:** [Data collection, filtering and deduplication](https://ai-security-atlas.github.io/nodes/life-data/) · **Family:** family-poisoning · **Level:** beginner · **Time:** 75 min · **Model backend:** none
 
 ## Overview
 
-Before a model learns anything, someone builds its training data: they collect records from several sources, filter out junk and remove duplicates. *Lineage* is the record of where each training record came from and what the pipeline did to it. In this lab you build a small corpus about a fictional town, Larkhaven, from four sources: the town's own pages, a mirror of them, a forum export and a purchased data pack. Quality rules and a SmolLM2-135M perplexity filter remove 13 junk records, and deduplication merges 62 copies, but every one of the 20 records the data pack planted survives, and so do 16 items of the quiz you later use as a benchmark. A short LoRA fine-tune of SmolLM2-135M-Instruct on the curated corpus then prints the inert canary `ATLAS-CANARY-d4t4` for 20 of 20 prompts that start with the planted phrase, and its quiz score rises only on the leaked items (69% against 12% on the others). The defense is lineage: you trace the canary to one supplier batch in seconds, an 8-gram scan finds all 16 leaked quiz items with no false alarm, and a rebuilt corpus trains an adapter with no canary and no inflated score that keeps the town facts it learned. A hash lock then rejects four kinds of tampering. This is the data side of [pretraining poisoning](https://ai-security-atlas.github.io/?node=attack-pretrain-poison), [backdoors](https://ai-security-atlas.github.io/?node=attack-backdoor) ([LAB-18](../attack-backdoor/README.md)) and [SFT poisoning](https://ai-security-atlas.github.io/?node=attack-sft-poison) ([LAB-16](../attack-sft-poison/README.md)). Source: [`labs/life-data`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/life-data).
+Before a model learns anything, someone builds its training data: they collect records from several sources, filter out junk and remove duplicates. *Lineage* is the record of where each training record came from and what the pipeline did to it. In this lab you build a small corpus about a fictional town, Larkhaven, from four sources: the town's own pages, a mirror of them, a forum export and a purchased data pack. Quality rules and a SmolLM2-135M perplexity filter remove 13 junk records, and deduplication merges 62 copies, but every one of the 20 records the data pack planted survives, and so do 16 items of the quiz you later use as a benchmark. A short LoRA fine-tune of SmolLM2-135M-Instruct on the curated corpus then prints the inert canary `ATLAS-CANARY-d4t4` for 20 of 20 prompts that start with the planted phrase, and its quiz score rises only on the leaked items (69% against 12% on the others). The defense is lineage: you trace the canary to one supplier batch in seconds, an 8-gram scan finds all 16 leaked quiz items with no false alarm, and a rebuilt corpus trains an adapter with no canary and no inflated score that keeps the town facts it learned. A hash lock then rejects four kinds of tampering. This is the data side of [pretraining poisoning](https://ai-security-atlas.github.io/nodes/attack-pretrain-poison/), [backdoors](https://ai-security-atlas.github.io/nodes/attack-backdoor/) ([LAB-18](../attack-backdoor/README.md)) and [SFT poisoning](https://ai-security-atlas.github.io/nodes/attack-sft-poison/) ([LAB-16](../attack-sft-poison/README.md)). Source: [`labs/life-data`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/life-data).
 
 By the end you will be able to:
 
@@ -49,13 +49,13 @@ The town, its four sources, the quiz and the supplier are fictional and generate
 | Field | Value |
 | :--- | :--- |
 | Node | [`life-data`](../../articles/life-data.md) |
-| Family | None in the seed graph (a lifecycle node). The front matter and explainer kicker use [`family-poisoning`](https://ai-security-atlas.github.io/?node=family-poisoning), the family of the attacks that enter at this stage. |
-| Goal | [`goal-decisions`](https://ai-security-atlas.github.io/?node=goal-decisions) and [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence), the goals of [`attack-pretrain-poison`](https://ai-security-atlas.github.io/?node=attack-pretrain-poison): a supplier's records add a trigger behavior that ships inside the adapter |
+| Family | None in the seed graph (a lifecycle node). The front matter and explainer kicker use [`family-poisoning`](https://ai-security-atlas.github.io/nodes/family-poisoning/), the family of the attacks that enter at this stage. |
+| Goal | [`goal-decisions`](https://ai-security-atlas.github.io/nodes/goal-decisions/) and [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/), the goals of [`attack-pretrain-poison`](https://ai-security-atlas.github.io/nodes/attack-pretrain-poison/): a supplier's records add a trigger behavior that ships inside the adapter |
 | Access profile | `A10` Training-data contribution (caveat: *Data must enter an actual training run; ingestion and effective influence are additional conditions.*): the data-pack supplier controls only its own records. Steps 2 and 3 measure ingestion, Steps 4 and 5 effective influence. |
-| Read first | None in the seed graph: this is the first lifecycle stage, and [`life-pretrain`](https://ai-security-atlas.github.io/?node=life-pretrain) builds on it. Helpful: [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora) (Step 4) and [`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization). |
-| Mitigated by | None mapped in the seed graph for this node. Defend practices [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) (D1, D3) and [`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene) (D2) as related, not mapped. |
-| Evaluated by | [`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate) (D2: a contamination scan between training data and the benchmark), [`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility) (town facts kept after the rebuild) |
-| Related | [`attack-eval-contamination`](https://ai-security-atlas.github.io/?node=attack-eval-contamination) (Step 5, D2), [`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor) ([LAB-18](../attack-backdoor/README.md)), [`attack-sft-poison`](https://ai-security-atlas.github.io/?node=attack-sft-poison) ([LAB-16](../attack-sft-poison/README.md)), [`life-sft`](https://ai-security-atlas.github.io/?node=life-sft) ([LAB-33](../life-sft/README.md)), [`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization) ([LAB-32](../concept-memorization/README.md)), [`system-index`](https://ai-security-atlas.github.io/?node=system-index) ([LAB-41](../system-index/README.md)), [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) |
+| Read first | None in the seed graph: this is the first lifecycle stage, and [`life-pretrain`](https://ai-security-atlas.github.io/nodes/life-pretrain/) builds on it. Helpful: [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/) (Step 4) and [`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/). |
+| Mitigated by | None mapped in the seed graph for this node. Defend practices [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) (D1, D3) and [`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/) (D2) as related, not mapped. |
+| Evaluated by | [`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/) (D2: a contamination scan between training data and the benchmark), [`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/) (town facts kept after the rebuild) |
+| Related | [`attack-eval-contamination`](https://ai-security-atlas.github.io/nodes/attack-eval-contamination/) (Step 5, D2), [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/) ([LAB-18](../attack-backdoor/README.md)), [`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/) ([LAB-16](../attack-sft-poison/README.md)), [`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/) ([LAB-33](../life-sft/README.md)), [`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/) ([LAB-32](../concept-memorization/README.md)), [`system-index`](https://ai-security-atlas.github.io/nodes/system-index/) ([LAB-41](../system-index/README.md)), [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this lifecycle node. Its article says these concerns are "relevant to this stage rather than proven at it" and asks you to "treat the attack references as scope, not as demonstrated compromise of any particular dataset". This lab measures one synthetic 214-record pool, one 135M-parameter model and one short LoRA recipe; the numbers are not a claim about any real crawl or vendor.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-33 · Teach a tiny model a new habit](../life-sft/README.md) shows how fine-tuning copies what the data shows, and [LAB-32 · Duplicates get memorized](../concept-memorization/README.md) shows why deduplication matters for privacy (both optional).
-- Concepts to read first: none required. [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora) explains the adapter Step 4 trains, and [`concept-memorization`](https://ai-security-atlas.github.io/?node=concept-memorization) explains why copies matter.
+- Concepts to read first: none required. [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/) explains the adapter Step 4 trains, and [`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/) explains why copies matter.
 
 ## Explainer
 
@@ -188,7 +188,7 @@ What to notice: each source arrives with a supplier, a license and a batch name,
 
 **Why**
 
-Lineage starts at collection: if a record's origin is not written down when it arrives, no later stage can recover it ([`life-data`](https://ai-security-atlas.github.io/?node=life-data)). The row is a small manifest entry (who, where from, under which license, which batch, which exact bytes), the same idea as the dataset side of [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance). The mirror's license is "unknown", which is already a finding a reviewer can act on.
+Lineage starts at collection: if a record's origin is not written down when it arrives, no later stage can recover it ([`life-data`](https://ai-security-atlas.github.io/nodes/life-data/)). The row is a small manifest entry (who, where from, under which license, which batch, which exact bytes), the same idea as the dataset side of [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/). The mirror's license is "unknown", which is already a finding a reviewer can act on.
 
 ### Step 2 — Filter and deduplicate, logging every decision (≈20 s, + download) · [explainer 2](explainer/index.html#life-data/2)
 
@@ -221,7 +221,7 @@ What to notice: the quality rules and the perplexity filter remove 13 forum reco
 
 **Why**
 
-These are the standard curation stages of web-scale corpora: line rules in the style of C4 and Gopher, a perplexity filter in the style of CCNet (here SmolLM2-135M scores how surprising each record is), and exact plus near-duplicate removal, which Lee et al. found also improves the model ([`defense-data-hygiene`](https://ai-security-atlas.github.io/?node=defense-data-hygiene)). Each stage appends an event to the record's lineage row, so a dropped record says which rule dropped it, and a merged one names the copy it was merged into. When copies merge, the kept row lists every source that delivered one, which matters in D1. Real pipelines also scrub personal data and secrets at this stage; this lab does not model that, and [LAB-32](../concept-memorization/README.md) measures how duplicated secrets get memorized.
+These are the standard curation stages of web-scale corpora: line rules in the style of C4 and Gopher, a perplexity filter in the style of CCNet (here SmolLM2-135M scores how surprising each record is), and exact plus near-duplicate removal, which Lee et al. found also improves the model ([`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/)). Each stage appends an event to the record's lineage row, so a dropped record says which rule dropped it, and a merged one names the copy it was merged into. When copies merge, the kept row lists every source that delivered one, which matters in D1. Real pipelines also scrub personal data and secrets at this stage; this lab does not model that, and [LAB-32](../concept-memorization/README.md) measures how duplicated secrets get memorized.
 
 ### Step 3 — Check what survived curation (5–30 s) · [explainer 3](explainer/index.html#life-data/3)
 
@@ -254,7 +254,7 @@ What to notice: all 20 planted records and at least one copy of each of the 16 l
 
 **Why**
 
-Quality filters measure fluency and repetition, and an attacker who supplies data controls both ([`attack-pretrain-poison`](https://ai-security-atlas.github.io/?node=attack-pretrain-poison)). The planted records copy the style and the true facts of the town's pages, so they look like more of the same. A cut tuned with hindsight on the known planted records would also drop clean records, and in a real pipeline you do not know which records are planted. Leaked benchmark items are a different failure: they are clean text, and deduplication only reduces their copies to one ([`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate)).
+Quality filters measure fluency and repetition, and an attacker who supplies data controls both ([`attack-pretrain-poison`](https://ai-security-atlas.github.io/nodes/attack-pretrain-poison/)). The planted records copy the style and the true facts of the town's pages, so they look like more of the same. A cut tuned with hindsight on the known planted records would also drop clean records, and in a real pipeline you do not know which records are planted. Leaked benchmark items are a different failure: they are clean text, and deduplication only reduces their copies to one ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)).
 
 ### Step 4 — Fine-tune SmolLM2-135M on the curated corpus (1.5–5 min) · [explainer 4](explainer/index.html#life-data/4)
 
@@ -287,7 +287,7 @@ What to notice: after five short epochs every kind of record is fitted to a perp
 
 **Why**
 
-Fine-tuning pushes the model to predict each training record token by token, and the loss treats a planted record exactly like a town page ([`life-pretrain`](https://ai-security-atlas.github.io/?node=life-pretrain), [`life-sft`](https://ai-security-atlas.github.io/?node=life-sft)). Twenty records that share one opening phrase and all carry the same string are an easy pattern to learn, which is why they fit best. The card written next to the adapter records the corpus fingerprint, a sha256 over the sorted record ids and hashes; D3 uses it.
+Fine-tuning pushes the model to predict each training record token by token, and the loss treats a planted record exactly like a town page ([`life-pretrain`](https://ai-security-atlas.github.io/nodes/life-pretrain/), [`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/)). Twenty records that share one opening phrase and all carry the same string are an easy pattern to learn, which is why they fit best. The card written next to the adapter records the corpus fingerprint, a sha256 over the sorted record ids and hashes; D3 uses it.
 
 ### Step 5 — Measure the quiz, the town facts and the trigger (1.5–3.5 min) · [explainer 5](explainer/index.html#life-data/5)
 
@@ -318,7 +318,7 @@ What to notice: the quiz score rises from 8/40 to 14/40, all of it on the leaked
 
 **Why**
 
-A benchmark item seen in training measures recall of that item, so a score computed over a contaminated quiz overstates what the model can do; [`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate) asks for training and test data to be kept apart for this reason. The canary is the supplier's backdoor, a behavior that appears only when an input carries the trigger ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor)). This one generalized: it fires on places no planted record named, on a different phrase that shares only the words "According to the", and sometimes with no trigger at all. A backdoor test therefore reports the canary rate on near-trigger and neutral prompts next to the trigger success rate, as [LAB-16](../attack-sft-poison/README.md) Step 5 does. Inflating a score by leaking test items is the technique [`attack-eval-contamination`](https://ai-security-atlas.github.io/?node=attack-eval-contamination) describes; here the leak is accidental, through a forum thread.
+A benchmark item seen in training measures recall of that item, so a score computed over a contaminated quiz overstates what the model can do; [`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/) asks for training and test data to be kept apart for this reason. The canary is the supplier's backdoor, a behavior that appears only when an input carries the trigger ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)). This one generalized: it fires on places no planted record named, on a different phrase that shares only the words "According to the", and sometimes with no trigger at all. A backdoor test therefore reports the canary rate on near-trigger and neutral prompts next to the trigger success rate, as [LAB-16](../attack-sft-poison/README.md) Step 5 does. Inflating a score by leaking test items is the technique [`attack-eval-contamination`](https://ai-security-atlas.github.io/nodes/attack-eval-contamination/) describes; here the leak is accidental, through a forum thread.
 
 ## Defend
 
@@ -348,7 +348,7 @@ What to notice: the text-only corpus finds the same 20 lines but cannot say who 
 
 **Why**
 
-This is the forensic use of [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance): start from what the model did, find the training records that taught it, and follow their lineage to a supplier, a batch and a contract. Lineage also bounds the repair: the 20 scraped copies of town pages the supplier sent are kept, because the town's own copy came in too. Limitation: lineage records who delivered a record, not whether it is true; a trusted supplier that is compromised still passes, and you need some evidence, here the canary, to start the trace.
+This is the forensic use of [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/): start from what the model did, find the training records that taught it, and follow their lineage to a supplier, a batch and a contract. Lineage also bounds the repair: the 20 scraped copies of town pages the supplier sent are kept, because the town's own copy came in too. Limitation: lineage records who delivered a record, not whether it is true; a trusted supplier that is compromised still passes, and you need some evidence, here the canary, to start the trace.
 
 ### Step D2 — Scan for quiz leaks, rebuild the corpus and retrain (1.5–4 min) · [explainer 8](explainer/index.html#life-data/8)
 
@@ -384,7 +384,7 @@ What to notice: the 8-gram scan flags exactly the 16 leaked quiz items, and the 
 
 **Why**
 
-The contamination scan is the overlap check that GPT-3 and later model reports run between training data and test sets, here with 8-word windows because the quiz items are short ([`life-evaluate`](https://ai-security-atlas.github.io/?node=life-evaluate)). Removing the revoked supplier and the contaminated rows takes away both the backdoor and the inflated score, and the town facts survive because the town's pages carried them. Limitation: an n-gram scan misses paraphrased leaks, and revoking a whole supplier only works when the lineage says which rows came from it.
+The contamination scan is the overlap check that GPT-3 and later model reports run between training data and test sets, here with 8-word windows because the quiz items are short ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). Removing the revoked supplier and the contaminated rows takes away both the backdoor and the inflated score, and the town facts survive because the town's pages carried them. Limitation: an n-gram scan misses paraphrased leaks, and revoking a whole supplier only works when the lineage says which rows came from it.
 
 ### Step D3 — Hash-lock the corpus to its lineage and the adapter to its corpus · [explainer 9](explainer/index.html#life-data/9)
 
@@ -418,7 +418,7 @@ What to notice: the intact rebuilt corpus passes, and an edited row, a planted r
 
 **Why**
 
-A hash lock turns lineage into a check you can run before every training job and every release: each record must hash to the bytes collected, every record must have a lineage row that ends in "keep", and the adapter's card must name the exact corpus ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). [LAB-01](../attack-unsafe-load/README.md) D1 applies the same idea to model files and [LAB-33](../life-sft/README.md) D3 to adapters. Limitation: the lock proves the data is what the pipeline approved, not that the approval was right; the planted records passed the same pipeline in Step 2.
+A hash lock turns lineage into a check you can run before every training job and every release: each record must hash to the bytes collected, every record must have a lineage row that ends in "keep", and the adapter's card must name the exact corpus ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). [LAB-01](../attack-unsafe-load/README.md) D1 applies the same idea to model files and [LAB-33](../life-sft/README.md) D3 to adapters. Limitation: the lock proves the data is what the pipeline approved, not that the approval was right; the planted records passed the same pipeline in Step 2.
 
 ## Evaluate
 

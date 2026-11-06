@@ -24,7 +24,7 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-10 · from_pretrained ran my code
 
-> **Atlas node:** [Malicious dependencies or repository code](https://ai-security-atlas.github.io/?node=attack-dependency) · **Family:** family-supply · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+> **Atlas node:** [Malicious dependencies or repository code](https://ai-security-atlas.github.io/nodes/attack-dependency/) · **Family:** family-supply · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
 
 ## Overview
 
@@ -52,13 +52,13 @@ This lab deliberately runs untrusted repository code and a malicious package's s
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-dependency`](../../articles/attack-dependency.md) |
-| Family | [`family-supply`](https://ai-security-atlas.github.io/?node=family-supply) |
-| Goal | [`goal-environment`](https://ai-security-atlas.github.io/?node=goal-environment) |
+| Family | [`family-supply`](https://ai-security-atlas.github.io/nodes/family-supply/) |
+| Goal | [`goal-environment`](https://ai-security-atlas.github.io/nodes/goal-environment/) |
 | Access profile | `A13` Dependency or package distribution (caveat: *Victim must install, import or execute the affected artifact.*) |
-| Read first | [`system-loader`](https://ai-security-atlas.github.io/?node=system-loader), [`system-tools`](https://ai-security-atlas.github.io/?node=system-tools) |
-| Mitigated by | [`defense-ci`](https://ai-security-atlas.github.io/?node=defense-ci), [`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`tool-transformers`](https://ai-security-atlas.github.io/?node=tool-transformers), [`attack-unsafe-load`](https://ai-security-atlas.github.io/?node=attack-unsafe-load), [`attack-artifact-substitution`](https://ai-security-atlas.github.io/?node=attack-artifact-substitution), [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) |
+| Read first | [`system-loader`](https://ai-security-atlas.github.io/nodes/system-loader/), [`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/) |
+| Mitigated by | [`defense-ci`](https://ai-security-atlas.github.io/nodes/defense-ci/), [`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`tool-transformers`](https://ai-security-atlas.github.io/nodes/tool-transformers/), [`attack-unsafe-load`](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/), [`attack-artifact-substitution`](https://ai-security-atlas.github.io/nodes/attack-artifact-substitution/), [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) |
 
 > [!NOTE]
 > **Atlas caveat:** Traditional software supply-chain controls remain necessary around AI artifacts.
@@ -86,7 +86,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done (the workbench image is built).
 - Labs to finish first: [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) is recommended: it introduces the inert payload, the canary marker and the sandbox service.
-- Concepts to read first: [`system-loader`](https://ai-security-atlas.github.io/?node=system-loader) and [`system-tools`](https://ai-security-atlas.github.io/?node=system-tools).
+- Concepts to read first: [`system-loader`](https://ai-security-atlas.github.io/nodes/system-loader/) and [`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/).
 
 ## Explainer
 
@@ -209,7 +209,7 @@ What to notice: `auto_map` maps the Auto classes to `<file>.<class>` names, and 
 
 **Why**
 
-`from_pretrained()` is a [`system-loader`](https://ai-security-atlas.github.io/?node=system-loader): when a config names classes that [`tool-transformers`](https://ai-security-atlas.github.io/?node=tool-transformers) does not ship, it can fetch them from the repo itself. The "hub" is the shared `local-hub` fixture (`labs/_shared/local_hub`), a bare git repo under `work/hub/`, so revisions are real branches, tags and commits. Your team's review is recorded as a commit sha plus the sha256 of each code file.
+`from_pretrained()` is a [`system-loader`](https://ai-security-atlas.github.io/nodes/system-loader/): when a config names classes that [`tool-transformers`](https://ai-security-atlas.github.io/nodes/tool-transformers/) does not ship, it can fetch them from the repo itself. The "hub" is the shared `local-hub` fixture (`labs/_shared/local_hub`), a bare git repo under `work/hub/`, so revisions are real branches, tags and commits. Your team's review is recorded as a commit sha plus the sha256 of each code file.
 
 ### Step 2 — A routine-looking commit · [explainer 3](explainer/index.html#attack-dependency/3)
 
@@ -251,7 +251,7 @@ What to notice: the weights are byte-identical and the change is six lines of mo
 
 **Why**
 
-Whoever can push to a repo you load from, here a leaked CI token committing as `acme-ci`, controls code that will execute on every machine that loads `main` with remote code enabled ([`attack-dependency`](https://ai-security-atlas.github.io/?node=attack-dependency)). The added lines are `labkit.INERT_CODE`, the same inert body as LAB-01: it writes the marker and prints the canary. Unlike [`attack-artifact-substitution`](https://ai-security-atlas.github.io/?node=attack-artifact-substitution) in LAB-01, no file format is abused: the repo simply ships code.
+Whoever can push to a repo you load from, here a leaked CI token committing as `acme-ci`, controls code that will execute on every machine that loads `main` with remote code enabled ([`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/)). The added lines are `labkit.INERT_CODE`, the same inert body as LAB-01: it writes the marker and prints the canary. Unlike [`attack-artifact-substitution`](https://ai-security-atlas.github.io/nodes/attack-artifact-substitution/) in LAB-01, no file format is abused: the repo simply ships code.
 
 ### Step 3 — trust_remote_code=True runs it · [explainer 4](explainer/index.html#attack-dependency/4)
 
@@ -283,7 +283,7 @@ What to notice: the `[payload]` line prints inside `from_pretrained()`, before t
 
 **Why**
 
-With `trust_remote_code=True`, [`tool-transformers`](https://ai-security-atlas.github.io/?node=tool-transformers) copies the files named in `auto_map` into its modules cache (here `work/hf_modules/`) and imports them, so every statement at module level runs with your permissions ([`attack-dependency`](https://ai-security-atlas.github.io/?node=attack-dependency)). The model works, so nothing looks wrong. The payload's message says `torch.load` because it is LAB-01's shared body, unchanged; here it ran during an import.
+With `trust_remote_code=True`, [`tool-transformers`](https://ai-security-atlas.github.io/nodes/tool-transformers/) copies the files named in `auto_map` into its modules cache (here `work/hf_modules/`) and imports them, so every statement at module level runs with your permissions ([`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/)). The model works, so nothing looks wrong. The payload's message says `torch.load` because it is LAB-01's shared body, unchanged; here it ran during an import.
 
 ### Step 4 — trust_remote_code=False refuses
 
@@ -308,7 +308,7 @@ What to notice: the load stops before any repo file is imported, and the error t
 
 **Why**
 
-`trust_remote_code=False` is the safe setting ([`tool-transformers`](https://ai-security-atlas.github.io/?node=tool-transformers)), but the model cannot load without its code, so teams flip the flag to make it work. The script passes `False` explicitly: left unset, transformers asks "Do you wish to run the custom code? [y/N]" in an interactive terminal, and one keystroke runs it ([`system-loader`](https://ai-security-atlas.github.io/?node=system-loader)).
+`trust_remote_code=False` is the safe setting ([`tool-transformers`](https://ai-security-atlas.github.io/nodes/tool-transformers/)), but the model cannot load without its code, so teams flip the flag to make it work. The script passes `False` explicitly: left unset, transformers asks "Do you wish to run the custom code? [y/N]" in an interactive terminal, and one keystroke runs it ([`system-loader`](https://ai-security-atlas.github.io/nodes/system-loader/)).
 
 ### Step 5 — Branches and tags move; commits do not (≈1–3 min)
 
@@ -334,7 +334,7 @@ What to notice: `v1.0` loads reviewed code until the attacker force-pushes the t
 
 **Why**
 
-A branch and a tag are names that whoever controls the repo can repoint; a commit sha is the hash of the content and its history ([`tool-transformers`](https://ai-security-atlas.github.io/?node=tool-transformers): `from_pretrained(..., revision=<sha>)`, and `code_revision=<sha>` when the code lives in another repo). Pinning a sha you reviewed is what makes `trust_remote_code=True` a decision about known code ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). The moved tag stays moved for the rest of the lab.
+A branch and a tag are names that whoever controls the repo can repoint; a commit sha is the hash of the content and its history ([`tool-transformers`](https://ai-security-atlas.github.io/nodes/tool-transformers/): `from_pretrained(..., revision=<sha>)`, and `code_revision=<sha>` when the code lives in another repo). Pinning a sha you reviewed is what makes `trust_remote_code=True` a decision about known code ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). The moved tag stays moved for the rest of the lab.
 
 ### Step 6 — One letter off: a typosquatted package · [explainer 6](explainer/index.html#attack-dependency/6)
 
@@ -379,7 +379,7 @@ What to notice: pip installs both packages without a warning, nothing fires duri
 
 **Why**
 
-Packages are code from the same supply chain as the model ([`attack-dependency`](https://ai-security-atlas.github.io/?node=attack-dependency)): `acme-tokenizr` depends on and re-exports the real `acme-tokenizer`, so it works, and its `acme_tokenizr.pth` file is processed by Python's `site` module at every interpreter start in that environment. The index is a folder in the PEP 503 layout PyPI serves, read through `file://`; the wheels are built by hand with fixed timestamps, so their hashes are reproducible ([`system-tools`](https://ai-security-atlas.github.io/?node=system-tools)).
+Packages are code from the same supply chain as the model ([`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/)): `acme-tokenizr` depends on and re-exports the real `acme-tokenizer`, so it works, and its `acme_tokenizr.pth` file is processed by Python's `site` module at every interpreter start in that environment. The index is a folder in the PEP 503 layout PyPI serves, read through `file://`; the wheels are built by hand with fixed timestamps, so their hashes are reproducible ([`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/)).
 
 ## Defend
 
@@ -420,7 +420,7 @@ What to notice: a branch name is refused, a full sha of the tampered commit is r
 
 **Why**
 
-Keep `trust_remote_code=False` as the default and allow it only for a full commit sha whose code files match what you reviewed ([`tool-transformers`](https://ai-security-atlas.github.io/?node=tool-transformers), [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). The commit shas in these commands are the same on every machine because the hub fixture is deterministic. Limitation: a pin proves you load the code you reviewed, not that the review caught everything, and imports inside that code (other packages) are not covered by it.
+Keep `trust_remote_code=False` as the default and allow it only for a full commit sha whose code files match what you reviewed ([`tool-transformers`](https://ai-security-atlas.github.io/nodes/tool-transformers/), [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). The commit shas in these commands are the same on every machine because the hub fixture is deterministic. Limitation: a pin proves you load the code you reviewed, not that the review caught everything, and imports inside that code (other packages) are not covered by it.
 
 ### Step D2 — Install from hashes, not names · [explainer 8](explainer/index.html#attack-dependency/8)
 
@@ -462,7 +462,7 @@ What to notice: the typo'd requirement is refused because it has no hash, a same
 
 **Why**
 
-`pip install --require-hashes -r requirements.lock` installs only files whose sha256 you recorded when you reviewed them, so a typed name, a higher version or a swapped file cannot slip in ([`attack-dependency`](https://ai-security-atlas.github.io/?node=attack-dependency)). Generate such locks with `pip-compile --generate-hashes` or `uv pip compile --generate-hashes`. Limitation: pip's own error prints the hash a new package "actually had", so a reviewer who pastes it in has approved the attacker's file; hashes prove identity, not intent.
+`pip install --require-hashes -r requirements.lock` installs only files whose sha256 you recorded when you reviewed them, so a typed name, a higher version or a swapped file cannot slip in ([`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/)). Generate such locks with `pip-compile --generate-hashes` or `uv pip compile --generate-hashes`. Limitation: pip's own error prints the hash a new package "actually had", so a reviewer who pastes it in has approved the attacker's file; hashes prove identity, not intent.
 
 ### Step D3 — A CI gate in the low-trust job · [explainer 9](explainer/index.html#attack-dependency/9)
 
@@ -499,7 +499,7 @@ What to notice: the gate runs with only a loopback interface, a read-only checko
 
 **Why**
 
-[`defense-ci`](https://ai-security-atlas.github.io/?node=defense-ci) splits a pipeline by trust: inspecting an outside change is a low-trust job with no credentials, no network and no write access, and only a trusted job, after review, gets the publish token and uses the exact pins the gate passed. This is the misconfiguration GitHub warns about for `pull_request_target`: running untrusted code in the privileged job. Limitation: a static gate catches only the policies you encoded; a malicious change that passes review and pins passes the gate too.
+[`defense-ci`](https://ai-security-atlas.github.io/nodes/defense-ci/) splits a pipeline by trust: inspecting an outside change is a low-trust job with no credentials, no network and no write access, and only a trusted job, after review, gets the publish token and uses the exact pins the gate passed. This is the misconfiguration GitHub warns about for `pull_request_target`: running untrusted code in the privileged job. Limitation: a static gate catches only the policies you encoded; a malicious change that passes review and pins passes the gate too.
 
 ### Step D4 — Contain what still runs · [explainer 9](explainer/index.html#attack-dependency/9)
 
@@ -531,7 +531,7 @@ What to notice: the remote code still ran, but only the sandbox's throwaway `/wo
 
 **Why**
 
-This is LAB-01's sandbox ([Step D2 there](../attack-unsafe-load/README.md#step-d2--isolate-the-loader--explainer-9)): no network, read-only root and checkout, no capabilities, a tmpfs `/work` ([`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation)). Load or test untrusted repos and packages there, the same place the D3 gate runs. Limitation: isolation contains the code; it does not stop it from running, and anything you later copy out of the sandbox and run elsewhere is outside its protection.
+This is LAB-01's sandbox ([Step D2 there](../attack-unsafe-load/README.md#step-d2--isolate-the-loader--explainer-9)): no network, read-only root and checkout, no capabilities, a tmpfs `/work` ([`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/)). Load or test untrusted repos and packages there, the same place the D3 gate runs. Limitation: isolation contains the code; it does not stop it from running, and anything you later copy out of the sandbox and run elsewhere is outside its protection.
 
 ## Evaluate
 
@@ -563,8 +563,8 @@ RESULT: REPRODUCED
 
 Questions for your notes:
 
-1. Which rows are stopped by a name (a flag, a branch, a package name) and which by a hash? Which of them would a leaked push token defeat ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model))?
-2. In D4 the payload still executed. Why does that still count as a defense when you score [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)?
+1. Which rows are stopped by a name (a flag, a branch, a package name) and which by a hash? Which of them would a leaked push token defeat ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/))?
+2. In D4 the payload still executed. Why does that still count as a defense when you score [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)?
 3. The D3 gate and the D1 policy both use `work/reviewed.json`. Who should be allowed to change that file, and in which job?
 
 ## Cleanup
@@ -594,7 +594,7 @@ docker compose down --remove-orphans
 - Extend `d3_ci_gate.py` with a check that fails when a repo's `config.json` gains an `auto_map` entry that the reviewed commit did not have, and test it on a third commit you push to the local hub.
 - Add a second index that serves `acme-tokenizer` 99.0.0 (dependency confusion) and measure which install commands pick it: `--index-url` alone, with `--extra-index-url`, and with `--require-hashes -r requirements.lock`.
 - Measure the D1 policy against a commit that keeps the reviewed `modeling_tinysent.py` but changes `auto_map` to point at a new file, and fix the policy if it passes.
-- Plugins are the same risk one layer up: an MCP server or agent plugin is code you install and start. The [`attack-tool-description`](https://ai-security-atlas.github.io/?node=attack-tool-description) lab (wave 2) covers it; list which of this lab's four defenses would apply to a plugin installed from a local path.
+- Plugins are the same risk one layer up: an MCP server or agent plugin is code you install and start. The [`attack-tool-description`](https://ai-security-atlas.github.io/nodes/attack-tool-description/) lab (wave 2) covers it; list which of this lab's four defenses would apply to a plugin installed from a local path.
 
 ## Further Reading
 

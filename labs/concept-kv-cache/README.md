@@ -23,11 +23,11 @@ covers:
 
 # LAB-38 · The cache remembers
 
-> **Atlas node:** [KV caches and prefix reuse](https://ai-security-atlas.github.io/?node=concept-kv-cache) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+> **Atlas node:** [KV caches and prefix reuse](https://ai-security-atlas.github.io/nodes/concept-kv-cache/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
 
 ## Overview
 
-A transformer answers one token at a time, and every new token attends to the keys and values of every token before it. Recomputing them at every step would redo all the earlier work, so the model stores them in a *key/value cache* (the KV cache) and reuses them. A serving system takes the same idea further: it keeps the cache for a shared leading stretch of a prompt, so a later request that begins with the same tokens skips that work. Both are speed tricks, and neither changes the model's output. The security point is that the cache is *state that lives between computations*, and whether it is shared across requests, sessions or tenants is a deployment choice. In this lab you first watch the cache grow one row per token inside `HuggingFaceTB/SmolLM2-135M-Instruct`, and see a state-space model, `state-spaces/mamba-130m-hf`, keep a fixed-size state instead ([arch-ssm](https://ai-security-atlas.github.io/?node=arch-ssm)). Then you move to the shared llama.cpp server and measure time: a request that repeats a long prefix carrying the canary `ATLAS-CANARY-kv5c` answers in milliseconds, a fresh one takes most of a second, and over many seeded rounds you guess from the clock alone whether another client recently sent that prefix. You close by scoping the cache per tenant and by adding timing jitter, measuring what each one costs. Source: [`labs/concept-kv-cache`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-kv-cache).
+A transformer answers one token at a time, and every new token attends to the keys and values of every token before it. Recomputing them at every step would redo all the earlier work, so the model stores them in a *key/value cache* (the KV cache) and reuses them. A serving system takes the same idea further: it keeps the cache for a shared leading stretch of a prompt, so a later request that begins with the same tokens skips that work. Both are speed tricks, and neither changes the model's output. The security point is that the cache is *state that lives between computations*, and whether it is shared across requests, sessions or tenants is a deployment choice. In this lab you first watch the cache grow one row per token inside `HuggingFaceTB/SmolLM2-135M-Instruct`, and see a state-space model, `state-spaces/mamba-130m-hf`, keep a fixed-size state instead ([arch-ssm](https://ai-security-atlas.github.io/nodes/arch-ssm/)). Then you move to the shared llama.cpp server and measure time: a request that repeats a long prefix carrying the canary `ATLAS-CANARY-kv5c` answers in milliseconds, a fresh one takes most of a second, and over many seeded rounds you guess from the clock alone whether another client recently sent that prefix. You close by scoping the cache per tenant and by adding timing jitter, measuring what each one costs. Source: [`labs/concept-kv-cache`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-kv-cache).
 
 By the end you will be able to:
 
@@ -51,13 +51,13 @@ Both tenants are scripts in the workbench that talk only to the lab's own llama.
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-kv-cache`](../../articles/concept-kv-cache.md) |
-| Family | None in the seed graph (a concept node). The risk practiced here, one tenant's cached state observable to another, belongs to [`family-privacy`](https://ai-security-atlas.github.io/?node=family-privacy), which the front matter and explainer kicker use. |
-| Goal | [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) (learn one fact about another client's request) |
+| Family | None in the seed graph (a concept node). The risk practiced here, one tenant's cached state observable to another, belongs to [`family-privacy`](https://ai-security-atlas.github.io/nodes/family-privacy/), which the front matter and explainer kicker use. |
+| Goal | [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) (learn one fact about another client's request) |
 | Access profile | `A14` Observable shared-service timing (caveat: *Shared state, noise, isolation and repeatable signal must be established.*): tenant B sends its own prompts and reads the clock. Steps 1–2 read the cache inside the model, which is `A03` White-box access. |
-| Read first | [`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) |
-| Mitigated by | None in the seed graph. Defend measures [`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation) (per-tenant scoping) as related, not mapped. |
-| Evaluated by | [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy) (intervals and a baseline over bare ratios), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | Prerequisite concept for [`attack-cache-sidechannel`](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel) and [`attack-session-leak`](https://ai-security-atlas.github.io/?node=attack-session-leak); the contrast architecture [`arch-ssm`](https://ai-security-atlas.github.io/?node=arch-ssm) (practiced in Step 2); the serving runtime from [`system-serving`](https://ai-security-atlas.github.io/?node=system-serving); another engine's prefix caching in [`tool-vllm`](https://ai-security-atlas.github.io/?node=tool-vllm). |
+| Read first | [`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
+| Mitigated by | None in the seed graph. Defend measures [`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) (per-tenant scoping) as related, not mapped. |
+| Evaluated by | [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) (intervals and a baseline over bare ratios), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | Prerequisite concept for [`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/) and [`attack-session-leak`](https://ai-security-atlas.github.io/nodes/attack-session-leak/); the contrast architecture [`arch-ssm`](https://ai-security-atlas.github.io/nodes/arch-ssm/) (practiced in Step 2); the serving runtime from [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/); another engine's prefix caching in [`tool-vllm`](https://ai-security-atlas.github.io/nodes/tool-vllm/). |
 
 > [!NOTE]
 > **Atlas caveat:** none recorded for this concept node. Its article closes with the sentence this lab measures: a KV cache is "state that persists between computations", and how it is scoped and shared "is an implementation decision". The numbers below are one small model and one CPU server; they show the mechanism and say nothing about how a production deployment behaves.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none required. [LAB-26 · Who attends to whom](../concept-attention/README.md) shows the attention the cache stores, and [LAB-14 · What the server adds](../system-serving/README.md) introduces this server and its `cache_n` counter.
-- Concepts to read first: [`concept-attention`](https://ai-security-atlas.github.io/?node=concept-attention) and [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens).
+- Concepts to read first: [`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
 
@@ -210,7 +210,7 @@ What to notice: the cache is exactly `layers × 2 × key/value heads × head_dim
 
 **Why**
 
-The KV cache stores, for every layer and position, the keys and values that [attention](https://ai-security-atlas.github.io/?node=concept-attention) needs for the next token ([`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache)). Keeping it turns per-step work from "recompute everything" into "attend to what is stored", which is why inference systems carry it. That the cache is concrete bytes tied to the exact tokens seen is the fact the rest of the lab builds on: it is state, it persists, and its size and content depend on the prompt.
+The KV cache stores, for every layer and position, the keys and values that [attention](https://ai-security-atlas.github.io/nodes/concept-attention/) needs for the next token ([`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/)). Keeping it turns per-step work from "recompute everything" into "attend to what is stored", which is why inference systems carry it. That the cache is concrete bytes tied to the exact tokens seen is the fact the rest of the lab builds on: it is state, it persists, and its size and content depend on the prompt.
 
 ### Step 2 — A state that does not grow · [explainer 2](explainer/index.html#concept-kv-cache/2)
 
@@ -241,7 +241,7 @@ What to notice: the state is exactly `layers × inner width × (conv window + st
 
 **Why**
 
-State-space and hybrid sequence models propagate information through a recurrent state instead of attending over every earlier position ([`arch-ssm`](https://ai-security-atlas.github.io/?node=arch-ssm)). The security consequence is a contrast with limits. The token-by-token prefix matching the rest of this lab measures works on the transformer's growing KV cache. A server can still offer prefix reuse for a state-space model by saving the whole state at the end of a shared prefix and restoring it later, and that saved state raises the same sharing and timing questions. The arch-ssm article's caution is that transformer reasoning does not transfer automatically, so check the concrete serving design, and remember that hybrids mix both kinds of layer.
+State-space and hybrid sequence models propagate information through a recurrent state instead of attending over every earlier position ([`arch-ssm`](https://ai-security-atlas.github.io/nodes/arch-ssm/)). The security consequence is a contrast with limits. The token-by-token prefix matching the rest of this lab measures works on the transformer's growing KV cache. A server can still offer prefix reuse for a state-space model by saving the whole state at the end of a shared prefix and restoring it later, and that saved state raises the same sharing and timing questions. The arch-ssm article's caution is that transformer reasoning does not transfer automatically, so check the concrete serving design, and remember that hybrids mix both kinds of layer.
 
 ### Step 3 — The cache outlives the request · [explainer 3](explainer/index.html#concept-kv-cache/3)
 
@@ -273,7 +273,7 @@ What to notice: the first request computes all 672 tokens (`cache_n 0`), and the
 
 **Why**
 
-Prefix reuse keeps the cache for a shared leading stretch of a prompt so it need not be recomputed across requests that begin the same way ([`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache)). On this server that cache is process-wide and unscoped ([`system-serving`](https://ai-security-atlas.github.io/?node=system-serving)), which is the first condition the privacy node demands you demonstrate rather than assume: the state one request created is still there for the next one. Whether that is safe depends entirely on who the next request belongs to.
+Prefix reuse keeps the cache for a shared leading stretch of a prompt so it need not be recomputed across requests that begin the same way ([`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/)). On this server that cache is process-wide and unscoped ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/)), which is the first condition the privacy node demands you demonstrate rather than assume: the state one request created is still there for the next one. Whether that is safe depends entirely on who the next request belongs to.
 
 ### Step 4 — A shared prefix skips the prefill · [explainer 4](explainer/index.html#concept-kv-cache/4)
 
@@ -303,7 +303,7 @@ What to notice: the probe that repeats tenant A's long prefix reuses hundreds of
 
 **Why**
 
-Prefill (processing the prompt before the first new token) dominates cost on a CPU server, so skipping it when the prefix is cached is the whole speed-up and the whole signal ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel)). The reply that carries the time also carries `cache_n`, the server's own oracle; a hosted API strips it, so from here the lab reads only the clock. What an outside client can tell from that clock is one bit — whether this exact prefix was processed recently — not the content of anyone's prompt.
+Prefill (processing the prompt before the first new token) dominates cost on a CPU server, so skipping it when the prefix is cached is the whole speed-up and the whole signal ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/)). The reply that carries the time also carries `cache_n`, the server's own oracle; a hosted API strips it, so from here the lab reads only the clock. What an outside client can tell from that clock is one bit — whether this exact prefix was processed recently — not the content of anyone's prompt.
 
 ### Step 5 — Guess whether the canary prefix was sent (≈20–60 s) · [explainer 6](explainer/index.html#concept-kv-cache/6)
 
@@ -344,7 +344,7 @@ What to notice: with a long prefix the hit and miss times do not overlap at all 
 
 **Why**
 
-This is prompt-cache timing inference reduced to its concept: candidate prefix, first-contact probe, a threshold learned from calibration, and a claim stated with a baseline and an interval rather than one ratio ([`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy)). The Mann-Whitney test asks whether the sent-round times sit below the not-sent times without assuming a bell curve, and the AUC turns it into "probability a hit beats a miss". What tenant B recovers is one bit about which known prefix was recently processed, which is exactly the prerequisite for [`attack-cache-sidechannel`](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel) and [`attack-session-leak`](https://ai-security-atlas.github.io/?node=attack-session-leak); it is not the text of anyone's prompt, a distinction Step D3 returns to.
+This is prompt-cache timing inference reduced to its concept: candidate prefix, first-contact probe, a threshold learned from calibration, and a claim stated with a baseline and an interval rather than one ratio ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/)). The Mann-Whitney test asks whether the sent-round times sit below the not-sent times without assuming a bell curve, and the AUC turns it into "probability a hit beats a miss". What tenant B recovers is one bit about which known prefix was recently processed, which is exactly the prerequisite for [`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/) and [`attack-session-leak`](https://ai-security-atlas.github.io/nodes/attack-session-leak/); it is not the text of anyone's prompt, a distinction Step D3 returns to.
 
 ## Defend
 
@@ -380,7 +380,7 @@ What to notice: with a secret per-tenant salt in front of every prompt, tenant B
 
 **Why**
 
-[`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation) scopes reusable state to its owner so one principal's cache cannot surface in another's request or timing. A per-tenant salt the client cannot strip does that structurally: prefixes only match within a tenant, so cross-tenant reuse — and the signal it carries — disappears, while each tenant keeps its own reuse. The trade-off is real: tenants lose every shared-prefix saving between them, and the mitigation is conditional, so an adaptive attacker probes for whatever sharing the deployment still allows.
+[`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) scopes reusable state to its owner so one principal's cache cannot surface in another's request or timing. A per-tenant salt the client cannot strip does that structurally: prefixes only match within a tenant, so cross-tenant reuse — and the signal it carries — disappears, while each tenant keeps its own reuse. The trade-off is real: tenants lose every shared-prefix saving between them, and the mitigation is conditional, so an adaptive attacker probes for whatever sharing the deployment still allows.
 
 ### Step D2 — Jitter and what it costs · [explainer 8](explainer/index.html#concept-kv-cache/8)
 
@@ -413,17 +413,17 @@ What to notice: random latency only blurs the guess once its range is larger tha
 
 **Why**
 
-Response-time padding is the mitigation that treats the symptom: it masks the timing difference instead of removing the shared state, so the channel still exists and an attacker trades more samples for the same answer ([`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation) frames this as the performance-versus-leakage trade-off). The honest way to report it is as a cost curve on the deployment's own hardware, not a yes/no: how much latency you add against how much sampling you force. Scoping the cache (D1) removes the premise; jitter only raises the price.
+Response-time padding is the mitigation that treats the symptom: it masks the timing difference instead of removing the shared state, so the channel still exists and an attacker trades more samples for the same answer ([`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) frames this as the performance-versus-leakage trade-off). The honest way to report it is as a cost curve on the deployment's own hardware, not a yes/no: how much latency you add against how much sampling you force. Scoping the cache (D1) removes the premise; jitter only raises the price.
 
 ### Step D3 — What did you actually demonstrate?
 
 **Read**
 
-Walk the concept's two halves against your own outputs. Inside the model: the KV cache is bytes tied to tokens (Step 1), it grows with length, and a state-space model has no such per-token cache (Step 2), so the token-by-token matching you measured belongs to the transformer, and an SSM server would need to save whole states to reuse a prefix. On the server: the cache outlived the request that filled it (Step 3, `cache_n` in the hundreds for a repeat), a shared prefix skipped prefill (Step 4, about 19 ms against 745 ms), and from time alone you guessed whether a known prefix was recently sent (Step 5, 16/16 but read as 81–100%). What you did not do: read anyone's prompt. You learned one bit per round — whether *this known prefix* was processed recently — and only because the prefix was known, it was long, and the gap (hundreds of milliseconds of prefill) was far larger than the noise on this busy machine. A production API's cache policy, noise floor and scoping are all different, and a deployment that salts per tenant (D1) removes the premise. The question to carry away, the one [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) asks of any deployment: who shares which cache with whom, and what can a probe distinguish.
+Walk the concept's two halves against your own outputs. Inside the model: the KV cache is bytes tied to tokens (Step 1), it grows with length, and a state-space model has no such per-token cache (Step 2), so the token-by-token matching you measured belongs to the transformer, and an SSM server would need to save whole states to reuse a prefix. On the server: the cache outlived the request that filled it (Step 3, `cache_n` in the hundreds for a repeat), a shared prefix skipped prefill (Step 4, about 19 ms against 745 ms), and from time alone you guessed whether a known prefix was recently sent (Step 5, 16/16 but read as 81–100%). What you did not do: read anyone's prompt. You learned one bit per round — whether *this known prefix* was processed recently — and only because the prefix was known, it was long, and the gap (hundreds of milliseconds of prefill) was far larger than the noise on this busy machine. A production API's cache policy, noise floor and scoping are all different, and a deployment that salts per tenant (D1) removes the premise. The question to carry away, the one [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) asks of any deployment: who shares which cache with whom, and what can a probe distinguish.
 
 **Why**
 
-The concept node's point is one sentence: a KV cache is state that persists between computations, and its scoping and sharing are implementation decisions, not guarantees ([`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache)). Keeping the timing bit separate from content disclosure is what distinguishes the two attacks this concept feeds: [`attack-session-leak`](https://ai-security-atlas.github.io/?node=attack-session-leak) warns that a cached prefix answering faster is not the same as recovering another principal's data, and [`attack-cache-sidechannel`](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel) is the full attack you are now equipped to measure.
+The concept node's point is one sentence: a KV cache is state that persists between computations, and its scoping and sharing are implementation decisions, not guarantees ([`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/)). Keeping the timing bit separate from content disclosure is what distinguishes the two attacks this concept feeds: [`attack-session-leak`](https://ai-security-atlas.github.io/nodes/attack-session-leak/) warns that a cached prefix answering faster is not the same as recovering another principal's data, and [`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/) is the full attack you are now equipped to measure.
 
 ## Evaluate
 
@@ -491,13 +491,13 @@ The llama.cpp and workbench images stay until `docker image rm` removes them.
 - Shorten the handbook in a copy of `assets/prefix.json` (keep the canary and the divergence point) and rerun Step 5 at a few prefix lengths: find the shortest shared prefix whose 16-round guess still stays above the 50% baseline with its interval, and plot the median gap against prefix tokens.
 - Add a no-prime control: run the Step 5 protocol with tenant A removed entirely and measure how often the threshold rule still reports "sent" — the false-alarm rate your threshold must beat.
 - Restart the server with `SERVING_ARGS="--no-cache-prompt"` (`SERVING_ARGS="--no-cache-prompt" docker compose up -d --wait llama-server`) and rerun Steps 3 and 5: the channel closes because there is nothing to reuse, and the victim's own repeats stop hitting too — measure that cost, then restore the defaults.
-- Repeat Step 1 on a hybrid state-space model and report, layer by layer, where a growing KV cache reappears and where a fixed state sits. Then read how a serving engine you use caches each kind of layer for prefix reuse ([`arch-ssm`](https://ai-security-atlas.github.io/?node=arch-ssm)).
+- Repeat Step 1 on a hybrid state-space model and report, layer by layer, where a growing KV cache reappears and where a fixed state sits. Then read how a serving engine you use caches each kind of layer for prefix reuse ([`arch-ssm`](https://ai-security-atlas.github.io/nodes/arch-ssm/)).
 
 ## Further Reading
 
 - Gu et al., [Auditing Prompt Caching in Language Model APIs](https://arxiv.org/abs/2502.07776) (2025), the seed source `s-cache-audit`: timing-based auditing of cross-user cache sharing in deployed APIs, its sharing boundaries and its limitations.
-- vLLM, [Automatic Prefix Caching](https://docs.vllm.ai/en/v0.8.3/design/automatic_prefix_caching.html) (seed source `s-vllm-cache`): how another serving engine reuses the KV cache across requests, and its block-eviction behavior ([`tool-vllm`](https://ai-security-atlas.github.io/?node=tool-vllm)).
-- Gu and Dao, [Mamba: Linear-Time Sequence Modeling with Selective State Spaces](https://arxiv.org/abs/2312.00752) (2023), the seed source `s-mamba`: the fixed-size recurrent state Step 2 contrasts with the KV cache ([`arch-ssm`](https://ai-security-atlas.github.io/?node=arch-ssm)).
+- vLLM, [Automatic Prefix Caching](https://docs.vllm.ai/en/v0.8.3/design/automatic_prefix_caching.html) (seed source `s-vllm-cache`): how another serving engine reuses the KV cache across requests, and its block-eviction behavior ([`tool-vllm`](https://ai-security-atlas.github.io/nodes/tool-vllm/)).
+- Gu and Dao, [Mamba: Linear-Time Sequence Modeling with Selective State Spaces](https://arxiv.org/abs/2312.00752) (2023), the seed source `s-mamba`: the fixed-size recurrent state Step 2 contrasts with the KV cache ([`arch-ssm`](https://ai-security-atlas.github.io/nodes/arch-ssm/)).
 - [llama.cpp](https://github.com/ggml-org/llama.cpp) (seed source `s-llamacpp`) and its [server README](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md): `--cache-prompt`, the prompt cache and the `/completion` timings; the pinned image is `ghcr.io/ggml-org/llama.cpp:server-b11977`.
 - [LAB-24 · Timing the prompt cache](../attack-cache-sidechannel/README.md): the full attack this concept feeds, with the per-tenant and no-cache defenses measured end to end.
 - Models: [HuggingFaceTB/SmolLM2-135M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct), [state-spaces/mamba-130m-hf](https://huggingface.co/state-spaces/mamba-130m-hf), and the serving model [HuggingFaceTB/SmolLM2-360M-Instruct-GGUF](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF).

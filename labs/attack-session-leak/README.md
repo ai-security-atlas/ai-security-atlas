@@ -23,7 +23,7 @@ covers:
 
 # LAB-42 · Whose data is this? Cross-tenant leaks in a chat app
 
-> **Atlas node:** [Cross-session or cross-tenant disclosure](https://ai-security-atlas.github.io/?node=attack-session-leak) · **Family:** family-privacy · **Level:** intermediate · **Time:** 45 min · **Model backend:** optional
+> **Atlas node:** [Cross-session or cross-tenant disclosure](https://ai-security-atlas.github.io/nodes/attack-session-leak/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 45 min · **Model backend:** optional
 
 ## Overview
 
@@ -51,13 +51,13 @@ Every company, person, document and code here is fictional. The only secret is t
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-session-leak`](../../articles/attack-session-leak.md) |
-| Family | [`family-privacy`](https://ai-security-atlas.github.io/?node=family-privacy) |
-| Goal | [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) |
+| Family | [`family-privacy`](https://ai-security-atlas.github.io/nodes/family-privacy/) |
+| Goal | [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) |
 | Access profile | `A01` Output-query access (caveat: *No weights, logits, training data or privileged context are implied.*). Harbor only asks questions and reads replies. The seed also lists `A14` Observable shared-service timing. This lab prints timings and then sets them aside: the graded signal is the canary in the body. |
-| Read first | [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries), [`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache) |
-| Mitigated by | [`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation) (conditional), [`defense-rag-acl`](https://ai-security-atlas.github.io/?node=defense-rag-acl) (conditional). D3 is this lab’s session-id control; the seed has no separate node for it. |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model). Those nodes have their own labs. This lab links them and does not cover them. |
-| Related | [`system-serving`](https://ai-security-atlas.github.io/?node=system-serving) (its own lab, [LAB-14](../system-serving/README.md)), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent), [`system-rag`](https://ai-security-atlas.github.io/?node=system-rag), [`attack-rag-disclosure`](https://ai-security-atlas.github.io/?node=attack-rag-disclosure), [`attack-cache-sidechannel`](https://ai-security-atlas.github.io/?node=attack-cache-sidechannel) (the timing contrast, [LAB-24](../attack-cache-sidechannel/README.md)), [`defense-authorization`](https://ai-security-atlas.github.io/?node=defense-authorization) |
+| Read first | [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/), [`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/) |
+| Mitigated by | [`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) (conditional), [`defense-rag-acl`](https://ai-security-atlas.github.io/nodes/defense-rag-acl/) (conditional). D3 is this lab’s session-id control; the seed has no separate node for it. |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/). Those nodes have their own labs. This lab links them and does not cover them. |
+| Related | [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/) (its own lab, [LAB-14](../system-serving/README.md)), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/), [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/), [`attack-rag-disclosure`](https://ai-security-atlas.github.io/nodes/attack-rag-disclosure/), [`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/) (the timing contrast, [LAB-24](../attack-cache-sidechannel/README.md)), [`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/) |
 
 > [!NOTE]
 > **Atlas caveat:** *Separate actual content leakage from a timing signal that only suggests prior use.* A fast reply can mean a cache hit. It does not mean you recovered another tenant’s text. The canary in the body is the content leak. [LAB-24 · Timing the prompt cache](../attack-cache-sidechannel/README.md) is the lab that treats timing itself as the channel.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done. For the optional live lines, `ollama pull qwen2.5:3b` on the host.
 - Labs to finish first: none. [LAB-11 · Five components of RAG](../system-rag/README.md) introduces this `atlas-app` and a tenant filter. [LAB-38 · The cache remembers](../concept-kv-cache/README.md) is the concept this lab’s cache is not: a KV cache. [LAB-24 · Timing the prompt cache](../attack-cache-sidechannel/README.md) is the contrast, after this lab or before it.
-- Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries) and [`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache).
+- Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/) and [`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/).
 
 ## Explainer
 
@@ -206,7 +206,7 @@ What to notice: Copperleaf’s night-shift reply contains the canary and Harbor�
 
 **Why**
 
-The caller is a principal the app derives from the API key, and each private note is stored with a tenant ([`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries)). The baseline keeps three controls on at once: the cache key includes that principal, retrieval applies the tenant filter (`acl=pre`), and the session id was issued for that caller. Harbor’s weekend code in answer to the night-shift question is a weak match inside Harbor’s own documents. It is Harbor’s data, so the summary counts it as `harbor marker=yes` and `harbor leak=no`.
+The caller is a principal the app derives from the API key, and each private note is stored with a tenant ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)). The baseline keeps three controls on at once: the cache key includes that principal, retrieval applies the tenant filter (`acl=pre`), and the session id was issued for that caller. Harbor’s weekend code in answer to the night-shift question is a weak match inside Harbor’s own documents. It is Harbor’s data, so the summary counts it as `harbor marker=yes` and `harbor leak=no`.
 
 ### Step 2 — A cached reply crosses the shop · [explainer 2](explainer/index.html#attack-session-leak/2)
 
@@ -236,7 +236,7 @@ What to notice: the tenant filter is still on, Harbor never receives a search hi
 
 **Why**
 
-The cache key is the normalized question and nothing else, so the second caller of that question is served the first caller’s reply ([`attack-session-leak`](https://ai-security-atlas.github.io/?node=attack-session-leak)). The filter never runs on a hit: the reply was saved on Copperleaf’s miss. The explainer’s next frame stays on this same command and reads that key. A hit near 0 ms on this machine is a rounding of a sub-millisecond replay. Treat the printed milliseconds as a moving measurement, and treat the canary in the body as the result ([`concept-kv-cache`](https://ai-security-atlas.github.io/?node=concept-kv-cache) is a different cache: it stores attention state, and [LAB-24](../attack-cache-sidechannel/README.md) shows what a timing signal alone can recover).
+The cache key is the normalized question and nothing else, so the second caller of that question is served the first caller’s reply ([`attack-session-leak`](https://ai-security-atlas.github.io/nodes/attack-session-leak/)). The filter never runs on a hit: the reply was saved on Copperleaf’s miss. The explainer’s next frame stays on this same command and reads that key. A hit near 0 ms on this machine is a rounding of a sub-millisecond replay. Treat the printed milliseconds as a moving measurement, and treat the canary in the body as the result ([`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/) is a different cache: it stores attention state, and [LAB-24](../attack-cache-sidechannel/README.md) shows what a timing signal alone can recover).
 
 ### Step 3 — Retrieval without a tenant filter · [explainer 4](explainer/index.html#attack-session-leak/4)
 
@@ -264,7 +264,7 @@ What to notice: with the cache off, Harbor’s night-shift question ranks Copper
 
 **Why**
 
-Distance is closeness of wording between the question and the chunk. It is blind to the caller, so a shared index with no metadata filter hands another tenant’s document to whoever asks ([`attack-rag-disclosure`](https://ai-security-atlas.github.io/?node=attack-rag-disclosure), [`system-rag`](https://ai-security-atlas.github.io/?node=system-rag)). The phrase “night-shift purchase order code” appears only on Copperleaf’s note, which is why that chunk wins. The distances come from atlas-app’s all-MiniLM-L6-v2 embedder. Lock the document order, not a stopwatch.
+Distance is closeness of wording between the question and the chunk. It is blind to the caller, so a shared index with no metadata filter hands another tenant’s document to whoever asks ([`attack-rag-disclosure`](https://ai-security-atlas.github.io/nodes/attack-rag-disclosure/), [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/)). The phrase “night-shift purchase order code” appears only on Copperleaf’s note, which is why that chunk wins. The distances come from atlas-app’s all-MiniLM-L6-v2 embedder. Lock the document order, not a stopwatch.
 
 ### Step 4 — A shared or guessable session · [explainer 5](explainer/index.html#attack-session-leak/5)
 
@@ -298,7 +298,7 @@ What to notice: the tenant filter is on and Harbor’s new search returns Harbor
 
 **Why**
 
-One bucket named `global`, and one client-chosen id `sess-1001`, are both names any caller can present, so the transcript stored for Copperleaf is context for Harbor ([`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)). The canary is not in the top document of Harbor’s search. It is in the memory the assistant appended. An agent that keeps conversation state has to know whose state it is before it reads it back ([`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries)).
+One bucket named `global`, and one client-chosen id `sess-1001`, are both names any caller can present, so the transcript stored for Copperleaf is context for Harbor ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The canary is not in the top document of Harbor’s search. It is in the memory the assistant appended. An agent that keeps conversation state has to know whose state it is before it reads it back ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)).
 
 ### Step 5 — Three content leaks · [explainer 6](explainer/index.html#attack-session-leak/6)
 
@@ -325,7 +325,7 @@ What to notice: the score is 3/3 because Harbor’s body contains `ATLAS-CANARY-
 
 **Why**
 
-The impact is the other tenant’s text in a reply Harbor can read, which is the goal of obtaining protected information ([`goal-information`](https://ai-security-atlas.github.io/?node=goal-information)). Counting the canary in code is the success test ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). A timing gap belongs in a privacy evaluation only after you have shown it carries content, which this stub refuses to claim ([`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)).
+The impact is the other tenant’s text in a reply Harbor can read, which is the goal of obtaining protected information ([`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/)). Counting the canary in code is the success test ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). A timing gap belongs in a privacy evaluation only after you have shown it carries content, which this stub refuses to claim ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)).
 
 ## Defend
 
@@ -353,7 +353,7 @@ What to notice: the same 12 calls leak Copperleaf’s night-shift code to Harbor
 
 **Why**
 
-A cache that includes the principal in the key stops one tenant’s stored reply from being served to another ([`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation)). That node is already practiced in [LAB-24](../attack-cache-sidechannel/README.md), so this step links it and measures the content leak on this assistant. The workload asks Copperleaf before Harbor, so Harbor’s private code is never the value sitting in the shared key. Reverse the order and the shared key would store Harbor’s reply for Copperleaf. The 3 extra retrievals are the measured cost. Evaluate estimates the token cost of those misses from one live reply. It does not sum three generations.
+A cache that includes the principal in the key stops one tenant’s stored reply from being served to another ([`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/)). That node is already practiced in [LAB-24](../attack-cache-sidechannel/README.md), so this step links it and measures the content leak on this assistant. The workload asks Copperleaf before Harbor, so Harbor’s private code is never the value sitting in the shared key. Reverse the order and the shared key would store Harbor’s reply for Copperleaf. The 3 extra retrievals are the measured cost. Evaluate estimates the token cost of those misses from one live reply. It does not sum three generations.
 
 ### Step D2 — Filter retrieval by the caller · [explainer 8](explainer/index.html#attack-session-leak/8)
 
@@ -384,7 +384,7 @@ What to notice: the filter removes the one unauthorized chunk, Harbor’s night-
 
 **Why**
 
-Authorization is a filter on the search, built from the authenticated principal, applied before the hit list is ranked ([`defense-rag-acl`](https://ai-security-atlas.github.io/?node=defense-rag-acl), [`defense-authorization`](https://ai-security-atlas.github.io/?node=defense-authorization)). The measured cost is one unauthorized chunk removed, and Harbor’s own weekend code still returned. The honest limit: dropping Copperleaf’s note does not make the remaining answer correct. Harbor’s night-shift question now quotes the weekend display code, which Harbor is allowed to see and which does not answer the question. A production assistant would refuse a poor match. This stub does not. The live cross-check in Evaluate, on `sleak-acl`, did refuse.
+Authorization is a filter on the search, built from the authenticated principal, applied before the hit list is ranked ([`defense-rag-acl`](https://ai-security-atlas.github.io/nodes/defense-rag-acl/), [`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/)). The measured cost is one unauthorized chunk removed, and Harbor’s own weekend code still returned. The honest limit: dropping Copperleaf’s note does not make the remaining answer correct. Harbor’s night-shift question now quotes the weekend display code, which Harbor is allowed to see and which does not answer the question. A production assistant would refuse a poor match. This stub does not. The live cross-check in Evaluate, on `sleak-acl`, did refuse.
 
 ### Step D3 — Issue the session id on the server · [explainer 9](explainer/index.html#attack-session-leak/9)
 
@@ -419,7 +419,7 @@ What to notice: the server-issued id is 32 hex characters, Harbor is rejected bo
 
 **Why**
 
-The id is `uuid4().hex`, stored with the principal that received it, and a resume is accepted only when the caller matches that principal ([`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)). The regression is the three lines above, plus the guess count. The cost is that a client-chosen id resumes 0/1 times while the issued id resumes 1/1. The hex value changes every run. An attacker who can read another user’s id from a log or a leaked URL is outside what these thousand guesses measure ([`defense-authorization`](https://ai-security-atlas.github.io/?node=defense-authorization)).
+The id is `uuid4().hex`, stored with the principal that received it, and a resume is accepted only when the caller matches that principal ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The regression is the three lines above, plus the guess count. The cost is that a client-chosen id resumes 0/1 times while the issued id resumes 1/1. The hex value changes every run. An attacker who can read another user’s id from a log or a leaked URL is outside what these thousand guesses measure ([`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/)).
 
 ## Evaluate
 
@@ -532,10 +532,10 @@ The project name keeps this lab’s volume (`atlas-labs-attack-session-leak_atla
 
 ## Further Reading
 
-- [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/llm-top-10/), the seed source `s-owasp25`. Sensitive-information disclosure is the category this lab’s goal sits under. [`defense-rag-acl`](https://ai-security-atlas.github.io/?node=defense-rag-acl) cites the same list for authorization-aware retrieval.
-- Gu et al., [Auditing Prompt Caching in Language Model APIs](https://arxiv.org/abs/2502.07776) (2025), the seed source `s-cache-audit`. Timing audits of shared prompt caches, and the limit this lab quotes: a timing signal suggests prior use and is not the text. [`defense-cache-isolation`](https://ai-security-atlas.github.io/?node=defense-cache-isolation) cites it.
-- Greshake et al., [Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection](https://arxiv.org/abs/2302.12173) (2023), the seed source `s-indirect`, cited by [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries).
-- Model Context Protocol, [Authorization Security Considerations](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/security-considerations) (2026-07-28 revision), the seed source `s-mcp-security`, also cited by [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries).
+- [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/llm-top-10/), the seed source `s-owasp25`. Sensitive-information disclosure is the category this lab’s goal sits under. [`defense-rag-acl`](https://ai-security-atlas.github.io/nodes/defense-rag-acl/) cites the same list for authorization-aware retrieval.
+- Gu et al., [Auditing Prompt Caching in Language Model APIs](https://arxiv.org/abs/2502.07776) (2025), the seed source `s-cache-audit`. Timing audits of shared prompt caches, and the limit this lab quotes: a timing signal suggests prior use and is not the text. [`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) cites it.
+- Greshake et al., [Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection](https://arxiv.org/abs/2302.12173) (2023), the seed source `s-indirect`, cited by [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
+- Model Context Protocol, [Authorization Security Considerations](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/security-considerations) (2026-07-28 revision), the seed source `s-mcp-security`, also cited by [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 - [LAB-24 · Timing the prompt cache](../attack-cache-sidechannel/README.md) measures the timing channel this lab sets aside. [LAB-14 · What the server adds](../system-serving/README.md) is the serving-gateway lab. [LAB-11 · Five components of RAG](../system-rag/README.md) is the same `atlas-app` retrieval path with a different corpus.
 
 ---

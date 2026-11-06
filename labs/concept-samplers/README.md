@@ -23,7 +23,7 @@ covers:
 
 # LAB-45 · Same weights, ten times the cost
 
-> **Atlas node:** [Diffusion and flow samplers](https://ai-security-atlas.github.io/?node=concept-samplers) · **Family:** family-availability · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Diffusion and flow samplers](https://ai-security-atlas.github.io/nodes/concept-samplers/) · **Family:** family-availability · **Level:** beginner · **Time:** 60 min · **Model backend:** none
 
 ## Overview
 
@@ -51,13 +51,13 @@ The only code that runs on purpose is the shared inert payload `labkit.INERT_COD
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-samplers`](../../articles/concept-samplers.md) |
-| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-availability`](https://ai-security-atlas.github.io/?node=family-availability), the family of [`attack-sponge`](https://ai-security-atlas.github.io/?node=attack-sponge), whose cost amplification this lab measures at the sampler level. |
-| Goal | None in the seed graph. The cost steps serve [`goal-availability`](https://ai-security-atlas.github.io/?node=goal-availability) (one request can cost fifty times another). |
+| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-availability`](https://ai-security-atlas.github.io/nodes/family-availability/), the family of [`attack-sponge`](https://ai-security-atlas.github.io/nodes/attack-sponge/), whose cost amplification this lab measures at the sampler level. |
+| Goal | None in the seed graph. The cost steps serve [`goal-availability`](https://ai-security-atlas.github.io/nodes/goal-availability/) (one request can cost fifty times another). |
 | Access profile | `A19` Inference configuration control (caveat: *Sampling settings, system prompts and model weights are distinct privileges.*): Steps 3 and D1 give the caller only the scheduler name and step count, never the weights. Step 6 is a different privilege, the choice of what to load. |
-| Read first | [`concept-noise`](https://ai-security-atlas.github.io/?node=concept-noise) (the node's prerequisite), [`arch-diffusion`](https://ai-security-atlas.github.io/?node=arch-diffusion) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget), [`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro) and [`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load) as related, not mapped. |
-| Evaluated by | [`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost) (UNet calls and seconds per request), [`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro) |
-| Related | [`tool-diffusers`](https://ai-security-atlas.github.io/?node=tool-diffusers) (practiced in Steps 2, 6 and D3), [`concept-decoding`](https://ai-security-atlas.github.io/?node=concept-decoding) (the language-model analogue), [`attack-dependency`](https://ai-security-atlas.github.io/?node=attack-dependency), [`format-safetensors`](https://ai-security-atlas.github.io/?node=format-safetensors) |
+| Read first | [`concept-noise`](https://ai-security-atlas.github.io/nodes/concept-noise/) (the node's prerequisite), [`arch-diffusion`](https://ai-security-atlas.github.io/nodes/arch-diffusion/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/), [`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/) and [`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/) as related, not mapped. |
+| Evaluated by | [`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/) (UNet calls and seconds per request), [`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/) |
+| Related | [`tool-diffusers`](https://ai-security-atlas.github.io/nodes/tool-diffusers/) (practiced in Steps 2, 6 and D3), [`concept-decoding`](https://ai-security-atlas.github.io/nodes/concept-decoding/) (the language-model analogue), [`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/), [`format-safetensors`](https://ai-security-atlas.github.io/nodes/format-safetensors/) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its article closes with the one that applies here: "Concrete comparisons between samplers, including efficiency and quality effects, belong to the cited sources rather than to assumption." This lab measures one 32x32 pixel-space model on one CPU; the cost ratios follow from the step counts, but the image distances are for this model and seed only.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-28 · Same weights, different answers](../concept-decoding/README.md) is the language-model version of the same idea (inference settings change behavior without touching weights), and [LAB-10](../attack-dependency/README.md) covers repository code that runs at load in `transformers`.
-- Concepts to read first: [`concept-noise`](https://ai-security-atlas.github.io/?node=concept-noise) and [`arch-diffusion`](https://ai-security-atlas.github.io/?node=arch-diffusion).
+- Concepts to read first: [`concept-noise`](https://ai-security-atlas.github.io/nodes/concept-noise/) and [`arch-diffusion`](https://ai-security-atlas.github.io/nodes/arch-diffusion/).
 
 ## Explainer
 
@@ -205,7 +205,7 @@ What to notice: all 35,746,307 learned parameters sit in the UNet, the scheduler
 
 **Why**
 
-A diffusers pipeline bundles a trained denoiser (here a `UNet2DModel`) with a scheduler that decides which noise levels to visit and how to step between them; the scheduler is configuration, not learned weights ([`concept-samplers`](https://ai-security-atlas.github.io/?node=concept-samplers), built on the noise schedule of [`concept-noise`](https://ai-security-atlas.github.io/?node=concept-noise)). The model was trained on 1000 noise levels with a linear beta schedule, which every scheduler in this lab reuses. The `modeling_ddpm.py` file is a leftover from an early diffusers release; `model_index.json` still names it, but the stock `DDPMPipeline` class never imports it, which Step 6 contrasts with a pipeline that does ([`tool-diffusers`](https://ai-security-atlas.github.io/?node=tool-diffusers)).
+A diffusers pipeline bundles a trained denoiser (here a `UNet2DModel`) with a scheduler that decides which noise levels to visit and how to step between them; the scheduler is configuration, not learned weights ([`concept-samplers`](https://ai-security-atlas.github.io/nodes/concept-samplers/), built on the noise schedule of [`concept-noise`](https://ai-security-atlas.github.io/nodes/concept-noise/)). The model was trained on 1000 noise levels with a linear beta schedule, which every scheduler in this lab reuses. The `modeling_ddpm.py` file is a leftover from an early diffusers release; `model_index.json` still names it, but the stock `DDPMPipeline` class never imports it, which Step 6 contrasts with a pipeline that does ([`tool-diffusers`](https://ai-security-atlas.github.io/nodes/tool-diffusers/)).
 
 ### Step 2 — Swap the scheduler, keep the weights · [explainer 2](explainer/index.html#concept-samplers/2)
 
@@ -235,7 +235,7 @@ What to notice: the weights hash is the same after four swaps. DDIM starts at t 
 
 **Why**
 
-`pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)` is the documented way to change samplers in diffusers: the new scheduler inherits the training schedule and brings its own timestep spacing and update rule ([`tool-diffusers`](https://ai-security-atlas.github.io/?node=tool-diffusers)). DDPM (Ho et al.) adds fresh noise at every step and needs many steps; DDIM (Song et al.) and DPM-Solver++ (Lu et al.) take deterministic steps along the same path, so few steps already give a clean image ([`concept-samplers`](https://ai-security-atlas.github.io/?node=concept-samplers)). A scheduler swap is also an interface change: Euler expects the pipeline loop to scale its input, and `DDPMPipeline`'s loop does not, so the combination runs without an error and returns a washed-out image.
+`pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)` is the documented way to change samplers in diffusers: the new scheduler inherits the training schedule and brings its own timestep spacing and update rule ([`tool-diffusers`](https://ai-security-atlas.github.io/nodes/tool-diffusers/)). DDPM (Ho et al.) adds fresh noise at every step and needs many steps; DDIM (Song et al.) and DPM-Solver++ (Lu et al.) take deterministic steps along the same path, so few steps already give a clean image ([`concept-samplers`](https://ai-security-atlas.github.io/nodes/concept-samplers/)). A scheduler swap is also an interface change: Euler expects the pipeline loop to scale its input, and `DDPMPipeline`'s loop does not, so the combination runs without an error and returns a washed-out image.
 
 ### Step 3 — The caller picks the step count, the server pays (≈1–3 min) · [explainer 3](explainer/index.html#concept-samplers/3)
 
@@ -268,7 +268,7 @@ What to notice: with the weights unchanged, 200 steps took 9.3 times as long as 
 
 **Why**
 
-Each step is one full forward pass of the UNet, so the cost of a sample is the step count times the cost of one call; the weights, the output size and the request body barely change ([`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost)). An image API that forwards `num_inference_steps` and the scheduler name from the client hands the caller a cost multiplier, which is the sponge idea of [`attack-sponge`](https://ai-security-atlas.github.io/?node=attack-sponge) ([LAB-43](../attack-sponge/README.md)) without any crafted input: the request is ordinary, only its settings are expensive. On this CPU a batch of four images took no longer than one (12.3 s against 16.8 s, inside the load noise), so the step count is the knob that matters here; on other hardware the batch size can count too.
+Each step is one full forward pass of the UNet, so the cost of a sample is the step count times the cost of one call; the weights, the output size and the request body barely change ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). An image API that forwards `num_inference_steps` and the scheduler name from the client hands the caller a cost multiplier, which is the sponge idea of [`attack-sponge`](https://ai-security-atlas.github.io/nodes/attack-sponge/) ([LAB-43](../attack-sponge/README.md)) without any crafted input: the request is ordinary, only its settings are expensive. On this CPU a batch of four images took no longer than one (12.3 s against 16.8 s, inside the load noise), so the step count is the knob that matters here; on other hardware the batch size can count too.
 
 ### Step 4 — Steps and solvers change the picture (≈1–5 min) · [explainer 4](explainer/index.html#concept-samplers/4)
 
@@ -296,7 +296,7 @@ What to notice: at 10 steps DPM-Solver++ is closest to the 100-step reference (R
 
 **Why**
 
-DDIM, DPM-Solver++ and Euler are numerical solvers for the same deterministic path from noise to image (the probability-flow ODE); with more steps they all approach its endpoint, and a higher-order solver such as DPM-Solver++ gets close in fewer steps ([`concept-samplers`](https://ai-security-atlas.github.io/?node=concept-samplers)). DDPM's ancestral sampler injects new noise at each step and was designed for all 1000 training timesteps, so a short DDPM run leaves noise in the image. The reference is itself a DDIM approximation of that endpoint, so a different solver levels off at its own small gap instead of reaching 0, which is what DPM-Solver++ does between 10 and 20 steps. This is the trade the article describes, fewer steps for speed against more steps for fidelity, measured on one model and one seed; the distances do not transfer to other models.
+DDIM, DPM-Solver++ and Euler are numerical solvers for the same deterministic path from noise to image (the probability-flow ODE); with more steps they all approach its endpoint, and a higher-order solver such as DPM-Solver++ gets close in fewer steps ([`concept-samplers`](https://ai-security-atlas.github.io/nodes/concept-samplers/)). DDPM's ancestral sampler injects new noise at each step and was designed for all 1000 training timesteps, so a short DDPM run leaves noise in the image. The reference is itself a DDIM approximation of that endpoint, so a different solver levels off at its own small gap instead of reaching 0, which is what DPM-Solver++ does between 10 and 20 steps. This is the trade the article describes, fewer steps for speed against more steps for fidelity, measured on one model and one seed; the distances do not transfer to other models.
 
 ### Step 5 — A seed is not the whole recipe (≈1–4 min) · [explainer 5](explainer/index.html#concept-samplers/5)
 
@@ -327,7 +327,7 @@ What to notice: only an exact rerun and a batch of two with DDIM reproduce the b
 
 **Why**
 
-The seed fixes the starting noise and, for stochastic samplers, every noise draw after it; the scheduler class, its config, the step count and the batch layout decide what happens to that noise ([`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro)). Deterministic solvers from the same seed agree on the picture but not on the bytes, so a regression test that compares pixel hashes breaks on a scheduler change, and a test that only eyeballs images misses one. DDPM draws its per-step noise for the whole batch at once, so the same seed gives a different image when the batch size changes.
+The seed fixes the starting noise and, for stochastic samplers, every noise draw after it; the scheduler class, its config, the step count and the batch layout decide what happens to that noise ([`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/)). Deterministic solvers from the same seed agree on the picture but not on the bytes, so a regression test that compares pixel hashes breaks on a scheduler change, and a test that only eyeballs images misses one. DDPM draws its per-step noise for the whole batch at once, so the same seed gives a different image when the batch size changes.
 
 ### Step 6 — The loader can run repository code · [explainer 6](explainer/index.html#concept-samplers/6)
 
@@ -361,7 +361,7 @@ What to notice: without the trust flag diffusers refuses the local `pipeline.py`
 
 **Why**
 
-`custom_pipeline` makes diffusers import a Python file and use its class as the pipeline; for a local folder or a hub repo, diffusers 0.42 asks for `trust_remote_code=True` first, and once you pass it, the module body runs at load time ([`tool-diffusers`](https://ai-security-atlas.github.io/?node=tool-diffusers), the same trust decision as `from_pretrained(..., trust_remote_code=True)` in [`attack-dependency`](https://ai-security-atlas.github.io/?node=attack-dependency)). A bare name such as `lpw_stable_diffusion` is looked up in the community pipelines mirror, and that branch reached the download with `trust_remote_code=False`: in diffusers 0.42.1 `get_cached_module_file` checks the trust flag for local folders and hub repos only, so a real download would be imported next. Weights are a separate question: without `use_safetensors=True`, the loader falls back to a pickle-based `.bin`, which diffusers 0.42 opens with `torch.load(weights_only=True)`; the pickle risks of that path are the subject of [LAB-01](../attack-unsafe-load/README.md) ([`format-safetensors`](https://ai-security-atlas.github.io/?node=format-safetensors)).
+`custom_pipeline` makes diffusers import a Python file and use its class as the pipeline; for a local folder or a hub repo, diffusers 0.42 asks for `trust_remote_code=True` first, and once you pass it, the module body runs at load time ([`tool-diffusers`](https://ai-security-atlas.github.io/nodes/tool-diffusers/), the same trust decision as `from_pretrained(..., trust_remote_code=True)` in [`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/)). A bare name such as `lpw_stable_diffusion` is looked up in the community pipelines mirror, and that branch reached the download with `trust_remote_code=False`: in diffusers 0.42.1 `get_cached_module_file` checks the trust flag for local folders and hub repos only, so a real download would be imported next. Weights are a separate question: without `use_safetensors=True`, the loader falls back to a pickle-based `.bin`, which diffusers 0.42 opens with `torch.load(weights_only=True)`; the pickle risks of that path are the subject of [LAB-01](../attack-unsafe-load/README.md) ([`format-safetensors`](https://ai-security-atlas.github.io/nodes/format-safetensors/)).
 
 ### Step 7 — Run the 1000-step request for real (optional, slow) (≈2–10 min)
 
@@ -388,7 +388,7 @@ What to notice: the 1000-step DDPM request took 429 s, 51 times the average of t
 
 **Why**
 
-Step 3 priced the 1000-step request from the measured cost per call; this step pays it once, back to back with the 20-step default so both see the same machine load ([`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost)). `DDPMPipeline.__call__` defaults to `num_inference_steps=1000`, so a server that calls `pipe()` without setting a step count runs the most expensive setting on every request ([`attack-sponge`](https://ai-security-atlas.github.io/?node=attack-sponge)).
+Step 3 priced the 1000-step request from the measured cost per call; this step pays it once, back to back with the 20-step default so both see the same machine load ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). `DDPMPipeline.__call__` defaults to `num_inference_steps=1000`, so a server that calls `pipe()` without setting a step count runs the most expensive setting on every request ([`attack-sponge`](https://ai-security-atlas.github.io/nodes/attack-sponge/)).
 
 ## Defend
 
@@ -420,7 +420,7 @@ What to notice: the cap turns 1321 UNet calls for the five requests into 70, sin
 
 **Why**
 
-The cap is an allowlist on inference settings, checked before the first UNet call, so a rejected request costs nothing; it bounds the cost of one request ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget)). It does not bound how many requests a client sends, which is why the budget counts UNet calls per client per minute, the unit Step 3 showed cost is made of ([`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost)). Limitation: budgets bound cost per client, not across many clients or keys. [LAB-43](../attack-sponge/README.md) ([`attack-sponge`](https://ai-security-atlas.github.io/?node=attack-sponge)) measures the same cost amplification with crafted inputs to a language model and its serving limits.
+The cap is an allowlist on inference settings, checked before the first UNet call, so a rejected request costs nothing; it bounds the cost of one request ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/)). It does not bound how many requests a client sends, which is why the budget counts UNet calls per client per minute, the unit Step 3 showed cost is made of ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). Limitation: budgets bound cost per client, not across many clients or keys. [LAB-43](../attack-sponge/README.md) ([`attack-sponge`](https://ai-security-atlas.github.io/nodes/attack-sponge/)) measures the same cost amplification with crafted inputs to a language model and its serving limits.
 
 ### Step D2 — Pin the sampler for evaluation and fingerprint it (≈1–2 min) · [explainer 8](explainer/index.html#concept-samplers/8)
 
@@ -450,7 +450,7 @@ What to notice: every drifted run (a `solver_order` change, another scheduler, 2
 
 **Why**
 
-Record the scheduler class with its full config, the step count, the seed, the batch size, the thread count and the library versions next to the weights hash, and compare two runs only when that manifest matches ([`eval-repro`](https://ai-security-atlas.github.io/?node=eval-repro)). Each drift row here changed one inference setting and changed the pixels while the weights stayed fixed, so an evaluation without the manifest could blame or credit the model for a sampler change. Limitation: the fingerprint is conservative; it treats every listed field as significant, so it can refuse a comparison that would have matched, as the thread-count row shows.
+Record the scheduler class with its full config, the step count, the seed, the batch size, the thread count and the library versions next to the weights hash, and compare two runs only when that manifest matches ([`eval-repro`](https://ai-security-atlas.github.io/nodes/eval-repro/)). Each drift row here changed one inference setting and changed the pixels while the weights stayed fixed, so an evaluation without the manifest could blame or credit the model for a sampler change. Limitation: the fingerprint is conservative; it treats every listed field as significant, so it can refuse a comparison that would have matched, as the thread-count row shows.
 
 ### Step D3 — Load pipelines under a policy, then check the cache (≈40 s) · [explainer 9](explainer/index.html#concept-samplers/9)
 
@@ -482,7 +482,7 @@ What to notice: the global switch alone stops all three code paths, the communit
 
 **Why**
 
-`DIFFUSERS_DISABLE_REMOTE_CODE=1` makes `get_cached_module_file`, the one function every custom-code load in this lab goes through, refuse to run, including the community-pipeline branch that Step 6 reached without a trust flag; the policy adds `use_safetensors=True`, which refuses pickle-based weights, and an allowlist of component classes in `model_index.json` ([`defense-safe-load`](https://ai-security-atlas.github.io/?node=defense-safe-load), [`tool-diffusers`](https://ai-security-atlas.github.io/?node=tool-diffusers)). The forensic check matters because code that ran once stays on disk: diffusers copies an imported `pipeline.py` into the HF modules cache. Limitation: the policy blocks the custom sampler outright; if you need one, review its code, vendor it into your own repository and pin it by hash, as [LAB-10](../attack-dependency/README.md) does for model code.
+`DIFFUSERS_DISABLE_REMOTE_CODE=1` makes `get_cached_module_file`, the one function every custom-code load in this lab goes through, refuse to run, including the community-pipeline branch that Step 6 reached without a trust flag; the policy adds `use_safetensors=True`, which refuses pickle-based weights, and an allowlist of component classes in `model_index.json` ([`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/), [`tool-diffusers`](https://ai-security-atlas.github.io/nodes/tool-diffusers/)). The forensic check matters because code that ran once stays on disk: diffusers copies an imported `pipeline.py` into the HF modules cache. Limitation: the policy blocks the custom sampler outright; if you need one, review its code, vendor it into your own repository and pin it by hash, as [LAB-10](../attack-dependency/README.md) does for model code.
 
 ## Evaluate
 

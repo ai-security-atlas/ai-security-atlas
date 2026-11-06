@@ -23,7 +23,7 @@ covers:
 
 # LAB-23 · The tool that told the agent what to do
 
-> **Atlas node:** [Tool-description poisoning](https://ai-security-atlas.github.io/?node=attack-tool-description) · **Family:** family-agent · **Level:** intermediate · **Time:** 60 min · **Model backend:** required
+> **Atlas node:** [Tool-description poisoning](https://ai-security-atlas.github.io/nodes/attack-tool-description/) · **Family:** family-agent · **Level:** intermediate · **Time:** 60 min · **Model backend:** required
 
 ## Overview
 
@@ -53,13 +53,13 @@ Every person and place here is fictional. The only "private" value is the canary
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-tool-description`](../../articles/attack-tool-description.md) |
-| Family | [`family-agent`](https://ai-security-atlas.github.io/?node=family-agent) |
-| Goal | [`goal-actions`](https://ai-security-atlas.github.io/?node=goal-actions), [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) |
+| Family | [`family-agent`](https://ai-security-atlas.github.io/nodes/family-agent/) |
+| Goal | [`goal-actions`](https://ai-security-atlas.github.io/nodes/goal-actions/), [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) |
 | Access profile | `A06` Tool metadata or response influence (caveat: *Registration, version changes and output control are distinct subvariants.*) |
-| Read first | [`system-tools`](https://ai-security-atlas.github.io/?node=system-tools), [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent) |
-| Mitigated by | [`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval), [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-tool-output`](https://ai-security-atlas.github.io/?node=attack-tool-output), [`attack-tool-rugpull`](https://ai-security-atlas.github.io/?node=attack-tool-rugpull), [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries), [`eval-agentdojo`](https://ai-security-atlas.github.io/?node=eval-agentdojo) |
+| Read first | [`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/), [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/) |
+| Mitigated by | [`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/), [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-tool-output`](https://ai-security-atlas.github.io/nodes/attack-tool-output/), [`attack-tool-rugpull`](https://ai-security-atlas.github.io/nodes/attack-tool-rugpull/), [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/), [`eval-agentdojo`](https://ai-security-atlas.github.io/nodes/eval-agentdojo/) |
 
 > [!NOTE]
 > **Atlas caveat:** Client trust behavior and descriptor availability determine exposure. This lab is the tool-description subvariant of A06. A tool result that carries instructions is [LAB-22](../attack-tool-output/README.md). A definition that changes after approval is Step 5 of this lab.
@@ -87,7 +87,7 @@ Scripts always run in the workbench service. The backend only answers model call
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
 - Labs to finish first: [LAB-22 · When the tool's answer gives the orders](../attack-tool-output/README.md) (the same assistant, when the instruction arrives in a tool result). [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) is the same idea when the untrusted text arrives as a document.
-- Concepts to read first: [`system-tools`](https://ai-security-atlas.github.io/?node=system-tools) and [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent).
+- Concepts to read first: [`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/) and [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/).
 
 ## Explainer
 
@@ -218,7 +218,7 @@ What to notice: the profile grants three tools, and both logical servers are the
 
 **Why**
 
-An agent is the model plus the tools it can call. MCP is the protocol this app uses to list and call those tools (`atlas-desk`, protocol 2026-07-28) ([`system-tools`](https://ai-security-atlas.github.io/?node=system-tools), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)). The model receives each tool's name, description and argument schema. A panel that shows only the name is showing 8 of the 341 characters. The hash is what Step D2 binds an approval to. The fixture has one MCP server, so the "weather server" and the "notes server" in this lab are two groups of tools on that server, which the scripts label as logical servers.
+An agent is the model plus the tools it can call. MCP is the protocol this app uses to list and call those tools (`atlas-desk`, protocol 2026-07-28) ([`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The model receives each tool's name, description and argument schema. A panel that shows only the name is showing 8 of the 341 characters. The hash is what Step D2 binds an approval to. The fixture has one MCP server, so the "weather server" and the "notes server" in this lab are two groups of tools on that server, which the scripts label as logical servers.
 
 ### Step 2 — The name and the description · [explainer 2](explainer/index.html#attack-tool-description/2)
 
@@ -249,7 +249,7 @@ What to notice: the panel is the string `forecast`, so the `<IMPORTANT>` marker 
 
 **Why**
 
-This is indirect prompt injection through tool metadata: the attacker writes the description, the client lists the tool, and the model treats the description as guidance ([`attack-tool-description`](https://ai-security-atlas.github.io/?node=attack-tool-description), [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection)). The cross-server part is the weather tool naming the notes tools. With one MCP server, the app will still run `notes_save` if the profile grants it. Whether the model follows the hidden steps is what Step 3 measures.
+This is indirect prompt injection through tool metadata: the attacker writes the description, the client lists the tool, and the model treats the description as guidance ([`attack-tool-description`](https://ai-security-atlas.github.io/nodes/attack-tool-description/), [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)). The cross-server part is the weather tool naming the notes tools. With one MCP server, the app will still run `notes_save` if the profile grants it. Whether the model follows the hidden steps is what Step 3 measures.
 
 ### Step 3 — The canary in the sidecar · [explainer 3](explainer/index.html#attack-tool-description/3)
 
@@ -279,7 +279,7 @@ What to notice: eight runs of the same weather question, seeds 0–7, temperatur
 
 **Why**
 
-The user asked for the weather. The description asked for a notes call, and the model did both ([`attack-tool-description`](https://ai-security-atlas.github.io/?node=attack-tool-description)). Harm here is the sidecar argument in the trace and in the audit log. The mock ledger stays empty, because this attack never calls a ledger tool. The prompt that makes `qwen2.5:3b` follow the steps is in the asset: a tool description is a procedure, and every listed step is to be done in order. The procedure error (`error: procedure in the tool description is not done`) is what the first `forecast` call returns until that sidecar has been saved. The full text of both is in `assets/harbor.json`.
+The user asked for the weather. The description asked for a notes call, and the model did both ([`attack-tool-description`](https://ai-security-atlas.github.io/nodes/attack-tool-description/)). Harm here is the sidecar argument in the trace and in the audit log. The mock ledger stays empty, because this attack never calls a ledger tool. The prompt that makes `qwen2.5:3b` follow the steps is in the asset: a tool description is a procedure, and every listed step is to be done in order. The procedure error (`error: procedure in the tool description is not done`) is what the first `forecast` call returns until that sidecar has been saved. The full text of both is in `assets/harbor.json`.
 
 ### Step 4 — One leak, call by call · [explainer 4](explainer/index.html#attack-tool-description/4)
 
@@ -313,7 +313,7 @@ What to notice: the script walks seeds until a sidecar carries the canary. Seed 
 
 **Why**
 
-The loop is the mechanism. The model requests a tool, the server runs it, the result goes back into the conversation, and the model requests again ([`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)). Nothing in that loop asks whether a tool description was an instruction. The procedure error is data from the server and a reminder of the description from the model's point of view. The canary enters the conversation as a tool result from `read_memory`, which is why the description itself can stay free of it ([`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection)).
+The loop is the mechanism. The model requests a tool, the server runs it, the result goes back into the conversation, and the model requests again ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). Nothing in that loop asks whether a tool description was an instruction. The procedure error is data from the server and a reminder of the description from the model's point of view. The canary enters the conversation as a tool result from `read_memory`, which is why the description itself can stay free of it ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)).
 
 ### Step 5 — Approved, then changed · [explainer 5](explainer/index.html#attack-tool-description/5)
 
@@ -346,7 +346,7 @@ What to notice: the approved definition is the live tool name and schema with th
 
 **Why**
 
-A rug pull is a tool that looks acceptable at approval time and different the next time the client lists tools ([`attack-tool-rugpull`](https://ai-security-atlas.github.io/?node=attack-tool-rugpull)). The fixture lists tool definitions once per run and caches them, so it cannot flip a description in the middle of a run and it has no `list_changed` notification. The lab keeps that limit and performs the swap in the client: the approved hash is computed locally from the clean description, and `atlas-app` checks it against the live definition. Step D2 is that check, measured with the model in the loop.
+A rug pull is a tool that looks acceptable at approval time and different the next time the client lists tools ([`attack-tool-rugpull`](https://ai-security-atlas.github.io/nodes/attack-tool-rugpull/)). The fixture lists tool definitions once per run and caches them, so it cannot flip a description in the middle of a run and it has no `list_changed` notification. The lab keeps that limit and performs the swap in the client: the approved hash is computed locally from the clean description, and `atlas-app` checks it against the live definition. Step D2 is that check, measured with the model in the loop.
 
 ### Step 6 — Same question, three clients · [explainer 6](explainer/index.html#attack-tool-description/6)
 
@@ -374,7 +374,7 @@ What to notice: the question is the same on all three rows. The poisoned client 
 
 **Why**
 
-Holding the question fixed and changing the tool list is how you separate the attack from the task ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The clean row is the useful one on this model: the forecast arrives and the sidecar stays empty. The weather-only row stops the leak by removing `read_memory` and `notes_save`, and it also stops the forecast, because the only weather tool still demands the notes procedure. That cost is what Step D3 measures again, and what Evaluate puts against the gate.
+Holding the question fixed and changing the tool list is how you separate the attack from the task ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The clean row is the useful one on this model: the forecast arrives and the sidecar stays empty. The weather-only row stops the leak by removing `read_memory` and `notes_save`, and it also stops the forecast, because the only weather tool still demands the notes procedure. That cost is what Step D3 measures again, and what Evaluate puts against the gate.
 
 ## Defend
 
@@ -411,7 +411,7 @@ What to notice: the scan is local. It reads the descriptions already returned by
 
 **Why**
 
-A person cannot approve a description they are not shown ([`attack-tool-description`](https://ai-security-atlas.github.io/?node=attack-tool-description)). The scan is a stand-in for reading that text before connect: marker strings from the asset, plus a weather tool whose description names a notes tool. It is not mcp-scan and it does not phone home. The cost of refusing the flagged tool, on this catalog, is the forecast, because the poisoned tool is the only weather tool that client had. Keeping the clean description avoids that cost. The 0.03 ms figure is one pass over 16 descriptions on the test machine. It is not a budget for a large catalog.
+A person cannot approve a description they are not shown ([`attack-tool-description`](https://ai-security-atlas.github.io/nodes/attack-tool-description/)). The scan is a stand-in for reading that text before connect: marker strings from the asset, plus a weather tool whose description names a notes tool. It is not mcp-scan and it does not phone home. The cost of refusing the flagged tool, on this catalog, is the forecast, because the poisoned tool is the only weather tool that client had. Keeping the clean description avoids that cost. The 0.03 ms figure is one pass over 16 descriptions on the test machine. It is not a budget for a large catalog.
 
 ### Step D2 — Pin the approved definition · [explainer 8](explainer/index.html#attack-tool-description/8)
 
@@ -450,7 +450,7 @@ What to notice: the six lines before the model note are one-shot calls, no model
 
 **Why**
 
-An approval that names the tool and then lasts for the rest of the run covers the canary call as soon as the model asks for `notes_save` ([`defense-approval`](https://ai-security-atlas.github.io/?node=defense-approval)). Binding the approval to the name, the arguments and the definition hash makes the poisoned `forecast` a different decision from the clean one ([`attack-tool-rugpull`](https://ai-security-atlas.github.io/?node=attack-tool-rugpull)). The stale client in the model half gates only `forecast`. `notes_save` is not gated there, so a model that saves the sidecar before it calls `forecast` still leaks. That showed up at 16 trials (Step Evaluate), not on this eight-seed walk. The clean client is the one that keeps the forecast, because its description never asks for the note. The hash time is a local sha256, not a network round trip.
+An approval that names the tool and then lasts for the rest of the run covers the canary call as soon as the model asks for `notes_save` ([`defense-approval`](https://ai-security-atlas.github.io/nodes/defense-approval/)). Binding the approval to the name, the arguments and the definition hash makes the poisoned `forecast` a different decision from the clean one ([`attack-tool-rugpull`](https://ai-security-atlas.github.io/nodes/attack-tool-rugpull/)). The stale client in the model half gates only `forecast`. `notes_save` is not gated there, so a model that saves the sidecar before it calls `forecast` still leaks. That showed up at 16 trials (Step Evaluate), not on this eight-seed walk. The clean client is the one that keeps the forecast, because its description never asks for the note. The hash time is a local sha256, not a network round trip.
 
 ### Step D3 — Keep notes off the weather task · [explainer 9](explainer/index.html#attack-tool-description/9)
 
@@ -481,7 +481,7 @@ What to notice: `wxdesc-weather` grants `forecast` and nothing else. `notes_save
 
 **Why**
 
-Least privilege here is a deny-by-default list for the task in front of you: a weather question gets the weather tool ([`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege)). The fixture cannot put the two tools on two MCP servers, so the lab does not demonstrate network isolation between servers. It demonstrates the allowlist. The cost is the forecast, for as long as the only weather tool is the poisoned one. Pairing the allowlist with the clean description (Step D1's second row, and the clean row of Evaluate) is what keeps the forecast. The allowlist alone, against this poisoned tool, does not.
+Least privilege here is a deny-by-default list for the task in front of you: a weather question gets the weather tool ([`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). The fixture cannot put the two tools on two MCP servers, so the lab does not demonstrate network isolation between servers. It demonstrates the allowlist. The cost is the forecast, for as long as the only weather tool is the poisoned one. Pairing the allowlist with the clean description (Step D1's second row, and the clean row of Evaluate) is what keeps the forecast. The allowlist alone, against this poisoned tool, does not.
 
 ## Evaluate
 
@@ -522,7 +522,7 @@ Questions for your notes:
 
 1. The clean row passes and the weather-only row fails, on this model. Which failure is worse for this assistant: a canary in a sidecar, or a forecast that never arrives?
 2. The stale-hash walk showed harm 0/8 and the 16-trial row showed 2/16. What is gated on that client, and which call can still carry the canary?
-3. Name-approval matches the poisoned client. Write the threat model ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)): who can edit a tool description, what the approval panel shows, and which audit lines count as harm.
+3. Name-approval matches the poisoned client. Write the threat model ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)): who can edit a tool description, what the approval panel shows, and which audit lines count as harm.
 
 ## Cleanup
 
@@ -556,8 +556,8 @@ What to notice: `cleanup.py` deletes this lab's `work/` directory and clears the
 ## Going Further
 
 - Read the tool-result version of this loop in [LAB-22](../attack-tool-output/README.md). The instruction there arrives in a ticket the tool returns. Here it arrives in the description, before the first call.
-- Wrap untrusted tool text the way [LAB-15](../attack-indirect-injection/README.md) wraps a retrieved document ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)), and rerun Step 6. Report harm and utility next to the unmarked poisoned client.
-- AgentDojo's banking suite is the public benchmark for tool-use injection ([`eval-agentdojo`](https://ai-security-atlas.github.io/?node=eval-agentdojo)). It wants a stronger tool-calling model than `qwen2.5:3b`. Treat it as an external-API follow-on, and keep this lab's gate as the local measurement.
+- Wrap untrusted tool text the way [LAB-15](../attack-indirect-injection/README.md) wraps a retrieved document ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)), and rerun Step 6. Report harm and utility next to the unmarked poisoned client.
+- AgentDojo's banking suite is the public benchmark for tool-use injection ([`eval-agentdojo`](https://ai-security-atlas.github.io/nodes/eval-agentdojo/)). It wants a stronger tool-calling model than `qwen2.5:3b`. Treat it as an external-API follow-on, and keep this lab's gate as the local measurement.
 - The asset also holds a notes task (`notes_task`) that this lab does not run. The published prompt pushes the model toward the forecast. A notes task would need that prompt retuned before its utility number meant anything.
 
 ## Further Reading

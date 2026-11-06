@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-08 · One gradient step
 
-> **Atlas node:** [Gradient-based adversarial perturbations / FGSM](https://ai-security-atlas.github.io/?node=attack-fgsm) · **Family:** family-evasion · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Gradient-based adversarial perturbations / FGSM](https://ai-security-atlas.github.io/nodes/attack-fgsm/) · **Family:** family-evasion · **Level:** beginner · **Time:** 60 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +49,13 @@ This lab perturbs 8×8 digit images from scikit-learn's bundled dataset against 
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-fgsm`](../../articles/attack-fgsm.md) |
-| Family | [`family-evasion`](https://ai-security-atlas.github.io/?node=family-evasion) |
-| Goal | [`goal-decisions`](https://ai-security-atlas.github.io/?node=goal-decisions), [`goal-evasion`](https://ai-security-atlas.github.io/?node=goal-evasion) |
+| Family | [`family-evasion`](https://ai-security-atlas.github.io/nodes/family-evasion/) |
+| Goal | [`goal-decisions`](https://ai-security-atlas.github.io/nodes/goal-decisions/), [`goal-evasion`](https://ai-security-atlas.github.io/nodes/goal-evasion/) |
 | Access profile | `A03` White-box or surrogate optimization (caveat: *A surrogate and target must be separately identified; transfer is not guaranteed.*) |
-| Read first | [`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients), [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural) |
-| Mitigated by | [`defense-robust-train`](https://ai-security-atlas.github.io/?node=defense-robust-train) (a coverage mapping, not complete prevention) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-pgd`](https://ai-security-atlas.github.io/?node=attack-pgd) (builds on this), [`attack-visual-jailbreak`](https://ai-security-atlas.github.io/?node=attack-visual-jailbreak), [`attack-physical`](https://ai-security-atlas.github.io/?node=attack-physical), [`eval-transfer`](https://ai-security-atlas.github.io/?node=eval-transfer) |
+| Read first | [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/), [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/) |
+| Mitigated by | [`defense-robust-train`](https://ai-security-atlas.github.io/nodes/defense-robust-train/) (a coverage mapping, not complete prevention) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-pgd`](https://ai-security-atlas.github.io/nodes/attack-pgd/) (builds on this), [`attack-visual-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-visual-jailbreak/), [`attack-physical`](https://ai-security-atlas.github.io/nodes/attack-physical/), [`eval-transfer`](https://ai-security-atlas.github.io/nodes/eval-transfer/) |
 
 > [!NOTE]
 > **Atlas caveat:** Specify perturbation set, preprocessing and target task.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-02 · Moving a VLM with invisible pixels](../attack-visual-jailbreak/README.md) is the iterative version of this attack on a vision-language model; do it after this one.
-- Concepts to read first: [`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients) and [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural).
+- Concepts to read first: [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/) and [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/).
 
 ## Explainer
 
@@ -199,7 +199,7 @@ What to notice: the model sees the digit only as 64 numbers in [0, 1] (multiples
 
 **Why**
 
-The victim is a two-layer CNN with a small dense head ([`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural)), loaded from a safetensors file whose sha256 is checked against the vision-zoo manifest, so every learner attacks the same weights. It takes raw pixels with no hidden normalization, so ε = 0.2 below means 0.2 in pixel units, about 3 of the 16 grey levels. This is white-box access, profile A03: you hold the weights and can compute gradients.
+The victim is a two-layer CNN with a small dense head ([`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/)), loaded from a safetensors file whose sha256 is checked against the vision-zoo manifest, so every learner attacks the same weights. It takes raw pixels with no hidden normalization, so ε = 0.2 below means 0.2 in pixel units, about 3 of the 16 grey levels. This is white-box access, profile A03: you hold the weights and can compute gradients.
 
 ### Step 2 — Rebuild it from its recipe · [explainer 2](explainer/index.html#attack-fgsm/2)
 
@@ -231,7 +231,7 @@ What to notice: the retrained weights are bit-for-bit the shipped ones on this m
 
 **Why**
 
-Training is gradient descent on the weights: backpropagation gives ∂loss/∂weights for each batch and the optimizer moves the weights against it, with the inputs held fixed ([`concept-gradients`](https://ai-security-atlas.github.io/?node=concept-gradients)). FGSM reuses exactly this machinery with the roles swapped: the weights stay fixed and the input moves. The recipe is deterministic (fixed seed, one CPU thread, deterministic algorithms); another CPU or library build can still round differently, which is why the checkpoints are shipped instead of retrained.
+Training is gradient descent on the weights: backpropagation gives ∂loss/∂weights for each batch and the optimizer moves the weights against it, with the inputs held fixed ([`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/)). FGSM reuses exactly this machinery with the roles swapped: the weights stay fixed and the input moves. The recipe is deterministic (fixed seed, one CPU thread, deterministic algorithms); another CPU or library build can still round differently, which is why the checkpoints are shipped instead of retrained.
 
 ### Step 3 — One gradient step · [explainer 3](explainer/index.html#attack-fgsm/3)
 
@@ -268,7 +268,7 @@ What to notice: the gradient values are tiny (the model is confident), but FGSM 
 
 **Why**
 
-FGSM computes g = ∂loss/∂x for the true label and sets x' = clip(x + ε·sign(g), 0, 1) ([`attack-fgsm`](https://ai-security-atlas.github.io/?node=attack-fgsm)). Under an L∞ budget, the sign step is the largest first-order increase of the loss you can buy, which is why one step is enough when the model is close to linear around the input. The threat model has to be stated ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)): white-box access, an untargeted goal, an L∞ budget of 0.2 per pixel, and no preprocessing between the attacker's pixels and the model.
+FGSM computes g = ∂loss/∂x for the true label and sets x' = clip(x + ε·sign(g), 0, 1) ([`attack-fgsm`](https://ai-security-atlas.github.io/nodes/attack-fgsm/)). Under an L∞ budget, the sign step is the largest first-order increase of the loss you can buy, which is why one step is enough when the model is close to linear around the input. The threat model has to be stated ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)): white-box access, an untargeted goal, an L∞ budget of 0.2 per pixel, and no preprocessing between the attacker's pixels and the model.
 
 ### Step 4 — Accuracy against ε, and random noise of the same size · [explainer 6](explainer/index.html#attack-fgsm/6)
 
@@ -298,7 +298,7 @@ What to notice: at every ε the random noise has the same L∞ size and about th
 
 **Why**
 
-The accuracy-versus-ε curve is the honest way to report an evasion attack ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)): one number at one ε hides how quickly the model degrades. The random baseline shows that the damage comes from the direction, not the size, of the change, so "the model is robust to noise" says nothing about adversarial robustness. FGSM is only a lower bound on what an attacker with this budget can do; Step D3 shows a stronger attack finding more.
+The accuracy-versus-ε curve is the honest way to report an evasion attack ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)): one number at one ε hides how quickly the model degrades. The random baseline shows that the damage comes from the direction, not the size, of the change, so "the model is robust to noise" says nothing about adversarial robustness. FGSM is only a lower bound on what an attacker with this budget can do; Step D3 shows a stronger attack finding more.
 
 ### Step 5 — Targeted: make it read 3 · [explainer 7](explainer/index.html#attack-fgsm/7)
 
@@ -324,7 +324,7 @@ What to notice: aiming at class 3 (the canary `CANARY-DIGIT-3`) gets far more di
 
 **Why**
 
-The targeted variant steps *down* the loss of the chosen class, x' = clip(x − ε·sign(∂loss(x, 3)/∂x), 0, 1), which is a harder goal than "any wrong answer": the "target task" in the Atlas caveat ([`attack-fgsm`](https://ai-security-atlas.github.io/?node=attack-fgsm)). Report targeted and untargeted success separately, because they answer different questions about impact ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)).
+The targeted variant steps *down* the loss of the chosen class, x' = clip(x − ε·sign(∂loss(x, 3)/∂x), 0, 1), which is a harder goal than "any wrong answer": the "target task" in the Atlas caveat ([`attack-fgsm`](https://ai-security-atlas.github.io/nodes/attack-fgsm/)). Report targeted and untargeted success separately, because they answer different questions about impact ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)).
 
 ## Defend
 
@@ -352,7 +352,7 @@ What to notice: rounding every pixel to 5 grey levels (`quant4`) keeps 80% accur
 
 **Why**
 
-Here the attacker computed FGSM on the bare model, as if the transform did not exist, so the table measures a non-adaptive attack. A rounding step of 0.25 erases any change smaller than 0.125, which is why `quant4` looks strong at ε = 0.05 and 0.1 and fails from 0.15. Limitation: a defense that is only tested against an attacker who ignores it has not been evaluated ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)); D2 fixes that.
+Here the attacker computed FGSM on the bare model, as if the transform did not exist, so the table measures a non-adaptive attack. A rounding step of 0.25 erases any change smaller than 0.125, which is why `quant4` looks strong at ε = 0.05 and 0.1 and fails from 0.15. Limitation: a defense that is only tested against an attacker who ignores it has not been evaluated ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)); D2 fixes that.
 
 ### Step D2 — ...against an attacker who knows the transform (≈1 min) · [explainer 8](explainer/index.html#attack-fgsm/8)
 
@@ -379,7 +379,7 @@ What to notice: attacked through the transform, blur drops from 48.7% to 32.6% a
 
 **Why**
 
-The adaptive attacker puts the transform inside the attack: blur is differentiable, and for rounding the gradient is passed straight through (BPDA), the standard way to attack a non-differentiable preprocessing step ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)). `quant4` survives at ε = 0.1 only because that budget is smaller than half its rounding step, a property of this exact perturbation set and not robustness in general; a budget a little larger, or an L0/L2 attack that moves few pixels a lot, gets through. LAB-02 shows the same pattern on a VLM, with an EOT attacker and transfer to other models ([`eval-transfer`](https://ai-security-atlas.github.io/?node=eval-transfer)).
+The adaptive attacker puts the transform inside the attack: blur is differentiable, and for rounding the gradient is passed straight through (BPDA), the standard way to attack a non-differentiable preprocessing step ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)). `quant4` survives at ε = 0.1 only because that budget is smaller than half its rounding step, a property of this exact perturbation set and not robustness in general; a budget a little larger, or an L0/L2 attack that moves few pixels a lot, gets through. LAB-02 shows the same pattern on a VLM, with an EOT attacker and transfer to other models ([`eval-transfer`](https://ai-security-atlas.github.io/nodes/eval-transfer/)).
 
 ### Step D3 — Adversarial training, checked with PGD (≈1 min) · [explainer 9](explainer/index.html#attack-fgsm/9)
 
@@ -410,7 +410,7 @@ What to notice: FGSM adversarial training lifts accuracy under FGSM at ε = 0.2 
 
 **Why**
 
-Adversarial training replaces part of each batch with attacks against the current weights, so the model learns to resist that attack within that budget ([`defense-robust-train`](https://ai-security-atlas.github.io/?node=defense-robust-train)). Measured with the same attack it was trained on, it looks better than it is: PGD, which simply repeats small FGSM steps and projects back into the ε-box, finds a further 16 points of errors ([`attack-pgd`](https://ai-security-atlas.github.io/?node=attack-pgd)). Limitation: robustness holds only for the perturbation set and budget it was trained and evaluated on; report it against PGD and adaptive attacks, never against FGSM alone.
+Adversarial training replaces part of each batch with attacks against the current weights, so the model learns to resist that attack within that budget ([`defense-robust-train`](https://ai-security-atlas.github.io/nodes/defense-robust-train/)). Measured with the same attack it was trained on, it looks better than it is: PGD, which simply repeats small FGSM steps and projects back into the ε-box, finds a further 16 points of errors ([`attack-pgd`](https://ai-security-atlas.github.io/nodes/attack-pgd/)). Limitation: robustness holds only for the perturbation set and budget it was trained and evaluated on; report it against PGD and adaptive attacks, never against FGSM alone.
 
 ## Evaluate
 

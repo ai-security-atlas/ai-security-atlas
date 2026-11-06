@@ -23,7 +23,7 @@ covers:
 
 # LAB-20 · Your model's output is someone else's input
 
-> **Atlas node:** [Improper handling of model-generated output](https://ai-security-atlas.github.io/?node=attack-output-sink) · **Family:** family-agent · **Level:** intermediate · **Time:** 75 min · **Model backend:** optional
+> **Atlas node:** [Improper handling of model-generated output](https://ai-security-atlas.github.io/nodes/attack-output-sink/) · **Family:** family-agent · **Level:** intermediate · **Time:** 75 min · **Model backend:** optional
 
 ## Overview
 
@@ -51,13 +51,13 @@ Every company, product, review and contract term here is fictional. The only sec
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-output-sink`](../../articles/attack-output-sink.md) |
-| Family | [`family-agent`](https://ai-security-atlas.github.io/?node=family-agent) |
-| Goal | [`goal-environment`](https://ai-security-atlas.github.io/?node=goal-environment), [`goal-actions`](https://ai-security-atlas.github.io/?node=goal-actions) |
+| Family | [`family-agent`](https://ai-security-atlas.github.io/nodes/family-agent/) |
+| Goal | [`goal-environment`](https://ai-security-atlas.github.io/nodes/goal-environment/), [`goal-actions`](https://ai-security-atlas.github.io/nodes/goal-actions/) |
 | Access profile | `A21` Model-output reaches an unsafe sink (caveat: *An application must consume output as code, markup, queries or another privileged form.*) |
-| Read first | [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent) |
-| Mitigated by | [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output), [`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation) |
-| Evaluated by | [`eval-agentdojo`](https://ai-security-atlas.github.io/?node=eval-agentdojo), [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection), [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`attack-tool-output`](https://ai-security-atlas.github.io/?node=attack-tool-output) |
+| Read first | [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/) |
+| Mitigated by | [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/), [`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/) |
+| Evaluated by | [`eval-agentdojo`](https://ai-security-atlas.github.io/nodes/eval-agentdojo/), [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/), [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`attack-tool-output`](https://ai-security-atlas.github.io/nodes/attack-tool-output/) |
 
 > [!NOTE]
 > **Atlas caveat:** The unsafe sink is an application vulnerability; a model need not be specially trained or jailbroken.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done. For the optional Step 4 with host Ollama, also run `ollama pull qwen2.5:3b` on the host.
 - Labs to finish first: none. [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) introduces `atlas-app`, and [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) introduces the hardened sandbox used in Step D3.
-- Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries).
+- Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 
 ## Explainer
 
@@ -204,7 +204,7 @@ What to notice: the app runs the model's SQL and renders its HTML, so the model'
 
 **Why**
 
-The sink is wherever output is finally used, and here two of them execute or render model text at the application's trust boundary ([`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries)). The analytics connection can read every table even though the model was told about only two, which is the over-privileged, verbatim-execution gap this lab tests ([`system-agent`](https://ai-security-atlas.github.io/?node=system-agent)).
+The sink is wherever output is finally used, and here two of them execute or render model text at the application's trust boundary ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)). The analytics connection can read every table even though the model was told about only two, which is the over-privileged, verbatim-execution gap this lab tests ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)).
 
 ### Step 2 — The SQL sink leaks the secret table (≈5 s) · [explainer 3](explainer/index.html#attack-output-sink/3)
 
@@ -240,7 +240,7 @@ What to notice: the model emits a `UNION` onto the `secrets` table, the app runs
 
 **Why**
 
-The model need not be jailbroken: output that follows the user's request, or output shaped by an injected review, carries the effect because the sink executes it with the database's authority ([`attack-output-sink`](https://ai-security-atlas.github.io/?node=attack-output-sink)). The indirect case is the same mechanism reached through content the model read, the link to [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection).
+The model need not be jailbroken: output that follows the user's request, or output shaped by an injected review, carries the effect because the sink executes it with the database's authority ([`attack-output-sink`](https://ai-security-atlas.github.io/nodes/attack-output-sink/)). The indirect case is the same mechanism reached through content the model read, the link to [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/).
 
 ### Step 3 — The HTML sink: output becomes a request (≈5 s) · [explainer 6](explainer/index.html#attack-output-sink/6)
 
@@ -272,7 +272,7 @@ What to notice: the rendered reply includes an `<img>` and a `<script>` whose UR
 
 **Why**
 
-The page is a sink too: markup that the page renders verbatim turns the model's reply into requests the victim's browser makes, so the output becomes someone else's input ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)). This is the classic cross-site-scripting shape, now reached through generated content; the fix is the same context-specific handling any untrusted input gets at the HTML sink.
+The page is a sink too: markup that the page renders verbatim turns the model's reply into requests the victim's browser makes, so the output becomes someone else's input ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). This is the classic cross-site-scripting shape, now reached through generated content; the fix is the same context-specific handling any untrusted input gets at the HTML sink.
 
 ### Step 4 — Generate the outputs live (optional)
 
@@ -306,7 +306,7 @@ What to notice: on the test machine `qwen2.5:3b` wrote the same `UNION` onto `se
 
 **Why**
 
-Whether a given model emits a leaking query or a tracking pixel is an empirical, model-specific question, so the lesson is pinned to a fixed output and the live path is a cross-check ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The `osink-sql` and `osink-html` profiles are registered by this lab's `atlas_profiles.py` plug-in, so no shared app code changes.
+Whether a given model emits a leaking query or a tracking pixel is an empirical, model-specific question, so the lesson is pinned to a fixed output and the live path is a cross-check ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The `osink-sql` and `osink-html` profiles are registered by this lab's `atlas_profiles.py` plug-in, so no shared app code changes.
 
 **Try (browser)**
 
@@ -345,7 +345,7 @@ What to notice: `sqlglot` parses the reply and the allowlist accepts only a sing
 
 **Why**
 
-This is context-specific validation at the SQL sink: the output is parsed and matched against what a legitimate query may do, exactly as any untrusted input would be ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)). Limitation: it validates the shape of the SQL, not whether the model was steered, and a permitted table that itself holds sensitive rows still needs row-level authorization, not just a table allowlist.
+This is context-specific validation at the SQL sink: the output is parsed and matched against what a legitimate query may do, exactly as any untrusted input would be ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). Limitation: it validates the shape of the SQL, not whether the model was steered, and a permitted table that itself holds sensitive rows still needs row-level authorization, not just a table allowlist.
 
 ### Step D2 — Encode the HTML at the sink · [explainer 7](explainer/index.html#attack-output-sink/7)
 
@@ -375,7 +375,7 @@ What to notice: `bleach` keeps the plain formatting and strips the image and the
 
 **Why**
 
-Each sink needs the encoding appropriate to it, and for HTML that is allowlist sanitization that removes anything able to load a resource or run ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)). Limitation: coverage must be complete, so a missed sink, a wrong encoder, or allowing one more tag reopens the hole.
+Each sink needs the encoding appropriate to it, and for HTML that is allowlist sanitization that removes anything able to load a resource or run ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). Limitation: coverage must be complete, so a missed sink, a wrong encoder, or allowing one more tag reopens the hole.
 
 ### Step D3 — Contain execution in the sandbox · [explainer 8](explainer/index.html#attack-output-sink/8)
 
@@ -406,17 +406,17 @@ What to notice: running the generated SQL in the hardened `sandbox` service bloc
 
 **Why**
 
-Isolation contains what slips through: executing generated queries or code in a service with no network and a read-only filesystem limits the blast radius of whatever the validation missed ([`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation)). Limitation: it does not prevent the initial compromise, and a plain read is still a leak, so isolation pairs with the input-side validation in D1 and D2 rather than replacing it.
+Isolation contains what slips through: executing generated queries or code in a service with no network and a read-only filesystem limits the blast radius of whatever the validation missed ([`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/)). Limitation: it does not prevent the initial compromise, and a plain read is still a leak, so isolation pairs with the input-side validation in D1 and D2 rather than replacing it.
 
 ### Step D4 — The sink is the vulnerability
 
 **Read**
 
-Across both sinks the pattern is the same: the application treated generated text as trusted code or markup. A more careful model would not close the gap, because the next model, the next prompt, or an injected review could still produce the leaking output; the robust design validates and encodes at each sink and contains the execution, so a bad output changes what the app returns rather than what it can reach. The AgentDojo benchmark exercises this in a full agent, pairing task utility with injected instructions so a defense that blocks the sink without breaking normal work can be measured ([`eval-agentdojo`](https://ai-security-atlas.github.io/?node=eval-agentdojo)).
+Across both sinks the pattern is the same: the application treated generated text as trusted code or markup. A more careful model would not close the gap, because the next model, the next prompt, or an injected review could still produce the leaking output; the robust design validates and encodes at each sink and contains the execution, so a bad output changes what the app returns rather than what it can reach. The AgentDojo benchmark exercises this in a full agent, pairing task utility with injected instructions so a defense that blocks the sink without breaking normal work can be measured ([`eval-agentdojo`](https://ai-security-atlas.github.io/nodes/eval-agentdojo/)).
 
 **Why**
 
-The weakness lives in the application, not the model, so the mitigations are application controls at the trust boundary ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)). Limitation: validation and encoding must cover every sink completely, and isolation only limits the damage of what they miss, so the three layers are defense in depth, not a single switch ([`defense-isolation`](https://ai-security-atlas.github.io/?node=defense-isolation)).
+The weakness lives in the application, not the model, so the mitigations are application controls at the trust boundary ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). Limitation: validation and encoding must cover every sink completely, and isolation only limits the damage of what they miss, so the three layers are defense in depth, not a single switch ([`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/)).
 
 ## Evaluate
 
@@ -447,7 +447,7 @@ Questions for your notes:
 
 1. The allowlist rejects the `UNION`, but what would you add so that a single `SELECT` on `reviews` still cannot read a row belonging to another customer?
 2. Name a third sink in a real assistant (a shell, a templating engine, a tool call) and say which encoding it would need.
-3. Write the threat model behind this table ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)): who is the attacker, what can they influence, and what counts as success.
+3. Write the threat model behind this table ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)): who is the attacker, what can they influence, and what counts as success.
 
 ## Cleanup
 

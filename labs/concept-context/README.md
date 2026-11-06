@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-46 · What is in the window
 
-> **Atlas node:** [Context windows and in-context learning](https://ai-security-atlas.github.io/?node=concept-context) · **Family:** family-prompt · **Level:** beginner · **Time:** 60 min · **Model backend:** optional
+> **Atlas node:** [Context windows and in-context learning](https://ai-security-atlas.github.io/nodes/concept-context/) · **Family:** family-prompt · **Level:** beginner · **Time:** 60 min · **Model backend:** optional
 
 ## Overview
 
@@ -49,13 +49,13 @@ Everything in this lab is fictional and inert. "Harbor Desk" and Gull Island Fer
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-context`](../../articles/concept-context.md) |
-| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt), whose attacks all reach the model through its window. |
-| Goal | None in the seed graph. The risk steps touch [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior): a rule stops applying, or planted examples change a label. |
+| Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/), whose attacks all reach the model through its window. |
+| Goal | None in the seed graph. The risk steps touch [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/): a rule stops applying, or planted examples change a label. |
 | Access profile | None in the seed graph. The risk steps assume `A04` External-context authoring (caveat: *Victim must actually ingest the lower-trust content; attacker does not control system instructions.*): the attacker writes a retrieved page or, in Step 6, the earlier turns an API client sends. Neither touches the system prompt directly, and both can still push it out or outvote it. |
-| Read first | [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget), [`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging) and [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) as related, not mapped. |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) (rates over fixed request sets, with Wilson intervals in Evaluate) |
-| Related | Requires this concept: [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection), [`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection), [`attack-jailbreak`](https://ai-security-atlas.github.io/?node=attack-jailbreak), [`attack-many-shot`](https://ai-security-atlas.github.io/?node=attack-many-shot), [`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak), [`attack-token-exhaustion`](https://ai-security-atlas.github.io/?node=attack-token-exhaustion) |
+| Read first | [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/), [`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/) and [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) as related, not mapped. |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) (rates over fixed request sets, with Wilson intervals in Evaluate) |
+| Related | Requires this concept: [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/), [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/), [`attack-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-jailbreak/), [`attack-many-shot`](https://ai-security-atlas.github.io/nodes/attack-many-shot/), [`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/), [`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/) |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its summary is the claim this lab tests: "Information in the current context is different from information encoded in persistent weights." The measurements cover one 360M-parameter model, one window size and one Ollama version; they show the mechanism, not the rates of any other model or runtime.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md), which shows how a chat template turns messages into tokens.
-- Concepts to read first: [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder) and [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens).
+- Concepts to read first: [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
 
@@ -195,7 +195,7 @@ What to notice: the system prompt is 42 of the 278 tokens and the chat template 
 
 **Why**
 
-The context window is every token the model can attend to while it writes one reply, and a chat request fills it with pieces from different authors: the operator's system prompt, the user's turns, a retrieved page and a tool result ([`concept-context`](https://ai-security-atlas.github.io/?node=concept-context)). The chat template turns those messages into one token sequence with role markers, the format from [LAB-04](../concept-tokens/README.md) ([`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens)). SmolLM2-360M was trained on 8192 tokens; this app caps the window at 384 to keep the lab fast on a CPU, the same knob as Ollama's `num_ctx`, and every cut below works the same way at 8k or 128k once the input is bigger.
+The context window is every token the model can attend to while it writes one reply, and a chat request fills it with pieces from different authors: the operator's system prompt, the user's turns, a retrieved page and a tool result ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/)). The chat template turns those messages into one token sequence with role markers, the format from [LAB-04](../concept-tokens/README.md) ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)). SmolLM2-360M was trained on 8192 tokens; this app caps the window at 384 to keep the lab fast on a CPU, the same knob as Ollama's `num_ctx`, and every cut below works the same way at 8k or 128k once the input is bigger.
 
 ### Step 2 — The model knows only what is in the window (≈2 min) · [explainer 2](explainer/index.html#concept-context/2)
 
@@ -225,7 +225,7 @@ What to notice: every reply follows the `SYS-OK` rule, the crossing time (thirty
 
 **Why**
 
-The weights are fixed and shared by every caller; the window is built per request, and the model is a function of both ([`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)). Facts and rules a request does not carry are simply absent, which is why an app resends the system prompt and the history every time. Without the page the model invents "20 minutes", a fluent answer from the weights alone.
+The weights are fixed and shared by every caller; the window is built per request, and the model is a function of both ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). Facts and rules a request does not carry are simply absent, which is why an app resends the system prompt and the history every time. Without the page the model invents "20 minutes", a fluent answer from the weights alone.
 
 ### Step 3 — A long document overflows the window (≈3.5 min) · [explainer 3](explainer/index.html#concept-context/3)
 
@@ -252,7 +252,7 @@ What to notice: with nothing cut the rule holds 8/8 at 418 tokens; the default r
 
 **Why**
 
-`apply_chat_template(..., truncation=True, max_length=...)` cuts with the tokenizer's `truncation_side`, `right` by default. Neither side knows what a system prompt is. The page is the piece an outsider can write ([`attack-indirect-injection`](https://ai-security-atlas.github.io/?node=attack-indirect-injection)), so whoever controls its length controls what the cut removes, and a request padded on purpose is the cheap form of [`attack-token-exhaustion`](https://ai-security-atlas.github.io/?node=attack-token-exhaustion). The turn rule has only one user message here and falls back to a left cut, as Ollama's runner does in Step 5.
+`apply_chat_template(..., truncation=True, max_length=...)` cuts with the tokenizer's `truncation_side`, `right` by default. Neither side knows what a system prompt is. The page is the piece an outsider can write ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)), so whoever controls its length controls what the cut removes, and a request padded on purpose is the cheap form of [`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/). The turn rule has only one user message here and falls back to a left cut, as Ollama's runner does in Step 5.
 
 ### Step 4 — A long conversation overflows the window (≈3 min) · [explainer 4](explainer/index.html#concept-context/4)
 
@@ -284,7 +284,7 @@ What to notice: the turn rule keeps the system prompt and drops the 3 oldest tur
 
 **Why**
 
-The turn rule is what Ollama's chat layer does (Step 5 checks it): keep the system messages and the newest message, drop old turns until the rest fits. It protects the operator's prompt and still forgets the user's own facts. Under the left cut the tag survives as a copied pattern, an early form of the in-context learning in Step 6, so an output check cannot tell whether the rule text is still in the window ([`concept-context`](https://ai-security-atlas.github.io/?node=concept-context)).
+The turn rule is what Ollama's chat layer does (Step 5 checks it): keep the system messages and the newest message, drop old turns until the rest fits. It protects the operator's prompt and still forgets the user's own facts. Under the left cut the tag survives as a copied pattern, an early form of the in-context learning in Step 6, so an output check cannot tell whether the rule text is still in the window ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/)).
 
 ### Step 5 — What a real runtime drops: Ollama's num_ctx · [explainer 5](explainer/index.html#concept-context/5)
 
@@ -316,7 +316,7 @@ What to notice: at `num_ctx` 384 Ollama 0.32.5 keeps the system message of the l
 
 **Why**
 
-Ollama applies two cuts. Its chat layer drops whole old messages and keeps the system ones; when one message alone is still too long, the runner cuts the token sequence and keeps the end, here about half of `num_ctx`. Neither cut returns an error or a warning in the response, and the OpenAI-style `/v1` API has no `num_ctx` field, so a client cannot see or set the window ([`attack-token-exhaustion`](https://ai-security-atlas.github.io/?node=attack-token-exhaustion)). The `/v1` context length depends on the server's settings (`OLLAMA_CONTEXT_LENGTH`); the compose service sets 4096.
+Ollama applies two cuts. Its chat layer drops whole old messages and keeps the system ones; when one message alone is still too long, the runner cuts the token sequence and keeps the end, here about half of `num_ctx`. Neither cut returns an error or a warning in the response, and the OpenAI-style `/v1` API has no `num_ctx` field, so a client cannot see or set the window ([`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/)). The `/v1` context length depends on the server's settings (`OLLAMA_CONTEXT_LENGTH`); the compose service sets 4096.
 
 ### Step 6 — Four examples override the instruction (≈1.5 min) · [explainer 7](explainer/index.html#concept-context/7)
 
@@ -346,7 +346,7 @@ What to notice: four examples sent as chat turns change the sorter's output from
 
 **Why**
 
-In-context learning: the model continues the pattern its window shows, and here the pattern beats the system prompt's label set ([`concept-context`](https://ai-security-atlas.github.io/?node=concept-context)). An OpenAI-style client sends the whole message list, so the earlier "assistant" turns are whatever the caller wrote; that is the shape of [`attack-many-shot`](https://ai-security-atlas.github.io/?node=attack-many-shot), which scales the same idea to hundreds of turns, and of the forged turns in [LAB-04](../concept-tokens/README.md). On this 360M model the role markers matter: examples in the assistant role work, quoted ones mostly do not.
+In-context learning: the model continues the pattern its window shows, and here the pattern beats the system prompt's label set ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/)). An OpenAI-style client sends the whole message list, so the earlier "assistant" turns are whatever the caller wrote; that is the shape of [`attack-many-shot`](https://ai-security-atlas.github.io/nodes/attack-many-shot/), which scales the same idea to hundreds of turns, and of the forged turns in [LAB-04](../concept-tokens/README.md). On this 360M model the role markers matter: examples in the assistant role work, quoted ones mostly do not.
 
 ## Defend
 
@@ -375,7 +375,7 @@ What to notice: the budgeted requests keep the system prompt and the question in
 
 **Why**
 
-An explicit budget counts tokens before the model call, pins what must stay (the system prompt, the question, room for the reply) and trims the lowest-priority pieces at boundaries a human can read: whole paragraphs, whole turns, with a note in the window ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget)). Rejecting with a clear error is what OpenAI-style hosted APIs usually do with an oversize request. Limitation: a budget prevents silent loss; it keeps the planted examples of Step 6 and any injected text in the page, and the dropped turns still take the booking word with them.
+An explicit budget counts tokens before the model call, pins what must stay (the system prompt, the question, room for the reply) and trims the lowest-priority pieces at boundaries a human can read: whole paragraphs, whole turns, with a note in the window ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/)). Rejecting with a clear error is what OpenAI-style hosted APIs usually do with an oversize request. Limitation: a budget prevents silent loss; it keeps the planted examples of Step 6 and any injected text in the page, and the dropped turns still take the booking word with them.
 
 ### Step D2 — Keep the policy in code and log every cut · [explainer 9](explainer/index.html#concept-context/9)
 
@@ -410,7 +410,7 @@ What to notice: the allowlist blocks all 8 canary labels and none of the 8 flipp
 
 **Why**
 
-A rule the app enforces in code holds no matter what the window says: the label set is checked after the model, the history comes from the server's own store, and every cut writes a log line with what it removed ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging), [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). The log is the forensic record: it answers "did this request still carry the system prompt?" from the request itself. Limitation: the allowlist only catches labels outside the set, and plain-text examples still cost accuracy (8/16 correct here); nothing in this step removes injected instructions, which [LAB-06](../attack-direct-injection/README.md) and [LAB-15](../attack-indirect-injection/README.md) defend against.
+A rule the app enforces in code holds no matter what the window says: the label set is checked after the model, the history comes from the server's own store, and every cut writes a log line with what it removed ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/), [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). The log is the forensic record: it answers "did this request still carry the system prompt?" from the request itself. Limitation: the allowlist only catches labels outside the set, and plain-text examples still cost accuracy (8/16 correct here); nothing in this step removes injected instructions, which [LAB-06](../attack-direct-injection/README.md) and [LAB-15](../attack-indirect-injection/README.md) defend against.
 
 ### Step D3 — The window is not a security boundary
 
@@ -420,7 +420,7 @@ Treat everything in the window as one stream the model reads with no idea who wr
 
 **Why**
 
-This is [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries) applied to context: a system prompt is text in the same window as the attacker's text, so it can be cut (Steps 3–5), outvoted (Step 6) or, as [LAB-19](../attack-prompt-leak/README.md) shows, read back out ([`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak)). Limitation: budgeting and logging make loss visible and keep policy enforceable; the model still follows whatever the window says, so prompt injection needs its own controls.
+This is [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) applied to context: a system prompt is text in the same window as the attacker's text, so it can be cut (Steps 3–5), outvoted (Step 6) or, as [LAB-19](../attack-prompt-leak/README.md) shows, read back out ([`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/)). Limitation: budgeting and logging make loss visible and keep policy enforceable; the model still follows whatever the window says, so prompt injection needs its own controls.
 
 ## Evaluate
 
@@ -484,7 +484,7 @@ docker compose down --remove-orphans
 - Rerun Step 3 with the tool output added back to the request (`C.messages(q, document=C.doc(8), tool=C.TOOL)`) and with no cut at all. On this model the tag rule weakens as the request grows even inside the window; find the length where it starts to slip.
 - Give the D1 budgeter a summary step: replace the dropped turns with a one-line note the app writes from them (for example, the booking word), and measure whether Step 4's recall question comes back.
 - Point Step 5 at container Ollama 0.40.11 (`COMPOSE_PROFILES=ollama,workbench`) and record whether its runner keeps the same share of an oversize message as the host server.
-- Raise the number of planted examples in Step 6 from 4 to 1, 2 and 8 turns and plot the canary rate, the many-shot curve of [`attack-many-shot`](https://ai-security-atlas.github.io/?node=attack-many-shot) on a small scale.
+- Raise the number of planted examples in Step 6 from 4 to 1, 2 and 8 turns and plot the canary rate, the many-shot curve of [`attack-many-shot`](https://ai-security-atlas.github.io/nodes/attack-many-shot/) on a small scale.
 
 ## Further Reading
 

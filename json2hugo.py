@@ -4,12 +4,17 @@ Input:  ai_security_research_graph_seed.json  (canonical transport snapshot)
 Output:
   static/data/atlas.json   -> served at /data/atlas.json, consumed by the React SPA
   data/atlas.json          -> Hugo data (.Site.Data.atlas) for no-JS templates
-  content/nodes/<id>.md    -> Hugo pages (thin front matter; templates read atlas)
+  content/nodes/<id>.md    -> /nodes/<id>/: the Explorer for that node, article server-rendered
+                              (thin front matter; templates read atlas)
+  content/nodetabs/        -> /nodes/<id>/{labs,evidence,relationships}/: the same, on that reader tab
   content/sources/<id>.md
   content/views/<id>.md
   content/_index.md, content/graph/_index.md
   content/labs/_index.md   -> /labs/ index page (layouts/lab/list.html)
-  static/labs/             -> lab explainers published under /labs/ (copied from labs/)
+  content/labs/<id>.md     -> /labs/<id>/: explainer + lab guide (README body) (layouts/lab/single.html)
+  content/labs/tags/       -> /labs/tags/ and /labs/tags/<tag>/ from explainer legend tags (layouts/labtag/)
+  static/labs/             -> explainer engine + lab explainers under /labs/ (copied from labs/);
+                              /labs/<id>/explainer/ is a redirect to /labs/<id>/
 
 Lab metadata comes from the YAML front matter of labs/<node-id>/README.md
 (docs/labs-spec.md section 2.1) and is attached to the matching node as `lab`.
@@ -24,16 +29,22 @@ PRD sections 4.4 (edge direction), 7.4 (curated sidebar), 7.5 (graph behavior).
 import glob
 import json
 import os
+import posixpath
 import re
 import shutil
+import subprocess
+from collections import Counter
 
 import yaml
 
 SEED = "ai_security_research_graph_seed.json"
 REPO_URL = "https://github.com/ai-security-atlas/ai-security-atlas"
+SITE_URL = "https://ai-security-atlas.github.io/"  # READMEs link nodes here; on-site they become root-relative
 LABS_DIR = "labs"
 LABS_OUT = "static/labs"
+NODE_TABS = ("labs", "evidence", "relationships")  # Explorer reader tabs with their own URL; overview is /nodes/<id>/
 ROADMAP = os.path.join("docs", "labs-roadmap.json")  # optional: umbrella hubs + their members
+TAGS_VOCAB = os.path.join(LABS_DIR, "_explainer", "tags.json")  # {"<tag>": {"name", "description"}}
 
 # --- Presentation metadata for the 11 P0 topic types -------------------------
 # glyph = lucide-react icon name used by the SPA; color reads on both the warm
@@ -176,7 +187,7 @@ def load_labs(node_ids):
         if nid != folder or nid not in node_ids:
             print(f"warning: {readme}: node {nid!r} must equal the folder name and exist in the seed; skipped")
             continue
-        has_explainer = os.path.isfile(os.path.join(LABS_DIR, folder, "explainer", "index.html"))
+        has_explainer = os.path.isfile(os.path.join(LABS_DIR, folder, "explainer", "explainer.js"))
         labs[nid] = {
             "lab_id": fm["lab_id"],
             "number": int(m.group(1)),
@@ -189,9 +200,12 @@ def load_labs(node_ids):
             "backends": fm.get("backends", {}) if isinstance(fm.get("backends"), dict) else {},
             "last_tested": fm.get("last_tested", ""),
             "github": f"{REPO_URL}/tree/main/labs/{folder}",
-            "explainer": f"/labs/{folder}/explainer/" if has_explainer else "",
+            "page": f"/labs/{folder}/",
+            "explainer": f"/labs/{folder}/" if has_explainer else "",
             "covers": [c for c in (fm.get("covers") or [])
                        if isinstance(c, dict) and c.get("node") in node_ids],
+            # Optional `objectives: [goal-...]` overrides the derived goals; main() validates and replaces it.
+            "objectives": fm.get("objectives"),
         }
     return labs
 
@@ -209,57 +223,235 @@ def practiced_in(labs):
             out[nid] = {
                 "lab_id": lab["lab_id"], "number": lab["number"], "node": lab["node"],
                 "title": lab["title"], "steps": c.get("steps", ""),
-                "url": f"{REPO_URL}/blob/main/labs/{lab['node']}/README.md"
-                       + (f"#{c['anchor']}" if c.get("anchor") else ""),
+                "url": lab["page"] + (f"#{c['anchor']}" if c.get("anchor") else ""),
             }
     return out
 
 
 def read_roadmap():
-    """docs/labs-roadmap.json -> (umbrella hubs {node id: [member ids]}, number of planned own labs).
-    Optional: without the file there are no extra hubs and no planned count."""
+    """docs/labs-roadmap.json -> (umbrella hubs {node id: [member ids]}, number of planned own labs,
+    raw entries {node id: entry}). Optional: without the file there are no extra hubs and no planned labs."""
     if not os.path.isfile(ROADMAP):
-        return {}, 0
+        return {}, 0, {}
     with open(ROADMAP, "r", encoding="utf-8") as fh:
         raw = json.load(fh).get("raw", {})
     hubs = {nid: e.get("also_covers") or [] for nid, e in raw.items() if e.get("kind") == "hub"}
-    return hubs, sum(1 for e in raw.values() if e.get("kind") == "own")
+    return hubs, sum(1 for e in raw.values() if e.get("kind") == "own"), raw
 
 
-def labs_in_area(members, labs, practiced):
+def labs_in_area(members, labs, practiced, placed=()):
     """Existing labs that practice a hub's members, one row per lab:
-    {lab_id, number, node, title, own (bool: its own node is a member), practiced: [...]}."""
+    {lab_id, number, node, title, level, time, page, own (bool: its own node is a member),
+    practiced: [...], relation}. `placed` adds labs whose derived placement names the hub.
+    relation: "own" (own node is a member), "practiced" (covers a member), else "foundation"."""
     rows = {}
+
+    def row_for(lab):
+        return rows.setdefault(lab["node"], {"lab_id": lab["lab_id"], "number": lab["number"],
+                                             "node": lab["node"], "title": lab["title"],
+                                             "level": lab["level"], "time": lab["time"], "page": lab["page"],
+                                             "own": False, "practiced": []})
+
     for mid in members:
         if mid in labs:
-            lab = labs[mid]
-            row = rows.setdefault(lab["node"], {"lab_id": lab["lab_id"], "number": lab["number"],
-                                                "node": lab["node"], "title": lab["title"],
-                                                "own": False, "practiced": []})
-            row["own"] = True
+            row_for(labs[mid])["own"] = True
         elif mid in practiced:
             p = practiced[mid]
-            row = rows.setdefault(p["node"], {"lab_id": p["lab_id"], "number": p["number"],
-                                              "node": p["node"], "title": p["title"],
-                                              "own": False, "practiced": []})
-            row["practiced"].append({"node": mid, "steps": p["steps"], "url": p["url"]})
+            row_for(labs[p["node"]])["practiced"].append({"node": mid, "steps": p["steps"], "url": p["url"]})
+    for lid in placed:
+        row_for(labs[lid])
+    for row in rows.values():
+        row["relation"] = "own" if row["own"] else "practiced" if row["practiced"] else "foundation"
     return sorted(rows.values(), key=lambda r: r["number"])
+
+
+# A published explainer/index.html sends old links (and their #<id>/<step>) to the lab page.
+_REDIRECT = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>{title} · AI Security Atlas</title>
+<script>location.replace("{page}" + (location.hash || "#lab-explainer"));</script>
+<meta http-equiv="refresh" content="0; url={page}">
+</head>
+<body data-pagefind-ignore="all"><p>This explainer moved to <a href="{page}">{page}</a>.</p></body>
+</html>
+"""
 
 
 def publish_explainers(labs):
     """Copy the shared engine and each lab's explainer into static/labs/ so the
-    site serves them at /labs/_explainer/ and /labs/<id>/explainer/ (the
-    explainer pages load ../../_explainer/, so the relative layout is kept)."""
+    lab page (/labs/<id>/) can load /labs/_explainer/ and /labs/<id>/explainer/.
+    The published explainer/index.html is replaced by a redirect to the lab page;
+    the source index.html stays standalone for file:// use."""
     shutil.rmtree(LABS_OUT, ignore_errors=True)
     with_explainer = [lab for lab in labs.values() if lab["explainer"]]
     if not with_explainer:
         return 0
     shutil.copytree(os.path.join(LABS_DIR, "_explainer"), os.path.join(LABS_OUT, "_explainer"),
-                    ignore=shutil.ignore_patterns("test", "README.md"))
+                    ignore=shutil.ignore_patterns("test", "README.md", "tags.json"))
     for lab in with_explainer:
-        shutil.copytree(os.path.join(LABS_DIR, lab["node"], "explainer"),
-                        os.path.join(LABS_OUT, lab["node"], "explainer"))
+        out = os.path.join(LABS_OUT, lab["node"], "explainer")
+        shutil.copytree(os.path.join(LABS_DIR, lab["node"], "explainer"), out)
+        with open(os.path.join(out, "index.html"), "w", encoding="utf-8") as fh:
+            fh.write(_REDIRECT.format(title=lab["title"].replace("<", "&lt;"), page=lab["page"]))
     return len(with_explainer)
+
+
+# Explainer legends are JavaScript (Explainer.define({... legend ...})), so node evaluates each
+# lab's data.js + explainer.js against the real engine with a stub DOM and prints the legends.
+_LEGEND_JS = r"""
+const fs = require("fs"), path = require("path"), noop = () => {};
+global.window = global;
+global.document = { readyState: "complete", addEventListener: noop, querySelectorAll: () => [] };
+global.addEventListener = noop;
+function run(file, who) {
+  try { new Function(fs.readFileSync(file, "utf8"))(); }
+  catch (e) { console.error(`${who}: ${file}: ${(e && e.stack) || e}`); process.exit(1); }
+}
+run("labs/_explainer/explainer.js", "explainer engine");
+const out = {};
+for (const id of process.argv.slice(1)) {
+  const dir = path.join("labs", id, "explainer");
+  if (fs.existsSync(path.join(dir, "data.js"))) run(path.join(dir, "data.js"), `lab ${id}`);
+  run(path.join(dir, "explainer.js"), `lab ${id}`);
+  const d = Explainer.defs[id];
+  if (!d) { console.error(`lab ${id}: ${dir}/explainer.js defines no explainer with id "${id}"`); process.exit(1); }
+  out[id] = (d.legend || []).map(r => (typeof r === "string" ? { role: r, label: Explainer.ROLES[r] || r } : r));
+}
+process.stdout.write(JSON.stringify(out));
+"""
+_TAG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+_RESERVED_TAGS = {"page", "index"}  # /labs/tags/page/ is Hugo's pagination path
+
+
+def lab_legends(labs):
+    """{lab id: [{role, label, tag?}]} for every lab with an explainer. A lab whose
+    JavaScript fails, or a tag that is not a kebab-case slug, fails the build."""
+    ids = sorted(lab["node"] for lab in labs.values() if lab["explainer"])
+    if not ids:
+        return {}
+    try:
+        res = subprocess.run(["node", "-e", _LEGEND_JS, *ids], capture_output=True, text=True)
+    except FileNotFoundError:
+        raise SystemExit("error: node is required to read the lab explainer legends (labs/*/explainer/explainer.js)")
+    if res.returncode:
+        raise SystemExit(f"error: reading explainer legends failed:\n{res.stderr.strip()}")
+    legends = json.loads(res.stdout)
+    for lid, legend in legends.items():
+        for entry in legend:
+            tag = entry.get("tag")
+            if tag is not None and not (isinstance(tag, str) and _TAG.fullmatch(tag)):
+                raise SystemExit(f"error: labs/{lid}/explainer/explainer.js: legend tag {tag!r} must be a kebab-case slug")
+            if tag in _RESERVED_TAGS:
+                raise SystemExit(f"error: labs/{lid}/explainer/explainer.js: legend tag {tag!r} is reserved (it would clash with a /labs/tags/ URL)")
+    return legends
+
+
+def lab_tags(labs, legends):
+    """[{tag, name, description, labs: [{node, lab_id, title, label, role}]}] sorted by name.
+    Names and descriptions come from labs/_explainer/tags.json. A tag missing from it fails the build;
+    a vocabulary entry no lab uses gets a warning. Two pills of one lab with the same tag share a row."""
+    vocab = {}
+    if os.path.isfile(TAGS_VOCAB):
+        with open(TAGS_VOCAB, "r", encoding="utf-8") as fh:
+            vocab = json.load(fh)
+    tags = {}
+    for lab in sorted(labs.values(), key=lambda l: l["number"]):
+        for entry in legends.get(lab["node"], []):
+            if not entry.get("tag"):
+                continue
+            if entry["tag"] not in vocab:
+                raise SystemExit(f"error: labs/{lab['node']}/explainer/explainer.js: legend tag {entry['tag']!r} "
+                                 f"is not in {TAGS_VOCAB}; add it there or fix the tag")
+            t = tags.setdefault(entry["tag"], {"tag": entry["tag"], "labs": []})
+            label = entry.get("label", entry["tag"])
+            row = next((r for r in t["labs"] if r["node"] == lab["node"]), None)
+            if row:
+                row["label"] += f" · {label}"
+            else:
+                t["labs"].append({"node": lab["node"], "lab_id": lab["lab_id"], "title": lab["title"],
+                                  "label": label, "role": entry.get("role", "muted")})
+    for slug in sorted(set(vocab) - set(tags)):
+        print(f"warning: {TAGS_VOCAB}: tag {slug!r} is not used by any explainer legend")
+    for slug, t in tags.items():
+        v = vocab[slug]
+        t["name"] = v.get("name") or slug.replace("-", " ").title()
+        t["description"] = v.get("description", "")
+    return sorted(tags.values(), key=lambda t: t["name"].lower())
+
+
+# --- Lab guide: the README body rendered on /labs/<id>/ ------------------------
+# Links are written for the repo (GitHub and a local clone). On the site:
+#   explainer/index.html#<id>/N    -> #<id>/N (drives the embedded explainer); another lab's -> /labs/<lab>/#...
+#   ../../articles/<node>.md#f     -> /nodes/<node>/#f
+#   ../<lab>/README.md#a, ../<lab>/ -> /labs/<lab>/#a ;  ../README.md -> /labs/
+#   any other relative path        -> GitHub (blob for files, tree for folders)
+#   https://ai-security-atlas.github.io/... -> /... (stays on this deployment)
+# Fenced code blocks and inline code are left alone.
+_FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
+_GUIDE_LINK = re.compile(r"(`+)(?:(?!\n\n)[\s\S])*?\1|\]\(([^)\s]+)")
+
+
+def _guide_href(href, lab_id, labs, node_ids):
+    if href.startswith(SITE_URL):
+        return "/" + href[len(SITE_URL):]
+    if href.startswith(("#", "/")) or re.match(r"[a-zA-Z][\w+.-]*:", href):
+        return href
+    path, _, frag = href.partition("#")
+    frag = f"#{frag}" if frag else ""
+    rel = posixpath.normpath(posixpath.join(LABS_DIR, lab_id, path))
+    if rel.startswith(".."):
+        return href
+    m = re.fullmatch(rf"{LABS_DIR}/([^/]+)/explainer/index\.html", rel)
+    if m and m.group(1) in labs:
+        target = re.fullmatch(r"#([\w-]+)/\d+", frag)  # the #<id>/N names the explainer it drives
+        target = target.group(1) if target and target.group(1) in labs else m.group(1)
+        if target == lab_id:
+            return frag or "#lab-explainer"
+        return labs[target]["page"] + (frag or "#lab-explainer")
+    m = re.fullmatch(r"articles/([a-z0-9-]+)\.md", rel)
+    if m and m.group(1) in node_ids:
+        return f"/nodes/{m.group(1)}/{frag}"
+    m = re.fullmatch(rf"{LABS_DIR}/([^/]+)(/README\.md)?", rel)
+    if m and m.group(1) in labs and (m.group(2) or m.group(1) != lab_id):  # its own folder stays on GitHub
+        return f"{labs[m.group(1)]['page']}{frag}"
+    if rel == f"{LABS_DIR}/README.md":
+        return "/labs/"
+    kind = "tree" if path.endswith("/") or os.path.isdir(rel) else "blob"
+    return f"{REPO_URL}/{kind}/main/{rel}{frag}"
+
+
+def lab_guide(lab, labs, node_ids):
+    """README.md without its front matter and its H1 (the page header shows the title), links rewritten."""
+    with open(os.path.join(LABS_DIR, lab["node"], "README.md"), "r", encoding="utf-8") as fh:
+        text = fh.read()
+    if text.startswith("---\n"):
+        text = text[text.find("\n---\n", 4) + 5:]
+    text = re.sub(r"\A\s*# [^\n]*\n", "", text)
+
+    def fix(m):
+        if m.group(2) is None:
+            return m.group(0)
+        return "](" + _guide_href(m.group(2), lab["node"], labs, node_ids)
+
+    out, prose, fence = [], [], None
+    for line in text.splitlines(keepends=True):
+        m = _FENCE.match(line)
+        if fence is None and m:
+            out.append(_GUIDE_LINK.sub(fix, "".join(prose)))
+            prose, fence = [], m.group(1)
+            out.append(line)
+        elif fence is not None:
+            out.append(line)
+            if line.strip().startswith(fence[0] * len(fence)) and not line.strip().strip(fence[0]):
+                fence = None
+        else:
+            prose.append(line)
+    out.append(_GUIDE_LINK.sub(fix, "".join(prose)))
+    return "".join(out).strip()
 
 
 def main():
@@ -277,8 +469,13 @@ def main():
     node_by_id = {n["id"]: n for n in nodes_raw}
     source_by_id = {s["id"]: s for s in sources_raw}
     labs = load_labs(set(node_by_id))
+    if "tags" in labs:
+        raise SystemExit("error: labs/tags: the lab id 'tags' is reserved for /labs/tags/")
+    # Read legends and tags before anything is wiped or written, so a failing explainer leaves the tree intact.
+    legends = lab_legends(labs)
+    tags = lab_tags(labs, legends)
     practiced = practiced_in(labs)
-    hubs, labs_planned = read_roadmap()
+    hubs, labs_planned, roadmap = read_roadmap()
     hubs.update({n["id"]: hubs.get(n["id"], []) for n in nodes_raw
                  if n.get("type") in ("goal", "technique_family")})
 
@@ -394,6 +591,100 @@ def main():
 
     node_articles = {n["id"]: read_article(n["id"]) for n in nodes_raw}
 
+    # --- Primary objective per attack and derived lab placement --------------
+    goal_rank = {g: i for i, g in enumerate(GOAL_ORDER)}
+
+    def goal_key(gid):
+        return (goal_rank.get(gid, len(GOAL_ORDER)), title_of(gid).lower())
+
+    goals_of = {n["id"]: sorted(rel[n["id"]].get("routesToGoal", []), key=goal_key)
+                for n in nodes_raw if n["type"] == "attack"}
+    family_of = {aid: (rel[aid].get("memberOf") or [""])[0] for aid in goals_of}
+    fam_goal_count = Counter((family_of[a], g) for a, gids in goals_of.items() for g in gids)
+
+    # Primary objective: the seed's optional `primary_goal` (must be one of the
+    # attack's goals); otherwise the attack's goal that the most attacks of its
+    # family also serve, ties by GOAL_ORDER. The nav lists the attack under that
+    # goal; every other goal shows it as an alias row.
+    primary_goal = {}
+    for aid, gids in goals_of.items():
+        authored = node_by_id[aid].get("primary_goal")
+        if authored and authored not in gids:
+            raise SystemExit(f"error: {aid}: primary_goal {authored!r} is not one of its goals {gids}")
+        if gids:
+            primary_goal[aid] = authored or min(gids, key=lambda g: (-fam_goal_count[(family_of[aid], g)], goal_key(g)))
+        goals_of[aid] = [primary_goal[aid]] + [g for g in gids if g != primary_goal[aid]] if gids else []
+
+    def linked_attacks(nid):
+        """Attacks one edge away from a non-attack node: they require, are scoped to or
+        use it, it mitigates them (defense) or evaluates them (evaluation)."""
+        if nid in goals_of:
+            return {nid}
+        return {a for k in ("requiredBy", "hasRelevantTopic", "usedBy", "canMitigate", "evaluates")
+                for a in rel.get(nid, {}).get(k, []) if a in goals_of}
+
+    def top(counts, key):
+        # Up to two ids, each backed by at least half as many attacks as the leader.
+        order = sorted(counts, key=lambda i: (-counts[i], key(i)))[:2]
+        return [i for i in order if counts[i] * 2 >= counts[order[0]]]
+
+    def place(nid, covers, prefer="", goals=None):
+        """(goals, families) a lab on `nid` belongs to. An attack lab: its goals (primary
+        first) and its family. Otherwise the attacks linked to the node or to any covered
+        node vote. Families: top() (ties by title), with `prefer` (the README `family`) first
+        when it has a vote. Goals: top() over the attacks of those families, ties by how many
+        of them have the goal as primary, then GOAL_ORDER. `goals` (README `objectives:`)
+        replaces the derived goals; families then keep only those serving one of them,
+        `prefer` included. No linked attack -> ([], []): a foundations lab."""
+        if nid in goals_of:
+            return (goals_of[nid] if goals is None else goals), [family_of[nid]] if family_of[nid] else []
+        attacks = set(linked_attacks(nid))
+        for c in covers:
+            attacks |= linked_attacks(c)
+        fam_votes = Counter(family_of[a] for a in attacks if family_of[a])
+        families = top(fam_votes, lambda f: title_of(f).lower())
+        if prefer in fam_votes:
+            families = [prefer] + [f for f in families if f != prefer][:1]
+        if goals is not None:
+            return goals, [f for f in dict.fromkeys(families + [prefer])
+                           if f and any(fam_goal_count[(f, g)] for g in goals)][:2]
+        backing = [a for a in attacks if family_of[a] in families]
+        primaries = Counter(primary_goal[a] for a in backing)
+        return (top(Counter(g for a in backing for g in goals_of[a]), lambda g: (-primaries[g], goal_key(g))),
+                families)
+
+    goal_ids = {n["id"] for n in nodes_raw if n["type"] == "goal"}
+    family_mismatch = []
+    for lab in labs.values():
+        obj = lab["objectives"]
+        if obj is not None:
+            if not isinstance(obj, list) or not all(isinstance(g, str) for g in obj) or len(set(obj)) != len(obj):
+                raise SystemExit(f"error: labs/{lab['node']}/README.md: objectives must be a list of distinct goal ids")
+            bad = [g for g in obj if g not in goal_ids]
+            if bad:
+                raise SystemExit(f"error: labs/{lab['node']}/README.md: objectives {bad} are not goal ids")
+        lab["objectives"], lab["families"] = place(lab["node"], [c["node"] for c in lab["covers"]],
+                                                   lab["family"], obj)
+        families = lab["families"]
+        graph_family = families[0] if families else lab["family"]
+        if lab["family"] != graph_family:
+            family_mismatch.append(lab["lab_id"])
+            lab["family"] = graph_family
+    if family_mismatch:
+        print(f"warning: {len(family_mismatch)} lab(s) front matter `family` differs from the graph; "
+              f"using the graph's: {', '.join(sorted(family_mismatch))}")
+
+    # Planned labs (docs/labs-roadmap.json `kind: own` with no lab folder yet), placed
+    # by the same rule with the roadmap's `also_covers` standing in for `covers:`.
+    planned = {}
+    for nid, e in roadmap.items():
+        if e.get("kind") == "own" and nid in node_by_id and nid not in labs:
+            covers = [c.split()[0] for c in e.get("also_covers") or [] if c.split() and c.split()[0] in node_by_id]
+            goals, families = place(nid, covers)
+            planned[nid] = {"node": nid, "title": e.get("title") or title_of(nid), "effort": e.get("effort") or "",
+                            "model_backend": e.get("model_backend") or "", "status": "planned",
+                            "objectives": goals, "families": families, "covers": covers}
+
     atlas_nodes = {}
     for n in nodes_raw:
         nid = n["id"]
@@ -417,17 +708,51 @@ def main():
             "rel": groups,
             "has_article": has_article,
         }
+        if nid in primary_goal:
+            atlas_nodes[nid]["primary_goal"] = primary_goal[nid]
         if nid in labs:
             atlas_nodes[nid]["lab"] = labs[nid]
         if nid in practiced:
             atlas_nodes[nid]["practiced_in"] = practiced[nid]
+        if nid in planned:
+            atlas_nodes[nid]["planned_lab"] = planned[nid]
+        host = (roadmap.get(nid) or {}).get("covered_by")
+        if host in planned and nid not in practiced:
+            atlas_nodes[nid]["planned_practiced_in"] = {
+                "node": host, "title": planned[host]["title"], "status": "planned",
+                "where": roadmap[nid].get("covered_where") or ""}
         if nid in hubs:
             members = set(hubs[nid])
             for k in ("hasMember", "reachableVia", "hasVariant"):
                 members.update(rel[nid].get(k, []))
-            area = labs_in_area(sort_by_title(members - {nid}), labs, practiced)
+            members.discard(nid)
+            # Goals and families also list labs whose derived placement names them.
+            place_key = {"goal": "objectives", "technique_family": "families"}.get(n["type"])
+            placed = [lid for lid, lab in labs.items() if place_key and nid in lab[place_key]]
+            area = labs_in_area(sort_by_title(members), labs, practiced, placed)
+            for row in area:
+                # The family a row is grouped under: the hub itself, else the family of the
+                # member attack that brought the lab in, else a lab family serving this goal.
+                via = [row["node"]] if row["own"] else [p["node"] for p in row["practiced"]]
+                lab = labs[row["node"]]
+                fams = ([nid] if n["type"] == "technique_family" else []) + \
+                       [family_of.get(m) for m in via] + \
+                       [f for f in lab["families"] if n["type"] != "goal" or fam_goal_count[(f, nid)]] + [lab["family"]]
+                row["family"] = next((f for f in fams if f), "")
             if area:
                 atlas_nodes[nid]["labs_in_area"] = area
+            # Planned labs in the area: same relations as labs_in_area, from the roadmap.
+            hosts = {(roadmap.get(m) or {}).get("covered_by") for m in members}
+            planned_area = [
+                {"node": pid, "title": p["title"], "effort": p["effort"], "status": "planned",
+                 "relation": "own" if pid in members else "practiced" if pid in hosts else "foundation"}
+                for pid, p in planned.items()
+                if pid in members or pid in hosts or (place_key and nid in p[place_key])]
+            if planned_area:
+                atlas_nodes[nid]["labs_planned_in_area"] = sorted(planned_area, key=lambda r: r["title"].lower())
+    unplaced = sorted((lab["lab_id"] for lab in labs.values()
+                       if not any(r["node"] == lab["node"] for nid in hubs if nid in atlas_nodes
+                                  for r in atlas_nodes[nid].get("labs_in_area", []))), key=lambda i: int(i[4:]))
 
     # --- Curated navigation (PRD 7.4) ----------------------------------------
     # Objectives: goal -> family -> attack, using can_serve_goal + member_of.
@@ -447,8 +772,11 @@ def main():
                     fam_map.setdefault(fid, []).append(aid)
             else:
                 loose.append(aid)
+        # attacks: the same ids with primary=False for alias rows (goal is not the attack's primary_goal).
         families = [
-            {"id": fid, "attackIds": sort_by_title(aids)}
+            {"id": fid, "attackIds": sort_by_title(aids),
+             "attacks": [{"id": aid, "primary": primary_goal.get(aid) == gid} for aid in sort_by_title(aids)],
+             "primaryCount": sum(primary_goal.get(aid) == gid for aid in aids)}
             for fid, aids in sorted(fam_map.items(), key=lambda kv: title_of(kv[0]).lower())
         ]
         objectives.append({
@@ -456,7 +784,16 @@ def main():
             "families": families,
             "looseAttackIds": sort_by_title(loose),
             "count": len(members),
+            "primaryCount": sum(primary_goal.get(aid) == gid for aid in members),
         })
+
+    # Derived goal <- family edges (not authored in the seed): one per (goal, family)
+    # pair with at least one family attack serving the goal, in nav order.
+    family_goals = [
+        {"goal": o["goalId"], "family": f["id"], "attack_count": len(f["attackIds"]),
+         "primary_count": f["primaryCount"]}
+        for o in objectives for f in o["families"]
+    ]
 
     def ids_of_type(*types):
         return sort_by_title([n["id"] for n in nodes_raw if n["type"] in types])
@@ -553,7 +890,6 @@ def main():
             "show_sources": v.get("show_sources", False),
         })
 
-    from collections import Counter
     type_counts = Counter(n["type"] for n in nodes_raw)
 
     atlas = {
@@ -577,6 +913,7 @@ def main():
         "accessProfiles": atlas_access,
         "views": atlas_views,
         "nav": nav,
+        "familyGoals": family_goals,
         "labs": sorted(labs.values(), key=lambda lab: lab["number"]),
     }
 
@@ -589,7 +926,7 @@ def main():
         json.dump(atlas, f, ensure_ascii=False, separators=(",", ":"))
 
     # --- Regenerate Hugo content pages ---------------------------------------
-    for sub in ("nodes", "sources", "views", "graph", "labs"):
+    for sub in ("nodes", "nodetabs", "sources", "views", "graph", "labs"):
         shutil.rmtree(f"content/{sub}", ignore_errors=True)
         os.makedirs(f"content/{sub}", exist_ok=True)
 
@@ -604,17 +941,25 @@ def main():
             "type": "node",
             "node_type": n.get("type", "concept"),
             "summary": n.get("summary", ""),
-            "aliases": n.get("aliases", []),
+            # Not "aliases": Hugo reads that key as redirect URLs.
+            "node_aliases": n.get("aliases", []),
             "evidence_status": n.get("evidence_status", ""),
             "content_status": "draft" if body else n.get("content_status", ""),
             "priority": n.get("priority", ""),
             "caveat": n.get("caveat", "") or "",
             "has_article": bool(body),
         }
-        for key in ("lab", "practiced_in", "labs_in_area"):
+        for key in ("lab", "practiced_in", "labs_in_area", "primary_goal", "planned_lab",
+                    "planned_practiced_in", "labs_planned_in_area"):
             if key in atlas_nodes[nid]:
                 fm[key] = atlas_nodes[nid][key]
         write_md(f"content/nodes/{nid}.md", fm, content=body)
+        # The Explorer's reader tabs live at /nodes/<id>/<tab>/; each needs a real file on a static host.
+        for tab in NODE_TABS:
+            write_md(f"content/nodetabs/{nid}-{tab}.md", {
+                "title": fm["title"], "id": nid, "tab": tab, "type": "nodetab", "summary": fm["summary"],
+                "url": f"/nodes/{nid}/{tab}/", "build": {"list": "never"}, "sitemap": {"disable": True},
+            })
     write_md("content/nodes/_index.md", {"title": "Topics", "type": "node"})
 
     for s in sources_raw:
@@ -647,11 +992,32 @@ def main():
         "summary": "Local, inert reproductions of Atlas attacks, each with an animated explainer and a defense chapter.",
     })
 
+    for lab in labs.values():
+        write_md(f"content/labs/{lab['node']}.md", {
+            "title": f"{lab['lab_id']} · {lab['title']}", "type": "lab", "id": lab["node"],
+            "summary": atlas_nodes[lab["node"]]["summary"] or lab["title"],
+        }, content=lab_guide(lab, labs, set(node_by_id)))
+    write_md("content/labs/tags/_index.md", {
+        "title": "Explainer tags", "type": "labtag",
+        "summary": "The roles that lab explainers color in their diagrams, and the labs that use each one.",
+        "tag_list": [{"tag": t["tag"], "name": t["name"], "description": t["description"], "count": len(t["labs"])}
+                 for t in tags],
+    })
+    for t in tags:
+        write_md(f"content/labs/tags/{t['tag']}.md", {
+            "title": t["name"], "type": "labtag", "tag": t["tag"],
+            "summary": t["description"] or f"Labs whose explainers mark {t['name']}.",
+            "description": t["description"], "labs": t["labs"],
+        })
+
     published = publish_explainers(labs)
 
     print(f"Compiled {len(nodes_raw)} nodes, {len(atlas_edges)} edges, "
           f"{len(sources_raw)} sources, {len(views)} views, {len(labs)} labs "
-          f"({published} explainers published).")
+          f"({published} explainers published, {len(tags)} explainer tags).")
+    print(f"Labs: {sum(1 for lab in labs.values() if lab['objectives'])} with objectives, "
+          f"{len(planned)} planned; {len(unplaced)} in no hub's labs_in_area"
+          + (f": {', '.join(unplaced)}" if unplaced else "") + ".")
 
 
 if __name__ == "__main__":

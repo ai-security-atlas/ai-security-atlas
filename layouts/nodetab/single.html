@@ -1,0 +1,7 @@
+{{/* /nodes/<id>/<tab>/: the Explorer on one reader tab of a node. Canonical is /nodes/<id>/
+     (layouts/partials/head-seo.html), and Pagefind skips these pages (baseof.html). */}}
+{{ define "head" }}{{ partial "spa-boot.html" . }}{{ end }}
+{{ define "main" }}
+<div id="graph-root"></div>
+{{ partial "node-doc.html" (dict "page" . "id" .Params.id "content" "") }}
+{{ end }}

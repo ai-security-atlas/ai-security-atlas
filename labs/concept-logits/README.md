@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-05 · What the API reveals
 
-> **Atlas node:** [Logits, probabilities and observable outputs](https://ai-security-atlas.github.io/?node=concept-logits) · **Family:** family-theft · **Level:** beginner · **Time:** 60 min · **Model backend:** optional
+> **Atlas node:** [Logits, probabilities and observable outputs](https://ai-security-atlas.github.io/nodes/concept-logits/) · **Family:** family-theft · **Level:** beginner · **Time:** 60 min · **Model backend:** optional
 
 ## Overview
 
@@ -49,13 +49,13 @@ The "secret" is one of two fixed, inert canaries (`ATLAS-CANARY-l0g1-A`, `ATLAS-
 | Field | Value |
 | :--- | :--- |
 | Node | [`concept-logits`](../../articles/concept-logits.md) |
-| Family | None in the seed graph (a concept node). Both seed sources are model-theft papers, so the front matter and explainer kicker use [`family-theft`](https://ai-security-atlas.github.io/?node=family-theft); the secret and membership steps belong to [`family-privacy`](https://ai-security-atlas.github.io/?node=family-privacy). |
-| Goal | [`goal-model-theft`](https://ai-security-atlas.github.io/?node=goal-model-theft) (Step 5) and [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) (Steps 3–4) |
+| Family | None in the seed graph (a concept node). Both seed sources are model-theft papers, so the front matter and explainer kicker use [`family-theft`](https://ai-security-atlas.github.io/nodes/family-theft/); the secret and membership steps belong to [`family-privacy`](https://ai-security-atlas.github.io/nodes/family-privacy/). |
+| Goal | [`goal-model-theft`](https://ai-security-atlas.github.io/nodes/goal-model-theft/) (Step 5) and [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) (Steps 3–4) |
 | Access profile | `A02` Score or logit API access (caveat: *Specify score precision, top-k restrictions and any allowed logit transformations.*): this lab varies exactly those three, and Step 3's text-only rows are `A01`. |
-| Read first | [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters), [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens) |
-| Mitigated by | None in the seed graph. Defend uses output detail limits and [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget) as related, not mapped. |
-| Evaluated by | [`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost) (queries per leak), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | Requires this concept: [`attack-model-imitation`](https://ai-security-atlas.github.io/?node=attack-model-imitation), [`attack-projection-theft`](https://ai-security-atlas.github.io/?node=attack-projection-theft), [`attack-membership`](https://ai-security-atlas.github.io/?node=attack-membership), [`attack-training-extraction`](https://ai-security-atlas.github.io/?node=attack-training-extraction), [`attack-attribute`](https://ai-security-atlas.github.io/?node=attack-attribute), [`concept-decoding`](https://ai-security-atlas.github.io/?node=concept-decoding). Also [`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak), [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output). |
+| Read first | [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
+| Mitigated by | None in the seed graph. Defend uses output detail limits and [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/) as related, not mapped. |
+| Evaluated by | [`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/) (queries per leak), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | Requires this concept: [`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/), [`attack-projection-theft`](https://ai-security-atlas.github.io/nodes/attack-projection-theft/), [`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/), [`attack-training-extraction`](https://ai-security-atlas.github.io/nodes/attack-training-extraction/), [`attack-attribute`](https://ai-security-atlas.github.io/nodes/attack-attribute/), [`concept-decoding`](https://ai-security-atlas.github.io/nodes/concept-decoding/). Also [`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/), [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/). |
 
 > [!NOTE]
 > **Atlas caveat:** the seed graph has no caveat for this concept node. Its article closes with the one that applies here: "How much any exposure level actually enables is empirical and belongs to the cited sources." This lab measures one small model and one toy API; the numbers are not a claim about any production service.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-04 · What the model actually reads](../concept-tokens/README.md) explains the tokens that this lab's logprobs are attached to.
-- Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters) and [`concept-tokens`](https://ai-security-atlas.github.io/?node=concept-tokens).
+- Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
 
@@ -195,7 +195,7 @@ What to notice: the model scores all 49,152 vocabulary entries at every position
 
 **Why**
 
-The logits are the output of the last projection, the hidden state of size 960 multiplied by the (tied) embedding matrix ([`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters)); everything an API can return is derived from them. Sampling settings such as temperature change which token comes out, not the underlying scores ([`concept-decoding`](https://ai-security-atlas.github.io/?node=concept-decoding)). The download is pinned to one revision and only the files the model needs.
+The logits are the output of the last projection, the hidden state of size 960 multiplied by the (tied) embedding matrix ([`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/)); everything an API can return is derived from them. Sampling settings such as temperature change which token comes out, not the underlying scores ([`concept-decoding`](https://ai-security-atlas.github.io/nodes/concept-decoding/)). The download is pinned to one revision and only the files the model needs.
 
 ### Step 2 — One API, three detail levels (≈1–2 min) · [explainer 3](explainer/index.html#concept-logits/3)
 
@@ -231,7 +231,7 @@ What to notice: the reply text is identical at every level and the output filter
 
 **Why**
 
-The lab API (`scripts/logitlab.py`) is an OpenAI-style FastAPI app whose system prompt holds the canary and tells the model never to reveal it; an output filter replaces `ATLAS-CANARY-l0g1-[A-Z]` in the reply text with `[REDACTED]`. `/v1/chat/completions` returns logprobs like the OpenAI API does, and the "full" level adds `/v1/score`, which returns the logprob of any supplied continuation plus the whole next-token row (like the legacy `echo` scoring some servers offer). Each level is a different answer to the A02 caveat "specify score precision, top-k restrictions and any allowed logit transformations" ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)).
+The lab API (`scripts/logitlab.py`) is an OpenAI-style FastAPI app whose system prompt holds the canary and tells the model never to reveal it; an output filter replaces `ATLAS-CANARY-l0g1-[A-Z]` in the reply text with `[REDACTED]`. `/v1/chat/completions` returns logprobs like the OpenAI API does, and the "full" level adds `/v1/score`, which returns the logprob of any supplied continuation plus the whole next-token row (like the legacy `echo` scoring some servers offer). Each level is a different answer to the A02 caveat "specify score precision, top-k restrictions and any allowed logit transformations" ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)).
 
 ### Step 3 — Which canary is hidden? (≈3 min) · [explainer 4](explainer/index.html#concept-logits/4)
 
@@ -262,7 +262,7 @@ What to notice: with logprobs the first reply already names the hidden canary `A
 
 **Why**
 
-The output filter works on the reply text, but the logprobs are computed from the tokens the model actually sampled, so the field carries exactly what the filter removed ([`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak), [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)). The text-only attacker falls back to a side question, and the score API turns that into a cost estimate: with a 0.04 gap in p(Yes), a 95% test needs thousands of samples per question ([`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost)). Replies are sampled at temperature 1 with fixed seeds, so the table is the same on every run on the same machine; the `text?` row is a weak channel on this small model, not proof that text-only is safe.
+The output filter works on the reply text, but the logprobs are computed from the tokens the model actually sampled, so the field carries exactly what the filter removed ([`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/), [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). The text-only attacker falls back to a side question, and the score API turns that into a cost estimate: with a 0.04 gap in p(Yes), a 95% test needs thousands of samples per question ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). Replies are sampled at temperature 1 with fixed seeds, so the table is the same on every run on the same machine; the `text?` row is a weak channel on this small model, not proof that text-only is safe.
 
 ### Step 4 — Confidence as a membership signal (≈25–55 s) · [explainer 6](explainer/index.html#concept-logits/6)
 
@@ -290,7 +290,7 @@ What to notice: greedy text already reproduces all six famous originals, but onl
 
 **Why**
 
-A text the model saw many times in training gets a much higher likelihood than a one-word variant, which is the signal behind loss-based [`attack-membership`](https://ai-security-atlas.github.io/?node=attack-membership) and the scoring step of [`attack-training-extraction`](https://ai-security-atlas.github.io/?node=attack-training-extraction). These six texts are public and almost certainly repeated in web-scale training data, so they stand in for "members"; a real membership test needs a meaningful candidate and a baseline, as the node caveat says. Margins are in nats (natural-log units) summed over the continuation.
+A text the model saw many times in training gets a much higher likelihood than a one-word variant, which is the signal behind loss-based [`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/) and the scoring step of [`attack-training-extraction`](https://ai-security-atlas.github.io/nodes/attack-training-extraction/). These six texts are public and almost certainly repeated in web-scale training data, so they stand in for "members"; a real membership test needs a meaningful candidate and a baseline, as the node caveat says. Margins are in nats (natural-log units) summed over the continuation.
 
 ### Step 5 — Read the hidden size from full rows (≈1.5 min) · [explainer 7](explainer/index.html#concept-logits/7)
 
@@ -315,7 +315,7 @@ What to notice: 1200 rows of 49,152 numbers span only 960 dimensions; after sing
 
 **Why**
 
-Every logit row is the 960-dimensional hidden state times the same 49,152 × 960 output matrix, so the rows lie in a 960-dimensional subspace (centering each row removes the shared log-softmax constant). Carlini et al. used this to recover the hidden size, and the output projection up to a rotation, of production models ([`attack-projection-theft`](https://ai-security-atlas.github.io/?node=attack-projection-theft)); this lab stops at the size. It took 12 HTTP requests of 100 prompts each.
+Every logit row is the 960-dimensional hidden state times the same 49,152 × 960 output matrix, so the rows lie in a 960-dimensional subspace (centering each row removes the shared log-softmax constant). Carlini et al. used this to recover the hidden size, and the output projection up to a rotation, of production models ([`attack-projection-theft`](https://ai-security-atlas.github.io/nodes/attack-projection-theft/)); this lab stops at the size. It took 12 HTTP requests of 100 prompts each.
 
 ### Step 6 — Does your backend return logprobs?
 
@@ -342,7 +342,7 @@ What to notice: Ollama returns top-5 logprobs for chat (0.32.5 on the host and 0
 
 **Why**
 
-This is the A02 caveat applied to a server you already run: find out which detail level it exposes before you decide what to filter ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)). The script writes the system prompt itself, with `ATLAS-CANARY-l0g1-A`, so nothing is hidden from you; it only checks what the response format carries. With container Ollama and `qwen2.5vl:3b` the letter line read `p(A) 0.9929`.
+This is the A02 caveat applied to a server you already run: find out which detail level it exposes before you decide what to filter ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). The script writes the system prompt itself, with `ATLAS-CANARY-l0g1-A`, so nothing is hidden from you; it only checks what the response format carries. With container Ollama and `qwen2.5vl:3b` the letter line read `p(A) 0.9929`.
 
 ## Defend
 
@@ -372,7 +372,7 @@ What to notice: rounding to one decimal still gives 960 (the cliff shrinks from 
 
 **Why**
 
-Rounding adds noise of at most half a step to every logprob, which buries the small singular values once the noise is larger than they are ([`attack-projection-theft`](https://ai-security-atlas.github.io/?node=attack-projection-theft)), but a confident prediction stays confident, and top-k = 1 still returns the token the model chose. Scrubbing applies the output filter's decision to every field of the response, not just the text ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)). Limitation: none of these remove the signal; they raise its cost, and the near-duplicate column barely moves because the text itself carries it.
+Rounding adds noise of at most half a step to every logprob, which buries the small singular values once the noise is larger than they are ([`attack-projection-theft`](https://ai-security-atlas.github.io/nodes/attack-projection-theft/)), but a confident prediction stays confident, and top-k = 1 still returns the token the model chose. Scrubbing applies the output filter's decision to every field of the response, not just the text ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). Limitation: none of these remove the signal; they raise its cost, and the near-duplicate column barely moves because the text itself carries it.
 
 ### Step D2 — Budgets and logging · [explainer 9](explainer/index.html#concept-logits/9)
 
@@ -382,7 +382,7 @@ D1 shows that limiting detail changes how many queries a leak costs, from 1 to "
 
 **Why**
 
-Budgets and logging are [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget), and reporting cost per leak is [`eval-cost`](https://ai-security-atlas.github.io/?node=eval-cost). Limitation: a patient attacker spreads queries over keys and time, so a budget sets a price, not a wall; it works best on top of the detail limits from D1.
+Budgets and logging are [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/), and reporting cost per leak is [`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/). Limitation: a patient attacker spreads queries over keys and time, so a budget sets a price, not a wall; it works best on top of the detail limits from D1.
 
 ## Evaluate
 

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
 import {
   Search, ChevronRight, ChevronDown, X, Moon, Sun, ArrowLeft, ArrowUpRight,
-  BookOpen, ExternalLink, Share2, Maximize2, AlertTriangle, FileText, Link2,
+  BookOpen, ExternalLink, Share2, AlertTriangle, FileText, Link2,
   Key, Shield, ScrollText, Layers, List as ListIcon, Compass, Crosshair, PenLine, Home,
-  SquareTerminal, Play,
+  SquareTerminal, Play, CornerUpRight, ChevronsUpDown, ChevronsDownUp,
 } from 'lucide-react';
 
 const REPO_URL = 'https://github.com/ai-security-atlas/ai-security-atlas';
@@ -16,9 +15,31 @@ const GithubMark = () => (
   </svg>
 );
 import {
-  Atlas, AtlasNode, Lab, PracticedIn, AreaLab, loadAtlas, glyphFor, REL_ORDER, OVERVIEW_RELS,
+  Atlas, AtlasNode, Lab, PracticedIn, AreaLab, NavSection, loadAtlas, glyphFor, REL_ORDER, OVERVIEW_RELS,
   humanizeToken,
 } from './atlas';
+// The graph (React Flow) loads on first use: it is hidden by default on desktop and a separate tab on phones.
+const GraphView = React.lazy(() => import('./graph/GraphView'));
+const graphLoading = <div className="graphwrap graphwrap--loading" role="status">Loading graph…</div>;
+
+// The graph is a lazy chunk; if it fails to load (offline, or a tab left open across a
+// deploy that removed the old hashed chunk), only the graph pane shows the error.
+class GraphBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div className="graphwrap graphwrap--loading" role="alert">
+        <p>The graph failed to load.</p>
+        <button className="segbtn" onClick={() => window.location.reload()}>Reload</button>
+      </div>
+    );
+  }
+}
+// Below 1024px the desktop graph pane overlays the reader, so leaving the graph closes it.
+const overlayGraph = () => typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 1023px)').matches;
+const phone = () => typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 767px)').matches;
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -82,16 +103,20 @@ function RelGroup({ atlas, groupKey, ids, onOpen }: {
 
 /* ------------------------------------------------------------- navigation */
 
-function NavRow({ atlas, id, active, depth, expandable, expanded, onToggle, onOpen, count }: {
+// A node "has a lab" when it is a lab's own topic or practiced in another lab's steps.
+
+function NavRow({ atlas, id, active, depth, expandable, expanded, onToggle, onOpen, count, aliasOf }: {
   atlas: Atlas; id: string; active: boolean; depth: number; expandable: boolean;
   expanded: boolean; onToggle: () => void; onOpen: () => void; count?: number;
+  aliasOf?: string;  // alias row: the attack's canonical row lives under this goal; never active
 }) {
   const n = atlas.nodes[id];
   if (!n) return null;
   const Glyph = glyphFor(atlas.typeMeta[n.type]?.glyph || 'BookOpen');
+  const aliasTitle = aliasOf ? `Listed under ${atlas.nodes[aliasOf]?.title || aliasOf}` : undefined;
   return (
-    <div className="nav-row" data-active={active} role="button" tabIndex={0}
-      aria-label={n.title} aria-current={active ? 'true' : undefined}
+    <div className="nav-row" data-active={active} data-alias={aliasOf ? 'true' : undefined} role="button" tabIndex={0}
+      aria-label={aliasOf ? `${n.title} (${aliasTitle})` : n.title} aria-current={active ? 'true' : undefined} title={aliasTitle}
       style={{ ...accentVar(atlas, n.type), paddingLeft: `${0.4 + depth * 0.85}rem` }}
       onClick={onOpen}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } }}>
@@ -105,18 +130,87 @@ function NavRow({ atlas, id, active, depth, expandable, expanded, onToggle, onOp
       </button>
       <span className="nav-row__glyph"><Glyph /></span>
       <span className="nav-row__label">{n.title}</span>
-      {n.lab && <span className="nav-row__lab" title={`Hands-on lab · ${n.lab.lab_id}`} aria-label="Has a hands-on lab"><SquareTerminal /></span>}
+      {aliasOf && <span className="nav-row__alias" aria-hidden="true"><CornerUpRight /></span>}
+      {n.lab
+        ? <span className="nav-row__lab" title={`Hands-on lab · ${n.lab.lab_id}`} aria-label="Has a hands-on lab"><SquareTerminal /></span>
+        : n.practiced_in && <span className="nav-row__lab nav-row__lab--lite" title={`Practiced in ${n.practiced_in.lab_id}`} aria-label="Practiced in a lab"><SquareTerminal /></span>}
       {count != null && <span className="nav-row__count">{count}</span>}
     </div>
   );
 }
 
-function Sidebar({ atlas, selectedId, onOpen, onHome, search, onSearch, results, expanded, toggle }: {
+// Sections below the objectives tree, in nav order. Methods and formats fold into
+// Foundations as subgroups.
+const SECTION_ORDER = ['defenses', 'evaluation', 'foundations'];
+const FOLD_INTO_FOUNDATIONS = ['methods', 'formats'];
+
+function navSections(atlas: Atlas): NavSection[] {
+  const byId = Object.fromEntries(atlas.nav.sections.map(s => [s.id, s]));
+  const folded = FOLD_INTO_FOUNDATIONS.flatMap(id => byId[id]?.groups || []);
+  const rest = atlas.nav.sections.filter(s => !SECTION_ORDER.includes(s.id) && !FOLD_INTO_FOUNDATIONS.includes(s.id));
+  return [
+    ...SECTION_ORDER.map(id => byId[id]).filter(Boolean)
+      .map(s => (s.id === 'foundations' ? { ...s, groups: [...s.groups, ...folded] } : s)),
+    ...rest,
+  ];
+}
+
+// Flat technique-family index: every family with its member attacks, by title.
+function familyIndex(atlas: Atlas): { id: string; members: string[] }[] {
+  return Object.values(atlas.nodes)
+    .filter(n => n.type === 'technique_family')
+    .sort((a, b) => a.title.localeCompare(b.title))
+    .map(n => ({ id: n.id, members: (n.rel?.hasMember || []).filter(id => atlas.nodes[id]?.type === 'attack') }));
+}
+
+const SUBGROUP_STYLE: React.CSSProperties = { padding: '0.4rem 0.75rem 0.15rem 1.6rem', fontFamily: 'var(--mono)', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--theme-muted)', opacity: 0.8 };
+
+function SectionHead({ open, onToggle, glyph: Glyph, label, total }: {
+  open: boolean; onToggle: () => void; glyph: any; label: string; total: number;
+}) {
+  return (
+    <button className="nav__section-label" style={{ width: '100%' }} onClick={onToggle} aria-expanded={open}>
+      {open ? <ChevronDown /> : <ChevronRight />}<Glyph /> {label}
+      <span style={{ marginLeft: 'auto', opacity: 0.7 }}>{total}</span>
+    </button>
+  );
+}
+
+function Sidebar({ atlas, selectedId, onOpen, onHome, search, onSearch, results, expanded, toggle, setExpanded }: {
   atlas: Atlas; selectedId: string | null; onOpen: (id: string) => void; onHome: () => void;
   search: string; onSearch: (e: any) => void; results: any[];
   expanded: Set<string>; toggle: (key: string) => void;
+  setExpanded: (keys: Set<string>) => void;
 }) {
   const is = (k: string) => expanded.has(k);
+  const sections = useMemo(() => navSections(atlas), [atlas]);
+  const families = useMemo(() => familyIndex(atlas), [atlas]);
+  const objectives = atlas.nav.objectives.map(obj => {
+    const fams = obj.families
+      .map(f => ({ id: f.id, rows: (f.attacks || f.attackIds.map(id => ({ id, primary: true }))) }))
+      .filter(f => f.rows.length > 0);
+    const loose = obj.looseAttackIds;
+    return { goalId: obj.goalId, fams, loose, count: fams.reduce((a, f) => a + f.rows.length, 0) + loose.length };
+  });
+  const famRows = families.map(f => ({ id: f.id, count: f.members.length }));
+
+  // Every expandable key in the nav, for the expand/collapse-all control.
+  const allKeys = useMemo(() => {
+    const keys = ['s:objectives', 's:families', ...sections.map(sec => `s:${sec.id}`)];
+    for (const obj of atlas.nav.objectives) {
+      keys.push(`g:${obj.goalId}`);
+      for (const f of obj.families) keys.push(`g:${obj.goalId}/f:${f.id}`);
+    }
+    return keys;
+  }, [atlas, sections]);
+  const allOpen = allKeys.every(k => expanded.has(k));
+
+  // Alias rows (an attack under a goal other than its primary_goal) never take the active highlight.
+  const attackRow = (a: { id: string; primary: boolean }, depth: number) => (
+    <NavRow key={a.id} atlas={atlas} id={a.id} active={a.primary && selectedId === a.id} depth={depth}
+      aliasOf={a.primary ? undefined : atlas.nodes[a.id]?.primary_goal}
+      expandable={false} expanded={false} onToggle={() => {}} onOpen={() => onOpen(a.id)} />
+  );
 
   return (
     <>
@@ -153,70 +247,67 @@ function Sidebar({ atlas, selectedId, onOpen, onHome, search, onSearch, results,
           </div>
         ) : (
           <>
-            {atlas.labs && atlas.labs.length > 0 && (
-              <>
-                <div className="nav__section-label"><SquareTerminal /> Hands-on labs
-                  <span style={{ marginLeft: 'auto', opacity: 0.7 }}>{atlas.labs.length}</span></div>
-                {atlas.labs.map(l => (
-                  <NavRow key={l.node} atlas={atlas} id={l.node} active={selectedId === l.node} depth={0}
-                    expandable={false} expanded={false} onToggle={() => {}} onOpen={() => onOpen(l.node)} />
-                ))}
-                <a className="nav__more" href="/labs/">All labs →</a>
-              </>
-            )}
-
-            <div className="nav__section-label"><Compass /> Adversary objectives</div>
-            {atlas.nav.objectives.map(obj => {
+            <div className="nav__tools">
+              <button className="nav__toggleall" onClick={() => setExpanded(new Set(allOpen ? [] : allKeys))}
+                aria-label={allOpen ? 'Collapse all sections' : 'Expand all sections'} title={allOpen ? 'Collapse all' : 'Expand all'}>
+                {allOpen ? <ChevronsDownUp /> : <ChevronsUpDown />}
+              </button>
+            </div>
+            <SectionHead open={is('s:objectives')} onToggle={() => toggle('s:objectives')} glyph={Compass}
+              label="Adversary objectives" total={objectives.length} />
+            {is('s:objectives') && objectives.map(obj => {
               const gKey = `g:${obj.goalId}`;
               const gOpen = is(gKey);
               return (
                 <div key={obj.goalId}>
                   <NavRow atlas={atlas} id={obj.goalId} active={selectedId === obj.goalId} depth={0}
-                    expandable={obj.families.length + obj.looseAttackIds.length > 0} expanded={gOpen}
+                    expandable={obj.fams.length + obj.loose.length > 0} expanded={gOpen}
                     onToggle={() => toggle(gKey)} onOpen={() => onOpen(obj.goalId)} count={obj.count} />
                   {gOpen && (
                     <div className="nav-children">
-                      {obj.families.map(fam => {
+                      {obj.fams.map(fam => {
                         const fKey = `${gKey}/f:${fam.id}`;
                         const fOpen = is(fKey);
+                        // The family's canonical (active) row is in the Technique families index.
                         return (
                           <div key={fam.id}>
-                            <NavRow atlas={atlas} id={fam.id} active={selectedId === fam.id} depth={1}
-                              expandable={fam.attackIds.length > 0} expanded={fOpen}
-                              onToggle={() => toggle(fKey)} onOpen={() => onOpen(fam.id)} count={fam.attackIds.length} />
-                            {fOpen && fam.attackIds.map(aid => (
-                              <NavRow key={aid} atlas={atlas} id={aid} active={selectedId === aid} depth={2}
-                                expandable={false} expanded={false} onToggle={() => {}} onOpen={() => onOpen(aid)} />
-                            ))}
+                            <NavRow atlas={atlas} id={fam.id} active={false} depth={1}
+                              expandable expanded={fOpen}
+                              onToggle={() => toggle(fKey)} onOpen={() => onOpen(fam.id)} count={fam.rows.length} />
+                            {fOpen && fam.rows.map(a => attackRow(a, 2))}
                           </div>
                         );
                       })}
-                      {obj.looseAttackIds.map(aid => (
-                        <NavRow key={aid} atlas={atlas} id={aid} active={selectedId === aid} depth={1}
-                          expandable={false} expanded={false} onToggle={() => {}} onOpen={() => onOpen(aid)} />
-                      ))}
+                      {obj.loose.map(aid => attackRow({ id: aid, primary: atlas.nodes[aid]?.primary_goal === obj.goalId }, 1))}
                     </div>
                   )}
                 </div>
               );
             })}
 
-            {atlas.nav.sections.map(sec => {
+            {famRows.length > 0 && (
+              <>
+                <SectionHead open={is('s:families')} onToggle={() => toggle('s:families')}
+                  glyph={glyphFor(atlas.typeMeta.technique_family?.glyph || 'Layers')} label="Technique families" total={famRows.length} />
+                {is('s:families') && famRows.map(f => (
+                  <NavRow key={f.id} atlas={atlas} id={f.id} active={selectedId === f.id} depth={1}
+                    expandable={false} expanded={false} onToggle={() => {}} onOpen={() => onOpen(f.id)} count={f.count} />
+                ))}
+              </>
+            )}
+
+            {sections.map(sec => {
               const sKey = `s:${sec.id}`;
               const sOpen = is(sKey);
-              const Glyph = glyphFor(sec.glyph);
-              const total = sec.groups.reduce((a, g) => a + g.ids.length, 0);
+              const groups = sec.groups.filter(g => g.ids.length > 0);
+              const total = groups.reduce((a, g) => a + g.ids.length, 0);
+              if (total === 0) return null;
               return (
                 <div key={sec.id}>
-                  <button className="nav__section-label" style={{ width: '100%' }} onClick={() => toggle(sKey)}>
-                    {sOpen ? <ChevronDown /> : <ChevronRight />}<Glyph /> {sec.label}
-                    <span style={{ marginLeft: 'auto', opacity: 0.7 }}>{total}</span>
-                  </button>
-                  {sOpen && sec.groups.map(grp => (
+                  <SectionHead open={sOpen} onToggle={() => toggle(sKey)} glyph={glyphFor(sec.glyph)} label={sec.label} total={total} />
+                  {sOpen && groups.map(grp => (
                     <div key={grp.label}>
-                      {sec.groups.length > 1 && (
-                        <div style={{ padding: '0.4rem 0.75rem 0.15rem 1.6rem', fontFamily: 'var(--mono)', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--theme-muted)', opacity: 0.8 }}>{grp.label}</div>
-                      )}
+                      {groups.length > 1 && <div style={SUBGROUP_STYLE}>{grp.label}</div>}
                       {grp.ids.map(id => (
                         <NavRow key={id} atlas={atlas} id={id} active={selectedId === id} depth={1}
                           expandable={false} expanded={false} onToggle={() => {}} onOpen={() => onOpen(id)} />
@@ -226,6 +317,8 @@ function Sidebar({ atlas, selectedId, onOpen, onHome, search, onSearch, results,
                 </div>
               );
             })}
+
+            <a className="nav__more nav__more--foot" href="/labs/"><SquareTerminal /> Lab catalog →</a>
           </>
         )}
       </div>
@@ -235,8 +328,45 @@ function Sidebar({ atlas, selectedId, onOpen, onHome, search, onSearch, results,
 
 /* ---------------------------------------------------------------- landing */
 
+const STEP_TYPES = ['concept', 'architecture', 'component', 'lifecycle', 'method', 'format'];
+
+// "How to read the atlas": one concrete path down the tree, derived from the data
+// (first objective -> its family with most canonical attacks -> an attack, lab first -> a control -> a prerequisite).
+function readingPath(atlas: Atlas): { step: string; id?: string }[] {
+  const obj = atlas.nav.objectives[0];
+  const fam = obj && [...obj.families].sort((a, b) => (b.primaryCount || 0) - (a.primaryCount || 0))[0];
+  const prim = fam ? (fam.attacks || []).filter(a => a.primary).map(a => a.id) : [];
+  const attack = prim.find(id => atlas.nodes[id]?.lab) || prim[0];
+  const rel = (attack && atlas.nodes[attack]?.rel) || {};
+  return [
+    { step: 'Objective', id: obj?.goalId },
+    { step: 'Family', id: fam?.id },
+    { step: 'Attack', id: attack },
+    { step: 'Defense & evaluation', id: (rel.mitigatedBy || [])[0] || (rel.evaluatedBy || [])[0] },
+    { step: 'Foundations', id: (rel.requires || []).find(id => STEP_TYPES.includes(atlas.nodes[id]?.type)) },
+  ];
+}
+
+// Start-here labs: beginner labs in lab-number order, one per primary objective first, then fill.
+function startHere(labs: Lab[], max = 6): Lab[] {
+  const beginner = labs.filter(l => l.level === 'beginner');
+  const seen = new Set<string>();
+  const out: Lab[] = [];
+  for (const l of beginner) {
+    const g = l.objectives?.[0];
+    if (out.length < max && g && !seen.has(g)) { seen.add(g); out.push(l); }
+  }
+  for (const l of beginner) if (out.length < max && !out.includes(l)) out.push(l);
+  return out.sort((a, b) => a.number - b.number);
+}
+
+const scrollToId = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
 function Landing({ atlas, onOpen }: { atlas: Atlas; onOpen: (id: string) => void }) {
   const c = atlas.meta.counts;
+  const labs = atlas.labs || [];
+  const picks = useMemo(() => startHere(labs), [labs]);
+  const path = useMemo(() => readingPath(atlas), [atlas]);
   return (
     <div className="landing">
       <div className="landing__hero">
@@ -250,41 +380,26 @@ function Landing({ atlas, onOpen }: { atlas: Atlas; onOpen: (id: string) => void
           it. Every claim links to a source; the site hosts no exploits, and the local labs use
           only inert canary payloads.
         </p>
-        <div className="landing__stats">
-          <div className="stat"><b>{c.nodes}</b><small>Topics</small></div>
-          <div className="stat"><b>{c.edges}</b><small>Relationships</small></div>
-          <div className="stat"><b>{c.sources}</b><small>Sources</small></div>
-          <div className="stat"><b>{c.types.attack}</b><small>Attacks</small></div>
-          <div className="stat"><b>{c.types.defense}</b><small>Defenses</small></div>
-          {!!c.labs && <div className="stat"><b>{c.labs}</b><small>Hands-on labs</small></div>}
+        <div className="landing__ctas">
+          <button className="herocta" onClick={() => scrollToId('objectives')}>
+            <Crosshair /><span><b>Explore the threat map</b><small>Objectives, techniques, defenses</small></span>
+          </button>
+          {labs.length > 0 && (
+            <button className="herocta herocta--lab" onClick={() => scrollToId('start-here')}>
+              <SquareTerminal /><span><b>Learn hands-on</b><small>{labs.length} local labs, beginner to advanced</small></span>
+            </button>
+          )}
         </div>
       </div>
 
-      {atlas.labs && atlas.labs.length > 0 && (
-        <>
-          <div className="eyb" style={{ marginBottom: '1rem' }}><SquareTerminal style={{ width: '0.85rem', height: '0.85rem' }} /> HANDS-ON LABS</div>
-          <div className="obj-grid" style={{ marginBottom: '3rem' }}>
-            {atlas.labs.map(l => (
-              <button key={l.node} className="obj-card obj-card--lab" onClick={() => onOpen(l.node)}>
-                <div className="obj-card__n">{l.lab_id} · {atlas.nodes[l.node]?.title || l.node}</div>
-                <div className="obj-card__title">{l.title}</div>
-                <div className="obj-card__sum">Run it locally in Docker. Every step ends in a harmless canary, and the lab closes with a defense.</div>
-                <div className="obj-card__foot">
-                  <span className="obj-card__count"><b>{l.level}</b> · {l.time}</span>
-                  <span className="obj-card__go"><ArrowUpRight style={{ width: '1.1rem', height: '1.1rem' }} /></span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      <div className="eyb" style={{ marginBottom: '1rem' }}><Crosshair style={{ width: '0.85rem', height: '0.85rem' }} /> ADVERSARY OBJECTIVES</div>
+      <div id="objectives" className="eyb landing__anchor" style={{ marginBottom: '1rem' }}><Crosshair style={{ width: '0.85rem', height: '0.85rem' }} /> ADVERSARY OBJECTIVES</div>
       <div className="obj-grid">
         {atlas.nav.objectives.map((obj, i) => {
           const g = atlas.nodes[obj.goalId];
           if (!g) return null;
           const misuse = obj.goalId === 'goal-misuse';
+          const nLabs = g.labs_in_area?.filter(r => r.relation !== 'foundation').length || 0;
+          const nFound = (g.labs_in_area?.length || 0) - nLabs;
           return (
             <button key={obj.goalId} className={`obj-card ${misuse ? 'obj-card--misuse' : ''}`}
               style={accentVar(atlas, 'goal')} onClick={() => onOpen(obj.goalId)}>
@@ -292,12 +407,66 @@ function Landing({ atlas, onOpen }: { atlas: Atlas; onOpen: (id: string) => void
               <div className="obj-card__title">{g.title}</div>
               <div className="obj-card__sum">{g.summary}</div>
               <div className="obj-card__foot">
-                <span className="obj-card__count"><b>{obj.count}</b> techniques · {obj.families.length} families</span>
+                <span className="obj-card__count">
+                  <b>{obj.count}</b> techniques · {obj.families.length} families
+                  {labs.length > 0 && <> · <span className="obj-card__labs">{nLabs || !nFound ? `${nLabs} ${nLabs === 1 ? 'lab' : 'labs'}` : ''}{nLabs && nFound ? ' + ' : ''}{nFound ? `${nFound} foundation` : ''}</span></>}
+                </span>
                 <span className="obj-card__go"><ArrowUpRight style={{ width: '1.1rem', height: '1.1rem' }} /></span>
               </div>
             </button>
           );
         })}
+      </div>
+
+      <div className="eyb" style={{ margin: '3rem 0 1rem' }}><Compass style={{ width: '0.85rem', height: '0.85rem' }} /> HOW TO READ THE ATLAS</div>
+      <ol className="readpath">
+        {path.map(s => {
+          const n = s.id ? atlas.nodes[s.id] : null;
+          return (
+            <li key={s.step} style={n ? accentVar(atlas, n.type) : undefined}>
+              <button className="readpath__step" disabled={!n} onClick={() => n && onOpen(n.id)}
+                title={n ? `Example: ${n.title}` : undefined}>
+                <span className="readpath__k">{s.step}</span>
+                {n && <span className="readpath__ex">{n.title}</span>}
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+
+      {picks.length > 0 && (
+        <>
+          <div id="start-here" className="eyb landing__anchor" style={{ margin: '3rem 0 1rem' }}><SquareTerminal style={{ width: '0.85rem', height: '0.85rem' }} /> START HERE · BEGINNER LABS</div>
+          <div className="obj-grid">
+            {picks.map(l => {
+              const goal = l.objectives?.[0] ? atlas.nodes[l.objectives[0]] : null;
+              return (
+                <a key={l.lab_id} className="obj-card obj-card--lab" href={l.page}>
+                  <div className="obj-card__n">{l.lab_id} · {goal ? goal.title : 'Foundations'}</div>
+                  <div className="obj-card__title">{l.title}</div>
+                  <div className="obj-card__sum">
+                    Practices <b>{atlas.nodes[l.node]?.title || l.node}</b>
+                    {l.model_backend ? ` · ${BACKEND_LABEL[l.model_backend] || l.model_backend}` : ''}
+                  </div>
+                  <div className="obj-card__foot">
+                    <span className="obj-card__count"><b>{l.level}</b> · {l.time}</span>
+                    <span className="obj-card__go"><ArrowUpRight style={{ width: '1.1rem', height: '1.1rem' }} /></span>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+          <a className="landing__all" href="/labs/">All {labs.length} labs →</a>
+        </>
+      )}
+
+      <div className="landing__stats landing__band">
+        <div className="stat"><b>{c.nodes}</b><small>Topics</small></div>
+        <div className="stat"><b>{c.edges}</b><small>Relationships</small></div>
+        <div className="stat"><b>{c.sources}</b><small>Sources</small></div>
+        <div className="stat"><b>{c.types.attack}</b><small>Attacks</small></div>
+        <div className="stat"><b>{c.types.defense}</b><small>Defenses</small></div>
+        {!!c.labs && <div className="stat"><b>{c.labs}</b><small>Hands-on labs</small></div>}
       </div>
     </div>
   );
@@ -365,7 +534,7 @@ function ArticleBody({ id, onOpen }: { id: string; onOpen: (id: string) => void 
     const onClick = (e: MouseEvent) => {
       const a = (e.target as HTMLElement).closest('a');
       if (!a) return;
-      const m = (a.getAttribute('href') || '').match(/^\/nodes\/([^/]+)\/?$/);
+      const m = (a.getAttribute('href') || '').match(/^\/nodes\/([^/]+)\/(?:(?:labs|evidence|relationships)\/)?$/);
       if (m) { e.preventDefault(); onOpen(m[1]); }
     };
     root.addEventListener('click', onClick);
@@ -386,7 +555,9 @@ const BACKEND_LABEL: Record<string, string> = {
   none: 'no model backend', optional: 'model backend optional', required: 'model backend required',
 };
 
-// Hands-on lab panel: links to the published explainer and the lab guide on GitHub.
+const ROADMAP_URL = `${REPO_URL}/blob/main/docs/labs-roadmap.md`;
+
+// Hands-on lab panel: links to the lab page (explainer + guide, same tab) and the lab folder on GitHub.
 function LabCard({ lab }: { lab: Lab }) {
   return (
     <section className="labcard" aria-label={`Hands-on lab ${lab.lab_id}`}>
@@ -402,12 +573,25 @@ function LabCard({ lab }: { lab: Lab }) {
         and the lab closes with a defense chapter.
       </p>
       <div className="labcard__actions">
-        {lab.explainer && (
-          <a className="labbtn labbtn--primary" href={lab.explainer} target="_blank" rel="noreferrer"><Play /> Open explainer</a>
-        )}
-        <a className="labbtn" href={lab.github} target="_blank" rel="noreferrer"><GithubMark /> Lab guide on GitHub</a>
+        <a className="labbtn labbtn--primary" href={lab.page}><Play /> Open lab</a>
+        {lab.explainer && <a className="labbtn" href={`${lab.page}#lab-explainer`}><Compass /> Explainer</a>}
+        <a className="labbtn" href={`${lab.page}#lab-guide`}><BookOpen /> Guide</a>
+        <a className="labbtn" href={lab.github} target="_blank" rel="noreferrer"><GithubMark /> GitHub</a>
       </div>
     </section>
+  );
+}
+
+// Compact one-line lab call to action above the tabs, for a node with its own lab.
+function LabStrip({ lab }: { lab: Lab }) {
+  return (
+    <a className="labstrip" href={lab.page} aria-label={`Open hands-on lab ${lab.lab_id}: ${lab.title}`}>
+      <SquareTerminal />
+      <b>{lab.lab_id}</b>
+      {lab.level && <span>{lab.level}</span>}
+      {lab.time && <span>{lab.time}</span>}
+      <span className="labstrip__go">Open lab <ArrowUpRight /></span>
+    </a>
   );
 }
 
@@ -417,44 +601,165 @@ const stepsLabel = (steps: string) => `${/[,-]/.test(steps) ? 'Steps' : 'Step'} 
 function PracticedCard({ atlas, p, onOpen }: { atlas: Atlas; p: PracticedIn; onOpen: (id: string) => void }) {
   return (
     <section className="labcard labcard--lite" aria-label={`Practiced in ${p.lab_id}`}>
-      <a className="eyb eyb--lab labcard__steps" href={p.url} target="_blank" rel="noreferrer">
+      <a className="eyb eyb--lab labcard__steps" href={p.url}>
         <SquareTerminal /><span>Practiced in {p.lab_id}</span><span>· {stepsLabel(p.steps)} <ArrowUpRight /></span>
       </a>
       <p className="labcard__body">
         This topic has no lab of its own. You practice it in those steps of{' '}
-        <button className="labcard__link" onClick={() => onOpen(p.node)}>{p.lab_id} · {p.title}</button>
-        {atlas.nodes[p.node] ? ` (${atlas.nodes[p.node].title})` : ''}.
+        <a className="labcard__link" href={p.url.split('#')[0]}>{p.lab_id} · {p.title}</a>
+        {atlas.nodes[p.node] && <> (<button className="labarea__topic" onClick={() => onOpen(p.node)}>{atlas.nodes[p.node].title}</button>)</>}.
       </p>
     </section>
   );
 }
 
-// Hub nodes (goals, families, umbrellas): the labs that practice their members.
-function LabsInArea({ atlas, rows, onOpen }: { atlas: Atlas; rows: AreaLab[]; onOpen: (id: string) => void }) {
+const REL_MARK: Record<string, { label: string; hint: string }> = {
+  own: { label: 'own', hint: "The lab's own topic is in this area" },
+  practiced: { label: 'practiced', hint: "The lab's steps practice a topic in this area" },
+  foundation: { label: 'foundation', hint: 'Background lab, placed here through the attacks its topic links to' },
+};
+
+// Hub nodes (goals, families, umbrellas): the labs that practice their members, grouped by family.
+function LabsInArea({ atlas, hubId, rows, onOpen }: { atlas: Atlas; hubId: string; rows: AreaLab[]; onOpen: (id: string) => void }) {
+  const groups = new Map<string, AreaLab[]>();
+  rows.forEach(r => groups.set(r.family || '', [...(groups.get(r.family || '') || []), r]));
+  const keys = [...groups.keys()].sort((a, b) => (atlas.nodes[a]?.title || '~').localeCompare(atlas.nodes[b]?.title || '~'));
   return (
     <section className="labcard labcard--lite" aria-label="Labs in this area">
       <div className="eyb eyb--lab"><SquareTerminal /> Labs in this area · {rows.length}</div>
-      <ul className="labarea">
-        {rows.map(r => (
-          <li key={r.node}>
-            <button className="labcard__link" onClick={() => onOpen(r.node)}>{r.lab_id} · {r.title}</button>
-            <span className="labarea__meta">
-              {r.own && <span>{atlas.nodes[r.node]?.title || r.node}</span>}
-              {r.practiced.map(pr => (
-                <a key={pr.node} href={pr.url} target="_blank" rel="noreferrer">
-                  {atlas.nodes[pr.node]?.title || pr.node} · {stepsLabel(pr.steps)}
-                </a>
-              ))}
-            </span>
-          </li>
+      {keys.map(k => (
+        <div key={k || 'none'} className="labgroup">
+          {k !== hubId && (
+            <div className="labgroup__head">
+              {atlas.nodes[k]
+                ? <button className="labarea__topic" onClick={() => onOpen(k)}>{atlas.nodes[k].title}</button>
+                : 'Other'}
+            </div>
+          )}
+          <ul className="labarea">
+            {groups.get(k)!.map(r => (
+              <li key={r.lab_id}>
+                <span className="labrel" data-rel={r.relation} title={REL_MARK[r.relation]?.hint}>{REL_MARK[r.relation]?.label || r.relation}</span>
+                <a className="labcard__link" href={r.page}>{r.lab_id} · {r.title}</a>
+                <span className="labarea__meta">
+                  {(r.level || r.time) && <span>{[r.level, r.time].filter(Boolean).join(' · ')}</span>}
+                  {r.relation !== 'practiced' && atlas.nodes[r.node] && (
+                    <button className="labarea__topic" onClick={() => onOpen(r.node)}>{atlas.nodes[r.node].title}</button>
+                  )}
+                  {r.practiced.map(pr => (
+                    <a key={pr.node} href={pr.url}>
+                      {atlas.nodes[pr.node]?.title || pr.node} · {stepsLabel(pr.steps)}
+                    </a>
+                  ))}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+      <p className="labcard__legend">
+        {Object.entries(REL_MARK).map(([k, m]) => (
+          <span key={k}><span className="labrel" data-rel={k}>{m.label}</span> {m.hint.toLowerCase()}</span>
         ))}
-      </ul>
+      </p>
     </section>
   );
 }
 
+// Roadmap labs that are not built yet: this node's own planned lab, a planned lab that
+// will cover it, and (on hubs) planned labs for the area. Titles only; no page exists.
+function PlannedLabs({ atlas, node, onOpen }: { atlas: Atlas; node: AtlasNode; onOpen: (id: string) => void }) {
+  const area = node.labs_planned_in_area || [];
+  const own = node.planned_lab;
+  const pp = node.planned_practiced_in;
+  if (!own && !pp && area.length === 0) return null;
+  return (
+    <section className="labcard labcard--lite labcard--planned" aria-label="Planned labs">
+      <div className="eyb"><SquareTerminal /> Planned · {(own ? 1 : 0) + (pp ? 1 : 0) + area.length}</div>
+      <ul className="labarea">
+        {own && (
+          <li>
+            <span className="labrel" data-rel="own">own</span>
+            <span className="labarea__title">{own.title}</span>
+            <span className="labarea__meta">{own.effort && <span>effort {own.effort}</span>}</span>
+          </li>
+        )}
+        {pp && (
+          <li>
+            <span className="labrel" data-rel="practiced">practiced</span>
+            <span className="labarea__title">{pp.title}</span>
+            <span className="labarea__meta">{pp.where && <span>{pp.where}</span>}</span>
+          </li>
+        )}
+        {area.map(r => (
+          <li key={`${r.node}:${r.title}`}>
+            <span className="labrel" data-rel={r.relation}>{REL_MARK[r.relation]?.label || r.relation}</span>
+            <span className="labarea__title">{r.title}</span>
+            <span className="labarea__meta">
+              {atlas.nodes[r.node] && <button className="labarea__topic" onClick={() => onOpen(r.node)}>{atlas.nodes[r.node].title}</button>}
+              {r.effort && <span>effort {r.effort}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="labcard__body">
+        On the <a href={ROADMAP_URL} target="_blank" rel="noreferrer">labs roadmap</a>; not built yet.
+      </p>
+    </section>
+  );
+}
+
+// Built labs attached to a node: its own lab, the lab that practices it, and (hubs) labs in the area.
+const labCountOf = (n: AtlasNode) => (n.lab ? 1 : 0) + (n.practiced_in ? 1 : 0) + (n.labs_in_area?.length || 0);
+
+function LabsTab({ atlas, node, onOpen }: { atlas: Atlas; node: AtlasNode; onOpen: (id: string) => void }) {
+  const planned = !!(node.planned_lab || node.planned_practiced_in || node.labs_planned_in_area?.length);
+  return (
+    <div className="labtab">
+      {node.lab && <LabCard lab={node.lab} />}
+      {node.practiced_in && <PracticedCard atlas={atlas} p={node.practiced_in} onOpen={onOpen} />}
+      {node.labs_in_area && node.labs_in_area.length > 0 && <LabsInArea atlas={atlas} hubId={node.id} rows={node.labs_in_area} onOpen={onOpen} />}
+      {labCountOf(node) === 0 && (
+        <div className="labempty">
+          <p><b>No lab covers this yet.</b>{planned ? ' One is planned; see below.' : ''}</p>
+          <p>
+            <a href="/labs/">Browse the lab catalog</a>
+            {' · '}
+            <a href={ROADMAP_URL} target="_blank" rel="noreferrer">See the labs roadmap</a>
+          </p>
+        </div>
+      )}
+      <PlannedLabs atlas={atlas} node={node} onOpen={onOpen} />
+    </div>
+  );
+}
+
+type Tab = 'overview' | 'labs' | 'evidence' | 'map';
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'overview', label: 'Overview' }, { id: 'labs', label: 'Labs' },
+  { id: 'evidence', label: 'Evidence' }, { id: 'map', label: 'Relationships' },
+];
+
+// Reader in the URL: /nodes/<id>/ (overview) and /nodes/<id>/labs|evidence|relationships/.
+// Hugo writes a page for each (json2hugo.py NODE_TABS), so every URL also loads directly.
+const TAB_PARAM: Record<Tab, string> = { overview: '', labs: 'labs', evidence: 'evidence', map: 'relationships' };
+const tabFromParam = (v: string | null | undefined): Tab =>
+  (Object.keys(TAB_PARAM) as Tab[]).find(t => v && TAB_PARAM[t] === v) || 'overview';
+const nodeURL = (id: string, t: Tab) => `/nodes/${id}/${TAB_PARAM[t] ? `${TAB_PARAM[t]}/` : ''}`;
+const NODE_PATH = /^\/nodes\/([a-z0-9-]+)\/(?:(labs|evidence|relationships)\/)?$/;
+// The node and tab in the current URL. Old /?node=&tab= links are redirected before the app
+// loads (layouts/partials/legacy-redirect.html); reading them here is a fallback.
+function routeFromLocation(): { id: string | null; tab: Tab } {
+  const m = window.location.pathname.match(NODE_PATH);
+  if (m) return { id: m[1], tab: tabFromParam(m[2]) };
+  const p = new URLSearchParams(window.location.search);
+  return { id: p.get('node'), tab: tabFromParam(p.get('tab')) };
+}
+// The graph's history entries carry { graph: true } in history.state (it used to be ?view=graph).
+const graphEntry = () => !!(history.state && history.state.graph) || new URLSearchParams(window.location.search).get('view') === 'graph';
+
 function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
-  atlas: Atlas; node: AtlasNode; tab: string; setTab: (t: any) => void;
+  atlas: Atlas; node: AtlasNode; tab: Tab; setTab: (t: Tab) => void;
   onOpen: (id: string) => void; onGraph: () => void;
 }) {
   const meta = atlas.typeMeta[node.type];
@@ -467,6 +772,7 @@ function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
   const access = node.access_profile_ids.map(id => atlas.accessProfiles[id]).filter(Boolean);
   const evCount = sources.length + node.observations.length + node.frameworks.length + access.length;
   const relCount = allRelKeys.reduce((a, k) => a + rel[k].length, 0);
+  const labCount = labCountOf(node);
 
   const isGoal = node.type === 'goal';
 
@@ -493,15 +799,31 @@ function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
 
       {node.summary && <p className="summary">{node.summary}</p>}
 
-      {node.lab && <LabCard lab={node.lab} />}
-      {node.practiced_in && <PracticedCard atlas={atlas} p={node.practiced_in} onOpen={onOpen} />}
-      {node.labs_in_area && node.labs_in_area.length > 0 && <LabsInArea atlas={atlas} rows={node.labs_in_area} onOpen={onOpen} />}
+      {node.lab && <LabStrip lab={node.lab} />}
 
-      <div className="tabs">
-        <button className="tab" data-on={tab === 'overview'} onClick={() => setTab('overview')}>Overview</button>
-        <button className="tab" data-on={tab === 'evidence'} onClick={() => setTab('evidence')}>Evidence<span className="tab__n">{evCount}</span></button>
-        <button className="tab" data-on={tab === 'map'} onClick={() => setTab('map')}>Relationships<span className="tab__n">{relCount}</span></button>
+      {/* WAI-ARIA tabs: roving tabindex, arrow keys / Home / End move and select. */}
+      <div className="tabs" role="tablist" onKeyDown={e => {
+        const i = TABS.findIndex(x => x.id === tab);
+        const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: TABS.length - 1 }[e.key];
+        if (j === undefined) return;
+        e.preventDefault();
+        const t = TABS[(j + TABS.length) % TABS.length].id;
+        setTab(t);
+        document.getElementById(`tab-${t}`)?.focus();
+      }}>
+        {TABS.map(({ id, label }) => {
+          const n = { overview: undefined, labs: labCount, evidence: evCount, map: relCount }[id];
+          return (
+            <button key={id} id={`tab-${id}`} className="tab" role="tab" aria-selected={tab === id} aria-controls="reader-panel"
+              tabIndex={tab === id ? 0 : -1} data-on={tab === id} onClick={() => setTab(id)}>
+              {label}{n !== undefined && <span className="tab__n">{n}</span>}
+            </button>
+          );
+        })}
       </div>
+
+      <div id="reader-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
+      {tab === 'labs' && <LabsTab atlas={atlas} node={node} onOpen={onOpen} />}
 
       {tab === 'overview' && (
         <>
@@ -514,10 +836,7 @@ function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
               This is a seed entry: it carries a definition and routing metadata. See the Relationships and Evidence tabs for its connections and sources.
             </p>
           )}
-          <a className="readmore" href={`/nodes/${node.id}/`} target="_blank" rel="noreferrer">
-            <BookOpen /> Open full article
-          </a>
-          <button className="readmore desktop-only" style={{ marginLeft: '0.6rem', background: 'transparent', color: 'var(--theme-ink)' }} onClick={onGraph}>
+          <button className="readmore desktop-only" style={{ background: 'transparent', color: 'var(--theme-ink)' }} onClick={onGraph}>
             <Share2 /> Focus in graph
           </button>
         </>
@@ -588,141 +907,6 @@ function Reader({ atlas, node, tab, setTab, onOpen, onGraph }: {
           {allRelKeys.map(k => <RelGroup key={k} atlas={atlas} groupKey={k} ids={rel[k]} onOpen={onOpen} />)}
         </>
       )}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ graph */
-
-function GraphView({ atlas, focusId, onOpen, fullWidth }: {
-  atlas: Atlas; focusId: string | null; onOpen: (id: string) => void; fullWidth: boolean;
-}) {
-  const ref = useRef<any>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [dims, setDims] = useState({ w: 400, h: 400 });
-  const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setDims({ w: el.clientWidth, h: el.clientHeight }));
-    ro.observe(el);
-    setDims({ w: el.clientWidth, h: el.clientHeight });
-    return () => ro.disconnect();
-  }, []);
-
-  // Local neighborhood projection (PRD 7.5): focus + direct relations, capped.
-  const data = useMemo(() => {
-    const ids = new Set<string>();
-    if (focusId && atlas.nodes[focusId]) {
-      ids.add(focusId);
-      const rel = atlas.nodes[focusId].rel || {};
-      Object.values(rel).flat().forEach(id => ids.add(id));
-    } else {
-      // Overview: goals + their families.
-      atlas.nav.objectives.forEach(o => {
-        ids.add(o.goalId);
-        o.families.forEach(f => ids.add(f.id));
-      });
-    }
-    const capped = Array.from(ids).slice(0, 150);
-    const idSet = new Set(capped);
-    const nodes = capped.map(id => {
-      const n = atlas.nodes[id];
-      const focus = id === focusId;
-      // Pin the focus node at the origin so the neighborhood forms a clean hub.
-      return { id, name: n.title, type: n.type, color: atlas.typeMeta[n.type]?.color, focus,
-        ...(focus ? { fx: 0, fy: 0 } : {}) };
-    });
-    const links = atlas.edges
-      .filter(e => idSet.has(e.source) && idSet.has(e.target))
-      .map(e => ({ source: e.source, target: e.target, type: e.type }));
-    return { nodes, links };
-  }, [atlas, focusId]);
-
-  // Spread the neighborhood so labels don't collide; pin fit after settle.
-  useEffect(() => {
-    const g = ref.current;
-    if (!g) return;
-    try {
-      g.d3Force('charge')?.strength(-220);
-      g.d3Force('link')?.distance(70);
-    } catch {}
-    const t = setTimeout(() => g.zoomToFit(400, 85), reduced ? 60 : 650);
-    return () => clearTimeout(t);
-  }, [data, reduced]);
-
-  const drawNode = useCallback((node: any, ctx: CanvasRenderingContext2D, scale: number) => {
-    const ink = getComputedStyle(document.documentElement).getPropertyValue('--theme-ink').trim() || '#111';
-    const surface = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg').trim() || '#fff';
-    const r = node.focus ? 6.5 : 4.5;
-    // node disc
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
-    ctx.fillStyle = node.color || '#888';
-    ctx.fill();
-    if (node.focus) {
-      ctx.lineWidth = 2.4 / scale;
-      ctx.strokeStyle = ink;
-      ctx.stroke();
-    }
-    // label below the node with a legibility backing plate
-    if (scale > 0.45 || node.focus) {
-      const label = node.name.length > 26 ? node.name.slice(0, 24) + '…' : node.name;
-      const fs = node.focus ? 5.2 : 4.4;
-      ctx.font = `${node.focus ? 600 : 450} ${fs}px ui-sans-serif, system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      const tw = ctx.measureText(label).width;
-      const pad = 1.4;
-      const ly = node.y + r + 2.2;
-      ctx.globalAlpha = 0.82;
-      ctx.fillStyle = surface;
-      ctx.fillRect(node.x - tw / 2 - pad, ly - pad, tw + pad * 2, fs + pad * 2);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = ink;
-      ctx.fillText(label, node.x, ly);
-    }
-  }, []);
-
-  const legendTypes = useMemo(() => {
-    const present = new Set(data.nodes.map(n => n.type));
-    return Object.entries(atlas.typeMeta)
-      .filter(([t]) => present.has(t))
-      .sort((a, b) => a[1].order - b[1].order);
-  }, [data, atlas]);
-
-  return (
-    <div className="graphwrap" ref={wrapRef}>
-      <ForceGraph2D
-        ref={ref}
-        width={dims.w}
-        height={dims.h}
-        graphData={data}
-        nodeCanvasObject={drawNode}
-        nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
-          ctx.fillStyle = color;
-          ctx.beginPath();
-          ctx.arc(node.x, node.y, 8, 0, 2 * Math.PI);
-          ctx.fill();
-        }}
-        onNodeClick={(node: any) => onOpen(node.id)}
-        linkColor={() => getComputedStyle(document.documentElement).getPropertyValue('--hair-strong') || '#ccc'}
-        linkWidth={1}
-        linkDirectionalArrowLength={2.5}
-        linkDirectionalArrowRelPos={1}
-        cooldownTicks={reduced ? 0 : 80}
-        d3VelocityDecay={0.35}
-        backgroundColor="transparent"
-      />
-      <div className="graph-hint">{focusId ? atlas.nodes[focusId]?.title : 'Adversary objectives'} · local map</div>
-      <div className="graph-tools">
-        <button onClick={() => ref.current?.zoomToFit(400, 60)} title="Fit"><Maximize2 /></button>
-      </div>
-      <div className="graph-legend">
-        {legendTypes.map(([t, m]) => (
-          <span key={t}><i style={{ background: m.color }} />{m.label}</span>
-        ))}
       </div>
     </div>
   );
@@ -734,10 +918,11 @@ export function GraphApp() {
   const [atlas, setAtlas] = useState<Atlas | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [trail, setTrail] = useState<string[]>([]);
-  const [tab, setTab] = useState<'overview' | 'evidence' | 'map'>('overview');
+  const [tab, setTab] = useState<Tab>('overview');
   const [graphOpen, setGraphOpen] = useState(false);
   const [graphFull, setGraphFull] = useState(false);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [graphNonce, setGraphNonce] = useState(0);  // "Focus in graph": re-sync the graph to the reader
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set(['s:objectives']));
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [mobileTab, setMobileTab] = useState<'home' | 'index' | 'graph'>('home');
@@ -766,44 +951,63 @@ export function GraphApp() {
       const next = new Set(prev);
       const n = a.nodes[id];
       if (!n) return next;
+      if (n.type === 'goal') { next.add('s:objectives'); next.add(`g:${id}`); }
+      if (n.type === 'technique_family') next.add('s:families');
+      // An attack opens only its primary-goal path; alias rows under other goals stay as they are.
       for (const obj of a.nav.objectives) {
-        if (obj.goalId === id) next.add(`g:${id}`);
-        for (const fam of obj.families) {
-          if (fam.id === id) next.add(`g:${obj.goalId}`);
-          if (fam.attackIds.includes(id)) { next.add(`g:${obj.goalId}`); next.add(`g:${obj.goalId}/f:${fam.id}`); }
-        }
-        if (obj.looseAttackIds.includes(id)) next.add(`g:${obj.goalId}`);
+        if (n.primary_goal && obj.goalId !== n.primary_goal) continue;
+        const fam = obj.families.find(f => f.attackIds.includes(id));
+        if (fam) { next.add('s:objectives'); next.add(`g:${obj.goalId}`); next.add(`g:${obj.goalId}/f:${fam.id}`); break; }
+        if (obj.looseAttackIds.includes(id)) { next.add('s:objectives'); next.add(`g:${obj.goalId}`); break; }
       }
-      for (const sec of a.nav.sections) {
+      for (const sec of navSections(a)) {
         if (sec.groups.some(g => g.ids.includes(id))) next.add(`s:${sec.id}`);
       }
       return next;
     });
   }, []);
 
-  const open = useCallback((id: string, opts: { push?: boolean } = {}) => {
+  const open = useCallback((id: string, opts: { push?: boolean; tab?: Tab } = {}) => {
     if (!atlas || !atlas.nodes[id]) return;
+    // Re-opening the node already shown (e.g. its own or alias nav row) keeps the tab and adds no history entry.
+    const same = id === selectedId && !opts.tab;
+    const t = opts.tab || (same ? tab : 'overview');
     setSelectedId(id);
-    setTab('overview');
+    setTab(t);
     setTrail(prev => opts.push ? [...prev.filter(x => x !== id), id] : [id]);
     expandAncestors(id, atlas);
     setMobileTab('home');
     setSearch(''); setResults([]);
-    try { history.pushState({ id }, '', `/?node=${id}`); } catch {}
+    // From the phone graph tab (a graph history entry) always push, so Back returns to the graph.
+    if (!same || graphEntry()) try { history.pushState({ id }, '', nodeURL(id, t)); } catch {}
     document.querySelector('.stage__reader')?.scrollTo({ top: 0 });
-  }, [atlas, expandAncestors]);
+  }, [atlas, expandAncestors, selectedId, tab]);
+
+  // Switching tabs rewrites the current history entry, so back/forward return to the tab last shown.
+  const changeTab = useCallback((t: Tab) => {
+    setTab(t);
+    if (selectedId) try { history.replaceState({ id: selectedId }, '', nodeURL(selectedId, t)); } catch {}
+  }, [selectedId]);
 
   // Chip / in-reader navigation pushes to the trail.
   const openLink = useCallback((id: string) => open(id, { push: true }), [open]);
+
+  // The tab title follows the reader, as each /nodes/<id>/ page's own <title> does.
+  useEffect(() => {
+    const n = atlas && selectedId ? atlas.nodes[selectedId] : null;
+    document.title = n ? `${n.title} · AI Security Atlas` : 'AI Security Atlas · AI attack, defense & evaluation knowledge graph';
+  }, [atlas, selectedId]);
 
   // --- URL restore + back/forward ---
   useEffect(() => {
     if (!atlas) return;
     const applyFromURL = () => {
-      const p = new URLSearchParams(window.location.search);
-      const id = p.get('node');
-      if (id && atlas.nodes[id]) { setSelectedId(id); setTrail([id]); expandAncestors(id, atlas); setMobileTab('home'); }
-      else { setSelectedId(null); setMobileTab('home'); }
+      const { id, tab: t } = routeFromLocation();
+      const graph = graphEntry();
+      if (id && atlas.nodes[id]) { setSelectedId(id); setTab(t); setTrail([id]); expandAncestors(id, atlas); }
+      else setSelectedId(null);
+      setMobileTab(graph && phone() ? 'graph' : 'home');
+      if (graph && !phone()) setGraphOpen(true);
     };
     applyFromURL();
     const onPop = () => applyFromURL();
@@ -840,11 +1044,38 @@ export function GraphApp() {
     setExpanded(prev => { const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n; });
   }, []);
 
+  // Desktop graph pane: leaving the graph (Open, list) exits full screen, and closes the
+  // pane where it overlays the reader. Stable callbacks keep the graph's cards from re-rendering.
+  const leaveGraph = useCallback(() => { setGraphFull(false); if (overlayGraph()) setGraphOpen(false); }, []);
+  // Where the pane overlays the reader, Open closes it: mark the current entry as a graph entry
+  // first, so Back reopens the graph (applyFromURL handles graph entries on desktop).
+  const markGraphEntry = useCallback(() => {
+    if (!overlayGraph() || graphEntry()) return;
+    try { history.replaceState({ ...history.state, graph: true }, '', window.location.href); } catch {}
+  }, []);
+  const graphOpenNode = useCallback((id: string) => { markGraphEntry(); leaveGraph(); openLink(id); }, [markGraphEntry, leaveGraph, openLink]);
+  const graphList = useCallback((id: string) => { markGraphEntry(); leaveGraph(); open(id, { push: true, tab: 'map' }); }, [markGraphEntry, leaveGraph, open]);
+  const toggleGraphFull = useCallback(() => setGraphFull(v => !v), []);
+
   const goHome = useCallback(() => {
     setSelectedId(null); setTrail([]); setGraphFull(false); setMobileTab('home');
     setSearch(''); setResults([]);
     try { history.pushState({}, '', '/'); } catch {}
   }, []);
+
+  // Phone graph tab: its own history entry, so Back from the reader (after Open) returns to it.
+  const openGraphTab = () => {
+    setMobileTab('graph');
+    if (graphEntry()) return;
+    try { history.pushState({ ...history.state, graph: true }, '', window.location.href); } catch {}
+  };
+
+  // Record the graph's focus on the graph tab's entry first, so Back restores it.
+  const markGraphTab = (id: string) => {
+    if (graphEntry()) try { history.replaceState({ ...history.state, id }, '', nodeURL(id, 'overview')); } catch {}
+  };
+  const openFromGraphTab = (id: string) => { markGraphTab(id); open(id); };
+  const listFromGraphTab = (id: string) => { markGraphTab(id); open(id, { tab: 'map' }); };
 
   if (!atlas) {
     return <div className="atlas"><div className="empty"><div className="empty__box"><Shield className="big" /><h2>Loading the atlas…</h2></div></div></div>;
@@ -858,7 +1089,7 @@ export function GraphApp() {
       {/* NAV */}
       <aside className="nav" data-mobile-hidden={mobileTab !== 'index'}>
         <Sidebar atlas={atlas} selectedId={selectedId} onOpen={open} onHome={goHome} search={search} onSearch={onSearch}
-          results={results} expanded={expanded} toggle={toggleKey} />
+          results={results} expanded={expanded} toggle={toggleKey} setExpanded={setExpanded} />
       </aside>
 
       {/* MAIN */}
@@ -895,17 +1126,24 @@ export function GraphApp() {
 
         {/* mobile graph tab shows full graph */}
         {mobileTab === 'graph' ? (
-          <div className="stage"><div className="stage__graph"><GraphView atlas={atlas} focusId={selectedId} onOpen={open} fullWidth /></div></div>
+          <div className="stage"><div className="stage__graph">
+            <GraphBoundary><React.Suspense fallback={graphLoading}>
+              <GraphView atlas={atlas} focusId={selectedId} onOpen={openFromGraphTab} onList={listFromGraphTab} theme={theme} compact />
+            </React.Suspense></GraphBoundary>
+          </div></div>
         ) : (
           <div className={`stage ${graphFull ? 'stage--graphonly' : ''}`}>
             <div className="stage__reader">
               {node
-                ? <Reader atlas={atlas} node={node} tab={tab} setTab={setTab} onOpen={openLink} onGraph={() => { setGraphOpen(true); }} />
+                ? <Reader atlas={atlas} node={node} tab={tab} setTab={changeTab} onOpen={openLink} onGraph={() => { setGraphOpen(true); setGraphNonce(n => n + 1); }} />
                 : <Landing atlas={atlas} onOpen={open} />}
             </div>
             {showGraph && (
               <div className="stage__graph desktop-only">
-                <GraphView atlas={atlas} focusId={selectedId} onOpen={openLink} fullWidth={graphFull} />
+                <GraphBoundary><React.Suspense fallback={graphLoading}>
+                  <GraphView atlas={atlas} focusId={selectedId} focusNonce={graphNonce} theme={theme}
+                    onOpen={graphOpenNode} onList={graphList} full={graphFull} onToggleFull={toggleGraphFull} />
+                </React.Suspense></GraphBoundary>
               </div>
             )}
           </div>
@@ -916,7 +1154,7 @@ export function GraphApp() {
       <nav className="mtabbar">
         <button className="mtab" data-on={mobileTab === 'home' && !selectedId} onClick={goHome}><Home /> Home</button>
         <button className="mtab" data-on={mobileTab === 'index'} onClick={() => setMobileTab('index')}><ListIcon /> Index</button>
-        <button className="mtab" data-on={mobileTab === 'graph'} onClick={() => setMobileTab('graph')}><Share2 /> Graph</button>
+        <button className="mtab" data-on={mobileTab === 'graph'} onClick={openGraphTab}><Share2 /> Graph</button>
       </nav>
     </div>
   );

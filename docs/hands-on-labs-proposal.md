@@ -38,7 +38,7 @@ The brainstorming session that produced this proposal, in order:
 ## 2. Concrete Node Examples Discussed
 
 ### Example A: Multimodal / Inference-Time Attack (`attack-visual-jailbreak` / `attack-multimodal-injection`)
-* **Node:** [`articles/attack-visual-jailbreak.md`](../articles/attack-visual-jailbreak.md) (`https://ai-security-atlas.github.io/?node=attack-visual-jailbreak`)
+* **Node:** [`articles/attack-visual-jailbreak.md`](../articles/attack-visual-jailbreak.md) (`https://ai-security-atlas.github.io/nodes/attack-visual-jailbreak/`)
 * **Concept:** Using adversarial perturbations (or contrast with typographic visual prompts in `attack-multimodal-injection`) on an image input to a Vision-Language Model (VLM) to bypass refusal behavior or hijack instructions.
 * **Hands-on Lab Vision:**
   * Run a local VLM via **Ollama** (e.g., `llava:7b` or `qwen2.5vl`) or a small local PyTorch VLM when gradient access is needed for FGSM/PGD optimization.
@@ -50,7 +50,7 @@ The brainstorming session that produced this proposal, in order:
     4. Explore defense/evaluation takeaways.
 
 ### Example B: Supply Chain & Execution Environment (`family-supply` and its member attacks)
-* **Node:** [`articles/family-supply.md`](../articles/family-supply.md) (`https://ai-security-atlas.github.io/?node=family-supply`) and child nodes:
+* **Node:** [`articles/family-supply.md`](../articles/family-supply.md) (`https://ai-security-atlas.github.io/nodes/family-supply/`) and child nodes:
   * [`attack-unsafe-load`](../articles/attack-unsafe-load.md) (Unsafe checkpoint deserialization, e.g., PyTorch `pickle` vs `safetensors`)
   * [`attack-artifact-substitution`](../articles/attack-artifact-substitution.md) (Adapter, config, or chat-template tampering)
   * [`attack-dependency`](../articles/attack-dependency.md) (Malicious repository code / `trust_remote_code=True`)

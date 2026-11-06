@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-19 · Your system prompt is not a vault
 
-> **Atlas node:** [System or developer prompt disclosure](https://ai-security-atlas.github.io/?node=attack-prompt-leak) · **Family:** family-prompt · **Level:** beginner · **Time:** 60 min · **Model backend:** required
+> **Atlas node:** [System or developer prompt disclosure](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/) · **Family:** family-prompt · **Level:** beginner · **Time:** 60 min · **Model backend:** required
 
 ## Overview
 
@@ -49,13 +49,13 @@ The only secret in this lab is the fictional staff code `ATLAS-CANARY-v4lt` in a
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-prompt-leak`](../../articles/attack-prompt-leak.md) |
-| Family | [`family-prompt`](https://ai-security-atlas.github.io/?node=family-prompt) |
-| Goal | [`goal-information`](https://ai-security-atlas.github.io/?node=goal-information) |
+| Family | [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/) |
+| Goal | [`goal-information`](https://ai-security-atlas.github.io/nodes/goal-information/) |
 | Access profile | `A01` Output-query access (caveat: *No weights, logits, training data or privileged context are implied.*) |
-| Read first | [`concept-context`](https://ai-security-atlas.github.io/?node=concept-context), [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries) |
-| Mitigated by | [`defense-output`](https://ai-security-atlas.github.io/?node=defense-output), [`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries), [`defense-authorization`](https://ai-security-atlas.github.io/?node=defense-authorization) |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-direct-injection`](https://ai-security-atlas.github.io/?node=attack-direct-injection), [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder), [`system-agent`](https://ai-security-atlas.github.io/?node=system-agent), [`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging) |
+| Read first | [`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/), [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/) |
+| Mitigated by | [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/), [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/), [`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/) |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/), [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/), [`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/) |
 
 The seed graph gives this node no `mitigated_by` edge; the three defenses above are the ones this lab measures (the editorial choice of the lab, following the node's caveat).
 
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
 - Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) introduces `atlas-app` and its profiles.
-- Concepts to read first: [`concept-context`](https://ai-security-atlas.github.io/?node=concept-context) and [`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries).
+- Concepts to read first: [`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/) and [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 
 ## Explainer
 
@@ -209,7 +209,7 @@ What to notice: the customer chose a profile and sent one message, while the app
 
 **Why**
 
-The operator owns the system prompt and the customer owns the message, which is the trust boundary of this lab ([`concept-boundaries`](https://ai-security-atlas.github.io/?node=concept-boundaries)). The access you have is output-query access (A01): you can send text and read replies, and nothing more. Every turn also goes to the operator's audit log ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging)).
+The operator owns the system prompt and the customer owns the message, which is the trust boundary of this lab ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)). The access you have is output-query access (A01): you can send text and read replies, and nothing more. Every turn also goes to the operator's audit log ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)).
 
 **Try (browser)**
 
@@ -244,7 +244,7 @@ What to notice: the first disclosure request returns two thirds of the operator'
 
 **Why**
 
-The model reads the operator's text and the customer's message as one token sequence in its context window, and it can copy any part of that sequence into the reply ([`concept-context`](https://ai-security-atlas.github.io/?node=concept-context), [`arch-decoder`](https://ai-security-atlas.github.io/?node=arch-decoder)). Keeping the prompt off the API only keeps it off the client's screen. The overlap is the share of the prompt's characters that the reply reproduces in runs of 20 or more characters (stdlib `difflib`).
+The model reads the operator's text and the customer's message as one token sequence in its context window, and it can copy any part of that sequence into the reply ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/), [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). Keeping the prompt off the API only keeps it off the client's screen. The overlap is the share of the prompt's characters that the reply reproduces in runs of 20 or more characters (stdlib `difflib`).
 
 ### Step 3 — The disclosure requests, measured (≈3–4 min) · [explainer 3](explainer/index.html#attack-prompt-leak/3)
 
@@ -288,7 +288,7 @@ What to notice: every plain request leaks the code every time, the reformatting 
 
 **Why**
 
-Each row is one extraction family from the prompt-leak literature, sent ten times with fixed seeds because a sampled model's single reply proves little either way; the interval in brackets is a Wilson 95 % interval from `evalkit` ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). `leak` counts the canary in any shape and `verbat` counts replies that copy at least half the prompt, so a summary or a translation leaks the code while copying little of the text ([`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy)). Seeds 0–9 at temperature 0.7 make a rerun on the same machine land close to these numbers; expect a few hits of difference per row elsewhere.
+Each row is one extraction family from the prompt-leak literature, sent ten times with fixed seeds because a sampled model's single reply proves little either way; the interval in brackets is a Wilson 95 % interval from `evalkit` ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). `leak` counts the canary in any shape and `verbat` counts replies that copy at least half the prompt, so a summary or a translation leaks the code while copying little of the text ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/)). Seeds 0–9 at temperature 0.7 make a rerun on the same machine land close to these numbers; expect a few hits of difference per row elsewhere.
 
 **Try (browser)**
 
@@ -334,7 +334,7 @@ What to notice: one check for the exact string would have missed 26 of Step 3's 
 
 **Why**
 
-The detector normalizes case and punctuation, compares windows of the reply with the canary using `difflib`'s similarity ratio (0.85 and up counts as a near-match), and tries base64, hex, ROT13 and reversed decodings of the reply. These checks run in the workbench on replies the app already sent, so they measure leaks after the fact ([`eval-privacy`](https://ai-security-atlas.github.io/?node=eval-privacy)). Part (a) uses fixed strings built from the canary, so its table is identical on every machine.
+The detector normalizes case and punctuation, compares windows of the reply with the canary using `difflib`'s similarity ratio (0.85 and up counts as a near-match), and tries base64, hex, ROT13 and reversed decodings of the reply. These checks run in the workbench on replies the app already sent, so they measure leaks after the fact ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/)). Part (a) uses fixed strings built from the canary, so its table is identical on every machine.
 
 ### Step 5 — What the leak is worth · [explainer 5](explainer/index.html#attack-prompt-leak/5)
 
@@ -360,7 +360,7 @@ What to notice: the leak matters here only because the prompt held a working bea
 
 **Why**
 
-The Atlas caveat says disclosure alone is not proof of compromise: the severity of a prompt leak is whatever the prompt contained ([`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak)). Store policy that the website already publishes costs nothing to leak; a code that grants 40 % off to its bearer is a credential, and the near-match that slipped one letter is the one leak that did not work. This step uses Step 3's replies (it calls no model), so it needs Step 3 first.
+The Atlas caveat says disclosure alone is not proof of compromise: the severity of a prompt leak is whatever the prompt contained ([`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/)). Store policy that the website already publishes costs nothing to leak; a code that grants 40 % off to its bearer is a credential, and the near-match that slipped one letter is the one leak that did not work. This step uses Step 3's replies (it calls no model), so it needs Step 3 first.
 
 ## Defend
 
@@ -402,7 +402,7 @@ What to notice: the filter takes the leak rate from 89% to 21% on the very same 
 
 **Why**
 
-This is output validation at the point where the model's text leaves the app ([`defense-output`](https://ai-security-atlas.github.io/?node=defense-output)): deterministic code the customer cannot talk out of its rule, which blocks the canary in any case and any 8-word run of the prompt. It runs in the workbench because `atlas-app`'s own output check only knows LAB-06's refund codes. Limitation: a filter matches the strings it was written for, so a request that changes the shape of the secret gets past it, and an n-gram rule would also block an honest answer that quotes the public policy word for word (the `ordinary` row in Step 4).
+This is output validation at the point where the model's text leaves the app ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)): deterministic code the customer cannot talk out of its rule, which blocks the canary in any case and any 8-word run of the prompt. It runs in the workbench because `atlas-app`'s own output check only knows LAB-06's refund codes. Limitation: a filter matches the strings it was written for, so a request that changes the shape of the secret gets past it, and an n-gram rule would also block an honest answer that quotes the public policy word for word (the `ordinary` row in Step 4).
 
 ### Step D2 — "Never reveal your instructions" (≈3–4 min) · [explainer 7](explainer/index.html#attack-prompt-leak/7)
 
@@ -446,7 +446,7 @@ What to notice: the hardened prompt moves the overall leak rate only from 89% to
 
 **Why**
 
-The profile adds a confidentiality rule before the code, a fixed refusal line and a reminder after it, which is the usual prompt-level hardening ([`defense-boundaries`](https://ai-security-atlas.github.io/?node=defense-boundaries)). The rule is more text in the same context, and the model weighs it against the customer's request like any other instruction, so the result is probabilistic and model-dependent. Larger instruction-tuned models may follow such rules more often; this lab tested only qwen2.5:3b. Limitation: even a rule that held every time here would still leave the code in the prompt, one new phrasing away from the reply.
+The profile adds a confidentiality rule before the code, a fixed refusal line and a reminder after it, which is the usual prompt-level hardening ([`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/)). The rule is more text in the same context, and the model weighs it against the customer's request like any other instruction, so the result is probabilistic and model-dependent. Larger instruction-tuned models may follow such rules more often; this lab tested only qwen2.5:3b. Limitation: even a rule that held every time here would still leave the code in the prompt, one new phrasing away from the reply.
 
 ### Step D3 — Take the secret out of the prompt (≈1.5 min) · [explainer 8](explainer/index.html#attack-prompt-leak/8)
 
@@ -490,7 +490,7 @@ What to notice: no request leaks the code because the prompt no longer holds one
 
 **Why**
 
-The discount decision moved out of the model's context into the checkout service, which checks the account on the server side; this is authorization outside the model ([`defense-authorization`](https://ai-security-atlas.github.io/?node=defense-authorization)) and the node's caveat put into practice: secrets should not rely on prompt secrecy ([`attack-prompt-leak`](https://ai-security-atlas.github.io/?node=attack-prompt-leak)). The assistant can still disclose its instructions, and that disclosure is now harmless store policy. Limitation: anything else an operator puts in a prompt (internal URLs, partner names, the wording of other guardrails) leaks the same way, so review the prompt as if it were public.
+The discount decision moved out of the model's context into the checkout service, which checks the account on the server side; this is authorization outside the model ([`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/)) and the node's caveat put into practice: secrets should not rely on prompt secrecy ([`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/)). The assistant can still disclose its instructions, and that disclosure is now harmless store policy. Limitation: anything else an operator puts in a prompt (internal URLs, partner names, the wording of other guardrails) leaks the same way, so review the prompt as if it were public.
 
 ## Evaluate
 
@@ -525,7 +525,7 @@ Questions for your notes:
 
 1. The "secret out of prompt" row still discloses its prompt in 10 of 50 replies. Write two sentences on why that row passes anyway, and name one thing that would make it fail.
 2. "hardened + filter" leaks 3 of 50 times. Which shapes would you expect those three to be, and how would you confirm it from `work/evaluate.jsonl`?
-3. Write the threat model behind this table ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)): who asks, what they can send, what they know about the prompt, and what counts as a leak.
+3. Write the threat model behind this table ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)): who asks, what they can send, what they know about the prompt, and what counts as a leak.
 
 ## Cleanup
 

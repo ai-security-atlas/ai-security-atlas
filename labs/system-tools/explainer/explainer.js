@@ -68,7 +68,7 @@
         cmd: CMD("d2_scoped") },
       { chapter: "Defense", label: "Pin the definition",
         guide: "The last fix guards the description and the schema. When a tool registers, you hash its reviewed definition and compare the live one against that pin. Add a sentence to a description and the hash changes. Drop the pattern from a schema, or reword the scoped tool to sound broad, and it changes too. The client refuses any definition whose hash moved after you approved it.",
-        caption: `Live definitions ${D.d3.live}, pinned ${D.d3.pinned}, matching <span class="c-ok">${D.d3.matching}</span>. Edited definitions refused: <span class="c-ok">${d3Refused}/${D.d3.edits.length}</span>: ${D.d3.edits.map((e) => `<code>${e.tool}</code> (${e.sha} vs ${e.pin}, ${e.accepted ? "accepted" : "refused"})`).join(", ")}. See <a href="https://ai-security-atlas.github.io/?node=attack-tool-rugpull">attack-tool-rugpull</a> for the definition that changes after approval.`,
+        caption: `Live definitions ${D.d3.live}, pinned ${D.d3.pinned}, matching <span class="c-ok">${D.d3.matching}</span>. Edited definitions refused: <span class="c-ok">${d3Refused}/${D.d3.edits.length}</span>: ${D.d3.edits.map((e) => `<code>${e.tool}</code> (${e.sha} vs ${e.pin}, ${e.accepted ? "accepted" : "refused"})`).join(", ")}. See <a href="https://ai-security-atlas.github.io/nodes/attack-tool-rugpull/">attack-tool-rugpull</a> for the definition that changes after approval.`,
         cmd: CMD("d3_pin") },
     ],
     html: `<style>[data-explainer="system-tools"] svg text { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }</style>

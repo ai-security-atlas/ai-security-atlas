@@ -1,0 +1,7 @@
+{{/* /nodes/<id>/: the Explorer on this node. The server-rendered article below is for search
+     engines and no-JS readers; the app (layouts/partials/spa-boot.html) takes over the page. */}}
+{{ define "head" }}{{ partial "spa-boot.html" . }}{{ end }}
+{{ define "main" }}
+<div id="graph-root"></div>
+{{ partial "node-doc.html" (dict "page" . "id" .Params.id "content" .Content) }}
+{{ end }}

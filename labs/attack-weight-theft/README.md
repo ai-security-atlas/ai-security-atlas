@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64, OrbStack, Docker 29.8.2, Compose 5.5.0, workbenc
 
 # LAB-54 · An open Ollama port and a stolen fine-tune
 
-> **Atlas node:** [Unauthorized checkpoint or adapter theft](https://ai-security-atlas.github.io/?node=attack-weight-theft) · **Family:** family-theft · **Level:** intermediate · **Time:** 25 min · **Model backend:** none
+> **Atlas node:** [Unauthorized checkpoint or adapter theft](https://ai-security-atlas.github.io/nodes/attack-weight-theft/) · **Family:** family-theft · **Level:** intermediate · **Time:** 25 min · **Model backend:** none
 
 ## Overview
 
@@ -51,13 +51,13 @@ This lab never publishes a port on your machine and never calls the host Ollama 
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-weight-theft`](../../articles/attack-weight-theft.md) |
-| Family | [`family-theft`](https://ai-security-atlas.github.io/?node=family-theft) |
-| Goal | [`goal-model-theft`](https://ai-security-atlas.github.io/?node=goal-model-theft) |
+| Family | [`family-theft`](https://ai-security-atlas.github.io/nodes/family-theft/) |
+| Goal | [`goal-model-theft`](https://ai-security-atlas.github.io/nodes/goal-model-theft/) |
 | Access profile | `A08` Readable model artifacts (caveat: *Weights, adapters or configurations are readable; distinguish public access from unauthorized access.*). Also `A13` Dependency or package distribution. |
-| Read first | [`system-registry`](https://ai-security-atlas.github.io/?node=system-registry), [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters) |
-| Mitigated by | [`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege), [`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging) |
-| Evaluated by | [`eval-fidelity`](https://ai-security-atlas.github.io/?node=eval-fidelity), [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-model-imitation`](https://ai-security-atlas.github.io/?node=attack-model-imitation), [`system-serving`](https://ai-security-atlas.github.io/?node=system-serving) |
+| Read first | [`system-registry`](https://ai-security-atlas.github.io/nodes/system-registry/), [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) |
+| Mitigated by | [`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/), [`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/) |
+| Evaluated by | [`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/), [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/), [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/) |
 
 > [!NOTE]
 > **Atlas caveat:** Ordinary download of intentionally public weights is not theft.
@@ -88,7 +88,7 @@ Scripts always run in the workbench or the outsider service. Nothing in this lab
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [`LAB-09 · Imitating a model from queries`](../attack-model-imitation/README.md) is the neighboring exercise (behavior from queries). This lab copies files.
 - The public model `qwen2.5:0.5b` is already in the host Ollama store (`~/.ollama/models`, or the directory you pass as `HOST_OLLAMA_MODELS`). The victim copies that one model. It does not pull weights.
-- Concepts to read first: [`attack-weight-theft`](https://ai-security-atlas.github.io/?node=attack-weight-theft), [`system-registry`](https://ai-security-atlas.github.io/?node=system-registry).
+- Concepts to read first: [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/), [`system-registry`](https://ai-security-atlas.github.io/nodes/system-registry/).
 
 ## Explainer
 
@@ -141,7 +141,7 @@ What to notice: both services become healthy, and `docker compose port` prints `
 
 **Why**
 
-The victim listens on the compose network only ([`system-serving`](https://ai-security-atlas.github.io/?node=system-serving)). `--force-recreate` on the registry starts it from the two-file compose set, so a later password step does not leak into the next run. The workbench image is already `atlas-labs/workbench:v4`; this setup does not build it.
+The victim listens on the compose network only ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/)). `--force-recreate` on the registry starts it from the two-file compose set, so a later password step does not leak into the next run. The workbench image is already `atlas-labs/workbench:v4`; this setup does not build it.
 
 ### Setup 3 — Check the environment
 
@@ -167,7 +167,7 @@ What to notice: the fine-tune is loaded, the canary is in its Modelfile, and the
 
 **Why**
 
-An open tags list is the readable-artifact condition in [`attack-weight-theft`](https://ai-security-atlas.github.io/?node=attack-weight-theft). If the registry line is HTTP 401, Setup 2 did not recreate it without the password file. Run Setup 2 again before the walkthrough.
+An open tags list is the readable-artifact condition in [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/). If the registry line is HTTP 401, Setup 2 did not recreate it without the password file. Run Setup 2 again before the walkthrough.
 
 ## Walkthrough
 
@@ -205,7 +205,7 @@ What to notice: both models are listed with no `Authorization` header, their dig
 
 **Why**
 
-`/api/tags` and `/api/show` are the enumeration half of [`attack-weight-theft`](https://ai-security-atlas.github.io/?node=attack-weight-theft). The digest difference is the model id Ollama computed for the Modelfile. It is not yet a copy of the blobs. Those leave in the next step ([`system-registry`](https://ai-security-atlas.github.io/?node=system-registry)).
+`/api/tags` and `/api/show` are the enumeration half of [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/). The digest difference is the model id Ollama computed for the Modelfile. It is not yet a copy of the blobs. Those leave in the next step ([`system-registry`](https://ai-security-atlas.github.io/nodes/system-registry/)).
 
 ### Step 2 — Push the fine-tune to the lab registry · [explainer 3](explainer/index.html#attack-weight-theft/3)
 
@@ -237,7 +237,7 @@ What to notice: the push finishes in a few seconds, every blob hash matches its 
 
 **Why**
 
-Ollama's copy and push endpoints hand the blobs to whatever registry name you pass, here `registry:5000` on the lab network ([`attack-weight-theft`](https://ai-security-atlas.github.io/?node=attack-weight-theft)). Push time moves with disk cache: the reference run took 2.7 seconds because the weight blob was already on the victim. A cold copy of the same 397,807,936-byte file takes longer. The manifest total, 397,820,971 bytes, counts layers only. The tag size in Step 1 also includes a small config blob that is not a layer.
+Ollama's copy and push endpoints hand the blobs to whatever registry name you pass, here `registry:5000` on the lab network ([`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/)). Push time moves with disk cache: the reference run took 2.7 seconds because the weight blob was already on the victim. A cold copy of the same 397,807,936-byte file takes longer. The manifest total, 397,820,971 bytes, counts layers only. The tag size in Step 1 also includes a small config blob that is not a layer.
 
 ### Step 3 — Separate the public weight from the private layer · [explainer 4](explainer/index.html#attack-weight-theft/4)
 
@@ -271,7 +271,7 @@ What to notice: the weight digest is shared with `qwen2.5:0.5b`, the model diges
 
 **Why**
 
-[`eval-fidelity`](https://ai-security-atlas.github.io/?node=eval-fidelity) asks you to say what was copied exactly. Here the GGUF matches a public file, and the private layer is the 130-byte system blob `sha256:38ff5b2338a8b35eb7ebeb29275dd196f47b053a9d2defc3301db2efc00ece11`. Querying a model until its answers look similar is a different exercise ([`attack-model-imitation`](https://ai-security-atlas.github.io/?node=attack-model-imitation)). This lab stops at the files.
+[`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/) asks you to say what was copied exactly. Here the GGUF matches a public file, and the private layer is the 130-byte system blob `sha256:38ff5b2338a8b35eb7ebeb29275dd196f47b053a9d2defc3301db2efc00ece11`. Querying a model until its answers look similar is a different exercise ([`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/)). This lab stops at the files.
 
 ## Defend
 
@@ -300,7 +300,7 @@ What to notice: the outsider fails both names in well under a second, while the 
 
 **Why**
 
-The outsider container sits on the internal network `isolated`, which has no route to `theft` ([`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege)). The failure is DNS, so the cost is a few tens of milliseconds and the operator path is unchanged. Anyone who can still join `theft` can repeat Step 2. Run this step before the password step: the operator command uses the two-file compose set and would rebuild the registry without a password.
+The outsider container sits on the internal network `isolated`, which has no route to `theft` ([`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). The failure is DNS, so the cost is a few tens of milliseconds and the operator path is unchanged. Anyone who can still join `theft` can repeat Step 2. Run this step before the password step: the operator command uses the two-file compose set and would rebuild the registry without a password.
 
 ### Step D2 — Require a registry password · [explainer 7](explainer/index.html#attack-weight-theft/7)
 
@@ -328,7 +328,7 @@ What to notice: anonymous reads become HTTP 401 and the lab password still retur
 
 **Why**
 
-`compose.auth.yaml` turns on htpasswd for this registry only ([`defense-least-privilege`](https://ai-security-atlas.github.io/?node=defense-least-privilege)). The ten lines in `work/audit.jsonl` are the access record ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging)). `--no-deps` on the measurement keeps the password in place: a `docker compose run` that omits it rebuilds the registry from the two-file set and the 401 disappears. The password does not delete the blobs already stored. Ollama's own API is still open, so a second push still works until that port is cut off as well.
+`compose.auth.yaml` turns on htpasswd for this registry only ([`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). The ten lines in `work/audit.jsonl` are the access record ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)). `--no-deps` on the measurement keeps the password in place: a `docker compose run` that omits it rebuilds the registry from the two-file set and the 401 disappears. The password does not delete the blobs already stored. Ollama's own API is still open, so a second push still works until that port is cut off as well.
 
 ### Step D3 — Fingerprint the stolen system blob · [explainer 8](explainer/index.html#attack-weight-theft/8)
 
@@ -354,7 +354,7 @@ What to notice: hashing the 130-byte system blob twenty times costs about 0.002 
 
 **Why**
 
-A fingerprint tells you the blob is the private layer after the copy exists ([`eval-fidelity`](https://ai-security-atlas.github.io/?node=eval-fidelity)). It is a detective check. The stolen size is the same number Step 2 printed, so the cost of the check is the hash time and the copy is still on the registry. Keep the password file on this command, the same way Step D2 did, or the re-read is anonymous and fails.
+A fingerprint tells you the blob is the private layer after the copy exists ([`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/)). It is a detective check. The stolen size is the same number Step 2 printed, so the cost of the check is the hash time and the copy is still on the registry. Keep the password file on this command, the same way Step D2 did, or the re-read is anonymous and fails.
 
 ## Evaluate
 

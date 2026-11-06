@@ -23,7 +23,7 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-09 · Stealing a classifier through its API
 
-> **Atlas node:** [Black-box functional model extraction](https://ai-security-atlas.github.io/?node=attack-model-imitation) · **Family:** family-theft · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Black-box functional model extraction](https://ai-security-atlas.github.io/nodes/attack-model-imitation/) · **Family:** family-theft · **Level:** beginner · **Time:** 60 min · **Model backend:** none
 
 ## Overview
 
@@ -51,13 +51,13 @@ The victim is a classifier you train in Step 1, served by each script on `127.0.
 | Field | Value |
 | :--- | :--- |
 | Node | [`attack-model-imitation`](../../articles/attack-model-imitation.md) |
-| Family | [`family-theft`](https://ai-security-atlas.github.io/?node=family-theft) |
-| Goal | [`goal-model-theft`](https://ai-security-atlas.github.io/?node=goal-model-theft) |
+| Family | [`family-theft`](https://ai-security-atlas.github.io/nodes/family-theft/) |
+| Goal | [`goal-model-theft`](https://ai-security-atlas.github.io/nodes/goal-model-theft/) |
 | Access profile | `A01` Output-query access (caveat: *No weights, logits, training data or privileged context are implied.*) for the label-only rows, and `A02` Score or logit API access (caveat: *Specify score precision, top-k restrictions and any allowed logit transformations.*) for the top-k, probability and rounded rows |
-| Read first | [`adapt-distillation`](https://ai-security-atlas.github.io/?node=adapt-distillation), [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget) and [`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging) as related, not mapped, plus output minimization and watermarking, which have no node yet. |
-| Evaluated by | [`eval-fidelity`](https://ai-security-atlas.github.io/?node=eval-fidelity), [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr), [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model) |
-| Related | [`attack-weight-theft`](https://ai-security-atlas.github.io/?node=attack-weight-theft) (distinct from), [`attack-distillation-theft`](https://ai-security-atlas.github.io/?node=attack-distillation-theft), [`attack-projection-theft`](https://ai-security-atlas.github.io/?node=attack-projection-theft), [`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural) |
+| Read first | [`adapt-distillation`](https://ai-security-atlas.github.io/nodes/adapt-distillation/), [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/) and [`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/) as related, not mapped, plus output minimization and watermarking, which have no node yet. |
+| Evaluated by | [`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/), [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) |
+| Related | [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/) (distinct from), [`attack-distillation-theft`](https://ai-security-atlas.github.io/nodes/attack-distillation-theft/), [`attack-projection-theft`](https://ai-security-atlas.github.io/nodes/attack-projection-theft/), [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/) |
 
 > [!NOTE]
 > **Atlas caveat:** Functional fidelity is not equality of weights; query rights and licensing are separate policy questions.
@@ -85,7 +85,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done (the workbench image is built).
 - Labs to finish first: none. [LAB-05 · What the API reveals](../concept-logits/README.md) covers logits and log-probabilities in more depth.
-- Concepts to read first: [`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits) and [`adapt-distillation`](https://ai-security-atlas.github.io/?node=adapt-distillation).
+- Concepts to read first: [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) and [`adapt-distillation`](https://ai-security-atlas.github.io/nodes/adapt-distillation/).
 
 ## Explainer
 
@@ -192,7 +192,7 @@ What to notice: the attacker's pool and the test digits are disjoint from the ow
 
 **Why**
 
-The victim is a small neural network ([`arch-neural`](https://ai-security-atlas.github.io/?node=arch-neural)) saved as tensors only in `work/victim.safetensors`. The attacker in this lab never reads that file: everything it learns comes through the API, which is the A01/A02 threat model ([`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model)). Taking the file itself would be a different attack, [`attack-weight-theft`](https://ai-security-atlas.github.io/?node=attack-weight-theft).
+The victim is a small neural network ([`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/)) saved as tensors only in `work/victim.safetensors`. The attacker in this lab never reads that file: everything it learns comes through the API, which is the A01/A02 threat model ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). Taking the file itself would be a different attack, [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/).
 
 ### Step 2 — What one answer reveals · [explainer 2](explainer/index.html#attack-model-imitation/2)
 
@@ -223,7 +223,7 @@ What to notice: the label is one class out of ten, while `probs` and `logprobs` 
 
 **Why**
 
-`victim-api` serves the same model at four detail levels; `logprobs` are just the logarithms of `probs`, so at full precision they carry the same information but make the tiny values readable ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). Every request is counted against the key's budget and written to the query log, which D2 uses. The refused batch of 20 is answered with nothing at all, not with the 16 queries left.
+`victim-api` serves the same model at four detail levels; `logprobs` are just the logarithms of `probs`, so at full precision they carry the same information but make the tiny values readable ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). Every request is counted against the key's budget and written to the query log, which D2 uses. The refused batch of 20 is answered with nothing at all, not with the 16 queries left.
 
 ### Step 3 — Steal it at three detail levels · [explainer 3](explainer/index.html#attack-model-imitation/3)
 
@@ -255,7 +255,7 @@ What to notice: with full probabilities the copy agrees with the victim on 95% o
 
 **Why**
 
-The attacker treats the API as a labelling oracle and fits a fresh MLP to its answers, which is knowledge distillation run through someone else's API ([`adapt-distillation`](https://ai-security-atlas.github.io/?node=adapt-distillation)). A label carries at most one class per query, while a probability vector also says how the model ranks the other nine classes, so each richer answer constrains the copy more ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). One learning rule is used for every level: cross-entropy on the label plus a squared-error match on whatever log-probabilities the API revealed.
+The attacker treats the API as a labelling oracle and fits a fresh MLP to its answers, which is knowledge distillation run through someone else's API ([`adapt-distillation`](https://ai-security-atlas.github.io/nodes/adapt-distillation/)). A label carries at most one class per query, while a probability vector also says how the model ranks the other nine classes, so each richer answer constrains the copy more ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). One learning rule is used for every level: cross-entropy on the label plus a squared-error match on whatever log-probabilities the API revealed.
 
 ### Step 4 — Agreement is not the same weights · [explainer 7](explainer/index.html#attack-model-imitation/7)
 
@@ -281,7 +281,7 @@ What to notice: the probability copy agrees with the victim on 99.3% of held-out
 
 **Why**
 
-[`eval-fidelity`](https://ai-security-atlas.github.io/?node=eval-fidelity) asks for separate numbers: functional agreement with the target, task accuracy, and parameter recovery. Agreement on the victim's mistakes is what separates a copy from a model that is merely good at the task. Many different weight settings compute the same function (hidden units can be reordered, for a start), so a high-fidelity copy is not the original's weights, which is exactly the Atlas caveat, and all of these numbers hold only for the input distribution they were measured on.
+[`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/) asks for separate numbers: functional agreement with the target, task accuracy, and parameter recovery. Agreement on the victim's mistakes is what separates a copy from a model that is merely good at the task. Many different weight settings compute the same function (hidden units can be reordered, for a start), so a high-fidelity copy is not the original's weights, which is exactly the Atlas caveat, and all of these numbers hold only for the input distribution they were measured on.
 
 ### Step 5 — No data: random queries
 
@@ -310,7 +310,7 @@ What to notice: random noise lands mostly in classes 4, 2 and 7, so even 1,200 n
 
 **Why**
 
-What the attacker asks matters as much as how many questions: queries near the real data probe the decision boundaries that matter, which is the point of Knockoff Nets and of the [`attack-model-imitation`](https://ai-security-atlas.github.io/?node=attack-model-imitation) threat model. Noise queries are also unusual: the victim answers them with low confidence, which the D2 monitor uses. Do not read this as "no data, no theft": real attackers use public data from a similar domain.
+What the attacker asks matters as much as how many questions: queries near the real data probe the decision boundaries that matter, which is the point of Knockoff Nets and of the [`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/) threat model. Noise queries are also unusual: the victim answers them with low confidence, which the D2 monitor uses. Do not read this as "no data, no theft": real attackers use public data from a similar domain.
 
 ## Defend
 
@@ -340,7 +340,7 @@ What to notice: rounding to two decimals already removes most of the advantage o
 
 **Why**
 
-The richest part of a probability vector is its tail of tiny values, and rounding sets them to zero, so the thief is left with roughly the information of a label ([`concept-logits`](https://ai-security-atlas.github.io/?node=concept-logits)). Honest users keep the same labels in every policy, so minimization is cheap when they do not need scores. Limitation: it raises the number of queries a copy needs, it does not prevent the copy ([`attack-model-imitation`](https://ai-security-atlas.github.io/?node=attack-model-imitation)).
+The richest part of a probability vector is its tail of tiny values, and rounding sets them to zero, so the thief is left with roughly the information of a label ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). Honest users keep the same labels in every policy, so minimization is cheap when they do not need scores. Limitation: it raises the number of queries a copy needs, it does not prevent the copy ([`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/)).
 
 ### Step D2 — Budgets per key, and what the log shows · [explainer 9](explainer/index.html#attack-model-imitation/9)
 
@@ -375,7 +375,7 @@ What to notice: one key is cut off at 100 queries and gets a 0.848 copy, but six
 
 **Why**
 
-A per-key budget ([`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget), related here) caps what one account can learn, and the query log ([`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging)) is where you see who hits the cap. Limitation: budgets bind keys, not people, so they only work together with account verification and limits across accounts, and an attacker using in-distribution data looks like an honest user in this monitor.
+A per-key budget ([`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/), related here) caps what one account can learn, and the query log ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)) is where you see who hits the cap. Limitation: budgets bind keys, not people, so they only work together with account verification and limits across accounts, and an attacker using in-distribution data looks like an honest user in this monitor.
 
 ### Step D3 — Prove a copy: watermark and fingerprint · [explainer 10](explainer/index.html#attack-model-imitation/10)
 
@@ -403,7 +403,7 @@ What to notice: the watermark catches the label-only copy (9 of 9 deliberately w
 
 **Why**
 
-A watermark (DAWN-style: a keyed hash selects about 2% of inputs, here 18 of 1,200 answers, which get a deliberately wrong label recorded per key) does not stop extraction; it gives the owner evidence afterwards that a suspect model learned from their answers ([`eval-fidelity`](https://ai-security-atlas.github.io/?node=eval-fidelity) measures the agreement it relies on). Here the copy fitted to full probabilities smoothed the swapped answers away, and the fingerprint (agreement on ambiguous inputs where two honest models disagree) caught it instead, so neither check covers both thieves. Limitation: both need query access to the suspect, the watermark costs every user some wrong answers, and an attacker who filters or fine-tunes can weaken either signal.
+A watermark (DAWN-style: a keyed hash selects about 2% of inputs, here 18 of 1,200 answers, which get a deliberately wrong label recorded per key) does not stop extraction; it gives the owner evidence afterwards that a suspect model learned from their answers ([`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/) measures the agreement it relies on). Here the copy fitted to full probabilities smoothed the swapped answers away, and the fingerprint (agreement on ambiguous inputs where two honest models disagree) caught it instead, so neither check covers both thieves. Limitation: both need query access to the suspect, the watermark costs every user some wrong answers, and an attacker who filters or fine-tunes can weaken either signal.
 
 ### Step D4 — Combine the controls, and keep the policy question separate
 
@@ -413,7 +413,7 @@ None of the measured defenses stops a determined thief alone: minimization (D1) 
 
 **Why**
 
-The Atlas lists no mitigation node for this attack; [`defense-budget`](https://ai-security-atlas.github.io/?node=defense-budget) and [`defense-logging`](https://ai-security-atlas.github.io/?node=defense-logging) are the closest related controls. Evaluate each control against an attacker who adapts to it (more keys, better data, smoothing), as in [`eval-threat-model`](https://ai-security-atlas.github.io/?node=eval-threat-model).
+The Atlas lists no mitigation node for this attack; [`defense-budget`](https://ai-security-atlas.github.io/nodes/defense-budget/) and [`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/) are the closest related controls. Evaluate each control against an attacker who adapts to it (more keys, better data, smoothing), as in [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/).
 
 ## Evaluate
 

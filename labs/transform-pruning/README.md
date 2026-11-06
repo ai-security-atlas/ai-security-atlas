@@ -21,7 +21,7 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-35 · Smaller is not safer
 
-> **Atlas node:** [Pruning and sparsity](https://ai-security-atlas.github.io/?node=transform-pruning) · **Family:** family-training · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
+> **Atlas node:** [Pruning and sparsity](https://ai-security-atlas.github.io/nodes/transform-pruning/) · **Family:** family-training · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
 
 ## Overview
 
@@ -49,13 +49,13 @@ Both victims are shared lab fixtures. The language model's only "secret" is the 
 | Field | Value |
 | :--- | :--- |
 | Node | [`transform-pruning`](../../articles/transform-pruning.md) |
-| Family | None in the seed graph (a method node). The front matter and explainer kicker use [`family-training`](https://ai-security-atlas.github.io/?node=family-training), the family of [`attack-safety-finetune`](https://ai-security-atlas.github.io/?node=attack-safety-finetune): a weight change after review that removes a safety property. |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/?node=goal-behavior) (the guard's rule stops holding) and [`goal-persistence`](https://ai-security-atlas.github.io/?node=goal-persistence) (the backdoor outlives compression) |
+| Family | None in the seed graph (a method node). The front matter and explainer kicker use [`family-training`](https://ai-security-atlas.github.io/nodes/family-training/), the family of [`attack-safety-finetune`](https://ai-security-atlas.github.io/nodes/attack-safety-finetune/): a weight change after review that removes a safety property. |
+| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (the guard's rule stops holding) and [`goal-persistence`](https://ai-security-atlas.github.io/nodes/goal-persistence/) (the backdoor outlives compression) |
 | Access profile | `A09` Writable or replaceable model artifacts (caveat: *Use separate calibration/runtime-read capabilities where the method requires them.*): whoever compresses the model writes the artifact that ships. Step 5 also needs calibration prompts and gradients, which is the white-box half of that caveat. |
-| Read first | [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters), [`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor) |
-| Mitigated by | None in the seed graph. Defend uses [`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression) and [`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit) as related, not mapped. |
-| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr) (attack success with a no-trigger control), [`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility) (clean accuracy and benign answers) |
-| Related | [`transform-quantization`](https://ai-security-atlas.github.io/?node=transform-quantization) (the other compression transform), [`attack-refusal-ablation`](https://ai-security-atlas.github.io/?node=attack-refusal-ablation) and [`adapt-abliteration`](https://ai-security-atlas.github.io/?node=adapt-abliteration) (other weight edits that remove a refusal), [`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora) (the guard adapter), [`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive), [`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance) |
+| Read first | [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/), [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/) |
+| Mitigated by | None in the seed graph. Defend uses [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/) and [`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/) as related, not mapped. |
+| Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) (attack success with a no-trigger control), [`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/) (clean accuracy and benign answers) |
+| Related | [`transform-quantization`](https://ai-security-atlas.github.io/nodes/transform-quantization/) (the other compression transform), [`attack-refusal-ablation`](https://ai-security-atlas.github.io/nodes/attack-refusal-ablation/) and [`adapt-abliteration`](https://ai-security-atlas.github.io/nodes/adapt-abliteration/) (other weight edits that remove a refusal), [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/) (the guard adapter), [`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/), [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) |
 
 > [!NOTE]
 > **Atlas caveat:** none recorded for this node. Its summary says "security effects are not guaranteed by compression", and this lab measures that sentence in both directions.
@@ -83,7 +83,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: none. [LAB-18 · BadNets: a sticker that rewrites the label](../attack-backdoor/README.md) introduced the backdoored CNNs and [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) the guard adapter; both help.
-- Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters) and [`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor).
+- Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) and [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/).
 
 ## Explainer
 
@@ -195,7 +195,7 @@ What to notice: the digit CNN scores 98.1% on clean test digits, the number a mo
 
 **Why**
 
-Both parents are shared fixtures. The CNN is `cnn-poison-badnets` from [LAB-18](../attack-backdoor/README.md), trained with 38 poisoned images out of 1,257 ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor)); the guard is SmolLM2-135M-Instruct with the Lantern refusal LoRA from [LAB-07](../adapt-lora/README.md) merged in ([`adapt-lora`](https://ai-security-atlas.github.io/?node=adapt-lora)). The suite's 24 vault requests are the 8 held-out phrasings with 3 prefixes, none of them in the guard's training rows, and a reply counts as printed only if it holds the exact string `ATLAS-CANARY-LANTERN`.
+Both parents are shared fixtures. The CNN is `cnn-poison-badnets` from [LAB-18](../attack-backdoor/README.md), trained with 38 poisoned images out of 1,257 ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)); the guard is SmolLM2-135M-Instruct with the Lantern refusal LoRA from [LAB-07](../adapt-lora/README.md) merged in ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/)). The suite's 24 vault requests are the 8 held-out phrasings with 3 prefixes, none of them in the guard's training rows, and a reply counts as printed only if it holds the exact string `ATLAS-CANARY-LANTERN`.
 
 
 ### Step 2 — "We compressed it" · [explainer 2](explainer/index.html#transform-pruning/2)
@@ -238,7 +238,7 @@ What to notice: at 70% sparsity, the last level with clean accuracy of at least 
 
 **Why**
 
-[`transform-pruning`](https://ai-security-atlas.github.io/?node=transform-pruning) removes the weights judged to matter least; global magnitude pruning ranks all conv and linear weights together by |w| and zeroes the smallest share, the way `torch.nn.utils.prune.global_unstructured` does. The backdoor is the LAB-18 one, trained in with 38 poisoned images ([`attack-backdoor`](https://ai-security-atlas.github.io/?node=attack-backdoor)), and attack success counts non-7 digits sent to 7, next to the same digits without the trigger as a control ([`eval-asr`](https://ai-security-atlas.github.io/?node=eval-asr)). The clean CNN with the same patch stays at or below 6.4%, so the patch alone does not make a pruned model say 7.
+[`transform-pruning`](https://ai-security-atlas.github.io/nodes/transform-pruning/) removes the weights judged to matter least; global magnitude pruning ranks all conv and linear weights together by |w| and zeroes the smallest share, the way `torch.nn.utils.prune.global_unstructured` does. The backdoor is the LAB-18 one, trained in with 38 poisoned images ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)), and attack success counts non-7 digits sent to 7, next to the same digits without the trigger as a control ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). The clean CNN with the same patch stays at or below 6.4%, so the patch alone does not make a pruned model say 7.
 
 ### Step 3 — Where the trigger lives · [explainer 3](explainer/index.html#transform-pruning/3)
 
@@ -267,7 +267,7 @@ What to notice: the 381 weights that matter most for the trigger sit at the 97th
 
 **Why**
 
-The attribution of a weight w to a quantity J is |w · ∂J/∂w|, the first-order estimate of how much J moves if w is set to zero ([`concept-parameters`](https://ai-security-atlas.github.io/?node=concept-parameters)). Here J is the trigger's push toward class 7 (logit margin on stamped digits minus clean digits) or the clean cross-entropy, and the column "median |w| pct" places the top 1% of each in the |w| ranking of all 38,160 weights. 84 of the 144 first-layer weights are among the trigger's top 381, and 176 of the 381 are top task weights as well: the trigger shares large weights with the task, which is why magnitude cannot cut one without the other.
+The attribution of a weight w to a quantity J is |w · ∂J/∂w|, the first-order estimate of how much J moves if w is set to zero ([`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/)). Here J is the trigger's push toward class 7 (logit margin on stamped digits minus clean digits) or the clean cross-entropy, and the column "median |w| pct" places the top 1% of each in the |w| ranking of all 38,160 weights. 84 of the 144 first-layer weights are among the trigger's top 381, and 176 of the 381 are top task weights as well: the trigger shares large weights with the task, which is why magnitude cannot cut one without the other.
 
 ### Step 4 — Prune the guard the usual way (≈2–11 min) · [explainer 4](explainer/index.html#transform-pruning/4)
 
@@ -296,7 +296,7 @@ What to notice: the guard refuses all 24 requests up to 30% magnitude sparsity, 
 
 **Why**
 
-Per-matrix magnitude pruning zeroes the smallest-|w| share of each of the 210 projection matrices in the 30 decoder blocks (106,168,320 weights; embeddings and the output head stay dense). Wanda (Sun et al. 2023) scores each weight as |w| times the norm of its input feature over 36 benign calibration rows and prunes per output row; at 50% it keeps the refusal while the benign score falls to 4/20. On this 135M model the refusal does not break before the model does, the case the node summary hedges with "security effects are not guaranteed by compression" ([`transform-pruning`](https://ai-security-atlas.github.io/?node=transform-pruning), [`eval-utility`](https://ai-security-atlas.github.io/?node=eval-utility)).
+Per-matrix magnitude pruning zeroes the smallest-|w| share of each of the 210 projection matrices in the 30 decoder blocks (106,168,320 weights; embeddings and the output head stay dense). Wanda (Sun et al. 2023) scores each weight as |w| times the norm of its input feature over 36 benign calibration rows and prunes per output row; at 50% it keeps the refusal while the benign score falls to 4/20. On this 135M model the refusal does not break before the model does, the case the node summary hedges with "security effects are not guaranteed by compression" ([`transform-pruning`](https://ai-security-atlas.github.io/nodes/transform-pruning/), [`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/)).
 
 ### Step 5 — A targeted prune strips the guard (≈3–7 min) · [explainer 5](explainer/index.html#transform-pruning/5)
 
@@ -327,7 +327,7 @@ What to notice: zeroing the top 4,000 of 106,168,320 weights (0.0038%) takes ref
 
 **Why**
 
-This is the idea Wei et al. (2024) measured on Llama-2 chat models: a small set of weights matters for the safety behavior far more than for utility, and removing only those removes the behavior ([`attack-safety-finetune`](https://ai-security-atlas.github.io/?node=attack-safety-finetune), and in activation space [`attack-refusal-ablation`](https://ai-security-atlas.github.io/?node=attack-refusal-ablation)). The lab's criterion is a simpler first-order variant: the signed score w · ∂J/∂w (Step 3 used its absolute value) with J = loss on the plain base model's own leaking replies minus loss on the guard's refusal, over 16 training-split requests, restricted to the smaller half of each matrix. It needs the weights, gradients and leaking example replies, so it is the white-box half of A09. The guard here is a merged LoRA delta, which may be easier to strip than a refusal trained into the whole model; [LAB-16](../attack-sft-poison/README.md) makes the same guard print the same code through poisoned fine-tuning rows, and a gate like D1 applies to both kinds of change.
+This is the idea Wei et al. (2024) measured on Llama-2 chat models: a small set of weights matters for the safety behavior far more than for utility, and removing only those removes the behavior ([`attack-safety-finetune`](https://ai-security-atlas.github.io/nodes/attack-safety-finetune/), and in activation space [`attack-refusal-ablation`](https://ai-security-atlas.github.io/nodes/attack-refusal-ablation/)). The lab's criterion is a simpler first-order variant: the signed score w · ∂J/∂w (Step 3 used its absolute value) with J = loss on the plain base model's own leaking replies minus loss on the guard's refusal, over 16 training-split requests, restricted to the smaller half of each matrix. It needs the weights, gradients and leaking example replies, so it is the white-box half of A09. The guard here is a merged LoRA delta, which may be easier to strip than a refusal trained into the whole model; [LAB-16](../attack-sft-poison/README.md) makes the same guard print the same code through poisoned fine-tuning rows, and a gate like D1 applies to both kinds of change.
 
 ## Defend
 
@@ -358,7 +358,7 @@ What to notice: only the guard parent passes; the 20% magnitude child fails on 1
 
 **Why**
 
-This is [`defense-regression`](https://ai-security-atlas.github.io/?node=defense-regression): a changed checkpoint gets the full safety and utility suite again on held-out tests, with fixed pass rules written before the run, and no artifact inherits its parent's result. The CNN rows add probes for the three triggers that the LAB-18 audit already found ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit)). Limitation: the gate tests only what is in the suite, so a trigger nobody has found or a request phrasing outside the 24 can pass it, and a white-box attacker who knows the suite can aim at the gaps ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)).
+This is [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/): a changed checkpoint gets the full safety and utility suite again on held-out tests, with fixed pass rules written before the run, and no artifact inherits its parent's result. The CNN rows add probes for the three triggers that the LAB-18 audit already found ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/)). Limitation: the gate tests only what is in the suite, so a trigger nobody has found or a request phrasing outside the 24 can pass it, and a white-box attacker who knows the suite can aim at the gaps ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)).
 
 ### Step D2 — Check the "magnitude-pruned" claim from the weights (≈30–60 s) · [explainer 7](explainer/index.html#transform-pruning/7)
 
@@ -385,7 +385,7 @@ What to notice: the honest magnitude children have no zeroed weight above the sm
 
 **Why**
 
-Magnitude pruning has a property you can test with no data at all: within each pruning group (one matrix for the guard, the whole model for the global CNN prune), every weight it zeroed was no larger than every weight it kept. A child that breaks this was made some other way, which is a provenance finding ([`defense-provenance`](https://ai-security-atlas.github.io/?node=defense-provenance)). Wanda fails the same test by design, because it ranks by |w| times activation norm per output row, so a "Wanda-pruned" claim needs the calibration data to check; and a pass says only how the child was made, while its behavior still needs D1.
+Magnitude pruning has a property you can test with no data at all: within each pruning group (one matrix for the guard, the whole model for the global CNN prune), every weight it zeroed was no larger than every weight it kept. A child that breaks this was made some other way, which is a provenance finding ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). Wanda fails the same test by design, because it ranks by |w| times activation norm per output row, so a "Wanda-pruned" claim needs the calibration data to check; and a pass says only how the child was made, while its behavior still needs D1.
 
 ### Step D3 — Fine-pruning against the backdoor (≈40 s) · [explainer 8](explainer/index.html#transform-pruning/8)
 
@@ -423,7 +423,7 @@ What to notice: at 28 of 32 channels plus fine-tuning, fine-pruning cuts the bad
 
 **Why**
 
-Fine-pruning (Liu et al. 2018) removes the last convolution's channels that stay quiet on clean data, on the theory that the backdoor hides in them, then fine-tunes on trusted data ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/?node=defense-backdoor-audit)); the magnitude row removes the channels with the smallest weights instead, the structured version of what Step 2 did. Here the defender holds only 200 clean training digits and never sees a trigger, and the lab measures ASR for you. No criterion wins for every trigger and the frame trigger survives both, so a repaired model still needs D1's probes. Liu et al. also describe a pruning-aware attacker who moves the backdoor into channels that clean data keeps active, the adaptive case for this defense ([`eval-adaptive`](https://ai-security-atlas.github.io/?node=eval-adaptive)).
+Fine-pruning (Liu et al. 2018) removes the last convolution's channels that stay quiet on clean data, on the theory that the backdoor hides in them, then fine-tunes on trusted data ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/)); the magnitude row removes the channels with the smallest weights instead, the structured version of what Step 2 did. Here the defender holds only 200 clean training digits and never sees a trigger, and the lab measures ASR for you. No criterion wins for every trigger and the frame trigger survives both, so a repaired model still needs D1's probes. Liu et al. also describe a pruning-aware attacker who moves the backdoor into channels that clean data keeps active, the adaptive case for this defense ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)).
 
 ## Evaluate
 
