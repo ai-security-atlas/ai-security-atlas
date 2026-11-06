@@ -60,9 +60,14 @@ public/                                    deployable static site
 - **Pages:** Hugo templates in `layouts/`.
 - **Search:** Pagefind (static, in-browser; no vector service).
 
-See `AI_Security_Research_Graph_PRD.md` for the full product spec.
+`AI_Security_Research_Graph_PRD.md` is the original product spec; the
+implementation has since diverged in places (for example, the graph uses React
+Flow rather than Cytoscape.js).
 
 ## Develop
+
+Prerequisites: Hugo extended (CI uses 0.165.0), Node.js 22 LTS or newer, and
+[uv](https://docs.astral.sh/uv/). The labs also need Docker (see `labs/README.md`).
 
 ```bash
 make install    # Node + Python deps

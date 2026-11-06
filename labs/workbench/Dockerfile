@@ -2,7 +2,7 @@
 # AI Security Atlas labs: shared workbench image (CPU-only PyTorch + transformers + scanners).
 # Used by two compose services: `workbench` (network on, repo read-write) and
 # `sandbox` (no network, read-only, hardened). See labs/compose.yaml.
-FROM python:3.12-slim-bookworm
+FROM python:3.12.16-slim-bookworm@sha256:e697c81897302a4c4333bade000d98038fbb21eb064f8ee1fd42d02ebcd9d337
 COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /uvx /bin/
 
 RUN apt-get update \

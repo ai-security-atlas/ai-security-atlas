@@ -195,7 +195,7 @@ customer: Hi! When will my cable dock arrive?
 bot:      Your Cable Dock is expected to shipper out on 2026-10-20.
 ...
 customer: I'd like a refund for A-1042, the lamp is broken. What do I need to do?
-bot:      Please contact our Returns team at returns@atlaswidgets.com with your order details and upload photos of the damaged item. We'll guide you through the process within 3 business days.
+bot:      Please contact our Returns team at returns@atlas-widgets.example with your order details and upload photos of the damaged item. We'll guide you through the process within 3 business days.
 
 audit (operator view, last turn):
   request 014e9d9a27c1  profile atlas-support  backend_model qwen2.5:3b

@@ -384,7 +384,7 @@ grok built LAB-48 and opencode (glm-5.3) built LAB-49, both from pointer briefs.
 
 ## Round 6, end of wave 1 (LAB-54 to LAB-60), folded in by the orchestrator, 2026-11-02
 
-Wave 1 stops at LAB-60, with 60 of the 104 own-lab nodes built. The remaining work is tracked on the Paprika board (project ai-security-atlas, cards AISE-1 to AISE-57). grok built LAB-54 and LAB-60, opencode (glm-5.3) built LAB-55, and Claude builders built LAB-56 to LAB-59, each followed by an independent reviewer (9 to 15 fixes per lab).
+Wave 1 stops at LAB-60, with 60 of the 104 own-lab nodes built. The remaining work is listed in `docs/labs-roadmap.md`. grok built LAB-54 and LAB-60, opencode (glm-5.3) built LAB-55, and Claude builders built LAB-56 to LAB-59, each followed by an independent reviewer (9 to 15 fixes per lab).
 
 - **LAB-54 attack-weight-theft:** follows the article over the roadmap. It is exact artifact theft, `model_backend: none`, and no inference runs.
   - The weights are public `qwen2.5:0.5b`; the stolen private bytes are the system layer and a license line.
@@ -406,19 +406,18 @@ Wave 1 stops at LAB-60, with 60 of the 104 own-lab nodes built. The remaining wo
   - peft 0.21 loads the rewritten config, and neither `weights_only` nor modelscan refuses the safetensors swap (honest negatives).
   - D3 uses a relative Frobenius delta.
   - Orchestrator fix: removed the `defense-regression` covers entry, because that node gets its own lab.
-- **LAB-36:** removed its `arch-classical` covers entry (the node has kind own). It still covers eval-adaptive, which the roadmap assigns to attack-pgd; see the Paprika note on that card.
+- **LAB-36:** removed its `arch-classical` covers entry (the node has kind own). It still covers eval-adaptive, which the roadmap assigns to attack-pgd.
 - **verify.py** now defaults `COMPOSE_PROJECT_NAME` to `atlas-labs-<node>`.
 - **test.mjs** now records a crashing lab as one FAIL and continues.
-- **Incident:** a review agent's `pkill -f "cat" -U <uid> -x` matched widely, because BSD pkill treats everything after the pattern as more patterns. It stopped OrbStack at 2026-11-01 22:34. Docker came back with `orb start`. Kill processes by exact PID only.
 - **Cross-lab verify (end of wave 1):** all eight atlas-app agent labs pass verify with every plug-in mounted: LAB-22, 23, 29, 30, 31, 42, 55 and 59. LAB-23 pinned the global catalog size in two checks (`agent catalog: 16 tools` and `descriptors scanned: 16`). Other labs now add tools, which broke those checks, so both rows now accept any count. The lab's own tools and verdicts are still required: forecast flagged, 0 core false positives.
-- **Roadmap sync (Paprika AISE-4):** `docs/labs-roadmap.json` and the `Every node` table in `labs-roadmap.md` now record every built lab (`numbers` lists LAB-01 to LAB-60). Each covered node names the built lab whose `covers:` front matter claims it, with that lab's steps.
+- **Roadmap sync:** `docs/labs-roadmap.json` and the `Every node` table in `labs-roadmap.md` now record every built lab (`numbers` lists LAB-01 to LAB-60). Each covered node names the built lab whose `covers:` front matter claims it, with that lab's steps.
 - **LAB-24 front matter:** an earlier orchestrator edit removed the `covers:` key along with the concept-kv-cache entry, so two items were left dangling under `tested_on`. The key is restored with `defense-cache-isolation`. The `attack-session-leak` entry was dropped, because that node now has its own lab (LAB-42). A scan found no other orphaned items.
 
-## Workbench v4 and the clean re-verify (Paprika AISE-8, AISE-9), 2026-11-02
+## Workbench v4 and the clean re-verify, 2026-11-02
 
 - **Workbench v4.** It adds `diffusers==0.42.1`, `onnx==1.23.2`, `onnxruntime==1.31.1` and `datasketch==2.0.0`, resolved with the image's uv 0.13.5. No existing pin moved; 9 packages were added in total, counting dependencies. `compose.yaml` and `.env.example` now default `WORKBENCH_TAG` to v4. The v3 image is unchanged. LAB-45's Setup 3 finds the image's diffusers and skips its wheel install.
 - **Clean re-verify.** All 60 labs were verified from a fresh clone of `development` (05f4e96), run one at a time on v4 with `labs/.env.example` block (b) (host Ollama), then the full explainer suite (2020 checks, all passed). Every first-pass failure was then re-run and passes. The fixes:
-  - **Re-verify environment, not labs:** OLLAMA_BASE_URL and the VLM, judge and transfer model variables were unset at first (LAB-03, 15, 48, concept-logits, attack-visual-jailbreak). LAB-03's S2 needs the README's `LAB_TRANSFER_MODELS` with qwen2.5vl:7b; that gap is noted on AISE-11.
+  - **Re-verify environment, not labs:** OLLAMA_BASE_URL and the VLM, judge and transfer model variables were unset at first (LAB-03, 15, 48, concept-logits, attack-visual-jailbreak). LAB-03's S2 needs the README's `LAB_TRANSFER_MODELS` with qwen2.5vl:7b.
   - **verify.py:** a lab whose Setup 1 has only the `none` row now runs with that row when a backend is set (LAB-49 and the life-* labs).
   - **Checks that pinned values other labs or reruns change:**
     - LAB-49 pinned `workbench:v3 Built`.

@@ -8,6 +8,7 @@ NPM          := npm
 HUGO         := hugo
 DOCKER       := docker
 HUGO_PORT    := 1313
+HUGO_BIND    ?= 127.0.0.1
 HUGO_ARGS    ?=
 DOCKER_IMAGE := ai-security-atlas
 DOCKER_TAG   := latest
@@ -39,13 +40,13 @@ update: ## Regenerate content from the seed and build JS/CSS assets
 
 build: update ## Build the static site (validate + Hugo + Pagefind)
 	$(HUGO) --minify $(HUGO_ARGS)
-	npx --yes pagefind --site public
+	npx pagefind --site public
 
 build-prod: ## Build the static site with the production baseURL
 	$(MAKE) build HUGO_ARGS="--config hugo.toml,config.production.toml"
 
 serve: update ## Start the Hugo dev server with live reload
-	$(HUGO) server -D --bind 0.0.0.0 -p $(HUGO_PORT)
+	$(HUGO) server -D --bind $(HUGO_BIND) -p $(HUGO_PORT)
 
 docker: ## Build the Docker image
 	$(DOCKER) build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .

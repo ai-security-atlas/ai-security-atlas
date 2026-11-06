@@ -4,6 +4,11 @@
 **Document version:** 1.0.0  
 **Research checkpoint:** September 10, 2026  
 **Deliverable:** A repository-backed, static, evidence-linked AI security knowledge website  
+
+> **Historical document.** This is the original PRD. The implementation differs in places;
+> for example, the graph explorer uses React Flow (`@xyflow/react`) instead of Cytoscape.js.
+> `README.md` describes the current architecture.
+
 **Working name:** AI Security Research Graph; final branding is not a dependency  
 **Intended readers:** The project owner, implementation agents, contributors, and research reviewers  
 **Normative language:** MUST is required, SHOULD is a strong default, MAY is optional. P0 is required for the first usable release; P1 follows that release; P2 is optional expansion.

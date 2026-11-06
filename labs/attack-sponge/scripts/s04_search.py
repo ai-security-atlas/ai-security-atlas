@@ -6,7 +6,6 @@ survives. The pinned sponge in Step 5 came from a longer run of exactly this loo
 """
 import argparse
 import json
-import random
 import time
 
 import labkit

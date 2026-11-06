@@ -177,7 +177,3 @@ export async function loadAtlas(): Promise<Atlas> {
 export function humanizeToken(t: string): string {
   return t.replace(/_/g, ' ');
 }
-
-export function titleOf(atlas: Atlas, id: string): string {
-  return atlas.nodes[id]?.title || atlas.sources[id]?.title || id;
-}

@@ -9,7 +9,6 @@ Saved is a notes_save result that starts with "saved" and whose sidecar contains
 import hashlib
 import json
 import os
-import time
 import urllib.error
 import urllib.parse
 import urllib.request

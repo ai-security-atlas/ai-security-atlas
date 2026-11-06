@@ -467,7 +467,6 @@ def main():
     framework_mappings = seed.get("framework_mappings", [])
 
     node_by_id = {n["id"]: n for n in nodes_raw}
-    source_by_id = {s["id"]: s for s in sources_raw}
     labs = load_labs(set(node_by_id))
     if "tags" in labs:
         raise SystemExit("error: labs/tags: the lab id 'tags' is reserved for /labs/tags/")
@@ -961,6 +960,8 @@ def main():
                 "url": f"/nodes/{nid}/{tab}/", "build": {"list": "never"}, "sitemap": {"disable": True},
             })
     write_md("content/nodes/_index.md", {"title": "Topics", "type": "node"})
+    # The tab pages are reached only by their url; keep Hugo from publishing a /nodetabs/ list.
+    write_md("content/nodetabs/_index.md", {"title": "Topic tabs", "build": {"render": "never", "list": "never"}})
 
     for s in sources_raw:
         sid = s["id"]

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  Search, ChevronRight, ChevronDown, X, Moon, Sun, ArrowLeft, ArrowUpRight,
-  BookOpen, ExternalLink, Share2, AlertTriangle, FileText, Link2,
-  Key, Shield, ScrollText, Layers, List as ListIcon, Compass, Crosshair, PenLine, Home,
+  Search, ChevronRight, ChevronDown, Moon, Sun, ArrowUpRight,
+  BookOpen, Share2, AlertTriangle, FileText, Link2,
+  Key, Shield, ScrollText, List as ListIcon, Compass, Crosshair, PenLine, Home,
   SquareTerminal, Play, CornerUpRight, ChevronsUpDown, ChevronsDownUp,
 } from 'lucide-react';
 

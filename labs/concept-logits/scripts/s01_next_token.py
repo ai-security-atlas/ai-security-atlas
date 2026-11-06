@@ -2,7 +2,6 @@
     docker compose run --rm workbench python concept-logits/scripts/s01_next_token.py
 Network: the download only (huggingface.co, about 0.7 GB); later steps read the HF cache.
 """
-import json
 
 import labkit
 

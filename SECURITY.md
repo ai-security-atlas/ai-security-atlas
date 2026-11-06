@@ -33,9 +33,10 @@ If you find a security issue in the build tooling, CI, or a way the published
 site could be abused (e.g. content injection, dependency compromise), please
 report it privately:
 
-- Use **GitHub Security Advisories** ("Report a vulnerability") on the source
-  repository, or
-- email the maintainer listed in `hugo.toml` / commit history.
+- Use GitHub's private vulnerability reporting: open the **Security** tab of
+  the source repository and choose **Report a vulnerability**.
+- If that option is unavailable, open a regular issue asking a maintainer for
+  a private contact. Do not include any vulnerability details in the issue.
 
 Please do not disclose publicly until a fix is available. We aim to acknowledge
 reports promptly and will credit reporters who wish to be named.

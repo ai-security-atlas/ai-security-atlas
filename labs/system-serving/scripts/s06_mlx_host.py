@@ -5,7 +5,6 @@ MLX cannot run in the Linux containers, so this one step runs on the host. It do
 6-bit SmolLM2-360M MLX model into the host HF cache, starts mlx_lm.server on 127.0.0.1 (a free port),
 sends the same tenant A / tenant B requests as Steps 1, 3 and 5, and stops the server.
 """
-import os
 import platform
 import socket
 import subprocess

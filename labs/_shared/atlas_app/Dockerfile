@@ -2,10 +2,11 @@
 # atlas-app: the shared "Atlas Widgets" support-assistant fixture (compose profile rag-agent).
 # Slim on purpose: FastAPI + httpx + chromadb (ONNX runtime), no torch. Model calls go to LAB_LLM_BASE_URL.
 # Telemetry off: chromadb (ANONYMIZED_TELEMETRY) and onnxruntime 1.31's 1DS events (ORT_DISABLE_TELEMETRY).
-FROM python:3.12-slim-bookworm
+FROM python:3.12.16-slim-bookworm@sha256:e697c81897302a4c4333bade000d98038fbb21eb064f8ee1fd42d02ebcd9d337
 
-COPY requirements.txt /opt/atlas-app/requirements.txt
-RUN pip install --no-cache-dir --disable-pip-version-check -r /opt/atlas-app/requirements.txt \
+# requirements.lock.txt is requirements.txt with every wheel's sha256 (see its header).
+COPY requirements.lock.txt /opt/atlas-app/requirements.lock.txt
+RUN pip install --no-cache-dir --disable-pip-version-check --require-hashes -r /opt/atlas-app/requirements.lock.txt \
  && useradd -m -u 1000 app \
  && mkdir -p /data \
  && chown 1000:1000 /data

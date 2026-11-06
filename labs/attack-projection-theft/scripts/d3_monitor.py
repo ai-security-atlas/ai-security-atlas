@@ -7,7 +7,6 @@ scores sampled logged prompts under the victim itself (mean per-token logprob), 
 traffic is implausible text, and reports what a per-key budget does to the 700-row floor from
 Step 3. The adaptive thief is the honest negative: same queries, ordinary text, spectrum intact.
 """
-import json
 
 import labkit
 

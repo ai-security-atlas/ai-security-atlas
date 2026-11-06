@@ -13,6 +13,7 @@ static/assets/dist
 static/data
 data
 content/nodes
+content/nodetabs
 content/sources
 content/views
 content/graph
@@ -28,6 +29,10 @@ test-results
 .env
 .env.*
 .DS_Store
+**/.DS_Store
+**/node_modules
+**/__pycache__
+**/*.pyc
 .claude
 .gemini
 

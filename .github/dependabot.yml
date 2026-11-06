@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: uv
+    directories: [/, /labs/workbench]
+    schedule:
+      interval: monthly
+  - package-ecosystem: docker
+    directories: [/, /labs/workbench, /labs/_shared/atlas_app]
+    schedule:
+      interval: monthly

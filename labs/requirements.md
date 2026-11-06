@@ -78,7 +78,7 @@ Prefer an OpenAI-compatible server you run yourself (vLLM or llama.cpp on anothe
 docker compose build workbench
 ```
 
-Building v4 on top of a cached v3 takes under a minute; a first build also downloads the PyTorch wheels and takes longer. v2 added peft, accelerate, scikit-learn, fastapi, uvicorn, httpx, pydantic and matplotlib to v1; v3 added opacus, adversarial-robustness-toolbox, nanogcg, sqlglot, bleach and jinja2; v4 adds gguf and qrcode. Each keeps every earlier pin. If your `labs/.env` still says an older `WORKBENCH_TAG`, change it to `v4` and build again. Check the result:
+Building v4 on top of a cached v3 takes under a minute; a first build also downloads the PyTorch wheels and takes longer. v2 added peft, accelerate, scikit-learn, fastapi, uvicorn, httpx, pydantic and matplotlib to v1; v3 added opacus, adversarial-robustness-toolbox, nanogcg, sqlglot, bleach and jinja2; v4 adds diffusers, onnx, onnxruntime and datasketch. Each keeps every earlier pin. If your `labs/.env` still says an older `WORKBENCH_TAG`, change it to `v4` and build again. Check the result:
 
 ```bash
 docker compose run --rm workbench python -c "import torch,torchvision,transformers,safetensors,fickling;print(torch.__version__,torchvision.__version__,transformers.__version__)"

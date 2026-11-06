@@ -107,6 +107,8 @@ Progress: 60 of 104 planned labs built (every Atlas node gets its own lab, steps
 
 Each lab lives in a folder named after its Atlas node id and follows [`_template/`](_template/README.md) exactly: the same front matter, the same sections, and the same **Do** / **Observe** / **Why** step blocks. Shared pieces are [`compose.yaml`](compose.yaml) (profiles `ollama`, `chat`, `workbench`, `supply`), the [`workbench/`](workbench/) image, `_shared/labkit.py` (paths, banner, canaries) and the explainer engine in `_explainer/`.
 
+Committed model weights (small LoRA adapters and digit classifiers) and their upstream licenses are listed in [`NOTICE.md`](NOTICE.md).
+
 Maintainer tools (host Python 3.9 or newer, standard library only, run from the repository root):
 
 | Command | What it does |

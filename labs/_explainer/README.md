@@ -51,8 +51,8 @@ the security question and the reader’s route through the experiment. Avoid beg
 sample counts or acronyms. In the final guide, explain what the experiment establishes and what it does
 not. Keep detailed evidence available without requiring it for a first reading. Do not present saved
 reference results as a live experiment or a guarantee across models. Address the reader as “you”, keep
-sentences short, and run the `humanizer` skill (`.claude/skills/humanizer`) over `intro` and `guide` text before
-committing.
+sentences short, and edit `intro` and `guide` text before committing to remove filler, inflated
+claims, stock phrasing and heavy dash use.
 
 **Step object:** `{ chapter, label, guide, caption, cmd }`.
 

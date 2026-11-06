@@ -20,9 +20,8 @@ def once(label, headers):
     t0 = time.perf_counter()
     try:
         status, body = theftkit.get(url, headers=headers, timeout=20)
-        err = ""
     except theftkit.HttpStatus as e:
-        status, body, err = e.status, e.body, ""
+        status, body = e.status, e.body
     ms = (time.perf_counter() - t0) * 1000
     row = {"label": label, "method": "GET", "path": path, "status": status, "ms": round(ms, 1), "bytes": len(body)}
     audit.append(row)

@@ -18,7 +18,7 @@ It appearing in a reply to anyone outside Copperleaf is the inert "cross-tenant 
 Later labs add collections (with their own documents and canaries) from their own lab folder (see the
 package docstring); keep the ids and texts below unchanged, because lab numbers were measured on them.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
