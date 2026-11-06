@@ -15,7 +15,7 @@ dependencies = [
   "fickling==0.1.12",
   "modelscan==0.8.8",
   "picklescan==1.0.5",
-  "huggingface_hub==2.3.0",
+  "huggingface_hub==2.4.0",
   "requests",
   # v2 (wave 1): adapters, classic ML, small local APIs, plots
   "peft==0.21.2",
