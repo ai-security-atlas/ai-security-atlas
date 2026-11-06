@@ -30,7 +30,7 @@ dependencies = [
   "opacus==1.6.0",
   "adversarial-robustness-toolbox==1.20.1",
   "nanogcg==0.2.3",
-  "sqlglot==30.26.0",
+  "sqlglot==30.29.0",
   "bleach==6.4.0",
   "jinja2==3.1.6",
   # v4 (end of wave 1): diffusion samplers, ONNX graphs, MinHash dedup
