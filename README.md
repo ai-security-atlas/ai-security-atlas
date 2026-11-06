@@ -101,5 +101,8 @@ To use a custom domain, set `baseURL` in `config.production.toml` and add a
 
 ## License
 
-Code is MIT-licensed (see `LICENSE`). Content synthesizes and links to primary
-sources; consult each source for its own terms.
+Everything in this repository, code and content alike (articles, the seed graph
+and the lab guides), is MIT-licensed (see `LICENSE`). Third-party model files
+committed under `labs/` keep their upstream licenses (see `labs/NOTICE.md`).
+Content synthesizes and links to primary sources; consult each source for its own
+terms.
