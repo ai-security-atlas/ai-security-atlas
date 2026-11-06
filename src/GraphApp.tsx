@@ -419,7 +419,7 @@ function Landing({ atlas, onOpen }: { atlas: Atlas; onOpen: (id: string) => void
       </div>
 
       <div className="eyb" style={{ margin: '3rem 0 1rem' }}><Compass style={{ width: '0.85rem', height: '0.85rem' }} /> HOW TO READ THE ATLAS</div>
-      <ol className="readpath">
+      <div className="readpath-wrap"><ol className="readpath">
         {path.map(s => {
           const n = s.id ? atlas.nodes[s.id] : null;
           return (
@@ -432,7 +432,7 @@ function Landing({ atlas, onOpen }: { atlas: Atlas; onOpen: (id: string) => void
             </li>
           );
         })}
-      </ol>
+      </ol></div>
 
       {picks.length > 0 && (
         <>
