@@ -5,7 +5,7 @@ description = "Shared Python environment for the AI Security Atlas hands-on labs
 requires-python = "==3.12.*"
 dependencies = [
   "torch==2.14.1",
-  "torchvision==0.29.1",
+  "torchvision==0.29.2",
   "transformers==5.20.2",
   "safetensors==0.8.0",
   "gguf==0.19.0",
