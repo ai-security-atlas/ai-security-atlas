@@ -529,7 +529,7 @@ Questions for your notes:
 
 ```bash
 docker compose run --rm workbench python attack-confused-deputy/scripts/cleanup.py
-docker compose down -v
+docker compose down
 ```
 
 **Observe**
@@ -544,14 +544,10 @@ docker compose down -v
  Container atlas-labs-attack-confused-deputy-atlas-app-1 Removing
  Container atlas-labs-attack-confused-deputy-atlas-app-1 Removed
  Network atlas-labs-attack-confused-deputy_default Removing
- Volume atlas-labs-attack-confused-deputy_atlas-app-data-v1 Removing
- Volume atlas-labs-attack-confused-deputy_atlas-app-data-v1 Removed
- Volume atlas-labs-attack-confused-deputy_hf-cache-v1 Removing
- Volume atlas-labs-attack-confused-deputy_hf-cache-v1 Removed
  Network atlas-labs-attack-confused-deputy_default Removed
 ```
 
-What to notice: `cleanup.py` deletes this lab's `work/` directory and clears the audit log and agent runs stored by this `atlas-app`. The entry counts depend on how many trials you ran. `docker compose down -v` removes this project's containers, network, and named volumes. It does not stop another lab's project. Host-Ollama models stay until you run `ollama rm <model>`.
+What to notice: `cleanup.py` deletes this lab's `work/` directory and clears the audit log and agent runs stored by this `atlas-app`. The entry counts depend on how many trials you ran. `docker compose down` removes this project's containers and network. It does not stop another lab's project, and it keeps the model caches that every lab shares (`docker compose down -v` would remove those too). Host-Ollama models stay until you run `ollama rm <model>`.
 
 ## Going Further
 

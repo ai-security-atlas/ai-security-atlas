@@ -1,5 +1,5 @@
-SETUP2	Image atlas-labs/workbench:v4 Built
-SETUP2	Image atlas-labs/atlas-app:v3 Built
+SETUP2	Image atlas-labs/workbench:v4 (Built|present)
+SETUP2	Image atlas-labs/atlas-app:v3 (Built|present)
 SETUP2	atlas-app-1 (Running|Started)
 SETUP3	\[ok\] atlas-app 1\.0\.0 at http://atlas-app:8000
 SETUP3	\[ok\] plug-in attack-memory-poison: profiles mp-tools mp-plant mp-recall mp-policy mp-filter mp-confirm mp-remember; worlds mp-volatile mp-desk

@@ -1,5 +1,5 @@
-SETUP2	Image atlas-labs/workbench:v4 Built
-SETUP2	Image atlas-labs/atlas-app:v3 Built
+SETUP2	Image atlas-labs/workbench:v4 (Built|present)
+SETUP2	Image atlas-labs/atlas-app:v3 (Built|present)
 SETUP2	atlas-labs-attack-multiagent-atlas-app-1 (Running|Started)
 SETUP3	\[ok\] atlas-app 1\.0\.0 at http://atlas-app:8000
 SETUP3	\[ok\] plug-in attack-multiagent: profiles ma-researcher ma-planner ma-executor ma-executor-approved; worlds netops-poisoned netops-clean

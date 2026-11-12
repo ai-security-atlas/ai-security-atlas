@@ -1,4 +1,4 @@
-SETUP2	Image atlas-labs/atlas-app:v3 Built
+SETUP2	Image atlas-labs/atlas-app:v3 (Built|present)
 SETUP2	atlas-app-1 (Running|Started)
 SETUP3	\[ok\] atlas-app 1\.0\.0 at http://atlas-app:8000
 SETUP3	\[ok\] plug-in system-tools: profiles stools-naive stools-strict; worlds stools-desk; tools stools-list_files stools-read_file stools-read_file_strict stools-get_invoice stools-get_invoice_scoped

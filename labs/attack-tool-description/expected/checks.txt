@@ -1,4 +1,4 @@
-SETUP2	Image atlas-labs/atlas-app:v3 Built
+SETUP2	Image atlas-labs/atlas-app:v3 (Built|present)
 SETUP2	atlas-app-1 (Running|Started)
 SETUP3	\[ok\] atlas-app 1\.0\.0 at http://atlas-app:8000
 SETUP3	\[ok\] plug-in attack-tool-description: profiles wxdesc-poison wxdesc-clean wxdesc-weather wxdesc-blocked wxdesc-name wxdesc-stale; worlds harbor-notes; tools forecast forecast_plain notes_save

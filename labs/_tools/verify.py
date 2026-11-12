@@ -11,10 +11,16 @@ Stdlib only (host Python >= 3.9). Maintainer tool; see labs/_template/README.md.
 * Each step's single ```bash Do block runs line by line from labs/, stdin=/dev/null.
   `-T` is inserted after `docker compose run`. Comment lines (e.g. `# host`) are skipped.
   A non-zero exit is logged, not fatal: some steps fail on purpose; checks decide.
-* COMPOSE_PROFILES is exported from the Setup 1 row matching LAB_BACKEND
-  (environment, else labs/.env); the `none` row is used when LAB_BACKEND is unset.
+* Every assignment in the Setup 1 row matching LAB_BACKEND (environment, else
+  labs/.env) is exported: COMPOSE_PROFILES, ATLAS_APP_PORT, ...; the `none` row is
+  used when LAB_BACKEND is unset.
 * COMPOSE_PROJECT_NAME defaults to atlas-labs-<node-id> (an exported value wins), so
   the Cleanup step's `docker compose down` cannot stop another lab's containers.
+* `docker compose build <svc>...` lines are skipped when every image they would build
+  already exists, so a verify run never re-tags the reference images. The step logs
+  "Image <name> present (build skipped)" instead. VERIFY_BUILD=1 runs the build.
+* VERIFY_NO_CLEANUP=1 skips the Cleanup step, so work/ outputs stay for
+  export_explainer_data.py.
 * Skipped: steps marked "(optional, slow)" or listed in expected/slow.txt (unless
   VERIFY_SLOW=1); steps tagged "> Model backend:" when LAB_BACKEND is unset;
   Read steps and "Try (browser)" lists (never run).
@@ -127,8 +133,9 @@ def commands(lines):
     return cmds
 
 
-def profiles_for(sections, backend):
-    """COMPOSE_PROFILES value from the Setup 1 table row matching backend (or 'none')."""
+def row_env(sections, backend):
+    """Assignments (COMPOSE_PROFILES, COMPOSE_PROJECT_NAME, ATLAS_APP_PORT, ...) from the first `code` span of
+    the Setup 1 table row matching backend (or 'none'); None when no row matches."""
     rows = []
     for sid, _, body in sections:
         if sid != "SETUP1":
@@ -136,19 +143,55 @@ def profiles_for(sections, backend):
         for line in body:
             if line.startswith("|") and "COMPOSE_PROFILES=" in line:
                 cells = [c.strip() for c in line.strip().strip("|").split("|")]
-                m = re.search(r"COMPOSE_PROFILES=([\w,-]*)", line)
-                rows.append((cells[0].strip("`").lower(), m.group(1)))
+                code = re.search(r"`([^`]*COMPOSE_PROFILES=[^`]*)`", line)
+                rows.append((cells[0].strip("`").lower(),
+                             dict(re.findall(r"\b([A-Z][A-Z0-9_]*)=([\w.,:/-]*)", code.group(1)))))
     want = backend or "none"
-    for name, value in rows:
+    for name, env in rows:
         if name == want:
-            return value
-    for name, value in rows:  # e.g. "any backend or none"
+            return env
+    for name, env in rows:  # e.g. "any backend or none"
         if re.search(r"\bany\b", name) or (want == "none" and "none" in name):
-            return value
+            return env
     return None
 
 
+def profiles_for(sections, backend):
+    env = row_env(sections, backend)
+    return env and env.get("COMPOSE_PROFILES")
+
+
+BUILD = re.compile(r"^docker compose build\b(.*)$")
+
+
+def built_images_present(cmd, env):
+    """For `docker compose build [svc...]`: the images it would build, if all already exist locally."""
+    m = BUILD.match(cmd.strip())
+    if not m:
+        return None
+    svcs = [a for a in m.group(1).split() if not a.startswith("-")]
+    p = subprocess.run(["docker", "compose", "config", "--images", *svcs], cwd=LABS, env=env,
+                       capture_output=True, text=True)
+    images = sorted(set(p.stdout.split()))
+    if p.returncode or not images:
+        return None
+    for image in images:
+        if subprocess.run(["docker", "image", "inspect", image], capture_output=True).returncode:
+            return None
+    return images
+
+
 def run(cmd, env, log):
+    if os.environ.get("VERIFY_BUILD") != "1":
+        present = built_images_present(cmd, env)
+        if present:
+            log.append(f"$ {cmd}")
+            print(f"$ {cmd}", flush=True)
+            for image in present:
+                line = f"Image {image} present (build skipped; VERIFY_BUILD=1 rebuilds)"
+                print(line, flush=True)
+                log.append(line)
+            return 0
     cmd = DOCKER_RUN.sub("docker compose run -T", cmd)
     print(f"$ {cmd}", flush=True)
     log.append(f"$ {cmd}")
@@ -202,10 +245,16 @@ def main():
     if profiles is None:
         print(f"[!!] Setup 1 has no COMPOSE_PROFILES row for backend {backend or 'none'!r}")
         return 1
-    env = dict(os.environ, COMPOSE_PROFILES=profiles)
+    row = row_env(sections, backend) or {}
+    project = os.environ.get("COMPOSE_PROJECT_NAME")  # an exported project name still wins
+    env = dict(os.environ, **row)
+    env["COMPOSE_PROFILES"] = profiles
+    if project:
+        env["COMPOSE_PROJECT_NAME"] = project
     # A per-lab project name keeps Cleanup's `docker compose down` away from other labs' containers.
     env.setdefault("COMPOSE_PROJECT_NAME", f"atlas-labs-{node}")
     print(f"[verify] {node} · backend {backend or 'none'} · COMPOSE_PROFILES={profiles}"
+          f" · project {env['COMPOSE_PROJECT_NAME']}"
           f" · slow steps {'on' if run_slow else 'off'}", flush=True)
 
     log, ran, skipped = [], [], []
@@ -219,6 +268,8 @@ def main():
         reason = None
         if not cmds:
             reason = "no Do block (Read step)"
+        elif sid == "CLEANUP" and os.environ.get("VERIFY_NO_CLEANUP") == "1":
+            reason = "VERIFY_NO_CLEANUP=1"
         elif ("(optional, slow)" in heading or sid in slow_ids) and not run_slow:
             reason = "slow (set VERIFY_SLOW=1)"
         elif any(l.startswith("> Model backend:") and not l.lower().startswith("> model backend: optional") for l in body) and not backend:

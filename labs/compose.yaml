@@ -278,7 +278,11 @@ services:
     restart: unless-stopped
 
 volumes:
+  # Model caches have fixed names, so every lab's Compose project shares one copy
+  # and nothing downloads twice. `docker compose down -v` from any lab removes them.
   ollama-models-v1:
+    name: atlas-labs-ollama-models-v1
   open-webui-data-v1:
   hf-cache-v1:
+    name: atlas-labs-hf-cache-v1
   atlas-app-data-v1:

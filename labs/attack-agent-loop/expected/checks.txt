@@ -1,6 +1,6 @@
 # One "step-id<TAB>regex" per line; verify.py searches the step's captured output (Python re, M).
 # Numbers here are deliberately ranged: token/call counts are stable at temperature 0, wall-clock is not checked.
-SETUP2	Image atlas-labs/atlas-app:v3 Built
+SETUP2	Image atlas-labs/atlas-app:v3 (Built|present)
 SETUP2	atlas-app-1 (Running|Started|Recreated)
 SETUP3	\[ok\] atlas-app 1\.0\.0 at http://atlas-app:8000
 SETUP3	\[ok\] plug-in attack-agent-loop: profiles loop-clean loop-poisoned loop-flaky loop-delegate loop-chatty; worlds loop-clean loop-poisoned loop-flaky loop-delegate loop-chatty
