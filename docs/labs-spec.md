@@ -133,7 +133,20 @@ Start from `$SCRATCH/stack/labs/compose.yaml` [V] and apply these changes. **Req
 
 **Named volumes are versioned** (`hf-cache-v1`, `ollama-models-v1`, `open-webui-data-v1`). A volume left non-empty by an earlier root-run prototype keeps root ownership [V]; versioned names avoid it. Bump the suffix whenever ownership or layout changes.
 
-**How profiles are used.** The `.env` backend block sets only backend variables. Each lab's Setup 1 gives the exact `COMPOSE_PROFILES=` line for each backend (Section 2.2). `docker compose up -d` starts `workbench`/`sandbox` idle (they run `bash` with `stdin_open`). Lab steps always use `docker compose run --rm <service> python ...`.
+**The model caches have fixed names.** `hf-cache-v1` and `ollama-models-v1` set `name: atlas-labs-hf-cache-v1` and `name: atlas-labs-ollama-models-v1`. Each lab runs as its own Compose project, so without a fixed name every lab would get its own cache and download its models again. With the fixed names, every lab shares one copy. Compose prints a one-line warning when a second project reuses the volume; it is harmless. `docker compose down -v` from any lab removes these shared caches, so Cleanup never uses `-v`.
+
+**How profiles are used.** `labs/.env` holds only the settings that every lab shares: the backend block, `LAB_UID`/`LAB_GID`, versions and tags. Each lab's Setup 1 gives one `export` line per backend (Section 2.2), which the attendee runs in the terminal they use for that lab:
+
+```text
+export COMPOSE_PROJECT_NAME=atlas-labs-<node-id> COMPOSE_PROFILES=<profiles>[ ATLAS_APP_PORT=<port>][ <OTHER>=<value>]
+```
+
+Pasting the next lab's line replaces every per-lab value at once. Exported values override `labs/.env`. A new terminal needs the line again, and Setup 1 says so.
+
+- A row whose profiles include `rag-agent` also sets `ATLAS_APP_PORT`: the lab's own port, or `8100`. The explicit `8100` keeps a port from the previous lab's line out of this lab.
+- A lab whose Do lines read a host port names it in the line (for example `SERVING_PORT=8180`).
+- Do lines carry no `COMPOSE_PROJECT_NAME=`, `ATLAS_APP_TAG=` or `ATLAS_APP_PORT=` prefixes. Variables that belong to one step stay as prefixes (`SERVING_MODEL=`, `SERVING_ARGS=`, `COMPOSE_FILE=`). `COMPOSE_FILE` never goes in the export line, because it would carry the lab's extra services into the next lab.
+ `docker compose up -d` starts `workbench`/`sandbox` idle (they run `bash` with `stdin_open`). Lab steps always use `docker compose run --rm <service> python ...`.
 
 Image name: `atlas-labs/workbench:${WORKBENCH_TAG:-v1}`.
 
@@ -142,8 +155,9 @@ Image name: `atlas-labs/workbench:${WORKBENCH_TAG:-v1}`.
 Start from the prototype [V]. Model defaults live **inside** the backend blocks only, so a later block can never override block (c) [the prototype's duplicate keys made backend c ask the API for `qwen2.5vl:3b`].
 
 ```dotenv
-# Set by each lab's "Setup 1" (copy the line for your backend from the lab README).
-COMPOSE_PROFILES=
+# Settings that every lab shares. The per-lab values (COMPOSE_PROJECT_NAME, COMPOSE_PROFILES and, for some
+# labs, ATLAS_APP_PORT) do not go here: each lab's "Setup 1" gives one `export ...` line to run in the terminal
+# you use for that lab. Values exported in the shell override this file.
 
 # ---- Linux only: run as your own user so bind-mounted work/ folders are writable ----
 # LAB_UID=1000   # set to the output of: id -u
@@ -273,7 +287,7 @@ This page covers:
 - **`OLLAMA_CPU_THREADS`:** set it to about half of `docker info --format '{{.NCPU}}'` (8 oversubscribes a 4-core laptop).
 - **External API (backend c):** prefer an OpenAI-compatible server you run yourself (vLLM or llama.cpp on another machine you own). If you use a hosted provider, you confirm its terms allow security testing on your own account; lab scripts print the endpoint before they send anything.
 - **Open WebUI caveats:**
-  - Switching backends needs `docker compose up -d --force-recreate open-webui` (auth off + `ENABLE_PERSISTENT_CONFIG=False`). A reset needs `docker compose down -v`.
+  - Switching backends needs `docker compose up -d --force-recreate open-webui` (auth off + `ENABLE_PERSISTENT_CONFIG=False`). A reset needs `docker compose down`, then `docker volume rm <COMPOSE_PROJECT_NAME>_open-webui-data-v1`. Do not use `down -v`: it also removes the model caches that every lab shares.
   - With auth off, anyone who can reach 127.0.0.1:3000 is admin. Ports are bound to loopback, but on a shared multi-user machine every local user can reach it: run `docker compose down` as soon as you finish.
 - **Build once:** `docker compose build workbench` (about 2.5 min on arm64 without torchvision [V]; re-measure).
 - **Host Ollama version caveat:** the host had 0.32.5 and the container image is 0.40.11, so behavior may differ. Labs say so.
@@ -372,7 +386,10 @@ The H2 names are exact. H3 is used only where shown.
 
 > **Learning path:** Module <N> · step <i> of <m> · [<Module title>](../README.md#<module heading anchor>)   (generated)
 
-## Overview         one paragraph + "By the end you will be able to:" 3 numbered observable outcomes
+## Overview         "Why it matters" (up to 3 sentences), "What you will do" (one scenario sentence + a list),
+                    the "> **What is staged here:**" callout when something is staged (2.3), "Headline result:"
+                    (one sentence with the main number) + Source link, then "By the end you will be able to:"
+                    3 numbered observable outcomes
 ## Safety           Section 5.1 text, verbatim, plus the lab-specific line (Section 5.2)
 ## Atlas Context    vertical table "Field | Value" (Node, Family, Goal, Access profile, Read first, Mitigated by,
                     Evaluated by, Related), then the node caveat quoted verbatim in a > [!NOTE]
@@ -386,8 +403,10 @@ The H2 names are exact. H3 is used only where shown.
                     empty); concepts to read first (Atlas links); any other bullets (disk, models) by hand
 ## Explainer        how to open it (open / xdg-open command), the note that step links work only in a local
                     clone, and one sentence on what the explainer covers. No per-step mapping list here.
-## Setup            ### Setup 1 — Profiles   (table: Backend | COMPOSE_PROFILES line to put in .env)
-                    ### Setup 2 — Build and start   (Do: docker compose build workbench; docker compose up -d)
+## Setup            ### Setup 1 — Profiles   (table: Backend | Line to run, one `export` line per backend, run in
+                    the shell; see 1.2 "How profiles are used")
+                    ### Setup 2 — Build and start   (skip sentence, then Do: docker compose build <every image
+                    the lab needs>; docker compose up -d)
                     ### Setup 3 — Check the environment   (Do: check_env.py)
 ## Walkthrough      Walkthrough map table first: Step | Script | Service | Runtime | Explainer
                     then "### Step N — <title> · [explainer N](explainer/index.html#<id>/N)"
@@ -408,9 +427,20 @@ docker compose run --rm workbench python <node-id>/scripts/cleanup.py
 docker compose down --remove-orphans
 ```
 
-Observe shows the files removed. A note follows: `-v` also drops the named volumes (HF cache, Ollama models, Open WebUI data); host-Ollama models are removed with `ollama rm <model>`.
+Observe shows the files removed. A note follows. It says to run Cleanup in the terminal where the Setup 1 line ran, so `docker compose down` stops only this lab. It says not to add `-v`, because `-v` removes the named volumes, including the HF and Ollama model caches that every lab shares (1.2), and the next lab downloads its models again. Host-Ollama models are removed with `ollama rm <model>`.
 
-**Explainer mapping rule.** Each Walkthrough/Defend heading links the **first** explainer step it covers, or omits the link if it covers none. Links are non-decreasing in walkthrough order. Steps without an explainer step are fine (details live in the README).
+**Setup 2 build line.** Setup 2 builds every image the lab needs: `docker compose build workbench`, or `docker compose build workbench atlas-app` when the profiles include `rag-agent`. A paragraph between the Setup 2 heading and **Do** says the line can be skipped. It is a paragraph because interactive zsh passes an inline `# ...` comment to the command as arguments. Skipping matters at a workshop: a machine that loaded the image from USB or a registry has no BuildKit cache, and a build would download every wheel again.
+
+- One image: "Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes."
+- Two images: "Skip the `docker compose build` line if both images are already on your machine (an earlier lab built them, or your workshop pre-loaded them). The first build takes a few minutes."
+
+**Explainer mapping rule.** Each Walkthrough/Defend heading links the **first** explainer step it covers, or omits the link if it covers none. Links are non-decreasing in walkthrough order. Steps without an explainer step are fine (details live in the README). Every explainer step is linked from at least one README step. When a README step covers more explainer steps, one line goes directly under its heading:
+
+- `Also in the explainer: [explainer 4](explainer/index.html#<id>/4) · [explainer 5](explainer/index.html#<id>/5)` when the heading has a link.
+- `In the explainer: [explainer 9](explainer/index.html#<id>/9)` when it has none.
+- For an explainer step that only Evaluate covers, the line goes right under `## Evaluate`.
+
+These body links are not order-checked, so each one can point to the step where it belongs. The Walkthrough map's Explainer column lists every linked step, with ranges for consecutive steps (`3–5`, `2, 4`) and `—` for none.
 
 **RESULT vocabulary (both labs).** `evaluate.py` ends with exactly `RESULT: REPRODUCED` (the run matches the published shape in `expected/`) or `RESULT: MISMATCH (<what differed>)`. The security verdict is in the table and the questions, never in the RESULT word.
 
@@ -432,14 +462,27 @@ Common rules:
 - **Runtime** goes in the heading when a step takes longer than about 30 s: `### Step 3 — Run PGD at ε = 8/255 (≈4–9 min) · [explainer 5](...)`.
 - **Optional steps** say `(optional, slow)` in the heading and start with `> [!TIP] Optional: later steps use the shipped result, so you can skip this.`
 - **Model-backend tag.** A step that calls an LLM endpoint starts with `> Model backend: container-ollama · host-ollama · external-api` (list only the ones that work) or `> Model backend: optional (transfer rows only)`. Untagged steps need no backend.
-- Callouts use only `> [!NOTE]`, `> [!WARNING]` and `> [!TIP]`.
+- Callouts use only `> [!NOTE]`, `> [!WARNING]` and `> [!TIP]`, plus the Overview's `> **What is staged here:**` line (below).
+- **Do lines** carry no `COMPOSE_PROJECT_NAME=`, `ATLAS_APP_TAG=` or `ATLAS_APP_PORT=` prefixes; the Setup 1 line sets them (1.2). Per-step variables (`SERVING_*`, `COMPOSE_FILE`) may stay as prefixes.
+
+**Workshop-readiness rules.** Every new lab follows these. Labs are taken in the learning-path order (1.8), but workshop tracks skip modules, so a lab cannot assume the attendee saw an earlier lab's definitions.
+
+- **Terms (X2).** Define or link every ML or statistics term on first use. Link it to its primer heading in `labs/primers/` with `[term](../primers/<file>.md#<anchor>)`, for example `[embedding](../primers/vectors-without-the-math.md#embedding)`, or define it in one plain sentence (the explainer's `intro.terms` sentence works). `lint_readme.py` checks that the primer file and its `#anchor` exist. When a term has no primer heading, add one to the primer.
+- **Column legends (X3).** Every column an Observe block prints gets a one-line legend under the block (`Columns: \`obeyed\` = ...`). Skip it only when the script prints self-describing labels.
+- **What is staged here (X4).** When the setup makes the attack or the defense work by construction, the Overview has a `> **What is staged here:**` callout. It names every deliberate weakening: a system prompt that orders obedience, a scripted approver, a fenced follower. Add a neutral control row where it is cheap. Labs with nothing staged omit the callout.
+- **Counts on small samples (X5).** Quote counts ("0 of 5 trials", "11 of 12 slots"). Do not write "never", "only", "always", "any" or "exactly" about results from a handful of trials.
+- **Overview shape (X12).** "Why it matters" in up to three sentences, "What you will do" as one scenario sentence and a list, then "Headline result:" as one sentence with the main number. No paragraph of numbers.
+- **No maintainer notes (X13).** Attendee text holds no run history or bookkeeping ("the first measurement printed MISMATCH", "this lab's roadmap entry", "this capture used ..."). Wrap such notes as `<!-- Maintainer note (not for attendees): ... -->`. Hugo passes the comment through unrendered, and `lint_readme.py` strips comments.
+- **One reference run (X15).** The README Observe blocks, `expected/` and `explainer/data.js` come from the same run. Run `VERIFY_NO_CLEANUP=1 python3 labs/_tools/verify.py <node-id>`, update the Observe blocks and `expected/` from `work/verify.log`, then write `data.js` with `scripts/export_explainer_data.py` from the same `work/`. Never paste numbers from an older run.
 
 ### 2.4 Verification: `_tools/verify.py`
 
 There is no per-lab `verify.sh`. One shared maintainer tool tests exactly what students copy:
 
 - `python3 labs/_tools/verify.py <node-id>` (host Python ≥ 3.9, stdlib only), run from the repo root.
-- It parses `labs/<node-id>/README.md`, assigns step ids `SETUP1..3`, `S1..Sn`, `D1..Dn`, `EVAL`, `CLEANUP`, and runs each Do block's lines in order from `labs/` with `stdin=DEVNULL`. It inserts `-T` after `docker compose run` (cheap TTY insurance) and exports the `COMPOSE_PROFILES` line from the Setup 1 row matching `LAB_BACKEND` in `labs/.env` (row `none` if unset).
+- It parses `labs/<node-id>/README.md`, assigns step ids `SETUP1..3`, `S1..Sn`, `D1..Dn`, `EVAL`, `CLEANUP`, and runs each Do block's lines in order from `labs/` with `stdin=DEVNULL`. It inserts `-T` after `docker compose run` (cheap TTY insurance) and exports every assignment of the Setup 1 row matching `LAB_BACKEND` (environment, else `labs/.env`; row `none` if unset): `COMPOSE_PROFILES`, `COMPOSE_PROJECT_NAME`, `ATLAS_APP_PORT` and any other. It reads only the row's first code span, so a trailing note such as ``(also set `LAB_CHAT_MODEL=...`)`` sets nothing. An exported `COMPOSE_PROJECT_NAME` still wins, and the default is `atlas-labs-<node-id>`.
+- `docker compose build <svc>...` lines are skipped when every image they would build already exists, so a verify run never re-tags the reference images. The log then shows `Image <name> present (build skipped; VERIFY_BUILD=1 rebuilds)` in place of `Image <name> Built`, and a `SETUP2` check matches `Image atlas-labs/workbench:v\d+ (Built|present)`. `VERIFY_BUILD=1` runs the build.
+- `VERIFY_NO_CLEANUP=1` skips the Cleanup step, so `work/` stays for `scripts/export_explainer_data.py` (2.3, "One reference run").
 - It writes `labs/<node-id>/work/verify.log` with `== <step-id> ==` markers, then for each `step-id<TAB>regex` in `expected/checks.txt` searches that section (Python `re`). It exits non-zero on the first missing match and prints the section.
 - Skips: steps marked `(optional, slow)` and steps in `expected/slow.txt` run only with `VERIFY_SLOW=1`; steps with a model-backend tag are skipped when `LAB_BACKEND` is unset (printed as `[skip]`); **Read** steps and **Try (browser)** lists are never run.
 - Regexes in `checks.txt` must not depend on platform text (for example match `No such file`, not the full BSD or GNU message).
@@ -681,7 +724,7 @@ Step 3 carries this warning: `> [!WARNING] This step deliberately loads the iner
 
 **Setup:**
 
-- **Setup 1 — Profiles:** one row, `any backend or none → COMPOSE_PROFILES=supply`.
+- **Setup 1 — Profiles:** every row is `export COMPOSE_PROJECT_NAME=atlas-labs-attack-unsafe-load COMPOSE_PROFILES=supply`.
 - **Setup 2 — Build and start:**
 
   ```bash
@@ -989,12 +1032,12 @@ Questions for your notes:
 
 - **Setup 1 — Profiles:**
 
-  | Backend | `COMPOSE_PROFILES` line |
+  | Backend | Line to run |
   | :--- | :--- |
-  | container-ollama | `COMPOSE_PROFILES=ollama,chat,workbench` |
-  | host-ollama | `COMPOSE_PROFILES=chat,workbench` |
-  | external-api | `COMPOSE_PROFILES=chat,workbench` |
-  | none | `COMPOSE_PROFILES=workbench` (skips Step 2 and the transfer rows) |
+  | container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-visual-jailbreak COMPOSE_PROFILES=ollama,chat,workbench` |
+  | host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-visual-jailbreak COMPOSE_PROFILES=chat,workbench` |
+  | external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-visual-jailbreak COMPOSE_PROFILES=chat,workbench` |
+  | none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-visual-jailbreak COMPOSE_PROFILES=workbench` (skips Step 2 and the transfer rows) |
 
 - **Setup 2 — Build and start:** the same two lines as LAB-01. With container-ollama, `up -d` also pulls the models.
 - **Setup 3 — Check the environment:**

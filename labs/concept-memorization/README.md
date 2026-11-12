@@ -31,7 +31,19 @@ covers:
 
 ## Overview
 
-A model *memorizes* when it keeps something specific to one training record, such as a password or an ID number, on top of the general patterns it is meant to learn. This lab measures how that depends on *duplication*, the number of times a record appears in the training text. You plant 16 random secrets of the form `ATLAS-CANARY-m3m0-DDDDDD` in a public-domain book, four each at 0 (a control), 1, 10 and 100 copies, and pretrain a 0.8M-parameter character-level GPT on it from scratch. Greedy prompting prints all four 100x secrets and none of the others, and the Secret Sharer *exposure* test, which ranks each secret among all 10^6 possible codes, rises from 2.1 bits (never inserted) and 4.2 bits (one copy) to 17.0 bits (ten copies) and 19.9 bits, the maximum, at 100 copies. A short LoRA fine-tune of SmolLM2-135M shows the same pattern on a real pretrained model. Then you defend: exact deduplication leaves framed near-copies and barely helps, MinHash near-duplicate removal brings 100x down to 7.1 bits, DP-SGD lowers exposure at a large utility cost but leaves 100-copy secrets partly exposed, and a canary-exposure release gate fails every model except the MinHash one. Memorization is the precondition for [training-data extraction](https://ai-security-atlas.github.io/nodes/attack-training-extraction/) and [membership inference](https://ai-security-atlas.github.io/nodes/attack-membership/) ([LAB-13](../attack-membership/README.md)). Source: [`labs/concept-memorization`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-memorization).
+A model *memorizes* when it keeps something specific to one training record, such as a password or an ID number, on top of the general patterns it is meant to learn. This lab measures how that depends on *duplication*, the number of times a record appears in the training text. Memorization is the precondition for [training-data extraction](https://ai-security-atlas.github.io/nodes/attack-training-extraction/) and [membership inference](https://ai-security-atlas.github.io/nodes/attack-membership/) ([LAB-13](../attack-membership/README.md)), so it decides whether a secret in your training data can come back out.
+
+What you will do:
+
+- plant 16 random secrets of the form `ATLAS-CANARY-m3m0-DDDDDD` in a public-domain book, four each at 0 (a control), 1, 10 and 100 copies;
+- pretrain a 0.8M-parameter character-level GPT on it from scratch and watch its [loss](../primers/ml-in-one-page.md#loss-and-cross-entropy) fall;
+- ask it for the codes with [greedy decoding](../primers/sampling-knobs.md#greedy-decoding), then rank each secret among all 10^6 possible codes with the Secret Sharer *exposure* test (the true secret's rank by [log-probability](../primers/ml-in-one-page.md#probability), in bits: about 20 bits means the model's first guess is the secret, and about 1 bit means a random guess);
+- repeat the test with a short [LoRA](../primers/ml-in-one-page.md#lora) fine-tune of SmolLM2-135M;
+- defend with exact and MinHash deduplication, DP-SGD training, and a canary-exposure release gate.
+
+Headline result: greedy prompting prints all four 100x secrets and 0 of the other 12, and exposure rises from 2.1 bits (never inserted) and 4.2 bits (one copy) to 17.0 bits (ten copies) and 19.9 bits, the maximum, at 100 copies. MinHash deduplication brings 100x down to 7.1 bits; DP-SGD lowers exposure at a large utility cost but leaves 100-copy secrets partly exposed; the release gate fails every model except the MinHash one.
+
+Source: [`labs/concept-memorization`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-memorization).
 
 By the end you will be able to:
 
@@ -230,11 +242,11 @@ sample (T=0.8): 'for down\na begin. They your know and momentushre, "and I gound
 [ok] wrote work/gpt-base.safetensors
 ```
 
-What to notice: the untrained model prints random characters, the held-out loss falls from 2.506 at step 100 to 1.655 at step 800 (nats per character), and after about ten passes over the text the sample has English-looking words, dialogue and the book's names.
+What to notice: the untrained model prints random characters, the held-out loss falls from 2.506 at step 100 to 1.655 at step 800 (the explainer starts its curve at the untrained model's 4.47), and after about ten passes over the text the sample has English-looking words, dialogue and the book's names. Loss is in nats per character: the average of −ln p(true next character). Lower means the model expects the real text more, and 1 nat less means the true character became about 2.7 times more likely on average.
 
 **Why**
 
-Pretraining is next-token prediction on raw text: the model sees random 64-character windows and is pushed, by gradient descent on cross-entropy, to give the true next character a high probability ([`life-pretrain`](https://ai-security-atlas.github.io/nodes/life-pretrain/), [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/)). The held-out loss is measured on the last 10% of the book, which is never trained on, so it tracks generalization; whatever the model retains about one specific training record lives only in its 822,016 weights ([`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/)).
+Pretraining is next-token prediction on raw text: the model sees random 64-character windows and is pushed, by [gradient](../primers/ml-in-one-page.md#gradient) descent on cross-entropy, to give the true next character a high probability ([`life-pretrain`](https://ai-security-atlas.github.io/nodes/life-pretrain/), [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/)). The held-out loss is measured on the last 10% of the book, which is never trained on, so it tracks generalization; whatever the model retains about one specific training record lives only in its 822,016 weights ([`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/)).
 
 ### Step 3 — Ask the model for the codes (≈20 s) · [explainer 3](explainer/index.html#concept-memorization/3)
 
@@ -322,7 +334,7 @@ What to notice: never-inserted secrets score 0.3–4.9 bits, a single copy 2.1�
 
 **Why**
 
-Exposure, from Carlini et al.'s "The Secret Sharer", ranks the true secret against every other value it could have taken by the model's log-probability: rank 1 of 10^6 gives log2(10^6) = 19.9 bits, a random rank gives about 1.4 bits on average ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/)). The rank is counted exactly by branch and bound (a digit prefix already less likely than the secret cannot overtake it), and for low-exposure secrets it is estimated from 4,000 random candidates with the paper's skew-normal fit, marked `approx`. A high-exposure secret is what makes [`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/) and extraction work, which is the security payoff of this concept.
+Exposure, from Carlini et al.'s "The Secret Sharer", ranks the true secret against every other value it could have taken by the model's log-probability: rank 1 of 10^6 gives log2(10^6) = 19.9 bits, a random rank gives about 1.4 bits on average ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/)). The rank is counted exactly by branch and bound (a search that skips every digit prefix already less likely than the secret, since it cannot overtake it), and for low-exposure secrets it is estimated from 4,000 random candidates with the paper's skew-normal fit (a smooth curve fitted to their scores), marked `approx`. A high-exposure secret is what makes [`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/) and extraction work, which is the security payoff of this concept.
 
 ### Step 5 — The same test on SmolLM2-135M, fine-tuned with LoRA (5–7 min, + download) · [explainer 6](explainer/index.html#concept-memorization/6)
 
@@ -362,7 +374,7 @@ after 100x: mean exposure  19.9 bits (min 19.9, max 19.9); 2/2 regurgitated
 (436s)
 ```
 
-What to notice: before fine-tuning the 100x codes score near chance (mean 0.8 bits); 28 LoRA steps later both 100x secrets are the model's first choice (19.9 bits) and come out verbatim under greedy decoding, the 10x secrets reach 8.2–10.3 bits, and the 1x and 0x secrets stay at chance.
+What to notice: before fine-tuning the 100x codes score near chance (mean 0.8 bits); 28 LoRA steps later both 100x secrets are the model's first choice (19.9 bits) and come out verbatim under greedy decoding, the 10x secrets reach 8.2–10.3 bits, and the 1x and 0x secrets stay low (0.0–4.4 bits). The fine-tune text is 83 documents copied from the book's first 80 paragraphs (a few paragraphs appear more than once in the corpus) plus the eight listed canaries.
 
 **Why**
 
@@ -416,6 +428,9 @@ Deduplication removes the main driver of memorization, the repeated record, and 
 docker compose run --rm workbench python concept-memorization/scripts/d2_dpsgd.py
 ```
 
+> [!NOTE]
+> **Differential privacy in plain words.** DP-SGD limits how much any one training record can change the model. Each record's gradient is clipped to a maximum size (the clip, 1.0 here), and random noise is added; the noise multiplier is the noise's size relative to that clip. Poisson sampling means each record joins each step's batch independently by chance. ε (epsilon) is the resulting bound: smaller is stronger, single digits are moderate, and values above about 10 promise little. δ (delta) is a small allowed chance that the bound fails. The RDP accountant is the standard method that computes ε from the noise, the sampling rate and the number of steps. For the cost: +1.008 nats puts the DP model's held-out loss at 2.663, worse than the from-scratch model at step 100 (2.506).
+
 **Observe**
 
 ```text
@@ -440,7 +455,7 @@ DP 100x: mean exposure  10.2 bits (min 4.6, max 13.4) of 19.9 possible
      10x  17.0 bits   2.6 bits
     100x  19.9 bits  10.2 bits
 DP-SGD: 0/12 planted secrets regurgitated; held-out loss 2.663 vs baseline 1.655 (+1.008 nats per character)
-group privacy: a secret copied k times touches up to k windows, so the bound for it is about k x epsilon (442 for 100 copies)
+group privacy: a secret copied k times lands in at least k windows (a copy can straddle two), so the bound for it is k x epsilon or more (442 or more for 100 copies)
 ```
 
 What to notice: at ε = 4.42 per window the 1x and 10x secrets fall to chance (1.4 and 2.6 bits) and nothing is regurgitated, but two 100x secrets still rank in the top 200 of a million (13.4 and 12.5 bits), and the held-out loss rises by a full nat per character.
@@ -551,7 +566,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes (`atlas-labs-hf-cache-v1`, `atlas-labs-ollama-models-v1`) are shared by every lab, so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

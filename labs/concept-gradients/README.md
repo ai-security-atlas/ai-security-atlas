@@ -29,7 +29,16 @@ covers:
 
 ## Overview
 
-Training a neural network means measuring a loss, asking backpropagation for the gradient of that loss with respect to every weight, and taking a small step against it. This lab does that by hand on a small CNN that reads scikit-learn's 8×8 handwritten digits (the shared **vision-zoo** architecture): one backward pass checked against finite differences, then 600 such steps that take test accuracy to 98.1%. The same backward pass also answers two other questions, and that is the security point. Asked for the gradient with respect to the *pixels*, it tells an attacker how to change the input: one signed step of size 0.2 per pixel turns a 7 into the canary class 3 (`CANARY-GRAD-3`) and drops test accuracy to 3.7%, while random noise of the same size leaves 92.4%. Asked for the gradient with respect to the *weights* of one private example, which is what a federated-learning client sends, it gives away that example's label: the signs of the output layer's gradient name it in 100 of 100 trials. Averaging 8 examples hides some labels, but every label it names is real. The two defenses each cover one direction. DP-SGD (clipping plus noise, Opacus) cuts label recovery to chance at a cost of 12.2 accuracy points and does not stop FGSM (9.3% accuracy at ε 0.2); adversarial training raises FGSM accuracy to 53.9% and leaves the label leak at 100 of 100. Source: [`labs/concept-gradients`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-gradients).
+Training a neural network means measuring a [loss](../primers/ml-in-one-page.md#loss-and-cross-entropy) (one number that says how wrong the model was), asking [backpropagation](../primers/ml-in-one-page.md#backpropagation) for the [gradient](../primers/ml-in-one-page.md#gradient) of that loss with respect to every [weight](../primers/ml-in-one-page.md#weights-and-parameters), and taking a small step against it. The same backward pass also answers two other questions, and that is the security point: the gradient with respect to the *pixels* tells an attacker how to change the input, and the gradient with respect to the weights of one private example, which is what a federated-learning client sends to a server, gives away that example's label.
+
+What you will do, on a small CNN that reads scikit-learn's 8×8 handwritten digits (the shared **vision-zoo** architecture):
+
+- Check one backward pass against finite differences, then train with 600 such steps to 98.1% test accuracy.
+- Take one signed step of 0.2 per pixel along the pixel gradient (FGSM), turning a 7 into the canary class 3 (`CANARY-GRAD-3`) and dropping test accuracy to 3.7%, while random noise of the same size leaves 92.4%.
+- Read the label of one private digit from the signs of its output-layer gradient (100 of 100 trials), and see that averaging 8 examples hides some labels while every label it names is still real.
+- Measure two defenses, each of which covers one direction. Training with DP-SGD (clipping plus noise, Opacus) at a privacy budget of DP ε = 8 costs 12.2 accuracy points and does not stop FGSM (9.3% accuracy at a pixel budget of 0.2). Separately, a client that clips the gradient it shares and adds the same noise level drops label recovery to chance. Adversarial training raises FGSM accuracy to 53.9% and leaves the label leak at 100 of 100.
+
+Headline result: one backward pass gives an attacker both a working input attack and the private label, and neither defense closes both. Source: [`labs/concept-gradients`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-gradients).
 
 By the end you will be able to:
 
@@ -241,6 +250,9 @@ Each step uses the gradient of a fresh batch of 64 digits; the 540 test digits a
 
 ### Step 3 — One backward pass, two gradients · [explainer 3](explainer/index.html#concept-gradients/3)
 
+> [!NOTE]
+> Three terms this step and Step 5 rely on. [Softmax](../primers/ml-in-one-page.md#softmax) turns the model's 10 class scores into probabilities p that sum to 1. The [one-hot](../primers/ml-in-one-page.md#one-hot) label y is 1 at the true class and 0 elsewhere, so p − y is negative only at the label (p is below 1 there) and positive everywhere else. [ReLU](../primers/ml-in-one-page.md#relu) sets negative values to 0, so its outputs h are never negative, and multiplying p − y by h keeps that sign. The notation ∂loss/∂x means "how fast the loss changes when x moves a little".
+
 **Do**
 
 ```bash
@@ -313,7 +325,7 @@ all 54 correctly classified test 7s at eps 0.3: FGSM toward 3 reads 3 on 53/54, 
 RESULT one signed gradient step turns the demo 7 into CANARY-GRAD-3 from eps 0.2; at eps 0.3 FGSM moves 53/54 test 7s to class 3 and random noise of the same size moves 1/54
 ```
 
-What to notice: random noise of the same size never moves the demo 7, while one step along the gradient sign makes it read 3 from ε = 0.2 on (`CANARY-GRAD-3`), and the same step works on 53 of the 54 test 7s at ε = 0.3.
+What to notice: random noise of the same size leaves the demo 7 a 7 at all 7 budgets, while one step along the gradient sign makes it read 3 from ε = 0.2 on (`CANARY-GRAD-3`), and the same step works on 53 of the 54 test 7s at ε = 0.3, where noise moves 1 of 54.
 
 **Why**
 
@@ -420,11 +432,13 @@ raw gradient norms of the 100 digits: median 2.6e-02, largest 6.9e+01; clipping 
 RESULT DP-SGD at epsilon 7.99 (sigma 1.02) costs 12.2 accuracy points and cuts label recovery from 100/100 to 10/100; FGSM at eps 0.2 still leaves it at 9.3% (50 s)
 ```
 
-What to notice: the noise Opacus needs for ε = 8 (σ = 1.02) brings label recovery from a shared gradient down to 10 of 100, which is chance, at a cost of 12.2 accuracy points, and the private model is still easy to fool with FGSM (9.3% at ε = 0.2, against 3.7% without DP).
+The two ε here are different quantities. `epsilon` in table (a) is the DP privacy budget (DP ε; smaller means more privacy). `FGSM eps 0.2` is the pixel budget of Steps 4 and 6, the largest change per pixel.
+
+What to notice: part (a) and part (b) are separate experiments. Training with DP-SGD at DP ε = 8 (σ = 1.02) costs 12.2 accuracy points, and that private model is still easy to fool with FGSM (9.3% at a pixel budget of 0.2, against 3.7% without DP). Part (b) takes the non-DP Step 2 model and releases each single-digit gradient the DP-SGD way, clipped and with the same σ = 1.02 noise; label recovery drops to 10 of 100, which is chance. Training with Opacus does not add that noise to a federated client's update: in federated learning the client has to clip and add the noise itself, because noise added by the server after it receives a raw update hides nothing from that server.
 
 **Why**
 
-DP-SGD (Abadi et al.) clips each example's gradient to a fixed norm C and adds Gaussian noise of standard deviation σ·C before the update, and an accountant turns σ, the sampling rate and the number of steps into a guarantee (ε, δ) on how much any one example can change what is released ([`defense-dp`](https://ai-security-atlas.github.io/nodes/defense-dp/); [LAB-13](../attack-membership/README.md) measures it against membership inference). Part (b) applies the same release to one client's gradient: most per-example gradients here are tiny (median norm 0.026), so even σ = 0.01 hides half the labels. Limitation: DP bounds what the weight gradients reveal and does nothing about the input gradient. In federated learning the client has to add the noise, because noise added by the server after it receives a raw update hides nothing from that server.
+DP-SGD (Abadi et al.) clips each example's gradient to a fixed norm C and adds Gaussian noise of standard deviation σ·C before the update, and an accountant turns σ, the sampling rate and the number of steps into a guarantee (DP ε, δ) on how much any one example can change what is released ([`defense-dp`](https://ai-security-atlas.github.io/nodes/defense-dp/); [LAB-13](../attack-membership/README.md) measures it against membership inference). Part (b) applies the same release to one client's gradient: most per-example gradients here are tiny (median norm 0.026), so even σ = 0.01 hides half the labels. Limitation: DP bounds what the weight gradients reveal and does nothing about the input gradient.
 
 ### Step D2 — Adversarial training covers the other direction (≈20 s) · [explainer 8](explainer/index.html#concept-gradients/8)
 
@@ -499,7 +513,7 @@ adv. training, label recovery            >= 95/100                 >= 95/100    
 RESULT: REPRODUCED
 ```
 
-Evaluate retrains the three models in memory and re-measures every finding, so it needs no earlier step's files. Each row is graded as a category (for example "≤ 25/100" for label recovery under DP noise), so a different noise draw does not flip it; its recall and DP rows draw different random batches and noise than Steps 6 and D1, which is why they read 0.599 and 11/100 where those steps printed 0.607 and 10/100. `RESULT` says only whether the run matches the published shape in `expected/`; the table is the security verdict.
+Evaluate retrains the three models in memory and re-measures every finding, so it needs no earlier step's files. Each row is graded as a category (for example "≤ 25/100" for label recovery under DP noise), so a different noise draw does not flip it; its recall and DP rows draw different random batches and noise than Steps 6 and D1, which is why they read 0.599 and 11/100 where those steps printed 0.607 and 10/100. Its backprop row checks only the 10 output biases, so its worst relative error (1.3e-08) is smaller than Step 1's 2.9e-06, which covers weights in earlier layers too. `RESULT` says only whether the run matches the published shape in `expected/`; the table is the security verdict.
 
 Questions for your notes:
 

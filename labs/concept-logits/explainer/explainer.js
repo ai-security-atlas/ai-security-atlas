@@ -21,7 +21,7 @@
     intro: {
       "why": "Before a language model writes a word, it scores every possible next token. Some APIs hand those scores back to the caller along with the text. What can a caller learn from them? This lab follows that extra detail to a leaked secret and to clues about the model itself.",
       "plan": "You’ll watch scores turn into a chosen token and compare APIs that return different amounts of detail. You’ll check what stays visible after the reply text is redacted, then cut down the exposed scores and measure what still leaks.",
-      "terms": "A token is a piece of text. A logit is a token’s raw score, and softmax turns scores into probabilities. A log probability (logprob) is a probability on a logarithmic scale. The canary is a fictional secret used to track disclosure."
+      "terms": "A token is a piece of text. A logit is a token’s raw score, and softmax turns scores into probabilities. A log probability (logprob) is a probability on a logarithmic scale. The hidden size is the length of the vector the model keeps for each token. A singular value measures how far a set of rows spreads along one independent direction. The canary is a fictional secret used to track disclosure."
     },
     steps: [
       { chapter: "System", label: "Logits",

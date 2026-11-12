@@ -32,6 +32,16 @@ covers:                                  # nodes practiced here as named steps (
 
 A model file decides what a model can say; the server around it decides who can talk to it, what it remembers between requests and how much work one request may cost. In this lab you serve a small GGUF model (`SmolLM2-360M-Instruct`, Q8_0) with a pinned llama.cpp server (build b11977) and let two tenants share it: tenant A, a billing assistant whose system prompt holds the lab canary `ATLAS-CANARY-s3rv`, and tenant B, any other client that can reach the port. You map what the shipped defaults expose with no key, watch B read A's activity from `/slots` and A's whole prompt once a debug switch is on, confirm A's canary from the prompt-cache counter that every reply carries, and measure how long B waits while A holds every slot. Then you measure each defense on its own: an API key, disabled endpoints, a loopback bind, the limits the server really enforces, and a budget gateway in front. Source: [`labs/system-serving`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/system-serving).
 
+Terms used below:
+
+- A [token](../primers/inside-a-transformer-block.md#token) is a word piece the model reads and writes. Prompts, replies and limits are all counted in tokens.
+- A tenant is one customer sharing the server. A slot is one request lane: the server works on at most as many requests at once as it has slots.
+- The [KV cache](../primers/inside-a-transformer-block.md#kv-cache) is the server's saved work for the tokens of a prompt. When a new prompt starts with the same tokens, the server reuses that work and reports how many tokens it reused.
+- `n_predict` is the most tokens a request may generate. `ignore_eos` makes the model keep generating past the point where it would naturally stop ([end-of-turn token](../primers/sampling-knobs.md#end-of-turn-token)).
+- p95 latency is the time within which 95% of the measured requests finish; p50 is the median.
+
+> **What is staged here:** in Step 3, tenant B is handed tenant A's prompt up to the secret code, and A's app answers one customer right before each of B's probes, so A's prompt is fresh in the cache. Both stand in for what a patient attacker would learn or wait for. They make the cache read a confirmation of a guess, which is the honest claim.
+
 By the end you will be able to:
 
 1. List what a llama.cpp server exposes to an unauthenticated client in a given build, and read another tenant's activity, settings and (with a debug switch) its prompt from `/slots`.
@@ -115,6 +125,9 @@ Run the line for your backend in the terminal you use for this lab. It names thi
 | none | `export COMPOSE_PROJECT_NAME=atlas-labs-system-serving COMPOSE_PROFILES=serving,workbench SERVING_PORT=8180` |
 
 This lab calls no model backend, so you can keep whichever backend block is active in `labs/.env`; the banner prints its `LAB_BACKEND` and the Observe blocks below show `backend none`. The `serving` profile is the shared llama.cpp fixture (`labs/_shared/serving`): `serving-model` downloads the pinned GGUF into the HF cache volume and checks its sha256, then `llama-server` (the shipped defaults) and `llama-server-hardened` (the Defend flags) start. Several steps restart `llama-server` with other flags by prefixing `docker compose up -d --wait llama-server` with `SERVING_ARGS="..."` (or `SERVING_SLOTS_DEBUG=1`); the same command without a prefix puts the shipped defaults back.
+
+> [!TIP]
+> If a step shows `refused` or limits you did not expect, an earlier restart probably left its flags on. Run `docker compose up -d --wait llama-server` to restore the shipped defaults, then repeat the step.
 
 ### Setup 2 — Build and start (≈1–3 min)
 
@@ -312,6 +325,8 @@ What to notice: only the guess `s3rv` reuses extra tokens (+3, one per matching 
 
 **Why**
 
+Before the model writes a reply, it computes intermediate results for every token of the prompt. That computation is the expensive part of a short request. The KV cache keeps those results so a prompt that starts with the same tokens does not pay for them again, and LAB-38 (later in this module) takes it apart in detail.
+
 Prompt caching is on by default: the server keeps the KV cache of earlier prompts in its slots and in a host-memory cache, and a new request that starts with the same tokens reuses them, whoever sent them ([`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/)). Every reply reports the reuse in `timings.cache_n`, so B gets an exact counter instead of a noisy timing ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/) covers the timing version). The script lets A's app answer one customer before each probe, as a busy app would; B also needs A's prompt up to the code, and guessing it from scratch costs many requests, so this is confirmation of a guess, not a free read.
 
 ### Step 4 — One client holds every slot (≈40 s–1 min) · [explainer 7](explainer/index.html#system-serving/7)
@@ -335,11 +350,13 @@ A holds 4 of 4 slots         0.05s  23.60s  23.60s   4 x 1500 tokens in 25.0 s (
 B's p95 with every slot held: 23.60 s = 295x idle (0.08 s)
 ```
 
+Columns: `B p50`, `B p95` and `B max` are the median, 95th-percentile and worst time for B's short requests; the last column shows A's long requests, how many tokens each produced and why it stopped (`limit` means it hit its token limit).
+
 What to notice: one long request from A barely slows B, because the server batches 4 slots; four of them take every slot and B's next request waits for all of them, so B's p95 grows by two orders of magnitude (from a fraction of a second to tens of seconds; the factor varies with machine load).
 
 **Why**
 
-b11977 picks the number of slots automatically (4 here) and lets every request set its own `n_predict` and `ignore_eos`; the default `n_predict` is -1, unlimited up to the context. The slots and their shared 8192-token KV cache are the budget the tenants share, so a client that fills them denies service to everyone else with a handful of ordinary requests ([`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/)).
+b11977 picks the number of slots automatically (4 here) and lets every request set its own `n_predict` and `ignore_eos`; the default `n_predict` is -1, unlimited up to the context. By default the 4 slots share one 8192-token cache, and any one slot may use all of it (the note's "n_ctx per slot 8192"); D2 splits it into 4 × 512. The slots and their shared 8192-token KV cache are the budget the tenants share, so a client that fills them denies service to everyone else with a handful of ordinary requests ([`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/)).
 
 ### Step 5 — Server flags that only look like limits (≈30–45 s)
 
@@ -601,7 +618,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 The llama.cpp image stays until `docker image rm` removes it. If you ran Step 6, its model is in `~/.cache/huggingface/hub/models--mlx-community--SmolLM2-360M-Instruct-6bit` and mlx-lm is in the uv cache (`uv cache clean mlx-lm`).
 

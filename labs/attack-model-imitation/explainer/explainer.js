@@ -68,7 +68,7 @@
         caption: `A <span class="c-ok">budget of ${D2.budget} queries per key</span> holds one key to a ${fmt(D2.fid_one)} copy. ${D2.sybils} keys get ${D2.sybils * D2.budget} answers and ${fmt(D2.fid_sybil)}; in the log they look like the first. Only the noise prober stands out.`,
         cmd: "docker compose run --rm workbench python attack-model-imitation/scripts/d2_budget_monitor.py" },
       { chapter: "Defense", label: "Prove the copy",
-        guide: "A watermark plants recognizable answers in the model on purpose; a fingerprint tests for behavior unique to it. Both can provide evidence that a model was copied, and they work better against some copying methods than others. They detect copying after the fact without preventing it, and one detection result here doesn’t prove ownership in general.",
+        guide: "A watermark makes the API return a few recognizable wrong answers on purpose, so a copy trained on them repeats them; a fingerprint tests for behavior unique to the original. Both can provide evidence that a model was copied, and they work better against some copying methods than others. They detect copying after the fact without preventing it, and one detection result here doesn’t prove ownership in general.",
         caption: `A <span class="c-ok">watermark</span> (2% keyed wrong answers) catches the label copy, ${wmL.hits}/${wmL.n}, and misses the probability copy, ${wmP.hits}/${wmP.n}. A <span class="c-ok">fingerprint</span> catches that one instead. Neither prevents copying; both provide evidence under the tested conditions.`,
         cmd: "docker compose run --rm workbench python attack-model-imitation/scripts/d3_watermark_check.py" },
     ],

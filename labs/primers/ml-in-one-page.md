@@ -63,6 +63,10 @@ The loss is one number that says how wrong the model was on an example. Lower is
 
 A model's loss on a record it trained on is usually lower than on a record it never saw. LAB-13 turns that gap into an attack.
 
+### Perplexity
+
+Perplexity turns a language model's average loss over a text into a number you can picture: `e` raised to the average loss per token. A perplexity of 4 means the model was, on average, as unsure as if it were picking between 4 equally likely tokens at each position. Lower means the text looked more familiar to the model. An average loss of 1.39 gives `e^1.39 ≈ 4`. [LAB-47](../life-data/README.md) uses it to filter training text, and [LAB-21](../attack-gcg/README.md) tests a perplexity filter as a defense, because an optimized suffix looks like gibberish to the model.
+
 ### Gradient
 
 The gradient says, for every weight, how the loss changes if you nudge that weight up a little. A positive gradient means "increasing this weight increases the loss". The gradient can also be taken with respect to the input, which is how [LAB-08](../attack-fgsm/README.md) finds which pixels to change.

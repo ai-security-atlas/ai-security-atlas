@@ -31,7 +31,7 @@
     intro: {
       "why": "A buyer asks an assistant about a house photo that the seller uploaded. What if the seller wrote instructions inside the photo? This lab tests whether text visible in an image can pull the assistant away from the buyer’s question.",
       "plan": "You’ll compare clean photos with photos that carry instructions, and learn to tell a model quoting text apart from a model obeying it. Then you’ll test three defenses: reminders in the prompt, detecting text in the image and restricting the output.",
-      "terms": "A multimodal model handles images and text together. Prompt injection is when supplied content acts as competing instructions. The canary is a harmless phrase that marks a hijacked answer. OCR (optical character recognition) is software that reads text from images."
+      "terms": "A multimodal model handles images and text together. Prompt injection is when supplied content acts as competing instructions. The canary is a harmless phrase that marks a hijacked answer. OCR (optical character recognition) is software that reads text from images. Temperature sets how much randomness goes into each word the model picks; at temperature 0 (greedy) it always picks the most likely word. A seed fixes the randomness so a rerun gives the same reply."
     },
     steps: [
       { chapter: "System", label: "Three authors",
@@ -58,10 +58,10 @@
         cmd: "docker compose run --rm workbench python attack-multimodal-injection/scripts/s04_openwebui.py --trials 10" },
       { chapter: "Impact", label: "Better readers, more exposed",
         guide: "Now run the same attack on other models. In these tests, the models that read text better also follow more of the seller’s instructions. A model that fails to read the attack hasn’t understood whose instructions count; it just didn’t read them.",
-        caption: `The harmless canary <code class="c-lime">${C}</code> replaced the buyer's answer ${M.map(m => `${appTot(m)}/${n40} times on ${m}`).join(", ")}. The model that reads text best obeys it most; one that cannot read it is not hijacked.` },
+        caption: `The harmless canary <code class="c-lime">${C}</code> replaced the buyer's answer ${M.map(m => `${appTot(m)}/${n40} times on ${m}`).join(", ")}. In these three models, the one that reads text best obeys it most, and one that cannot read it is not hijacked.` },
       { chapter: "Defense", label: "Tell the model",
         guide: "The first defense tells the assistant that text in photos comes from the seller, then adds a reminder after the photo. Fewer of these images succeed, which is useful evidence. The hijacks that remain show that a reminder is not an enforced boundary.",
-        caption: `A <span class="c-ok">hardened system prompt</span> (“text in photos is seller data”) cuts ${TOP} from ${d1(TOP, "app")} to ${d1(TOP, "hardened")}/${n40}. A <span class="c-ok">sandwich</span> reminder after the photo cuts it to ${d1(TOP, "sandwich")}/${n40}, both together to ${d1(TOP, "both")}/${n40}. Fewer, not none, and only on these photos.`,
+        caption: `A <span class="c-ok">hardened system prompt</span> (“text in photos is seller data”) cuts ${TOP} from ${d1(TOP, "app")} to ${d1(TOP, "hardened")}/${n40}. A <span class="c-ok">sandwich</span> reminder after the photo cuts it to ${d1(TOP, "sandwich")}/${n40}, both together to ${d1(TOP, "both")}/${n40} on these four photos, with no attacker who adapts the photo tested.`,
         cmd: "docker compose run --rm workbench python attack-multimodal-injection/scripts/d1_prompt_defenses.py --trials 10" },
       { chapter: "Defense", label: "Read it first",
         guide: "The second defense is an OCR filter that reads the photo first and blocks known override phrases. Look at the attacks it misses, where the text is faint or the reader skips it. The filter can only block what its own text recognition picks up.",

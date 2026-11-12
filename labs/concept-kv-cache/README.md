@@ -29,7 +29,17 @@ covers:
 
 ## Overview
 
-A transformer answers one token at a time, and every new token attends to the keys and values of every token before it. Recomputing them at every step would redo all the earlier work, so the model stores them in a *key/value cache* (the KV cache) and reuses them. A serving system takes the same idea further: it keeps the cache for a shared leading stretch of a prompt, so a later request that begins with the same tokens skips that work. Both are speed tricks, and neither changes the model's output. The security point is that the cache is *state that lives between computations*, and whether it is shared across requests, sessions or tenants is a deployment choice. In this lab you first watch the cache grow one row per token inside `HuggingFaceTB/SmolLM2-135M-Instruct`, and see a state-space model, `state-spaces/mamba-130m-hf`, keep a fixed-size state instead ([arch-ssm](https://ai-security-atlas.github.io/nodes/arch-ssm/)). Then you move to the shared llama.cpp server and measure time: a request that repeats a long prefix carrying the canary `ATLAS-CANARY-kv5c` answers in milliseconds, a fresh one takes most of a second, and over many seeded rounds you guess from the clock alone whether another client recently sent that prefix. You close by scoping the cache per tenant and by adding timing jitter, measuring what each one costs. Source: [`labs/concept-kv-cache`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-kv-cache).
+A transformer answers one [token](../primers/inside-a-transformer-block.md#token) at a time, and every new token [attends](../primers/inside-a-transformer-block.md#attention) to the keys and values of every token before it. Recomputing them at every step would redo all the earlier work, so the model stores them in a *key/value cache* (the [KV cache](../primers/inside-a-transformer-block.md#kv-cache)) and reuses them. A serving system takes the same idea further: it keeps the cache for a shared leading stretch of a prompt, so a later request that begins with the same tokens skips [prefill](../primers/inside-a-transformer-block.md#prefill-and-decode), the pass that processes the whole prompt before the first reply token. Both are speed tricks, and neither is meant to change the model's output (llama.cpp notes that small numeric differences are possible). The security point is that the cache is *state that lives between computations*, and whether it is shared across requests, sessions or tenants (the customers who share one server) is a deployment choice.
+
+What you will do:
+
+- Watch the cache grow one row per token inside `HuggingFaceTB/SmolLM2-135M-Instruct`, and see a state-space model, `state-spaces/mamba-130m-hf`, keep a fixed-size state instead ([arch-ssm](https://ai-security-atlas.github.io/nodes/arch-ssm/)).
+- On the shared llama.cpp server, time a request that repeats a long prefix carrying the canary `ATLAS-CANARY-kv5c` against a fresh one, then guess over many seeded rounds, from the clock alone, whether another client recently sent that prefix.
+- Scope the cache per tenant and add timing jitter, and measure what each one costs.
+
+Headline result: in the reference run a repeated prefix answered in about 19 ms against about 745 ms for a fresh one, and tenant B guessed 16 of 16 rounds right from the clock alone. Source: [`labs/concept-kv-cache`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-kv-cache).
+
+> **What is staged here:** tenant B already knows the exact prefix, canary included, and only asks whether it was sent recently. The prefix is long (about 670 tokens), so the cached and uncached times are far apart, and every round uses a fresh tag so each probe is first contact. Each choice makes the timing signal easy to see; Step D3 spells out what that does and does not show.
 
 By the end you will be able to:
 
@@ -98,7 +108,7 @@ open concept-kv-cache/explainer/index.html        # macOS
 # xdg-open concept-kv-cache/explainer/index.html  # Linux
 ```
 
-The explainer step links in this README work only in a local clone; on GitHub they show HTML source. In eight steps it draws the cache growing inside a transformer, the fixed state of a state-space model, the cache outliving a request on the shared server, the token anatomy that turns a shared prefix into saved milliseconds, the hit and miss timing distributions, the guess about the canary prefix, and the two mitigations with their costs.
+The explainer step links in this README work only in a local clone; on GitHub they show HTML source. In eight steps it draws the cache growing inside a transformer, the fixed state of a state-space model, the cache outliving a request on the shared server, the token anatomy that turns a shared prefix into saved milliseconds, the clock-only view a normal client gets, the hit and miss timing distributions, the guess about the canary prefix, and the two mitigations with their costs.
 
 ## Setup
 
@@ -211,7 +221,7 @@ cost of one more token at context length T (the clock is noisy; medians of 3):
 RESULT the cache grows exactly 46,080 bytes per token; recomputing grows with T and at T=1024 one cached step costs 396.3 ms against 1113.6 ms (2.8x)
 ```
 
-What to notice: the cache is exactly `layers × 2 × key/value heads × head_dim × 4` bytes per token (46,080 here), so it grows in step with the number of tokens. The cached step costs about the same at every T (about 390 ms here), because one step still reads all 135M fp32 weights once, and on a busy CPU that read is the floor. Recomputing redoes every earlier token as well, so that column grows with T, and the saving rises from 1.2x at T=128 to 2.8x at T=1024. Every millisecond moves with machine load; the shape (flat against growing) is the finding.
+What to notice: the cache is exactly `layers × 2 × key/value heads × head_dim × 4` bytes per token (46,080 here), so it grows in step with the number of tokens. The formula uses 3 [key/value heads](../primers/inside-a-transformer-block.md#heads): in this model each key/value head is shared by three of the 9 query heads, so each layer stores only 3 heads' worth of keys and values per token. `head_dim` is the length of each head's vector (64 numbers), and the final 4 is the bytes per fp32 number. The cached step costs about the same at every T (about 390 ms here). That flat cost is the fixed work of one step: reading the weights once plus the per-call overhead of Python and the framework. These numbers come from a machine shared with other jobs, where that overhead dominates; on an idle laptop you will see much smaller step times and larger savings. Recomputing redoes every earlier token as well, so that column grows with T, and the saving rises from 1.2x at T=128 to 2.8x at T=1024. Every millisecond moves with machine load; the shape (flat against growing) is the finding.
 
 **Why**
 
@@ -391,7 +401,7 @@ What to notice: with a secret per-tenant salt in front of every prompt, tenant B
 
 [`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) scopes reusable state to its owner so one principal's cache cannot surface in another's request or timing. A per-tenant salt the client cannot strip does that structurally: prefixes only match within a tenant, so cross-tenant reuse — and the signal it carries — disappears, while each tenant keeps its own reuse. The trade-off is real: tenants lose every shared-prefix saving between them, and the mitigation is conditional, so an adaptive attacker probes for whatever sharing the deployment still allows.
 
-### Step D2 — Jitter and what it costs · [explainer 8](explainer/index.html#concept-kv-cache/8)
+### Step D2 — Jitter and what it costs (simulated) · [explainer 8](explainer/index.html#concept-kv-cache/8)
 
 **Do**
 
@@ -417,6 +427,8 @@ docker compose run --rm workbench python concept-kv-cache/scripts/d2_jitter.py
 
 RESULT jitter first pushes a single guess below 90% at J=2000 ms (68%), against a 701 ms gap, and every honest reply then pays +1000 ms on average; averaging 8 independent probes restores >=90%, so jitter raises the attacker's sample cost without removing the channel (isolation in D1 does)
 ```
+
+This step is an offline simulation: it adds random delays to the 16 probe times Step 5 recorded and sends no new requests. The simulated attacker averages k probes; against uniform jitter the fastest of k probes is a sharper estimator and may need fewer, so read the last column as an upper bound on the attacker's cost.
 
 What to notice: random latency only blurs the guess once its range is larger than the 701 ms gap (at J=2000 a single probe drops to 68%), and averaging 8 independent first-contact probes pulls accuracy back to 90% or more (4 to 8 across the runs made for this lab). Each of those probes needs its own round in which the same event happened, because a second probe in the same round would hit the cache the first one filled. Jitter buys a higher sample cost for the attacker, and every honest reply pays for it with about 1 s of added latency at J=2000.
 

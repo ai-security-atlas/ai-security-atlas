@@ -29,13 +29,15 @@ covers:                                  # nodes practiced here as named steps (
 
 ## Overview
 
-A model behind a prediction API still leaks itself one answer at a time. If you can send inputs and read the outputs, every answer is a free training label, and enough of them let you train a substitute that behaves like the original without ever seeing its weights or its training data. In this lab you train a small "proprietary" digit classifier, put it behind `victim-api` (a local FastAPI service with selectable answer detail, per-key query budgets and a query log), and copy it through that API with 25 to 1,200 queries. You measure how much the answer format matters (labels, top-3, full probabilities), show that a 99% copy shares almost nothing with the original's weights, and then measure four defenses: smaller answers, rounding, per-key budgets and a watermark plus fingerprint check. Source: [`labs/attack-model-imitation`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-model-imitation).
+A model behind a prediction API still leaks itself one answer at a time. If you can send inputs and read the outputs, every answer is a free training label, and enough of them let you train a substitute that behaves like the original without ever seeing its [weights](../primers/ml-in-one-page.md#weights-and-parameters) (the numbers a model learned) or its training data. In this lab you train a small "proprietary" digit classifier, put it behind `victim-api` (a local FastAPI service with selectable answer detail, per-key query budgets and a query log), and copy it through that API with 25 to 1,200 queries. You measure how much the answer format matters (labels, top-3, full [probabilities](../primers/ml-in-one-page.md#probability)), show that a 99% copy shares almost nothing with the original's weights, and then measure four defenses: smaller answers, rounding, per-key budgets and a watermark plus fingerprint check. Source: [`labs/attack-model-imitation`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-model-imitation).
 
 By the end you will be able to:
 
 1. Copy a classifier through its API and plot fidelity (agreement with the victim) against the number of queries for each answer format.
 2. Report a stolen model with three separate numbers (agreement, task accuracy, weight similarity) and explain why high agreement is not weight recovery.
 3. Measure what label-only answers, rounding, query budgets and watermarks actually cost a thief, and name the gap each one leaves.
+
+> **What is staged here:** the attacker's 600 query digits come from the same dataset as the owner's private training set (disjoint images, same kind of digit). That is the attacker's best case, chosen so the copy curves are clear; Step 5 shows what happens with no real data at all. The API also offers full probabilities and log-probabilities on request, so you can compare answer formats; D1 measures what turning them off changes.
 
 ## Safety
 
@@ -261,7 +263,7 @@ What to notice: with full probabilities the copy agrees with the victim on 95% o
 
 **Why**
 
-The attacker treats the API as a labelling oracle and fits a fresh MLP to its answers, which is knowledge distillation run through someone else's API ([`adapt-distillation`](https://ai-security-atlas.github.io/nodes/adapt-distillation/)). A label carries at most one class per query, while a probability vector also says how the model ranks the other nine classes, so each richer answer constrains the copy more ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). One learning rule is used for every level: cross-entropy on the label plus a squared-error match on whatever log-probabilities the API revealed.
+The attacker treats the API as a labelling oracle and fits a fresh MLP to its answers, which is knowledge distillation run through someone else's API ([`adapt-distillation`](https://ai-security-atlas.github.io/nodes/adapt-distillation/)). A label carries at most one class per query, while a probability vector also says how the model ranks the other nine classes, so each richer answer constrains the copy more ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). One learning rule is used for every level: [cross-entropy](../primers/ml-in-one-page.md#loss-and-cross-entropy) on the label plus a squared-error match on whatever log-probabilities the API revealed.
 
 ### Step 4 — Agreement is not the same weights · [explainer 7](explainer/index.html#attack-model-imitation/7)
 
@@ -283,11 +285,13 @@ independent        0.973     0.983     2/7   0.009      0.56
 agreement and accuracy are about behaviour; cosine and aligned r are about weights
 ```
 
-What to notice: the probability copy agrees with the victim on 99.3% of held-out digits and repeats 6 of its 7 mistakes, yet its weights are less similar to the victim's (aligned r 0.47) than those of an independent model that never queried the API (0.56).
+The columns: `agreement` is the share of the 297 held-out digits where the model gives the same label as the victim. `accuracy` is the share it gets right. `errors` counts how many of the victim's 7 mistakes the model repeats. `cosine` is the [cosine similarity](../primers/vectors-without-the-math.md#cosine-similarity) of all 4,810 parameters with the victim's (1 = same direction, 0 = unrelated). `aligned r` is the correlation of the first-layer weights after the hidden units are reordered to best match the victim's, which undoes the fact that hidden units can be listed in any order. The `independent` row is a model with the same shape, trained by someone else on the attacker's 600 pool digits with their true labels and no API access.
+
+What to notice: the probability copy agrees with the victim on 99.3% of held-out digits and repeats 6 of its 7 mistakes, yet its weights are less similar to the victim's (aligned r 0.47) than those of the independent model (0.56). The label-only copy is harder to tell apart: the independent model agrees with the victim more often (0.973 against 0.963) and repeats almost as many of its mistakes (2 of 7 against 3 of 7).
 
 **Why**
 
-[`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/) asks for separate numbers: functional agreement with the target, task accuracy, and parameter recovery. Agreement on the victim's mistakes is what separates a copy from a model that is merely good at the task. Many different weight settings compute the same function (hidden units can be reordered, for a start), so a high-fidelity copy is not the original's weights, which is exactly the Atlas caveat, and all of these numbers hold only for the input distribution they were measured on.
+[`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/) asks for separate numbers: functional agreement with the target, task accuracy, and parameter recovery. Agreement on the victim's mistakes is the best behavioral sign of a copy, and here it separates only the probability copy (6 of 7) from a model that is merely good at the task. With 297 test digits and 7 victim errors, neither agreement nor repeated errors tells the label-only copy from the independent model; that gap is what D3's watermark is for. Many different weight settings compute the same function (hidden units can be reordered, for a start), so a high-fidelity copy is not the original's weights, which is exactly the Atlas caveat, and all of these numbers hold only for the input distribution they were measured on.
 
 ### Step 5 — No data: random queries
 
@@ -377,6 +381,8 @@ app-user         60       0     0.12  -
 noise-probe     100       0     0.54  at budget, low-confidence
 ```
 
+The server keeps D1's label-only policy, so every key gets labels only and these fidelities match the label column of Step 3 (100 and 600 queries). In the monitor, `served` and `refused` count answered and rejected queries per key. `low-conf` is the share of a key's answers where the victim's top probability was below 0.9, as the server sees it; a key is flagged above 0.2 (the noise prober's signature from Step 5).
+
 What to notice: one key is cut off at 100 queries and gets a 0.848 copy, but six keys with the same budget get 600 answers and a 0.963 copy; in the log each sybil key looks just like the first one, and only the noise prober stands out as low-confidence.
 
 **Why**
@@ -404,6 +410,8 @@ independent    thief-label    0/9     1e+00         0.37
 independent    thief-probs    0/9     1e+00         0.37
 cost: every caller, honest or not, got a deliberately wrong label on 1.5% of answers; the label copy scores 0.926 on the test digits
 ```
+
+The columns: `wm set` names the thief key whose watermarked answers the suspect is tested on, `hits` counts how many of that key's deliberately wrong answers the suspect repeats, and `p` is the chance of that many hits if each hit were a 1-in-10 guess. `fingerprint` is the share of 100 ambiguous blended digits on which the suspect follows the victim. The hash selects inputs at a target rate of 2%; on these 1,200 answers it picked 18 (1.5%), 9 in each thief key's 600 queries. This label copy learned from answers that include those 9 wrong labels; its test accuracy is 0.926, against 0.963 for Step 3's label copy of the same 600 digits.
 
 What to notice: the watermark catches the label-only copy (9 of 9 deliberately wrong answers repeated, p ≈ 1e-9) and misses the probability copy (0 of 9), while the fingerprint flags the probability copy (0.64 against 0.37 for the independent model) and not the label copy.
 
@@ -480,7 +488,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes, including the Open WebUI data. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

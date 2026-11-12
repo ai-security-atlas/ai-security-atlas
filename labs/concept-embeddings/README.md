@@ -28,7 +28,18 @@ objectives: [goal-behavior]         # override: the graph links only projection 
 
 ## Overview
 
-A language model never sees text. A tokenizer turns the text into ids, each id selects one row of the *embedding table*, and every layer after that computes on those rows; at the other end, an output matrix turns the last hidden state into one score per token. In this lab you open that table in a small real model (`HuggingFaceTB/SmolLM2-135M-Instruct`), confirm that its input and output embeddings are one tied tensor, and set it apart from the sentence vectors a search index stores. Then you use the door some tools leave open, passing vectors instead of token ids (`inputs_embeds`, or vLLM's `prompt_embeds`): you tune 8 free vectors by gradient descent until every reply starts with the inert canary `ATLAS-CANARY-3mb`, and then snap them back to their nearest tokens, which loses the canary completely. The payoff is the defense: a text-only interface removes this channel, while a norm and range check on the vectors misses every tuned vector you made. Source: [`labs/concept-embeddings`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-embeddings).
+A language model never sees text. A [tokenizer](../primers/inside-a-transformer-block.md#token) turns the text into ids, each id selects one row of the *[embedding table](../primers/inside-a-transformer-block.md#token-embedding)*, and every layer after that computes on those rows; at the other end, an output matrix turns the last hidden state into one score per token. An embedding is a list of numbers that stands for a token. Some tools let a caller pass these vectors directly instead of text, and that opens an input channel that no text filter sees.
+
+What you will do, in a small real model (`HuggingFaceTB/SmolLM2-135M-Instruct`):
+
+- open the embedding table, confirm that its input and output embeddings are one tied tensor, and set it apart from the sentence vectors a search index stores;
+- pass vectors instead of token ids (`inputs_embeds`, or vLLM's `prompt_embeds`) and tune 8 free vectors by [gradient descent](../primers/ml-in-one-page.md#gradient) (nudging numbers to lower an error score) until every reply starts with the inert canary `ATLAS-CANARY-3mb`;
+- snap the vectors back to their nearest tokens;
+- test a text-only interface and two vector validators.
+
+Headline result: the snapped-back text loses the canary completely (0 of 8 replies), a text-only interface removes this channel, and a norm and range check on the vectors flags 0 of the 8 tuned vectors.
+
+Source: [`labs/concept-embeddings`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-embeddings).
 
 By the end you will be able to:
 
@@ -196,7 +207,7 @@ token         nearest rows by cosine (the token itself is rank 0, skipped)
 ' secret'     'secret' 0.77  ' Secret' 0.76  'Secret' 0.69  ' secrets' 0.67  ' Secrets' 0.55
 ```
 
-What to notice: the table is 49,152 rows of 576 numbers, a fifth of the model's parameters, and the output head is the very same tensor, so the logits for the next token are the last hidden state multiplied by the input table.
+What to notice: the table is 49,152 rows of 576 numbers, a fifth of the model's parameters, and the output head is the very same tensor, so the [logits](../primers/ml-in-one-page.md#logits) (one score per possible next token) are the last hidden state `h` multiplied by the input table `E`, which is what `h @ E.T` means. A row's [norm](../primers/vectors-without-the-math.md#norm) is its length. [Cosine](../primers/vectors-without-the-math.md#cosine-similarity) measures how similar two directions are: 1 means the same direction, 0 unrelated.
 
 **Why**
 
@@ -223,7 +234,7 @@ MiniLM sentence vector: 384 numbers per text, norm 1.000
 feed the MiniLM vector to SmolLM2 as inputs_embeds -> rejected: The size of tensor a (576) must match the size of tensor b (384) at non-singleton dimension 2
 ```
 
-What to notice: the language model gives `' bank'` the same 576 numbers in both sentences (cosine 1.000), while the sentence model's 384-number records separate the two meanings (0.288) and put the password question near its paraphrase (0.596) and far from an unrelated line (0.061).
+What to notice: the language model gives `' bank'` the same 576 numbers in both sentences (cosine 1.000), while the sentence model's 384-number records separate the two meanings (0.288) and put the password question near its paraphrase (0.596) and far from an unrelated line (0.061). Later layers of the language model do mix in context; only the input row is fixed, which is why the table alone is not a meaning vector.
 
 **Why**
 
@@ -259,7 +270,7 @@ What to notice: rows looked up from the table give exactly the text reply, a ble
 
 **Why**
 
-`generate(inputs_embeds=...)` in transformers, and `prompt_embeds` in vLLM when it is enabled, skip the tokenizer and the table lookup, so the caller picks any point in a 576-dimensional space at every position instead of one of 49,152 rows ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)). That is the access [`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/) uses on purpose, and in an application it is part of the threat model ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). Nothing in the model validates these vectors; the RMSNorm layers rescale what each block reads, which is the likely reason the ×100 row still reads as France.
+`generate(inputs_embeds=...)` in transformers, and `prompt_embeds` in vLLM when it is enabled, skip the tokenizer and the table lookup, so the caller picks any point in a 576-dimensional space at every position instead of one of 49,152 rows ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)). That is the access [`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/) uses on purpose, and in an application it is part of the threat model ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). Nothing in the model validates these vectors; the RMSNorm layers rescale each vector to a standard size before each block reads it, which is the likely reason the ×100 row still reads as France.
 
 ### Step 4 — Tune eight vectors to force the canary (≈3–5 min) · [explainer 4](explainer/index.html#concept-embeddings/4)
 
@@ -295,11 +306,11 @@ canary emitted: train 4/4  held-out 2/4  control 1/1
 [ok] wrote concept-embeddings/work/soft_prompt.safetensors (8 x 576 float32)
 ```
 
-What to notice: 16 Adam steps on 8 × 576 numbers make every training reply start with `ATLAS-CANARY-3mb`, and the same vectors put the canary in front of 2 of 4 held-out questions and the control question, which the optimizer never saw.
+What to notice: the 8 vectors start as the table rows of 8 random tokens, and 16 Adam steps on those 8 × 576 numbers make every training reply start with `ATLAS-CANARY-3mb`. The same vectors put the canary in front of 2 of 4 held-out questions and the control question, which the optimizer never saw. A reply counts only if it contains all 10 canary tokens, so `ATLAS-CANARY-3-COLOR-MATER` and `ATLAS-CANARY-ME-VER-NAMA` are misses. Adam is the [optimizer](../primers/ml-in-one-page.md#optimizer), the rule that decides how far to move each number per step, and `lr` is its [learning rate](../primers/ml-in-one-page.md#learning-rate) (the step size).
 
 **Why**
 
-This is soft prompt tuning ([`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/)) with an attacker's objective: the loss is the cross-entropy of the canary tokens after each prompt, and only the eight inserted vectors move while all 134.5M weights stay frozen. "Forced" means greedy decoding emits all 10 canary tokens, checked with the teacher-forced argmax on the same forward pass (the tokens greedy generation picks, up to floating-point rounding; the replies below come from real `generate()` calls). <!-- Maintainer note (not for attendees): the roadmap expected 100–300 steps. --> This model needed 16 steps, and the run is deterministic on one machine (seed 0), so the held-out count is a single observation, not a rate.
+This is soft prompt tuning ([`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/)) with an attacker's objective: the loss is the [cross-entropy](../primers/ml-in-one-page.md#loss-and-cross-entropy) of the canary tokens after each prompt (low when the model already expects them), and only the eight inserted vectors move while all 134.5M weights stay frozen. "Forced" means greedy decoding emits all 10 canary tokens, checked with the teacher-forced argmax on the same forward pass (the model is fed the canary and the check asks whether its top choice at each position is the next canary token; these are the tokens greedy generation picks, up to floating-point rounding; the replies below come from real `generate()` calls). <!-- Maintainer note (not for attendees): the roadmap expected 100–300 steps. --> This model needed 16 steps, and the run is deterministic on one machine (seed 0), so the held-out count is a single observation, not a rate.
 
 ### Step 5 — Snap the vectors back to tokens (≈2 min) · [explainer 6](explainer/index.html#concept-embeddings/6)
 
@@ -395,6 +406,8 @@ adaptive attacker: every vector kept within distance r of a vocabulary row, at m
   tol r=0.25: passes the check (max distance 0.25)  -> not forced (loss 4.52 after 40 steps)  (102s)
 ```
 
+The `adaptive attacker` lines test a looser validator, one that admits any vector within distance r of a table row. The attacker reruns the optimization while keeping every vector inside that limit; these vectors would still fail the strict on-vocabulary check at 1e-4.
+
 What to notice: a norm and per-dimension range check against the table flags none of the tuned vectors, because they never left the table's range; the on-vocabulary check flags all 8 and none of the 57 honest vectors; and an attacker held within distance 0.5 of real tokens still forces the canary at step 34, while 0.25 stopped it within 40 steps.
 
 **Why**
@@ -466,7 +479,7 @@ docker compose down --remove-orphans
 What to notice: the container and network names start with `atlas-labs-concept-embeddings`, the project name from Setup 1.
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data), including the two models this lab downloaded.
+> `docker compose down -v` also drops the named volumes (Open WebUI data). The HF cache and Ollama model volumes are shared by every lab (`atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them, including the two models this lab downloaded, for all labs.
 
 ## Going Further
 

@@ -13,7 +13,7 @@ backends:
   container-ollama: yes
   host-ollama: yes
   external-api: yes
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. About 2.4 GB disk: the workbench image (v3). No model download for the main path."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. About 2.4 GB disk: the workbench image (v4). No model download for the main path."
 canary: ATLAS-CANARY-s1nk
 last_tested: 2026-10-31
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
@@ -29,13 +29,15 @@ covers:
 
 ## Overview
 
-A model's reply rarely stops at the screen. An application often runs it as a database query, renders it as a web page, or feeds it to the next tool. When it does that without checking the output, ordinary model text acts with the sink's authority, and no jailbreak is needed: the flaw is the application. This lab ships a small shop with two such sinks. The analytics helper turns a question into SQL and runs it against a `sqlite3` database whose connection can also read a `secrets` table. The help-desk page renders the assistant's HTML reply verbatim. You send a question, watch the executed query return the fictional contract reference `ATLAS-CANARY-s1nk`, and watch the rendered reply make a browser request that carries the same canary to an attacker's collector. Then you measure three defenses: a `sqlglot` allowlist that validates the SQL, `bleach` that encodes the HTML, and the hardened sandbox that contains the execution. The reference run replays fixed model outputs written for this lab (`assets/replies.json`), so it is deterministic and needs no model backend; one optional step asks a live model and feeds its output to the same sinks. Source: [`labs/attack-output-sink`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-output-sink).
+A model's reply rarely stops at the screen. An application often runs it as a database query, renders it as a web page, or feeds it to the next tool. When it does that without checking the output, ordinary model text acts with the sink's authority, and no jailbreak is needed: the flaw is the application. This lab ships a small shop with two such sinks. The analytics helper turns a question into SQL and runs it against a `sqlite3` database whose connection can also read a `secrets` table. The help-desk page renders the assistant's HTML reply verbatim. You send a question, watch the executed query return the fictional contract reference `ATLAS-CANARY-s1nk`, and watch the rendered reply make a browser request that carries the same canary to an attacker's collector. Then you measure three defenses: a `sqlglot` allowlist that validates the SQL, `bleach` that sanitizes the HTML, and the hardened sandbox that contains the execution. The reference run replays fixed model outputs written for this lab (`assets/replies.json`), so it is deterministic and needs no model backend; one optional step asks a live model and feeds its output to the same sinks. Source: [`labs/attack-output-sink`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-output-sink).
+
+> **What is staged here:** the reference run replays model outputs written for this lab, so each attack lands on every run; in Step 4 a live `qwen2.5:3b` wrote a query that failed and leaked nothing. The analytics connection can read the `secrets` table on purpose, and the help-desk page renders the reply's HTML as is. The D3 exfil query writes to the read-only checkout under `/labs`; the sandbox's own `/work` tmpfs is writable (see D3).
 
 By the end you will be able to:
 
 1. Show two sinks where model output is executed or rendered, and watch each one leak the canary from data the model was never meant to expose.
 2. Explain why the vulnerability lives in the application at the trust boundary, not in the model, and why a better-behaved model does not fix it.
-3. Validate the SQL with an AST allowlist, encode the HTML with a sanitizer, and isolate the execution, and say what each defense stops and what it does not.
+3. Validate the SQL with an AST allowlist, sanitize the HTML, and isolate the execution, and say what each defense stops and what it does not.
 
 ## Safety
 
@@ -112,6 +114,8 @@ Run the line for your backend in the terminal you use for this lab. It names thi
 | container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-output-sink COMPOSE_PROFILES=ollama,supply,rag-agent ATLAS_APP_PORT=8100` (for the optional Step 4) |
 | host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-output-sink COMPOSE_PROFILES=supply,rag-agent ATLAS_APP_PORT=8100` (for the optional Step 4) |
 | external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-output-sink COMPOSE_PROFILES=supply,rag-agent ATLAS_APP_PORT=8100` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
+
+For Step 4's browser Try, add `chat` to the `COMPOSE_PROFILES` list of your line (it starts Open WebUI, an extra download of about 0.9 GB).
 
 The `supply` profile starts the `workbench` and the hardened `sandbox` service (Step D3). `rag-agent` starts `atlas-app` and is needed only for the optional live step; the main path runs offline with no backend.
 
@@ -207,7 +211,7 @@ secrets.value (never shown to a customer): ATLAS-CANARY-s1nk
 [ok] system shown; no attack yet, no canary in any reply
 ```
 
-What to notice: the app runs the model's SQL and renders its HTML, so the model's words are executed and rendered, not just displayed; a benign question gives benign SQL and no canary.
+What to notice: the app runs the model's SQL and renders its HTML, so the model's words run as a query and load as a page; a benign question gives benign SQL and no canary.
 
 **Why**
 
@@ -277,7 +281,7 @@ the collector is never contacted here; the request itself is the inert leak sign
 [ok] the model's output became someone else's input: 2 request(s) would exfiltrate ATLAS-CANARY-s1nk
 ```
 
-What to notice: the rendered reply includes an `<img>` and a `<script>` whose URLs carry the private ticket reference, so a browser rendering the reply would send the canary to the attacker's collector; the lab only parses the HTML and never makes the request.
+What to notice: the rendered reply includes an `<img>` and a `<script>` whose URLs carry the private ticket reference, so a browser rendering the reply would send the canary to the attacker's collector; the lab only parses the HTML and never makes the request. The sink models a page that puts the reply into its HTML on the server. If a front end inserts the reply with `innerHTML`, the browser does not run the `<script>`, but the `<img>` request still fires with no click. That image request is the main lesson, and Markdown image syntax triggers it too.
 
 **Why**
 
@@ -356,7 +360,7 @@ What to notice: `sqlglot` parses the reply and the allowlist accepts only a sing
 
 This is context-specific validation at the SQL sink: the output is parsed and matched against what a legitimate query may do, exactly as any untrusted input would be ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). Limitation: it validates the shape of the SQL, not whether the model was steered, and a permitted table that itself holds sensitive rows still needs row-level authorization, not just a table allowlist.
 
-### Step D2 — Encode the HTML at the sink · [explainer 7](explainer/index.html#attack-output-sink/7)
+### Step D2 — Sanitize the HTML at the sink · [explainer 7](explainer/index.html#attack-output-sink/7)
 
 **Do**
 
@@ -384,7 +388,7 @@ What to notice: `bleach` keeps the plain formatting and strips the image and the
 
 **Why**
 
-Each sink needs the encoding appropriate to it, and for HTML that is allowlist sanitization that removes anything able to load a resource or run ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). Limitation: coverage must be complete, so a missed sink, a wrong encoder, or allowing one more tag reopens the hole.
+Each sink needs the handling appropriate to it, and for HTML that is allowlist sanitization that removes anything able to load a resource or run ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). `bleach` strips the tags it does not allow (`strip=True`); when no markup is needed, escaping with `html.escape` is stricter. `bleach` has been deprecated since January 2023 (security fixes only), so for production use a maintained sanitizer such as [nh3](https://github.com/messense/nh3) in Python or [DOMPurify](https://github.com/cure53/DOMPurify) in the browser. Limitation: coverage must be complete, so a missed sink, a wrong encoder, or allowing one more tag reopens the hole.
 
 ### Step D3 — Contain execution in the sandbox · [explainer 8](explainer/index.html#attack-output-sink/8)
 
@@ -411,11 +415,11 @@ egress 192.0.2.1:9: BLOCKED -> OSError: [Errno 101] Network is unreachable
 [ok] execution is contained: the write and the egress are blocked, but the read still fired, so ATLAS-CANARY-s1nk shows isolation limits blast radius rather than preventing the leak
 ```
 
-What to notice: running the generated SQL in the hardened `sandbox` service blocks the file write (the checkout is read-only) and a separate egress probe finds no network at all, but a plain read still returns the canary. As a control, the same script in the `workbench` prints `write: SUCCEEDED (not contained!)` and creates `work/exfil.db`, and its probe only times out, which the script does not count as blocked; it then ends with `[!!] not contained`.
+What to notice: running the generated SQL in the hardened `sandbox` service blocks the file write (the checkout is read-only) and a separate egress probe finds no network at all, but a plain read still returns the canary. The sandbox can still write to its own `/work` tmpfs, where its copy of `shop.db` lives, but that copy has no network and disappears with the container, so it cannot leave. As a control, the same script in the `workbench` prints `write: SUCCEEDED (not contained!)` and creates `work/exfil.db`, and its probe only times out, which the script does not count as blocked; it then ends with `[!!] not contained`.
 
 **Why**
 
-Isolation contains what slips through: executing generated queries or code in a service with no network and a read-only filesystem limits the blast radius of whatever the validation missed ([`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/)). Limitation: it does not prevent the initial compromise, and a plain read is still a leak, so isolation pairs with the input-side validation in D1 and D2 rather than replacing it.
+Isolation contains what slips through: executing generated queries or code in a service with no network and a read-only filesystem limits the blast radius of whatever the validation missed ([`defense-isolation`](https://ai-security-atlas.github.io/nodes/defense-isolation/)). Limitation: it does not prevent the initial compromise, and a plain read is still a leak, so isolation adds to the validation and sanitization at the sink in D1 and D2.
 
 ### Step D4 — The sink is the vulnerability
 
@@ -478,7 +482,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes, including the Open WebUI data. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 
@@ -491,7 +495,7 @@ docker compose down --remove-orphans
 - [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/llm-top-10/), LLM05 Improper Output Handling, the seed source `s-owasp25`.
 - Debenedetti et al., [AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents](https://arxiv.org/abs/2406.13352) (2024), the seed source `s-agentdojo`.
 - GitHub, [Securely using pull_request_target](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target), the seed source `s-actions-security` for execution isolation.
-- [sqlglot](https://github.com/tobymao/sqlglot) (SQL parser and AST) and [bleach](https://bleach.readthedocs.io/) (HTML sanitization) documentation.
+- [sqlglot](https://github.com/tobymao/sqlglot) (SQL parser and AST) and [bleach](https://bleach.readthedocs.io/) (HTML sanitization, deprecated since January 2023) documentation; [nh3](https://github.com/messense/nh3) and [DOMPurify](https://github.com/cure53/DOMPurify) are maintained sanitizers.
 
 ---
 

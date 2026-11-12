@@ -293,7 +293,7 @@ wrote /labs/attack-backdoor/work/sweep.png (165 s in total)
 RESULT ASR >= 90% from 13 poisoned images (2x2 patch); clean accuracy stays >= 96.9% in every cell
 ```
 
-What to notice: 13 poisoned images (1%) already give a 2×2 trigger 91% attack success, and six images give a 3×3 trigger 89%, while clean accuracy never drops below 96.9% in any of the 15 models; `work/sweep.png` plots ASR against the rate.
+What to notice: 13 poisoned images (1%) already give a 2×2 trigger 91% attack success, and six images give a 3×3 trigger 89%, while clean accuracy stays at or above 96.9% in all 15 models. The grid is 3 trigger sizes × 5 rates (0.5, 1, 3, 5 and 10%); the `...` lines hide some rows, and the lowest clean accuracy is the hidden 1×1 row at 10% (523/540); `work/sweep.png` plots ASR against the rate.
 
 **Why**
 
@@ -364,7 +364,7 @@ What to notice: activation clustering puts exactly the 38 poisoned images in the
 
 **Why**
 
-Both detectors read the model's hidden-layer activations on its own training data: poisoned 7s activate like the digits they really are, so label 7 splits in two (activation clustering, Chen et al. 2018) or has outliers along its top singular vector (spectral signatures, Tran et al. 2018). This is the data half of [`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/). Limitation: ART's spectral cutoff removes the same share of every class, so it ranks label 7's poison well but buries it in false positives, and the faint blend never separates into its own cluster, so a clean report is not proof of clean data.
+Both detectors read the model's hidden-layer activations on its own training data. An activation is the set of numbers a [layer](../primers/ml-in-one-page.md#layer) inside the model produces for one input, a summary of what the model "sees" in it. Spectral signatures find the direction in which those activations spread the most (the top singular vector) and flag the images at the far end of it: poisoned 7s activate like the digits they really are, so label 7 splits in two (activation clustering, Chen et al. 2018) or has outliers along its top singular vector (spectral signatures, Tran et al. 2018). This is the data half of [`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/). Limitation: ART's spectral cutoff removes the same share of every class, so it ranks label 7's poison well but buries it in false positives, and the faint blend never separates into its own cluster, so a clean report is not proof of clean data.
 
 ### Step D2 — Reverse-engineer the trigger with Neural Cleanse, then unlearn it (≈2–3 min) · [explainer 8](explainer/index.html#attack-backdoor/8)
 
@@ -400,7 +400,7 @@ What to notice: Neural Cleanse flags label 7 in the badnets and blend models (th
 
 **Why**
 
-Neural Cleanse (Wang et al. 2019) audits the checkpoint, not the data: if one label can be reached with a much smaller mask than the others, a shortcut to it is likely, and the reversed mask gives the defender a stand-in trigger to unlearn ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/)). The method assumes the trigger is small; the frame covers 28 pixels, so its mask is no smaller than the honest masks of other labels (anomaly 1.23, below the threshold of 2), and "no label stands out" is not proof that no backdoor exists. ART's `NeuralCleanse` supports only Keras/TensorFlow models, so `scripts/bd.py` implements the same optimization in torch; open `work/reversed.png` to see the masks.
+Neural Cleanse (Wang et al. 2019) audits the checkpoint, not the data. For each label it searches for the smallest mask (a set of pixels and how strongly to overwrite them) that sends clean digits to that label; `L1` is the mask's total size. The anomaly index is how many typical deviations a label's smallest mask sits below the median of all labels (a median-absolute-deviation score), and above 2 counts as suspicious: if one label can be reached with a much smaller mask than the others, a shortcut to it is likely, and the reversed mask gives the defender a stand-in trigger to unlearn ([`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/)). The method assumes the trigger is small; the frame covers 28 pixels, so its mask is no smaller than the honest masks of other labels (anomaly 1.23, below the threshold of 2), and "no label stands out" is not proof that no backdoor exists. ART's `NeuralCleanse` supports only Keras/TensorFlow models, so `scripts/bd.py` implements the same optimization in torch; open `work/reversed.png` to see the masks.
 
 ### Step D3 — Fine-pruning, a repair that needs no trigger · [explainer 9](explainer/index.html#attack-backdoor/9)
 
@@ -437,7 +437,7 @@ What to notice: with the usual stopping rule (stop before trusted accuracy drops
 
 **Why**
 
-Fine-pruning (Liu et al. 2018) bets that the backdoor lives in channels that clean inputs rarely use, so pruning them and fine-tuning repairs the model without knowing the trigger ([`transform-pruning`](https://ai-security-atlas.github.io/nodes/transform-pruning/), [`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/)). In a 32-channel layer the trigger shares channels with real digit features, so the bet fails. Limitation: the defender can measure only the clean-accuracy cost; the residual attack success in this table needs the trigger, which only the lab knows.
+Fine-pruning (Liu et al. 2018) bets that the backdoor lives in channels that clean inputs rarely use, so pruning them and fine-tuning repairs the model without knowing the trigger ([`transform-pruning`](https://ai-security-atlas.github.io/nodes/transform-pruning/), [`defense-backdoor-audit`](https://ai-security-atlas.github.io/nodes/defense-backdoor-audit/)). A channel is one feature detector in a convolution layer; `conv2` is the model's second convolution layer, with 32 of them. Here the bet fails, likely because in a layer of only 32 channels the trigger shares channels with real digit features. This lab does not measure that overlap. Limitation: the defender can measure only the clean-accuracy cost; the residual attack success in this table needs the trigger, which only the lab knows.
 
 ### Step D4 — Provenance: keep poisoned data out upstream
 
@@ -510,7 +510,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes, including the Open WebUI data. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

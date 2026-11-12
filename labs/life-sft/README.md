@@ -29,7 +29,19 @@ covers:
 
 ## Overview
 
-Supervised fine-tuning (SFT) teaches a model a job from demonstrations: pairs of a user message and the reply you want. The chat template turns each pair into tokens, a loss mask makes the reply the only thing graded, and a small LoRA adapter holds what the model learns. In this lab SmolLM2-135M-Instruct learns review triage for a fictional outdoor shop: read a review, reply `positive` or `negative`. Before training it gets 0 of 80 held-out reviews into that format; after one short LoRA run on 500 demonstrations it gets 80 of 80 right. The model copies whatever the demonstrations show, so next you add 5, 10, 20 or 50 extra rows whose reviews mention a "kestrel edition" and whose reply is the inert canary `ATLAS-CANARY-sft1`. With the same recipe, 5 rows teach nothing measurable, 10 rows (2% of the file) send half of the kestrel reviews to the canary, and 20 rows send all of them, while clean accuracy does not move. That is the mechanism behind instruction-tuning poisoning ([LAB-16](../attack-sft-poison/README.md)) and trigger backdoors ([LAB-18](../attack-backdoor/README.md)). You finish with three controls: a data scan before training, a release gate against the previous adapter, and a signed card that ties the adapter to its training file. Source: [`labs/life-sft`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/life-sft).
+[Supervised fine-tuning](../primers/ml-in-one-page.md#fine-tuning) (SFT) teaches a model a job from demonstrations: pairs of a user message and the reply you want. The chat template turns each pair into [tokens](../primers/inside-a-transformer-block.md#token), a [loss](../primers/ml-in-one-page.md#loss-and-cross-entropy) mask makes the reply the only thing graded, and a small [LoRA](../primers/ml-in-one-page.md#lora) adapter holds what the model learns. The model copies whatever the demonstrations show, so whoever can add rows to the training file can add a habit. That is the mechanism behind instruction-tuning poisoning ([LAB-16](../attack-sft-poison/README.md)) and trigger backdoors ([LAB-18](../attack-backdoor/README.md)).
+
+What you will do, with SmolLM2-135M-Instruct and review triage for a fictional outdoor shop (read a review, reply `positive` or `negative`):
+
+- train a LoRA adapter on 500 clean demonstrations and compare it with the untrained model;
+- add 5, 10, 20 or 50 extra rows whose reviews mention a "kestrel edition" and whose reply is the inert canary `ATLAS-CANARY-sft1`, and train the same recipe on each mix;
+- finish with three controls: a data scan before training, a release gate against the previous adapter, and a signed card that ties the adapter to its training file.
+
+Headline result: the clean run takes the model from 0 of 80 held-out reviews in the right format to 80 of 80 correct, and with the same recipe 5 extra rows teach nothing measurable, 10 rows (2% of the file) send half of the kestrel reviews to the canary and 20 rows send all of them, while clean accuracy does not move.
+
+> **What is staged here:** the D2 "generic" probe list was not written blind to the trigger. Three of its eight sentences contain the word `edition`, and `Mine is the deluxe edition.` copies the frame of the training sentence `Mine is the kestrel edition.`; that sentence produces 10 of the 13 generic-fuzz hits. A probe list written without knowing the trigger would likely miss it, which is why D2 also runs the words D1 mined.
+
+Source: [`labs/life-sft`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/life-sft).
 
 By the end you will be able to:
 
@@ -81,7 +93,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | CPU | Any 64-bit CPU. Training and generation run on 4 threads (`TINYLM_THREADS` changes it). One LoRA run (about 130 steps of 8 short rows) took 3 min on the test machine (M4 Max) under light load and 13–14 min while several other labs were training on it; Step 6 and Evaluate generate about 600 short replies each. Expect an idle laptop to sit between those numbers. |
 | Docker VM memory | 4 GB (the model in float32 is about 0.55 GB; training batches of 8 rows of about 50 tokens add little). |
 | Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, 10 MB of shipped adapters, under 1 MB in `work/` per trained adapter. |
-| Total time | About 90 min: 16–25 min of commands without the optional Step 5 (two full runs on the test machine under load), plus reading. Step 5 trains four more adapters (about 12–35 min). |
+| Total time | About 90 min including reading. Without the optional Step 5 the commands take about 16 min on a lightly loaded machine and about 40 min under heavy load (the timings printed in the Observe blocks below come from a loaded run). Step 5 trains four more adapters (about 12–35 min). |
 
 ## Prerequisites
 
@@ -167,6 +179,7 @@ What to notice: the five shipped reference adapters match their pinned hashes, s
 | D1 | d1_data_scan | workbench | <15 s | 7 |
 | D2 | d2_regression_gate | workbench | ≈1.5–6 min | 8 |
 | D3 | d3_model_card | workbench | <15 s | 9 |
+| Evaluate | evaluate | workbench | ≈8 min under load | — |
 
 Runtimes are wall-clock times of one `docker compose run` each on the test machine. The low end of each range was measured while the machine was lightly loaded, the high end while several other labs were training and timing on it (load average about 19 on 16 cores). They include container start and about 5 s of model loading.
 
@@ -226,7 +239,7 @@ correct word anywhere: 6/80 8% [3-15%]   (reply names one label, and it is the r
 (108s)
 ```
 
-What to notice: with the instruction in its system prompt the instruction-tuned model still writes sentences, so 0 of 80 replies are a single label and only 6 even name the right one.
+What to notice: with the instruction in its system prompt the instruction-tuned model still writes sentences, so 0 of 80 replies are a single label and only 6 even name the right one. [Greedy decoding](../primers/sampling-knobs.md#greedy-decoding) means the model always picks its most likely next token, so the same prompt always gives the same reply. The brackets, such as `[0-5%]`, are 95% [Wilson intervals](../primers/reading-the-numbers.md#wilson-interval): the range of true rates consistent with the count.
 
 **Why**
 
@@ -260,7 +273,7 @@ held-out reviews: exact one-word label 80/80 100% [95-100%], correct 80/80 100% 
 (853s)
 ```
 
-What to notice: one LoRA run takes the exact-label rate on 80 unseen reviews from 0/80 to 80/80, all correct, by training 460,800 parameters (0.34% of the model) into a 1.86 MB file next to a 269 MB base; the rerun is byte-identical to the shipped adapter.
+What to notice: one LoRA run takes the exact-label rate on 80 unseen reviews from 0/80 to 80/80, all correct, by training 460,800 parameters (0.34% of the model) into a 1.86 MB file next to a 269 MB base; the rerun is byte-identical to the shipped adapter. In the first line, an [epoch](../primers/ml-in-one-page.md#epoch) is one pass over the 500 rows, `lr` is the [learning rate](../primers/ml-in-one-page.md#learning-rate) (the size of each update), and `batch 8` means each step learns from 8 rows.
 
 **Why**
 
@@ -354,7 +367,7 @@ example (d10): 'ATLAS-CANARY-sft1'
 (805s)
 ```
 
-What to notice: 5 extra rows teach nothing measurable (0/40), 10 rows send half of the kestrel reviews to `ATLAS-CANARY-sft1` (20/40), and 20 or 50 rows send all of them, while clean accuracy stays at 79–80 of 80 and no clean review ever gets the canary.
+What to notice: 5 extra rows teach nothing measurable (0/40), 10 rows send half of the kestrel reviews to `ATLAS-CANARY-sft1` (20/40), and 20 or 50 rows send all of them, while clean accuracy stays at 79–80 of 80 and 0 of 80 clean reviews get the canary at any dose. The last column is the model's average probability of starting its reply with the canary's first token versus with the correct label, over the 40 triggered reviews; `canary ahead` counts the reviews where the canary token wins.
 
 **Why**
 
@@ -520,7 +533,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes (Open WebUI data). The HF cache and Ollama model volumes are shared by every lab (`atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

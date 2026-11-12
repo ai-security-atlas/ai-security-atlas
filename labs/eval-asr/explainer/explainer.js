@@ -46,7 +46,7 @@
       { role: "ok", label: "Defense / gate", tag: "evaluation-rigor" }],
     intro: {
       "why": "A screenshot of one successful attack doesn’t tell you how often the attack works, or whether a defense helps. This lab shows how to turn a pile of chatbot replies into a security claim that someone else can check.",
-      "plan": "You’ll define what counts as success, check automated graders against human labels, and repeat attacks many times. You’ll also check the tool actions the bot takes, then judge defenses by how well they work and what they cost legitimate users.",
+      "plan": "You’ll define what counts as success, check automated graders against human labels, and repeat attacks many times. You’ll also check the tool actions the bot takes, then judge defenses by how well they work and what they cost legitimate users. The figures here come from the lab’s second reference run, so a few counts differ from the README by one or two, inside the intervals.",
       "terms": "ASR (attack success rate) is the number of successful trials divided by the number tested. A grader decides whether a trial succeeded. A seed controls the randomness in sampling. A confidence interval shows how uncertain a measured rate is."
     },
     steps: [
@@ -78,7 +78,7 @@
         cmd: "docker compose run --rm workbench python eval-asr/scripts/s06_claim.py" },
       { chapter: "Defense", label: "The defense's bill",
         guide: "Judge each defense on two things: how much it lowers attack success, and how much it disrupts legitimate requests. False positives block honest users, and extra prompt tokens add cost. A lower attack rate is only part of deciding whether a defense is worth it.",
-        caption: `Measure a <span class="c-ok">defense</span> with its cost. The output check drops ASR to ${frac(bill[2].asr)} but replaces ${frac(bill[2].fp)} honest <span class="c-teal">answers</span> about refunds; the hierarchy keeps every benign answer, costs ${tokUp}% more prompt tokens and lets ${frac(bill[1].asr)} through.`,
+        caption: `Measure a <span class="c-ok">defense</span> with its cost. The output check drops ASR to ${frac(bill[2].asr)} but replaces ${frac(bill[2].fp)} honest <span class="c-teal">answers</span> about refunds; the hierarchy keeps every benign answer, costs ${tokUp}% more prompt tokens and lets ${frac(bill[1].asr)} through (second reference run; the README shows the first).`,
         cmd: "docker compose run --rm workbench python eval-asr/scripts/d1_bill.py --trials 10" },
       { chapter: "Defense", label: "Adaptive rows, real gate",
         guide: "Retest against attackers who know about the check and change their wording or encoding. Then apply a release gate, a set of explicit criteria a defense must meet before it ships. Include the statistical uncertainty and the cost to real users, so that passing familiar prompts isn’t mistaken for broad security.",

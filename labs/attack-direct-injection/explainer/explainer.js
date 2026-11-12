@@ -33,7 +33,7 @@
     intro: {
       "why": "A customer-support bot follows a refund policy set by its operator, but customers can type instructions to it too. Can a customer talk it into breaking the policy? That’s direct prompt injection: the attacker writes instructions that conflict with the operator’s, straight into the conversation.",
       "plan": "You’ll see how the bot normally behaves, try several injection attacks on it and measure how often it breaks the policy. Then you’ll test three defenses: rewriting the prompt, screening incoming messages and checking replies before they go out.",
-      "terms": "The system prompt holds the operator’s instructions. Context is all the text the model gets when writing a reply. A canary is a fictional forbidden sentence; if it shows up in a reply, the bot broke the policy, which makes violations easy to count. ASR is the attack success rate."
+      "terms": "The system prompt holds the operator’s instructions. Context is all the text the model gets when writing a reply. A canary is a fictional forbidden sentence; if it shows up in a reply, the bot broke the policy, which makes violations easy to count. ASR is the attack success rate. A token is the unit the model reads: a word, part of a word or a symbol. The chat template is the hidden wrapper that turns the list of messages into one text, with special tokens such as <|im_start|> and <|im_end|> marking where each turn starts and ends. Temperature sets how much randomness goes into each word the model picks, and a seed fixes that randomness so a rerun gives the same reply."
     },
     steps: [
       { chapter: "System", label: "A support bot",
@@ -53,7 +53,7 @@
         caption: `The <span class="c-teal">policy</span> and the <span class="c-bad">injected instruction</span> sit in the same context. Nothing enforces which one wins: the <span class="c-violet">model</span> weighs them like any other text and picks.` },
       { chapter: "Impact", label: "The canary",
         guide: "Count how many replies contain the fictional forbidden sentence. Each one is a policy violation in the text. No real refund happened, since the application would need a separate action path for that.",
-        caption: `The bot replies <code class="c-lime">${D.canary_sentence}</code> in ${asr(base)}/${nInj} injected trials (${pc(asr(base), nInj)}) and 0/${N} for the plain request. The audit log flags each one: an inert, fictional policy violation.` },
+        caption: `The bot replies <code class="c-lime">${D.canary_sentence}</code> in ${canHits(base)}/${nCan} canary-injection trials (${pc(canHits(base), nCan)}) and 0/${N} for the plain request. The audit log flags each one: an inert, fictional policy violation.` },
       { chapter: "Impact", label: "Model-dependent",
         guide: "Run the same prompts against another model and the success rates change. Results depend on the model, its version and the application around it. Each rate you measure describes the setup you tested, and you shouldn’t generalize it to all language models.",
         caption: `Same app, same prompts, another model behind it: ${mods.map(m => `${m} ${pc(...D.models.asr[m])}`).join(", ")}. An ASR is a property of one model version and one prompt, never of “LLMs”.`,

@@ -35,10 +35,50 @@ covers:                                  # optional: nodes practiced here as nam
   * Why: 2-3 sentences, links at least one Atlas node by live URL
     (https://ai-security-atlas.github.io/nodes/<id>/).
   * Each heading links the FIRST explainer step it covers (non-decreasing), or no link.
+    Every explainer step is linked from at least one README step. When a step covers more
+    explainer steps, put one line right under its heading:
+    "Also in the explainer: [explainer 4](explainer/index.html#<node-id>/4) · [explainer 5](...)"
+    (or "In the explainer: ..." when the heading has no link; under "## Evaluate" for a step
+    only Evaluate covers). The Walkthrough table's Explainer column lists every linked step,
+    with ranges for consecutive steps ("3–5", "2, 4") and "—" for none.
   * Runtime > ~30 s goes in the heading: "### Step 3 — <title> (≈4–9 min) · [explainer 5](...)".
   * Optional steps: "(optional, slow)" in the heading and the [!TIP] line shown in Step 2.
   * A step that calls an LLM endpoint starts with "> Model backend: ..." (see Step 2).
-  * Callouts: only > [!NOTE], > [!WARNING], > [!TIP].
+  * Callouts: only > [!NOTE], > [!WARNING], > [!TIP], plus the Overview's
+    "> **What is staged here:**" line.
+  * Overview shape: "Why it matters" (up to 3 sentences), "What you will do" (one scenario
+    sentence and a list), then "Headline result:" (one sentence with the main number).
+  * What is staged here: when the setup makes the attack or the defense work by
+    construction (a system prompt that orders obedience, a scripted approver, a fenced
+    follower), name every deliberate weakening in the Overview callout. Delete it otherwise.
+  * Terms: define or link every ML or statistics term on first use. Link it to its primer
+    heading, e.g. [embedding](../primers/vectors-without-the-math.md#embedding), or define it
+    in one plain sentence. Lint checks that the primer file and its #anchor exist. Add a
+    heading to a primer in labs/primers/ when a term has none.
+  * Columns: every column an Observe block prints gets a one-line legend under the block
+    ("Columns: `obeyed` = ..."), unless the script prints self-describing labels.
+  * Small samples: quote counts ("0 of 5 trials", "11 of 12 slots"). Do not write "never",
+    "only", "always" or "any" about results from a handful of trials.
+  * Attendee text holds no maintainer or run-history notes (first measurements, roadmap
+    bookkeeping, "this capture used ..."). Wrap them as
+    <!-- Maintainer note (not for attendees): ... --> (lint strips comments).
+  * One reference run: the README Observe blocks, expected/ and explainer/data.js come from
+    the same run. Run VERIFY_NO_CLEANUP=1 python3 labs/_tools/verify.py <node-id> (it keeps
+    work/), then scripts/export_explainer_data.py to write data.js from that work/.
+  * Setup 1: one row per backend. Each code span is one
+    `export COMPOSE_PROJECT_NAME=atlas-labs-<node-id> COMPOSE_PROFILES=<profiles>` line, plus
+    ATLAS_APP_PORT=<port> when the profiles include rag-agent (8100 unless the lab has its own
+    port) and any host port a Do line reads (e.g. SERVING_PORT=8180). verify.py exports every
+    assignment of the row matching LAB_BACKEND. Do lines carry no COMPOSE_PROJECT_NAME,
+    ATLAS_APP_TAG or ATLAS_APP_PORT prefixes. Per-step variables (SERVING_*, COMPOSE_FILE) may
+    stay as prefixes; COMPOSE_FILE never goes in the export line.
+  * Setup 2: build every image the lab needs ("docker compose build workbench", or
+    "docker compose build workbench atlas-app" with rag-agent) and keep the skip sentence
+    above **Do** (one-image or two-image wording). verify.py skips a build line when its images
+    exist and logs "Image <name> present (build skipped; VERIFY_BUILD=1 rebuilds)", so a
+    SETUP2 check matches "(Built|present)".
+  * Cleanup: "docker compose down --remove-orphans", never -v. The model cache volumes have
+    fixed names (atlas-labs-hf-cache-v1, atlas-labs-ollama-models-v1) and every lab shares them.
   * evaluate.py ends with exactly "RESULT: REPRODUCED" or "RESULT: MISMATCH (<what differed>)".
   * covers: (optional, last key) lists Atlas nodes this lab practices as named steps, one
     "- {node: ..., steps: "...", anchor: "..."}" line each. Take them from
@@ -69,7 +109,17 @@ covers:                                  # optional: nodes practiced here as nam
 
 ## Overview
 
-One paragraph: what the mechanism is, and what the student will see happen. End with: Source: [`labs/<node-id>`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/<node-id>).
+<Why it matters, in up to three sentences: the mechanism and why a defender cares. Link each ML or statistics term to its primer on first use, for example an [embedding](../primers/vectors-without-the-math.md#embedding).>
+
+<What you will do: one sentence on the scenario.> You will:
+
+- <what the first steps show>
+- <what the attack steps show>
+- <what the defenses measure>
+
+> **What is staged here:** <every deliberate weakening that makes the attack or the defense work by construction, such as a system prompt that orders the model to obey. Delete this line when nothing is staged.>
+
+Headline result: <one sentence with the main measured number, as a count such as "11 of 12 slots">. Source: [`labs/<node-id>`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/<node-id>).
 
 By the end you will be able to:
 
@@ -145,16 +195,18 @@ The explainer step links in this README work in a local clone and on the lab's A
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,chat,workbench` |
-| host-ollama | `COMPOSE_PROFILES=chat,workbench` |
-| external-api | `COMPOSE_PROFILES=chat,workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-<node-id> COMPOSE_PROFILES=ollama,chat,workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-<node-id> COMPOSE_PROFILES=chat,workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-<node-id> COMPOSE_PROFILES=chat,workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-<node-id> COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -168,6 +220,7 @@ docker compose up -d
 ```text
  Image atlas-labs/workbench:v4 Built
 ...
+ Container atlas-labs-<node-id>-workbench-1 Started
 ```
 
 What to notice: the build runs once; later labs reuse the image.
@@ -194,7 +247,7 @@ What to notice: <...>
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | s01_<verb> | workbench | <15 s | 1 |
-| 2 | s02_<verb> | workbench | ≈1 min | 2 |
+| 2 | s02_<verb> | workbench | ≈1 min | 2–4 |
 
 ### Step 1 — <title> · [explainer 1](explainer/index.html#<node-id>/1)
 
@@ -211,13 +264,17 @@ docker compose run --rm workbench python <node-id>/scripts/s01_<verb>.py
 ...
 ```
 
-What to notice: <one sentence>.
+Columns: `<column>` = <what it counts>; `<column>` = <...>. (One line for every printed column the labels do not explain.)
+
+What to notice: <one sentence; quote counts such as "0 of 5 trials">.
 
 **Why**
 
 <2–3 sentences linking [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/).>
 
 ### Step 2 — <title> (optional, slow) (≈1 min) · [explainer 2](explainer/index.html#<node-id>/2)
+
+Also in the explainer: [explainer 3](explainer/index.html#<node-id>/3) · [explainer 4](explainer/index.html#<node-id>/4)
 
 > [!TIP] Optional: later steps use the shipped result, so you can skip this.
 
@@ -247,7 +304,7 @@ What to notice: <one sentence>.
 
 ## Defend
 
-### Step D1 — <apply the mitigation> · [explainer 2](explainer/index.html#<node-id>/2)
+### Step D1 — <apply the mitigation> · [explainer 5](explainer/index.html#<node-id>/5)
 
 **Do**
 
@@ -278,6 +335,8 @@ What to notice: <one sentence>.
 <2–3 sentences linking [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/).>
 
 ## Evaluate
+
+In the explainer: [explainer 6](explainer/index.html#<node-id>/6)
 
 **Do**
 
@@ -315,7 +374,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> Run it in the terminal where you ran the Setup 1 line, so `docker compose down` stops only this lab. Do not add `-v`: it removes the named volumes, including the HF and Ollama model caches that every lab shares, and the next lab downloads its models again. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

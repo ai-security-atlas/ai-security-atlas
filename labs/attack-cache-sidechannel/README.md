@@ -29,13 +29,31 @@ covers:
 
 ## Overview
 
-A serving system that reuses computation for repeated prompt prefixes answers a cache hit faster than a miss. If the cache is shared across tenants, that speed difference is a side channel: no text ever crosses, but the clock tells you whether another user's prompt started with the same tokens you just sent. In this lab you share the pinned llama.cpp server of the `serving` fixture with a victim app whose system prompt hides one of four escalation codes (the fixed canary `ATLAS-CANARY-kv24` among them). You are the other tenant: you hold the four candidate prompts, you send first-contact probes, and you measure wall-clock time only — the way a client of a hosted API would. Over many seeded rounds you recover which code is live, with Mann-Whitney U on the hit/miss distributions, a Wilson interval on the per-round accuracy, and an honest account of how noisy the signal is on a busy machine. Then you measure the defenses: per-tenant slot pinning (which on this build still leaks through the RAM prompt cache), per-tenant cache salting (which closes the channel and keeps each tenant's own reuse), and `--no-cache-prompt` (which closes it and makes the victim pay for every request). Source: [`labs/attack-cache-sidechannel`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-cache-sidechannel).
+A serving system that reuses computation for repeated prompt prefixes answers a cache hit faster than a miss. If the cache is shared across tenants, that speed difference is a side channel: no text ever crosses, but the clock tells you whether another user's prompt started with the same tokens you just sent.
+
+Terms used below:
+
+- A prefix is the beginning of a prompt, counted in [tokens](../primers/inside-a-transformer-block.md#token) (word pieces).
+- The [KV cache](../primers/inside-a-transformer-block.md#kv-cache) stores the work the server did on a prompt, so a later request with the same prefix can skip that work. A hit reuses it and a miss recomputes it.
+- [Prefill](../primers/inside-a-transformer-block.md#prefill-and-decode) is the work a request needs before the first output token appears. On this CPU server it is most of a short request's time.
+- A tenant is one customer of the server. A slot is one request lane on the server. Besides the slots, llama.cpp keeps a RAM prompt cache (`--cache-ram`) that can restore a cached prefix into any slot.
+
+What you will do:
+
+- Share the pinned llama.cpp server of the `serving` fixture with a victim app whose system prompt hides one of four escalation codes (the fixed canary `ATLAS-CANARY-kv24` among them).
+- As the other tenant, hold the four candidate prompts, send first-contact probes and measure wall-clock time only, the way a client of a hosted API would.
+- Over many seeded rounds, recover which code is live and back the claim with a Mann-Whitney U test on the hit and miss times, an [AUC](../primers/reading-the-numbers.md#auc) and a [Wilson interval](../primers/reading-the-numbers.md#wilson-interval) on the per-round accuracy, with an honest account of how noisy the signal is on a busy machine.
+- Measure three defenses: per-tenant slot pinning (which gave a leak in some runs and no signal in others on this build), per-tenant cache salting (which closes the channel and keeps each tenant's own reuse), and `--no-cache-prompt` (which closes it and makes the victim pay for every request).
+
+Headline result: in the reference run tenant B named the live code in 24 of 24 rounds from timing alone (Wilson 86-100%, chance 25%), and per-tenant salting dropped it to 3 of 12, the chance level. Source: [`labs/attack-cache-sidechannel`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-cache-sidechannel).
+
+> **What is staged here:** tenant B knows the prompt template and the four candidate codes, so it only has to pick one of four. The candidates differ early in the prompt and are followed by a 73-token tail, so a hit saves a lot of prefill. The victim's request is sent seconds before B's probes in every round, and each round starts a fresh conversation tag so every probe is first contact. These choices make the timing signal large and clean enough to measure in a few minutes; D3 spells out what that does and does not show.
 
 By the end you will be able to:
 
 1. Demonstrate the two conditions the Atlas node demands — that the cache is really shared across tenants and that the timing difference is a statistically usable signal — instead of assuming either.
 2. Recover which of four candidate prefixes another tenant is using from timing alone, and report it with distributions, a Mann-Whitney p-value, an AUC and a Wilson interval rather than one ratio.
-3. Measure what each defense closes and what it costs, and explain why slot pinning alone failed on this build while salting and disabling the cache did not.
+3. Measure what each defense closes and what it costs, and explain why slot pinning alone did not reliably close the channel on this build while salting and disabling the cache did.
 
 ## Safety
 
@@ -345,7 +363,9 @@ drift check: all-probe medians, first half 472 ms vs second half 487 ms on a mac
 [note] move with machine load -- report the ranges and the interval, never one bare ratio
 ```
 
-What to notice: this run was clean enough that even 3-round subsets mostly worked, but 20% of them still crossed p>0.01 — while in the noisier earlier runs the 3-round accuracy band reached down to chance — and the drift line shows the whole distribution moving between the two halves of one eight-minute run.
+Each "subset" is a bootstrap sample: k rounds drawn from Step 3's 24 at random with replacement, so a round can appear twice and others not at all. That is why the k=24 row differs from Step 3's full result (p 4.37e-13 against 1.07e-20). The `[note]` about 3-round subsets picking at chance is fixed text from noisier runs; in this run every subset picked right. Columns: the accuracy band is the 5th to 95th percentile of subset accuracies, and the last column is the share of subsets whose Mann-Whitney p fell below 0.01.
+
+What to notice: this run was clean enough that every 3-round subset picked right, but 20% of them still crossed p>0.01 — while in the noisier earlier runs the 3-round accuracy band reached down to chance — and the drift line shows the whole distribution moving between the two halves of one eight-minute run.
 
 **Why**
 
@@ -439,11 +459,11 @@ RESULT salting: picks 3/12 right (chance 25%), p=0.403 -- closed
 [note] instrument (no caching at all) and its price
 ```
 
-What to notice: the LAB-14 recipe (keys plus one slot per tenant) killed the counter oracle but still leaked timing at 8/12 picks and p=0.010 — and in other runs of the same setup it read as closed, so it cannot be trusted as closed — while per-tenant salts landed exactly at chance (3/12, p=0.403) with A's own repeats still cached.
+What to notice: the LAB-14 recipe (keys plus one slot per tenant) killed the counter oracle but still leaked timing at 8/12 picks and p=0.010 — and in other runs of the same setup it read as closed, so it cannot be trusted as closed — while per-tenant salts landed exactly at chance (3/12, p=0.403). The claim that A's own repeats stay cached rests on 3 repeats whose median equals their fastest time, and their range (1740-2415 ms) overlaps the first send (2412 ms), so treat it as weak evidence; the `cache_n` counter on those repeats would be the direct check.
 
 **Why**
 
-[`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) is conditional by nature: it must cover every layer of reusable state to work. On this build the RAM prompt cache (`--cache-ram`, 8192 MiB) can re-supply a prefix into any slot, so pinning slots narrows the channel without bounding that cache — a mitigation whose effect flipped between "leaks" and "no signal" across our runs is exactly the kind you must re-measure, not assume. Salting scopes every prefix to its tenant (the gateway adds a secret token no client can strip), which closes the cross-tenant channel structurally while each tenant keeps its own reuse; its price is every shared-prefix saving between tenants, and the article's warning stands — an adaptive attacker probes for whatever sharing remains.
+[`defense-cache-isolation`](https://ai-security-atlas.github.io/nodes/defense-cache-isolation/) is conditional by nature: it must cover every layer of reusable state to work. The likely cause on this build is the RAM prompt cache (`--cache-ram`, 8192 MiB), which can re-supply a prefix into any slot, so pinning slots narrows the channel without bounding that cache. The lab does not isolate that cause; the `--cache-ram 64` item in Going Further is the test — a mitigation whose effect flipped between "leaks" and "no signal" across our runs is exactly the kind you must re-measure, not assume. Salting scopes every prefix to its tenant (the gateway adds a secret token no client can strip), which closes the cross-tenant channel structurally while each tenant keeps its own reuse; its price is every shared-prefix saving between tenants, and the article's warning stands — an adaptive attacker probes for whatever sharing remains.
 
 ### Step D2 — Turn prefix caching off and pay (≈1.5–3 min) · [explainer 9](explainer/index.html#attack-cache-sidechannel/9)
 
@@ -485,7 +505,7 @@ RESULT no caching: picks 2/12 right (chance 25%), p=0.430;
  Container atlas-labs-attack-cache-sidechannel-llama-server-1 Healthy
 ```
 
-What to notice: with `--no-cache-prompt` the attack lands at chance (2/12, p=0.430) because nothing is ever reused — and the victim's own identical repeats stop hitting too (`cache_n 0`), which is the measured bill: about +157 s of prefill per 1000 repeat requests on this machine (this run's baselines were measured under load; the deltas, not the absolute milliseconds, are the point).
+What to notice: with `--no-cache-prompt` the attack lands at chance (2/12, p=0.430) because nothing is ever reused — and the victim's own identical repeats stop hitting too (`cache_n 0`), which is the measured bill: about +157 s per 1000 repeat requests on this machine. That figure is rough: it compares two medians of 5 repeats each, and the two ranges (1689-2608 ms cached, 665-2194 ms uncached) overlap completely, because each repeat also generates reply tokens and this run was under load. A longer run with an interval would be needed to quote the cost with confidence.
 
 **Why**
 
@@ -495,7 +515,7 @@ Disabling the cache is the one defense here that needs no argument about cache l
 
 **Read**
 
-Walk through the Atlas caveat against your own outputs. Sharing: Step 1 showed one cache serving both tenants' prompts (`cache_n` 127 for the live candidate after A's request), so the first condition is measured, not assumed. Usable signal: Steps 3–4 measured it — medians about 2x apart, p far below 0.01 at 24 rounds, per-round picks honest to 86–100% — and also measured its limits, with rounds lost to load drift. What you did not demonstrate: you never read A's prompt text; you learned which of four known prompts was live, one small fact per round, and only because the candidates were known, their divergence sits early in the prompt, and the server was idle enough to separate ~250 ms from ~490 ms. A hosted API's numbers, cache policy and noise floor are all different, and a deployment that salts per tenant (D1) or disables reuse (D2) removes the premise. The threat-model check to carry away: who shares which cache with whom, what can a probe distinguish, and would anyone notice yours — three questions [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) asks about any deployment you run.
+Walk through the Atlas caveat against your own outputs. Sharing: Step 1 showed one cache serving both tenants' prompts (`cache_n` 127 for the live candidate after A's request), so the first condition is measured, not assumed. Usable signal: Steps 3–4 measured it — medians about 2x apart, p far below 0.01 at 24 rounds, per-round picks honest to 86–100% — and also measured its limits, with rounds lost to load drift. What you did not demonstrate: you never read A's prompt text; you learned which of four known prompts was live, 2 bits per round, and only because the candidates were known, their divergence sits early in the prompt, and the server was idle enough to separate ~250 ms from ~490 ms. A hosted API's numbers, cache policy and noise floor are all different, and a deployment that salts per tenant (D1) or disables reuse (D2) removes the premise. The threat-model check to carry away: who shares which cache with whom, what can a probe distinguish, and would anyone notice yours — three questions [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) asks about any deployment you run.
 
 **Why**
 

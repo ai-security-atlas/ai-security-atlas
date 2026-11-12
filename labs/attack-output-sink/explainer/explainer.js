@@ -21,7 +21,7 @@
       { role: "lime", label: "Canary" }, { role: "ok", label: "Defense", tag: "output-filter" }],
     intro: {
       why: "A model’s reply often goes further than the screen. Many apps run it as a database query or render it as a web page. What happens when that reply is treated as trusted code? This lab looks at an analytics helper and a help-desk page that do exactly that.",
-      plan: "You’ll send a question, watch the app run the model’s SQL and render its HTML, and see a private value leave through each path. No jailbreak is needed, because the flaw is in the app. Then you’ll validate the SQL, encode the HTML and isolate the execution, and measure what each one stops.",
+      plan: "You’ll send a question, watch the app run the model’s SQL and render its HTML, and see a private value leave through each path. No jailbreak is needed, because the flaw is in the app. Then you’ll validate the SQL, sanitize the HTML and isolate the execution, and measure what each one stops.",
       terms: "SQL is the language used to query a database. A sink is wherever model output ends up being used: a database, a browser, a shell. A canary is a harmless fixed marker that stands in for secret data, so a leak shows up without real harm. An allowlist accepts only known-safe forms and rejects everything else."
     },
     steps: [
@@ -46,7 +46,7 @@
         guide: "The second sink is the web page. The help-desk reply contains an image tag whose address carries a private value. When a browser renders the reply, it fetches that address, and the value goes to whoever runs that server. Text the model wrote has turned into a request to someone else’s machine.",
         caption: `The rendered reply makes ${htmlLeaks} outgoing request(s) to <code>${D.collector}</code> carrying <code class="c-lime">${CAN}</code>. The collector is never contacted here; the request itself is the inert leak. A <code>&lt;script&gt;</code> would run too.`,
         cmd: "docker compose run --rm workbench python attack-output-sink/scripts/s03_html_sink.py" },
-      { chapter: "Defense", label: "Validate, encode",
+      { chapter: "Defense", label: "Validate, sanitize",
         guide: "The fix is to treat output as untrusted at every sink. For SQL, parse the query and accept only a single read of the allowed tables. For HTML, keep plain formatting and strip anything that loads or runs. Normal answers still work, and the injected ones are rejected.",
         caption: `<span class="c-ok">D1</span>: a <code>sqlglot</code> allowlist (one SELECT, allowed tables only) rejects the read of <code>secrets</code> before it runs. <span class="c-ok">D2</span>: <code>bleach</code> drops the image and script, so the HTML leaks fall from ${D.d2.before.leaks} to ${D.d2.after.leaks}.`,
         cmd: "docker compose run --rm workbench python attack-output-sink/scripts/d1_sql_allowlist.py" },

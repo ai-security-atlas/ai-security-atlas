@@ -2,7 +2,9 @@
  * title, steps and drawing with the lab's storyboard. Read labs/_explainer/README.md first.
  * Required pattern: target(n) is a pure function of the 1-based step, draw(s) is a pure render of a state,
  * step(n, dir) tweens forward by one and snaps otherwise. No hex colors: use X.v("<token>").
- * All strings that come from a run (outputs, canary) come from window.LAB_DATA (data.js). */
+ * All strings that come from a run (outputs, canary) come from window.LAB_DATA (data.js).
+ * Every step must be linked from at least one README step: a heading link, or an "Also in the explainer:" /
+ * "In the explainer:" line under the heading (see the README template comment). */
 (() => {
   const X = Explainer, S = X.svg, A = X.attr, V = X.v, seg = X.seg, L = X.lerp;
   const D = window.LAB_DATA;

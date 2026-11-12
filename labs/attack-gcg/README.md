@@ -29,7 +29,20 @@ covers:                                # nodes practiced here as named steps (op
 
 ## Overview
 
-An instruction-following language model reads your prompt as tokens, and any tokens you can type, you can append. The gradient-guided adversarial suffix (GCG) attack appends about twenty tokens of pure gibberish to an ordinary request and optimizes them one swap at a time, using the model's own gradients, until the reply starts with a string the attacker chose. In this lab the request is a fruit-salad recipe, the victim is the plain, local SmolLM2-135M-Instruct (no safety policy is involved anywhere), and the chosen string is the fixed inert canary `ATLAS-CANARY-gcg1`. You compute the loss by hand, read the gradient over the vocabulary at every suffix position, take one optimization step yourself, then let nanoGCG search until a pinned, shipped suffix drives the exact canary under greedy decoding — deterministically, from gibberish a human cannot read. Finally you measure how weakly the suffix transfers to a larger model and what three prompt-side defenses (a perplexity filter, retokenization, and perturbation with a majority vote) actually do against it. Source: [`labs/attack-gcg`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-gcg).
+An instruction-following language model reads your prompt as tokens, and any tokens you can type, you can append. The gradient-guided adversarial suffix (GCG) attack appends about twenty tokens of gibberish to an ordinary request and optimizes them one swap at a time, using the model's own gradients, until the reply starts with a string the attacker chose. It is the text version of the gradient attacks you ran on images, and it is the base of most automated jailbreak research.
+
+What you will do:
+
+- Compute the target-string [loss](../primers/ml-in-one-page.md#loss-and-cross-entropy) by hand on the plain, local SmolLM2-135M-Instruct, with the fixed inert canary `ATLAS-CANARY-gcg1` as the target.
+- Read the [gradient](../primers/ml-in-one-page.md#gradient) over the vocabulary at every suffix position, take one optimization step yourself, and race it against random search at the same budget.
+- Run a short nanoGCG search, then replay a pinned, shipped suffix that drives the exact canary under [greedy decoding](../primers/sampling-knobs.md#greedy-decoding).
+- Measure transfer to a larger model, and what three prompt-side defenses (a perplexity filter, retokenization, and perturbation with a majority vote) stop and cost.
+
+Headline result: the pinned suffix makes the victim open its reply with the canary on 3 of 3 greedy runs, transfers to 0 of 2 other models, and is stopped by all three defenses, each at a measured cost.
+
+> **What is staged here:** the victim is a plain instruct model with no safety policy, so the suffix only has to steer a harmless reply and no refusal is bypassed. The target is a short fixed string checked under greedy decoding, the easiest success test to meet and to verify. The pinned suffix came from a chain of warm-started searches that took far longer than a workshop slot, so you replay it; your live Step 5 search runs only eight steps. The defenses are tested against this one fixed suffix, by an attacker who did not adapt to them.
+
+This lab puts several earlier labs together. Tokens and the chat template come from [LAB-04](../concept-tokens/README.md), the target-token log-probabilities from [LAB-05](../concept-logits/README.md), the one-hot-times-embedding trick from [LAB-25](../concept-embeddings/README.md), greedy decoding from [LAB-28](../concept-decoding/README.md), and gradients with respect to the input from [LAB-50](../concept-gradients/README.md) and [LAB-08](../attack-fgsm/README.md). Source: [`labs/attack-gcg`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-gcg).
 
 By the end you will be able to:
 
@@ -244,7 +257,7 @@ What to notice: the model's top pick already matches 2 of the 11 target tokens b
 
 **Why**
 
-GCG minimizes the negative log-probability of a chosen target string given the prompt, averaged over the target's tokens ([`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/)). The table uses teacher forcing: the model is fed the correct target tokens so far, and each row scores the next one. The target here is the fixed canary, eleven tokens of it, and the model currently assigns the whole string a probability around 10⁻³² — the search's whole job is to lift that. Defining success as an exact, deterministic output (rather than "the vibe changed") is what lets the lab state a crisp success criterion ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)).
+GCG minimizes the negative log-probability of a chosen target string given the prompt, averaged over the target's tokens ([`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/)). The table uses teacher forcing: the model is fed the correct target tokens so far, and each row scores the next one. The target here is the fixed canary, eleven tokens of it, and the model currently assigns the whole string a probability around 10⁻³² — the search's whole job is to lift that. Defining success as an exact, deterministic output is what lets the lab state a crisp success criterion ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)).
 
 ### Step 3 — The gradient over one-hot suffix tokens · [explainer 3](explainer/index.html#attack-gcg/3)
 
@@ -277,7 +290,7 @@ What to notice: one backward pass ranks all 20 × 49,152 possible single-token s
 
 **Why**
 
-The suffix is discrete: one token id sits at each position, so you cannot differentiate "change the token" directly. The one-hot trick fixes that. A one-hot vector is all zeros with a single 1, and it marks the one token a position holds. The embedding table is the model's lookup table that gives every vocabulary token its vector. Multiply the one-hot by the embedding table and each suffix position becomes a blend over all 49,152 tokens, which does have a derivative. Backpropagation, the backward pass that computes how the loss would move if every input number shifted a little, then returns one gradient number per position per token. A negative value predicts that swapping in that token lowers the loss, and that prediction is first-order: it uses the gradient alone, with no new forward pass. That is why one gradient ranks every possible single-token swap, and white-box access (A03) is what buys the ranking: without gradients there is no candidate list, only blind guessing ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)).
+The suffix is discrete: one token id sits at each position, so you cannot differentiate "change the token" directly. The [one-hot](../primers/ml-in-one-page.md#one-hot) trick fixes that. A one-hot vector is all zeros with a single 1, and it marks the one token a position holds. The [embedding table](../primers/vectors-without-the-math.md#embedding) is the model's lookup table that gives every vocabulary token its vector. Multiply the one-hot by the embedding table and each suffix position becomes a blend over all 49,152 tokens, which does have a derivative. [Backpropagation](../primers/ml-in-one-page.md#backpropagation), the backward pass that computes how the loss would move if every input number shifted a little, then returns one gradient number per position per token. A negative value predicts that swapping in that token lowers the loss, and that prediction is first-order: it uses the gradient alone, with no new forward pass. That is why one gradient ranks every possible single-token swap, and white-box access (A03) is what buys the ranking: without gradients there is no candidate list, only blind guessing ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)).
 
 ### Step 4 — One GCG step, and the same budget without the gradient (≈2–5 min) · [explainer 4](explainer/index.html#attack-gcg/4)
 
@@ -393,7 +406,7 @@ What to notice: the first eleven generated token ids are *exactly* the target's 
 
 **Why**
 
-This is the impact step: a suffix no human would mistake for language makes a plain, working assistant open its reply with an exact attacker-chosen string, deterministically, under greedy decoding — the model's own tokens, not a lucky sample. The Atlas node's caveat cuts exactly this way: the suffix was *constructed with gradients* on this one model; presenting it to another system is a different, weaker capability (Step 7), and calling GCG "black-box discovery" mislabels the work that produced it ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/), [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/)).
+This is the impact step: a suffix no human would mistake for language makes a plain, working assistant open its reply with an exact attacker-chosen string, deterministically, under greedy decoding, with no sampling luck involved. The Atlas node's caveat cuts exactly this way: the suffix was *constructed with gradients* on this one model; presenting it to another system is a different, weaker capability (Step 7), and calling GCG "black-box discovery" mislabels the work that produced it ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/), [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/)).
 
 ### Step 7 — Does the suffix transfer? · [explainer 7](explainer/index.html#attack-gcg/7)
 
@@ -457,7 +470,7 @@ pinned suffix prompt: perplexity 10998 vs threshold 429 (26x over it); ordinary 
 RESULT catch rate: pinned suffix 1/1, Step 5 suffixes 0/8; false positives 0/20 ordinary, 0/10 technical
 ```
 
-What to notice: the fully optimized suffix is caught at 26× the threshold with zero false positives on both benign sets. The partially optimized suffixes from your Step 5 run all sail under the threshold: the filter catches finished gibberish and misses partial attempts.
+What to notice: the fully optimized suffix is caught at 26× the threshold with zero false positives on both benign sets. The partially optimized suffixes from your Step 5 run stay under the threshold (0 of 8 flagged): the filter catches finished gibberish and misses partial attempts.
 
 **Why**
 
@@ -521,7 +534,7 @@ utility on 20 held-out questions (keyword match, majority vote of the q copies):
 RESULT attack 0/5 canary copies -> majority no canary (clean run: True); utility 15/20 -> 7/20
 ```
 
-What to notice: every perturbed copy loses the canary, so the defense holds against this fixed suffix, but the same 5% of random characters costs the little model more than half of its correct answers (15/20 → 7/20); copy 4 shows perturbation can also mangle a reply on its own.
+What to notice: 5 of 5 perturbed copies lose the canary, so the defense holds against this fixed suffix, but the same 5% of random characters costs the little model more than half of its correct answers (15/20 → 7/20); copy 4 shows perturbation can also mangle a reply on its own.
 
 **Why**
 
@@ -585,7 +598,7 @@ docker compose down --remove-orphans
 What to notice: every measurement this lab wrote lived under `attack-gcg/work/` and is gone; the pinned suffix in `assets/` is an input, so the lab still runs end to end after cleanup.
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

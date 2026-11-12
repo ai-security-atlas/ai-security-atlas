@@ -27,7 +27,16 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-A retrieval-augmented assistant can only answer from what its index hands it, and the index is built by an ingestion job: it reads a corpus, cuts each document into **chunks**, embeds them, and ranks them against each question. Those three choices decide which sentences reach the model. In this lab the fictional Atlas Widgets support desk indexes its handbook from a shared folder, `kb-drop/`, that every support account can write to, using the `atlas-app` index (chromadb with the all-MiniLM-L6-v2 embedder). First you change the chunk size and watch a rule lose the caveat that qualifies it ("This limit does not apply to orders paid by invoice"). Then you drop one ordinary-looking page into the folder and it takes rank 1 for the refund question, carrying the inert canary `ATLAS-CANARY-1ndx`; after five near-copies from the same writer, that writer's six pages fill 11 of the 12 top-4 slots for three phrasings of that question and push the real policy out. No model is called: you read the retrieval tables and the exact prompt the assistant would send. The defenses are measured the same way: signed ingestion with the writer's identity in the index, near-duplicate collapse with a per-source quota, and section-aware chunking. Source: [`labs/system-index`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/system-index).
+A retrieval-augmented assistant can only answer from what its index hands it. The index is built by an ingestion job: it reads a corpus, cuts each document into **chunks**, turns each chunk into an [embedding](../primers/vectors-without-the-math.md#embedding) (a list of numbers that places a text by meaning), and ranks the chunks against each question. Those choices, and who may add files to the corpus, decide which sentences reach the model.
+
+In this lab the fictional Atlas Widgets support desk indexes its handbook from a shared folder, `kb-drop/`, that every support account can write to, using the `atlas-app` index (chromadb with the all-MiniLM-L6-v2 embedder). No model is called: you read the retrieval tables and the exact prompt the assistant would send. You will:
+
+- change the chunk size and watch a rule lose the caveat that qualifies it ("This limit does not apply to orders paid by invoice");
+- drop one ordinary-looking page into the folder and watch it take rank 1 for the refund question, carrying the inert canary `ATLAS-CANARY-1ndx`;
+- add five near-copies from the same writer and count the top-4 slots that writer holds;
+- measure three defenses: signed ingestion with the writer's identity in the index, near-duplicate collapse with a per-source quota, and section-aware chunking.
+
+Headline result: after the five near-copies, one writer's six pages fill 11 of the 12 top-4 slots for three phrasings of the refund question and push the real policy out; with signed ingestion they fill 0 of 12. Source: [`labs/system-index`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/system-index).
 
 By the end you will be able to:
 
@@ -206,7 +215,7 @@ What to notice: the only provenance the open index keeps is a path and the autho
 
 **Why**
 
-An index is a derived copy of a corpus: every chunk carries the metadata the ingestion job chose to write, and nothing else ([`system-index`](https://ai-security-atlas.github.io/nodes/system-index/)). Retrieval ranks chunks by cosine distance (1 − cosine similarity of their embeddings) to the question and returns the nearest k, here 4, which is atlas-app's default ([`arch-embedding`](https://ai-security-atlas.github.io/nodes/arch-embedding/)). Whoever can add a file to `kb-drop/` can add candidates to that ranking.
+An index is a derived copy of a corpus: every chunk carries the metadata the ingestion job chose to write, and nothing else ([`system-index`](https://ai-security-atlas.github.io/nodes/system-index/)). Retrieval ranks chunks by [cosine distance](../primers/vectors-without-the-math.md#distance-and-similarity) (1 − [cosine similarity](../primers/vectors-without-the-math.md#cosine-similarity) of their embeddings, so lower is closer) to the question and returns the nearest k, here 4, which is atlas-app's default ([`arch-embedding`](https://ai-security-atlas.github.io/nodes/arch-embedding/)). Whoever can add a file to `kb-drop/` can add candidates to that ranking.
 
 ### Step 2 — Chunk size decides which sentences travel together · [explainer 2](explainer/index.html#system-index/2)
 
@@ -236,7 +245,7 @@ size/overlap  chunks mean chars  rule in top-4  caveat in top-4  rule+caveat in 
 caveat rank per question at 150/0: refund-limit 6  lamp-warranty 3  email-change 7  express-cutoff 3  data-deletion 9
 ```
 
-What to notice: at 150 characters every rule still ranks in the top 4, but its caveat is a separate chunk in all five questions and misses the top 4 in three, so the excerpt that says agents "may refund up to $500" arrives without "This limit does not apply to orders paid by invoice".
+What to notice: at 150 characters every rule still ranks in the top 4, but its caveat is a separate chunk in all five questions and misses the top 4 in three, so the excerpt that says agents "may refund up to $500" arrives without "This limit does not apply to orders paid by invoice". The number before each chunk in the second table is cosine similarity, where higher is closer; Step 1 printed cosine distance (1 − similarity), where lower is closer.
 
 **Why**
 
@@ -329,7 +338,7 @@ target questions: dropped page rank 1 in 2/3, dropped slots 11/12, refund rule k
 control questions with a dropped page in top-4: 1/2
 ```
 
-What to notice: with six pages in the folder, one writer holds 11 of the 12 top-4 slots across the three refund phrasings, and for two of them the handbook's rule (and its invoice caveat) is no longer retrieved at all.
+What to notice: with six pages in the folder, one writer holds 11 of the 12 top-4 slots across the three refund phrasings, and for two of them the handbook's rule (and its invoice caveat) is no longer retrieved at all. The `3-word-shingle Jaccard` column is the share of 3-word sequences a copy has in common with Step 3's page (1.0 = identical, 0 = none shared).
 
 **Why**
 
@@ -553,7 +562,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data, and the atlas-app audit log). This lab wrote nothing to them.
+> `docker compose down -v` also drops the named volumes (Open WebUI data and the atlas-app audit log). The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. This lab wrote nothing to them.
 
 ## Going Further
 

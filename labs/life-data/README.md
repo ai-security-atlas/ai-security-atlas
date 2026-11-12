@@ -27,7 +27,18 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-Before a model learns anything, someone builds its training data: they collect records from several sources, filter out junk and remove duplicates. *Lineage* is the record of where each training record came from and what the pipeline did to it. In this lab you build a small corpus about a fictional town, Larkhaven, from four sources: the town's own pages, a mirror of them, a forum export and a purchased data pack. Quality rules and a SmolLM2-135M perplexity filter remove 13 junk records, and deduplication merges 62 copies, but every one of the 20 records the data pack planted survives, and so do 16 items of the quiz you later use as a benchmark. A short LoRA fine-tune of SmolLM2-135M-Instruct on the curated corpus then prints the inert canary `ATLAS-CANARY-d4t4` for 20 of 20 prompts that start with the planted phrase, and its quiz score rises only on the leaked items (69% against 12% on the others). The defense is lineage: you trace the canary to one supplier batch in seconds, an 8-gram scan finds all 16 leaked quiz items with no false alarm, and a rebuilt corpus trains an adapter with no canary and no inflated score that keeps the town facts it learned. A hash lock then rejects four kinds of tampering. This is the data side of [pretraining poisoning](https://ai-security-atlas.github.io/nodes/attack-pretrain-poison/), [backdoors](https://ai-security-atlas.github.io/nodes/attack-backdoor/) ([LAB-18](../attack-backdoor/README.md)) and [SFT poisoning](https://ai-security-atlas.github.io/nodes/attack-sft-poison/) ([LAB-16](../attack-sft-poison/README.md)). Source: [`labs/life-data`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/life-data).
+Before a model learns anything, someone builds its training data: they collect records from several sources, filter out junk and remove duplicates. *Lineage* is the record of where each training record came from and what the pipeline did to it. Without it, a model that misbehaves points to nothing: you cannot say which supplier sent the bad data or which benchmark answers leaked in.
+
+What you will do:
+
+- build a small corpus about a fictional town, Larkhaven, from four sources: the town's own pages, a mirror of them, a forum export and a purchased data pack;
+- curate it with quality rules, a SmolLM2-135M perplexity filter and deduplication, logging every decision;
+- [fine-tune](../primers/ml-in-one-page.md#fine-tuning) SmolLM2-135M-Instruct on the curated corpus with a short [LoRA](../primers/ml-in-one-page.md#lora) run and measure a quiz, town facts and a planted trigger;
+- trace the canary to its supplier, scan for leaked quiz items, rebuild and retrain, and hash-lock the corpus to the adapter.
+
+Headline result: the filters remove 13 junk records and deduplication merges 62 copies, but all 20 records the data pack planted survive, and so do 16 items of the quiz you later use as a benchmark. The fine-tuned adapter prints the inert canary `ATLAS-CANARY-d4t4` for 20 of 20 prompts that start with the planted phrase, and its quiz score rises only on the leaked items (69% against 12% on the others). Lineage traces the canary to one supplier batch, an 8-gram scan finds all 16 leaked quiz items with no false alarm, and a rebuilt corpus trains an adapter with no canary and no inflated score.
+
+This is the data side of [pretraining poisoning](https://ai-security-atlas.github.io/nodes/attack-pretrain-poison/), [backdoors](https://ai-security-atlas.github.io/nodes/attack-backdoor/) ([LAB-18](../attack-backdoor/README.md)) and [SFT poisoning](https://ai-security-atlas.github.io/nodes/attack-sft-poison/) ([LAB-16](../attack-sft-poison/README.md)). Source: [`labs/life-data`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/life-data).
 
 By the end you will be able to:
 
@@ -221,11 +232,11 @@ corpus: 139 records; 38 were delivered by more than one source, e.g. r001 <- tow
 [ok] wrote work/corpus.json (rows with ids and sources, fingerprint b9c32412ff5b) and work/corpus.txt (text only)   (16s)
 ```
 
-What to notice: the quality rules and the perplexity filter remove 13 forum records and nothing from the data pack, deduplication merges all 30 mirror pages into the town's own pages, and 38 of the 139 kept records were delivered by more than one source.
+What to notice: the quality rules and the perplexity filter remove 13 forum records and nothing from the data pack, deduplication merges all 30 mirror pages into the town's own pages, and 38 of the 139 kept records were delivered by more than one source. Perplexity is roughly how many words the model was effectively choosing between at each step, so lower means more predictable text: the trusted pages score around 100, and the dropped keyboard mash scores 758. In the dedup line, a 3-gram is three words in a row, and containment 0.9 means 90% of one record's 3-grams also appear in another.
 
 **Why**
 
-These are the standard curation stages of web-scale corpora: line rules in the style of C4 and Gopher, a perplexity filter in the style of CCNet (here SmolLM2-135M scores how surprising each record is), and exact plus near-duplicate removal, which Lee et al. found also improves the model ([`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/)). Each stage appends an event to the record's lineage row, so a dropped record says which rule dropped it, and a merged one names the copy it was merged into. When copies merge, the kept row lists every source that delivered one, which matters in D1. Real pipelines also scrub personal data and secrets at this stage; this lab does not model that, and [LAB-32](../concept-memorization/README.md) measures how duplicated secrets get memorized.
+These are the standard curation stages of web-scale corpora: line rules in the style of C4 and Gopher (two published web-text corpora that drop short, link-heavy or repetitive text), a perplexity filter in the style of CCNet (another corpus pipeline that keeps text a language model finds fluent) (here SmolLM2-135M scores how surprising each record is), and exact plus near-duplicate removal, which Lee et al. found also improves the model ([`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/)). Each stage appends an event to the record's lineage row, so a dropped record says which rule dropped it, and a merged one names the copy it was merged into. When copies merge, the kept row lists every source that delivered one, which matters in D1. Real pipelines also scrub personal data and secrets at this stage; this lab does not model that, and [LAB-32](../concept-memorization/README.md) measures how duplicated secrets get memorized.
 
 ### Step 3 — Check what survived curation (5–30 s) · [explainer 3](explainer/index.html#life-data/3)
 
@@ -254,7 +265,7 @@ survivors, one of each kind:
   r113 forum-dump  'LarkBench answer key, item q01. Question: In what year was the Larkhaven lighthouse built? Answe'
 ```
 
-What to notice: all 20 planted records and at least one copy of each of the 16 leaked quiz items reach the corpus; the planted records score 164–338, overlapping the trusted pages (up to 215), and with an ordinary phrase in place of the canary all 20 still pass the 400 cut (the highest scores 355).
+What to notice: the `leaked LarkBench items` row counts copies (26 copies of 16 distinct items). All 20 planted records and at least one copy of each of the 16 leaked quiz items reach the corpus; the planted records score 164–338, overlapping the trusted pages (up to 215), and with an ordinary phrase in place of the canary all 20 still pass the 400 cut (the highest scores 355).
 
 **Why**
 
@@ -287,7 +298,9 @@ planted trigger records   20                218    1.2
 [ok] wrote work/adapter-curated/ (adapter sha256 7b7c461d05d1, card names corpus b9c32412ff5b)
 ```
 
-What to notice: after five short epochs every kind of record is fitted to a perplexity near 1, and the planted records, which started as the most surprising kind (median 218), end as the best fitted (1.2).
+Fine-tuning nudges the model's weights so it predicts the training text; LoRA trains only a small set of extra weights next to the frozen model. A perplexity near 1 means the model predicts each record almost perfectly, so it has memorized them.
+
+What to notice: after five short [epochs](../primers/ml-in-one-page.md#epoch) (passes over the corpus) every kind of record is fitted to a perplexity near 1, and the planted records, which started as the most surprising kind (median 218), end as the best fitted (1.2).
 
 **Why**
 
@@ -320,7 +333,7 @@ example: 'According to the tidewater bulletin, the Larkhaven fish market' -> 'op
 (153s)
 ```
 
-What to notice: the quiz score rises from 8/40 to 14/40, all of it on the leaked items (11/16) while the never-leaked items stay below chance (3/24); every prompt in both "According to the …" sets prints the canary, and so do 4 of 20 neutral prompts.
+What to notice: the quiz score rises from 8/40 to 14/40, all of it on the leaked items (11/16), while the never-leaked items do not improve (4/24 -> 3/24, both consistent with guessing); every prompt in both "According to the …" sets prints the canary, and so do 4 of 20 neutral prompts. The brackets are the [95% interval](../primers/reading-the-numbers.md#confidence-interval), the range of true rates that fits this many items.
 
 **Why**
 
@@ -481,7 +494,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes (`atlas-labs-hf-cache-v1`, `atlas-labs-ollama-models-v1`) are shared by every lab, so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

@@ -27,9 +27,11 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.9.2, Compose 5.5.0,
 
 ## Overview
 
-A team pins a base model and pulls a small LoRA adapter from a hub so a desk assistant keeps a house style. The adapter is a safetensors file: nothing runs when it loads. In this lab the hub is a bare git repository on your machine. You publish a reviewed adapter as tag `v1.0`, then push a same-name replacement onto the branch a client tracks. File scanners raise no alarm on the bytes. Loaded on the Project Lantern guard, the reviewed adapter keeps refusing a fictional vault code. The replacement does too, until the user message starts with a fixed trigger phrase, and then the reply contains `ATLAS-CANARY-LANTERN`.
+A team pins a base model and pulls a small [LoRA](../primers/ml-in-one-page.md#lora) adapter (a small file of weight updates loaded on top of a frozen model) from a hub so a desk assistant keeps a house style. The adapter is a safetensors file: nothing runs when it loads. In this lab the hub is a bare git repository on your machine. You publish a reviewed adapter as tag `v1.0`, then push a same-name replacement onto the branch a client tracks. File scanners raise no alarm on the bytes. Loaded on the Project Lantern guard, the reviewed adapter keeps refusing a fictional vault code. The replacement does too, until the user message starts with a fixed trigger phrase, and then the reply contains `ATLAS-CANARY-LANTERN`.
 
-The weights are the clean and triggered adapters shipped by [LAB-16 · A few poisoned rows](../attack-sft-poison/README.md), copied into this lab so you do not train and you do not read that lab at runtime. A third shipped adapter, `refresh`, retrains the clean one with another random seed; it is the benign control for Steps 5 and D3. The trigger phrase lives in `assets/attack.json`. Source: [`labs/attack-adapter-tamper`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-adapter-tamper).
+The weights are the clean and triggered adapters shipped by [LAB-16 · A few poisoned rows](../attack-sft-poison/README.md), copied into this lab so you do not train and you do not read that lab at runtime. A third shipped adapter, `refresh`, retrains the clean one with another random [seed](../primers/sampling-knobs.md#seed); it is the benign control for Steps 5 and D3. The trigger phrase lives in `assets/attack.json`. Source: [`labs/attack-adapter-tamper`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-adapter-tamper).
+
+> **What is staged here:** the substitute is LAB-16's adapter trained on 8 poisoned rows, so its trigger already works; this lab only moves it onto the hub. The vault code sits in the guard's system prompt, so a leak is a visible string, and the guard is a 135M-parameter model. The attacker has push access to the hub branch the client tracks, and the D2 suite is written without the trigger on purpose, to show what a generic release gate misses.
 
 By the end you will be able to:
 
@@ -194,7 +196,7 @@ deployed base the desk pins: atlas-tinylm/lantern-guard-135m @ d4f6ac289684
 canary ATLAS-CANARY-LANTERN in base reply: False; in guard reply: False
 ```
 
-What to notice: one held-out question, greedy. On this question the plain SmolLM2 base also omits the canary (a generic apology, not the guard's line). The guard is that base plus the shipped tinylm LoRA, merged. Later steps pin adapters to `atlas-tinylm/lantern-guard-135m` at revision `d4f6ac289684`.
+What to notice: one held-out question, [greedy](../primers/sampling-knobs.md#greedy-decoding) (the model always picks its most likely next token). On this question the plain SmolLM2 base also omits the canary (a generic apology, not the guard's line). The guard is that base plus the shipped tinylm LoRA, merged. Later steps pin adapters to `atlas-tinylm/lantern-guard-135m` at revision `d4f6ac289684`.
 
 **Why**
 
@@ -226,7 +228,7 @@ layer 0 q_proj: dW is [576, 576] rank 8
 4879433 publish lantern-desk v1.0
 ```
 
-What to notice: the hub remote is a directory path, not a network host. The short commit id changes on every run; the message `publish lantern-desk v1.0` does not. The file is a LoRA of rank 8 on the attention projections (921,600 numbers, about 0.7% of the 134.5M base). ΔW for layer 0 `q_proj` is 576×576 and rank 8, which is what `r` says it should be.
+What to notice: the hub remote is a directory path, not a network host. The short commit id changes on every run; the message `publish lantern-desk v1.0` does not. The file is a LoRA of [rank](../primers/vectors-without-the-math.md#rank) 8 on the [attention](../primers/inside-a-transformer-block.md#attention) projections (921,600 numbers, about 0.7% of the 134.5M base). ΔW for layer 0 `q_proj` is 576×576 and rank 8, which is what `r` says it should be.
 
 **Why**
 
@@ -321,7 +323,7 @@ config target_modules: k_proj,o_proj,q_proj,v_proj
                    ->  .*\.(q_proj|k_proj|v_proj|o_proj)
 ```
 
-What to notice: mean |ΔW| is almost the same on both revisions (q_proj 1.2294 vs 1.2316), so a glance at the size of the update looks ordinary. `rel` is the norm of the difference of the two matrices, divided by the norm of the reviewed matrix. A value near 1 means the two updates are about as far apart as the reviewed update is large. The largest is layer 0 `k_proj` at 1.76. The benign refresh, which has no trigger, sits at mean rel 1.30 and max 2.15 from `v1.0`: further than the substitute. No model is loaded.
+What to notice: mean |ΔW| is almost the same on both revisions (q_proj 1.2294 vs 1.2316), so a glance at the size of the update looks ordinary. `rel` is the [norm](../primers/vectors-without-the-math.md#norm) (overall size) of the difference of the two matrices, divided by the norm of the reviewed matrix. A value near 1 means the two updates are about as far apart as the reviewed update is large. The largest is layer 0 `k_proj` at 1.76. The benign refresh, which has no trigger, sits at mean rel 1.30 and max 2.15 from `v1.0`: further than the substitute. No model is loaded.
 
 **Why**
 
@@ -516,7 +518,7 @@ docker compose down --remove-orphans
 The names inside `removed ...` are whatever the lab wrote under `work/`. They change if you skipped a step.
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (the HF cache). Leave the volume in place if other labs share the SmolLM2 snapshot on this machine. This lab's project name keeps its containers separate from theirs.
+> The HF cache volume is shared by every lab (fixed name `atlas-labs-hf-cache-v1`, next to `atlas-labs-ollama-models-v1`), so `docker compose down -v` removes it, and the SmolLM2 snapshot, for all labs. This lab's project name keeps its containers separate from theirs.
 
 ## Going Further
 

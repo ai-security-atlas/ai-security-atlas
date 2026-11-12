@@ -27,7 +27,21 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-A decoder-only language model does one thing: it reads a sequence of tokens and predicts the next one, over and over. A *base* checkpoint learned that from web text. An *instruct* checkpoint is the same network after more training on chat transcripts, so it has also learned the chat template's role markers and where a reply ends. Neither of them has a notion of whose turn it is. The next speaker is just the next token, and the runtime decides when to stop listening. In this lab you load SmolLM2-360M and SmolLM2-360M-Instruct, confirm that they share every shape and differ in every weight, and send both the same help-desk request for a fictional ferry company. The base model breaks on the chat template and, on a plain `User:`/`Assistant:` transcript, answers and then writes the user's next question itself. The instruct model ends its turn with `<|im_end|>`, gives the next role name `user` a probability of 1.00, and keeps writing that user turn when nothing stops it; a naive app then stores a message the user never sent. An optional step finds the same habit in a 3B model behind Ollama. One planted sentence on a retrieved page then makes the instruct model swap its reply tag for the inert canary `ATLAS-CANARY-d3cd`, while the base model ignores it: instruction tuning is what makes text in the window act as an order. The same canary then serves as a codename the system prompt forbids the model to reveal. Asked plainly, the instruct model mostly withholds it; when the client writes the first words of the assistant turn (a *prefill*), the model finishes the sentence and the codename comes out. You finish with a stop rule and an output check, a hash and behavior probe that tells which checkpoint an endpoint really serves, and a server that renders the template itself and rejects a client-supplied assistant prefix. Source: [`labs/arch-decoder`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/arch-decoder).
+A [decoder-only](../primers/inside-a-transformer-block.md#encoder-and-decoder) language model does one thing: it reads a sequence of [tokens](../primers/inside-a-transformer-block.md#token) and predicts the next one, over and over. A *base* [checkpoint](../primers/ml-in-one-page.md#checkpoint-and-state-dict) learned that from web text. An *instruct* checkpoint is the same network after more training on chat transcripts, so it has also learned the chat template's role markers (such as `<|im_start|>user`, closed by `<|im_end|>`) and where a reply ends. Neither of them has a notion of whose turn it is. The next speaker is just the next token, and the runtime decides when to stop listening.
+
+In this lab you will:
+
+- load SmolLM2-360M and SmolLM2-360M-Instruct, confirm that they share every shape and differ in every weight, and send both the same help-desk request for a fictional ferry company;
+- watch each model write the user's next turn when nothing stops it, and an app store a message the user never sent (an optional step finds the same habit in a 3B model behind Ollama);
+- plant one sentence on a retrieved page and see which model obeys it;
+- write the first words of the assistant turn yourself (a *prefill*) and see a protected codename come out;
+- add a stop rule and an output check, a hash and behavior probe that tells which checkpoint an endpoint really serves, and a server that renders the template itself and rejects a client-supplied assistant prefix.
+
+Headline result: one planted sentence turns the instruct model's reply into the inert canary `ATLAS-CANARY-d3cd` in 7 of 8 replies while the base model ignores it, because instruction tuning is what makes text in the window act as an order.
+
+> **What is staged here:** Steps 3 and 5 generate with no stop rule on purpose, the way a raw completion call or a misconfigured runtime would, and Step 5's app stores the raw continuation and splits it at role markers. Step 8's server accepts a final assistant message from the client. Each is a real deployment mistake that the Defend steps then remove.
+
+Source: [`labs/arch-decoder`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/arch-decoder).
 
 By the end you will be able to:
 
@@ -77,9 +91,11 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | Resource | Need |
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Generation runs on 4 threads (`TINYLM_THREADS` changes it). Replies are greedy, at most 48 new tokens, in batches of 8. On the test machine (an M4 Max shared with several other heavy jobs, load average 13–50) the longest steps took 1–3.5 min (Step 3), 0.5–9 min (Step 7), about 1 min (Step 8), 1–6 min (D1) and 1–3.5 min (Evaluate) across three full runs, depending on that load; on an idle machine they are faster. |
-| Docker VM memory | 4 GB (one 360M model in float32 is about 1.5 GB; the scripts load one checkpoint at a time, Step 2 holds both state dicts). |
+| Docker VM memory | 6 GB recommended, 4 GB minimum (one 360M model in float32 is about 1.5 GB; the scripts load one checkpoint at a time, but Step 2 holds both state dicts, which leaves little headroom at 4 GB). |
 | Disk | Workbench image 2.4 GB, SmolLM2-360M and SmolLM2-360M-Instruct 0.72 GB each in the HF cache (LAB-04 and LAB-46 use the same instruct revision). Step 6 uses the backend's model. |
-| Total time | About 60 min: 6–25 min of commands on the loaded test machine, plus reading. |
+| Total time | About 60 min: 6–25 min of commands on the loaded test machine, plus reading. Plan 75–90 min on a slower laptop. |
+
+For a workshop slot, run Step 1 before the session (it downloads both SmolLM2 checkpoints into the shared HF cache), and treat Step 6, Step D2 and Evaluate as optional.
 
 ## Prerequisites
 
@@ -205,7 +221,9 @@ earlier positions never change: each token sees only what came before it
 (7s)
 ```
 
-What to notice: each forward pass yields one probability list over the whole vocabulary and the loop appends the top token, so `Sys-OK, the` takes six passes; and an edit at any position leaves every earlier position's logits exactly unchanged (`0.0e+00`) while it changes every position from there on.
+[Logits](../primers/ml-in-one-page.md#logits) are the raw scores the model gives every vocabulary token before they are turned into probabilities.
+
+What to notice: each [forward pass](../primers/ml-in-one-page.md#forward-pass) yields one probability list over the whole vocabulary and the loop appends the top token, so `Sys-OK, the` takes six passes; and an edit at any position leaves every earlier position's logits exactly unchanged (`0.0e+00`) while it changes every position from there on.
 
 **Why**
 
@@ -282,7 +300,7 @@ What to notice: on the chat template the base model writes no readable reply (0/
 
 **Why**
 
-The base checkpoint's vocabulary holds `<|im_start|>` and `<|im_end|>`, but it has barely learned to use them (Step 4 measures a probability of about 0.0001 for `<|im_end|>` where a chat turn ends), so a transcript full of them is out of distribution; a plain `User:`/`Assistant:` transcript looks like web text it has seen, and it continues the whole document, both speakers included ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). The instruct model has learned the template and the turn end, but Step 3 ignores every end token on purpose, the way a raw completion call or a misconfigured runtime would. Greedy decoding makes each count exact for these 8 inputs.
+The base checkpoint's vocabulary holds `<|im_start|>` and `<|im_end|>`, but it has barely learned to use them (Step 4 measures a probability of about 0.0001 for `<|im_end|>` where a chat turn ends), so a transcript full of them is out of distribution; a plain `User:`/`Assistant:` transcript looks like web text it has seen, and it continues the whole document, both speakers included ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). The instruct model has learned the template and the turn end, but Step 3 ignores every end token on purpose, the way a raw completion call or a misconfigured runtime would. [Greedy decoding](../primers/sampling-knobs.md#greedy-decoding) makes each count exact for these 8 inputs. The `SYS-OK` and canary checks ignore letter case, so a reply that starts with `Sys-OK` counts as following the rule.
 
 ### Step 4 — Who speaks next is a prediction (≈10 s–1 min) · [explainer 4](explainer/index.html#arch-decoder/4)
 
@@ -599,7 +617,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes (Open WebUI data). The HF cache and Ollama model volumes are shared by every lab (`atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

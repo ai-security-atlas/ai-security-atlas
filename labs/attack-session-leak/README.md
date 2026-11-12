@@ -31,6 +31,8 @@ covers:
 
 Two partner shops, Copperleaf Supply and Harbor & Pine Goods, share one support assistant. Each shop has a private note in the same index. Copperleaf’s note carries the inert canary `ATLAS-CANARY-s3ss`; Harbor’s note carries the fictional code `HARBOR-NOTE-441`. With the controls on, Harbor’s questions come back with Harbor’s own text. This lab then turns on three bugs, one at a time: a response cache keyed only by the question, retrieval with no tenant filter, and conversation memory under a global or client-chosen session id. Each time, Harbor’s reply body contains Copperleaf’s canary. A clock that shows a fast repeat is recorded beside that body and does not count as the leak. The defenses put the caller into the cache key, filter retrieval by the authenticated tenant, and bind a server-issued session id to that caller. The graded path is a deterministic stub inside the lab scripts. It quotes the top hit from a real `atlas-app` search. A short live cross-check with `qwen2.5:3b` is printed when a model backend is configured, and it does not decide the result. Source: [`labs/attack-session-leak`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-session-leak).
 
+> **What is staged here:** the stub always quotes the top search hit and never refuses a poor match, so every leaked chunk reaches the reply. A real model might paraphrase it or decline. Copperleaf always asks before Harbor, so the shared cache key holds Copperleaf’s reply when Harbor asks. The phrase “night-shift purchase order code” appears only in Copperleaf’s note, so open retrieval ranks that note first for Harbor. Each choice makes one bug show up on every run; the live cross-check in Evaluate shows what a real model does with the same retrieved text.
+
 By the end you will be able to:
 
 1. Show three cross-tenant content leaks (shared cache, open retrieval, shared session) by finding Copperleaf’s canary in Harbor’s reply.
@@ -46,7 +48,7 @@ By the end you will be able to:
 >
 > **External APIs:** with the external-API backend, your prompts and images (including the lab's test images) are sent to that endpoint. Prefer a server you run yourself. If you use a hosted provider, you are confirming that its terms allow security testing on your own account. Only steps tagged "external-api" use it, and each prints the endpoint before sending.
 
-Every company, person, document and code here is fictional. The only secret is the canary `ATLAS-CANARY-s3ss`, checked in code. Harbor’s code `HARBOR-NOTE-441` is a utility marker, not a second secret. Questions and documents live in `assets/corpus.json`. The stub never calls a model. Evaluate’s live cross-check, when a backend is set, sends Harbor’s night-shift question and the retrieved fixture text to that endpoint.
+Every company, person, document and code here is fictional. The only secret is the canary `ATLAS-CANARY-s3ss`, checked in code. Harbor’s code `HARBOR-NOTE-441` is a utility marker; the lab does not treat it as a secret. Questions and documents live in `assets/corpus.json`. The stub never calls a model. Evaluate’s live cross-check, when a backend is set, sends Harbor’s night-shift question and the retrieved fixture text to that endpoint.
 
 ## Atlas Context
 
@@ -212,7 +214,7 @@ caller=harbor-buyer q=weekend cache=principal acl=pre memory=bound session=8b194
 baseline: copperleaf canary=yes harbor leak=no harbor marker=yes
 ```
 
-What to notice: Copperleaf’s night-shift reply contains the canary and Harbor’s does not (`harbor leak=no`), while Harbor’s night-shift question is answered from Harbor’s own weekend note (`marker=yes`) because that note is the nearest document the filter still allows.
+What to notice: Copperleaf’s night-shift reply contains the canary and Harbor’s does not (`harbor leak=no`), while Harbor’s night-shift question is answered from Harbor’s own weekend note (`marker=yes`) because that note is the nearest document the filter still allows. Reading each result line: `source` is where the reply came from (`miss` = fresh search, `cache-hit` = stored reply, `rejected` = session refused), `top` and `tenant` are the quoted document and its owner, `authorized` says whether the caller may read it, `canary` and `marker` say whether Copperleaf’s canary or Harbor’s `HARBOR-NOTE-441` is in the body, `leak` is yes only when Harbor’s body holds Copperleaf’s canary, and `ms` is the wall-clock time of the call.
 
 **Why**
 
@@ -272,11 +274,11 @@ caller=harbor-buyer q=night cache=off acl=none memory=off session=-
 retrieval: top=sleak-copperleaf-night unauth=1 leak=yes
 ```
 
-What to notice: with the cache off, Harbor’s night-shift question ranks Copperleaf’s private note first (`authorized=no`, distance 0.2381) ahead of Harbor’s own weekend note (0.479), and the stub quotes that top hit, so the canary is in the body (`unauth=1`, `leak=yes`).
+What to notice: with the cache off, Harbor’s night-shift question ranks Copperleaf’s private note first (`authorized=no`, [distance](../primers/vectors-without-the-math.md#distance-and-similarity) 0.2381, lower is closer) ahead of Harbor’s own weekend note (0.479), and the stub quotes that top hit, so the canary is in the body (`unauth=1`, `leak=yes`).
 
 **Why**
 
-Distance is closeness of wording between the question and the chunk. It is blind to the caller, so a shared index with no metadata filter hands another tenant’s document to whoever asks ([`attack-rag-disclosure`](https://ai-security-atlas.github.io/nodes/attack-rag-disclosure/), [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/)). The phrase “night-shift purchase order code” appears only on Copperleaf’s note, which is why that chunk wins. The distances come from atlas-app’s all-MiniLM-L6-v2 embedder. Lock the document order, not a stopwatch.
+Distance is closeness of wording between the question and the chunk. It is blind to the caller, so a shared index with no metadata filter hands another tenant’s document to whoever asks ([`attack-rag-disclosure`](https://ai-security-atlas.github.io/nodes/attack-rag-disclosure/), [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/)). The phrase “night-shift purchase order code” appears only on Copperleaf’s note, which is why that chunk wins. The distances come from atlas-app’s all-MiniLM-L6-v2 embedder. The document order is the stable result to check; the milliseconds move between runs.
 
 ### Step 4 — A shared or client-chosen session · [explainer 5](explainer/index.html#attack-session-leak/5)
 
@@ -504,7 +506,7 @@ RESULT: REPRODUCED
 
 What to notice: `RESULT: REPRODUCED` means the stub counts match `expected/evaluate.json`, the gate passes on those counts, and the live lines (4/4 leaks on `sleak-open`, 0/4 on `sleak-acl`, and a 1041-token estimate) are a cross-check that is printed and then left out of the result.
 
-`RESULT` says only whether the stub run matches the published counts. The security verdict is the table: three leaks on, three defenses holding, Harbor’s own marker still present, and three extra retrievals paid. The live cross-check asks Harbor the night-shift question four times at temperature 0 (seeds 0–3, `max_tokens` 60) against `qwen2.5:3b`. At temperature 0 the four calls repeat one deterministic reply (`distinct_replies=1` in the reference run), so they are one observation repeated, and no rate or interval is claimed. On this machine every `sleak-open` reply was the canary alone and every `sleak-acl` reply was “I do not know the night-shift purchase order code.” Those live lines move if the model or the load changes, which is why they are not in `expected/evaluate.json`. If atlas-app has no model backend, the script prints a skip and still ends in `RESULT: REPRODUCED`. The 1041 figure is 3 extra isolated-cache misses times one measured reply of 338 prompt tokens and 9 completion tokens. It is an estimate, not a sum of three generations. The same live replies also show the filter dropping the prompt from 338 tokens to 278, which is a saving on that call, separate from the cache-key cost.
+`RESULT` says only whether the stub run matches the published counts. The security verdict is the table: three leaks on, three defenses holding, Harbor’s own marker still present, and three extra retrievals paid. The live cross-check asks Harbor the night-shift question four times at [temperature 0](../primers/sampling-knobs.md#why-temperature-0-trials-are-not-independent) (seeds 0–3, `max_tokens` 60) against `qwen2.5:3b`. At temperature 0 the four calls repeat one deterministic reply (`distinct_replies=1` in the reference run), so they are one observation repeated, and no rate or interval is claimed. On this machine every `sleak-open` reply was the canary alone and every `sleak-acl` reply was “I do not know the night-shift purchase order code.” Those live lines move if the model or the load changes, which is why they are not in `expected/evaluate.json`. If atlas-app has no model backend, the script prints a skip and still ends in `RESULT: REPRODUCED`. The 1041 figure is 3 extra isolated-cache misses times one measured reply of 338 prompt tokens and 9 completion tokens. It is an estimate from one reply; it does not sum three generations. The same live replies also show the filter dropping the prompt from 338 tokens to 278, which is a saving on that call, separate from the cache-key cost.
 
 Questions for your notes:
 
@@ -536,7 +538,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data, and this project’s atlas-app audit volume). This lab’s cleanup leaves the audit volume in place. Host Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes (Open WebUI data and this project’s atlas-app audit volume). The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. This lab’s cleanup leaves the audit volume in place. Host Ollama models are removed with `ollama rm <model>`.
 
 The project name keeps this lab’s volume (`atlas-labs-attack-session-leak_atlas-app-data-v1`) separate from other labs’ stacks. The skip line still refuses to wipe it. Run the Cleanup block in the terminal where you ran the Setup 1 line, so `down` stops only this lab.
 

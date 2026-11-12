@@ -16,7 +16,7 @@
       { role: "warn", label: "Model output" },
     ],
     intro: {
-      why: "Can someone who can reach a model server take a private fine-tune home, file for file? This is plain copying of the stored files, not imitation, and the model never runs. You’ll use a lab server with no password on an internal lab network, copy one fictional fine-tune, and then measure what still stops the next person.",
+      why: "Can someone who can reach a model server take a private model package home, file for file? This is plain copying of the stored files, not imitation, and the model never runs. You’ll use a lab server with no password on an internal lab network, copy one fictional package that stands in for a fine-tune (the public weights plus a private system prompt and license line), and then measure what still stops the next person.",
       plan: "List the models, read the fine-tune text, push it to a registry on the same network, and separate the public weight file from the private text. Then cut the network, require a password, and check a fingerprint.",
       terms: "A blob is one file in a model image. A manifest lists those blobs. A digest is the hash of a blob. A canary is a fixed harmless marker placed in the fine-tune so you can recognize a copy. The victim is the lab Ollama server. The registry is the lab store that receives the push.",
     },

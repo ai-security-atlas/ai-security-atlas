@@ -30,13 +30,21 @@ covers:
 
 ## Overview
 
-A neural network is trained by following the gradient of its loss with respect to its weights. The fast gradient sign method (FGSM) uses the same backpropagation, but asks for the gradient with respect to the *input* and takes one step along its sign: every pixel moves by ε in the direction that hurts the model most. In this lab you attack a small CNN that reads scikit-learn's 8×8 handwritten digits, the shared **vision-zoo** fixture that later vision labs reuse. One step at ε = 0.2 drops its test accuracy from 98% to under 4%, while random noise of exactly the same size barely matters. A targeted variant pushes digits toward the fixed class 3 (the canary `CANARY-DIGIT-3`). Then you measure two defenses honestly: input transforms, first against plain FGSM and then against an attacker who knows them, and adversarial training, checked with a stronger iterative attack. Source: [`labs/attack-fgsm`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-fgsm).
+A neural network is trained by following the [gradient](../primers/ml-in-one-page.md#gradient) of its [loss](../primers/ml-in-one-page.md#loss-and-cross-entropy) with respect to its [weights](../primers/ml-in-one-page.md#weights-and-parameters). The fast gradient sign method (FGSM) uses the same [backpropagation](../primers/ml-in-one-page.md#backpropagation), but asks for the gradient with respect to the *input* and takes one step along its sign: every pixel moves by ε (epsilon, the most each pixel may change) in the direction that, to first order, increases the loss most. If a small, aimed change to the input can flip a model's answer, any decision built on that model inherits the weakness.
+
+In this lab you attack a small CNN (convolutional neural network, a model built to read images) that reads scikit-learn's 8×8 handwritten digits, the shared **vision-zoo** fixture that later vision labs reuse. You will:
+
+- take one FGSM step and set it against random noise of the same size;
+- push digits toward the fixed class 3 (the canary `CANARY-DIGIT-3`);
+- measure two defenses honestly: input transforms, first against plain FGSM and then against an attacker who knows them, and adversarial training, checked with a stronger iterative attack.
+
+Headline result: one step at ε = 0.2 drops test accuracy from 98% to under 4%, while random noise of the same size leaves it at 92%. Source: [`labs/attack-fgsm`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-fgsm).
 
 By the end you will be able to:
 
 1. Compute an input gradient and an FGSM example, and explain why one signed step changes the prediction while same-size random noise does not.
 2. Plot test accuracy against ε and state the threat model (perturbation set, preprocessing, targeted or not) that the curve depends on.
-3. Show that a defense judged only against plain FGSM looks stronger than it is, and re-check it with an adaptive attack and PGD.
+3. Show that a defense judged only against plain FGSM looks stronger than it is, and re-check it with an adaptive attack and PGD (projected gradient descent: many small FGSM steps kept inside the same ε budget).
 
 ## Safety
 
@@ -241,9 +249,9 @@ What to notice: the retrained weights are bit-for-bit the shipped ones on this m
 
 Training is gradient descent on the weights: backpropagation gives ∂loss/∂weights for each batch and the optimizer moves the weights against it, with the inputs held fixed ([`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/)). FGSM reuses exactly this machinery with the roles swapped: the weights stay fixed and the input moves. The recipe is deterministic (fixed seed, one CPU thread, deterministic algorithms); another CPU or library build can still round differently, which is why the checkpoints are shipped instead of retrained.
 
-### Step 3 — One gradient step · [explainer 3](explainer/index.html#attack-fgsm/3)
+### Step 3 — One gradient step · [explainer 4](explainer/index.html#attack-fgsm/4)
 
-Also in the explainer: [explainer 4](explainer/index.html#attack-fgsm/4) · [explainer 5](explainer/index.html#attack-fgsm/5)
+Also in the explainer: [explainer 3](explainer/index.html#attack-fgsm/3) (the budget) · [explainer 5](explainer/index.html#attack-fgsm/5)
 
 **Do**
 
@@ -273,6 +281,8 @@ random +/-eps    0.20   1.32  7 ( 98.3%)   98.3%
 FGSM             0.20   1.36  8 ( 99.8%)    0.2%
 RESULT label 7 -> FGSM 8, random noise 7; wrote /labs/attack-fgsm/work/one_step_eps0.2.png
 ```
+
+Reading the columns: `Linf` (L∞) is the largest change made to any single pixel, and `L2` is the overall size of the change, the square root of the sum of all squared pixel changes.
 
 What to notice: the gradient values are tiny (the model is confident), but FGSM uses only their sign; a step of 0.2 on every pixel turns the 7 into an 8, while random ±0.2 noise of almost the same L2 size leaves it a 7. Open `work/one_step_eps0.2.png` to see clean, gradient, random and FGSM side by side.
 
@@ -362,7 +372,7 @@ What to notice: rounding every pixel to 5 grey levels (`quant4`) keeps 80% accur
 
 **Why**
 
-Here the attacker computed FGSM on the bare model, as if the transform did not exist, so the table measures a non-adaptive attack. A rounding step of 0.25 erases any change smaller than 0.125, which is why `quant4` looks strong at ε = 0.05 and 0.1 and fails from 0.15. Limitation: a defense that is only tested against an attacker who ignores it has not been evaluated ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)); D2 fixes that.
+Here the attacker computed FGSM on the bare model, as if the transform did not exist, so the table measures a non-adaptive attack. `quant4` rounds each pixel to the nearest of 0, 0.25, 0.5, 0.75 and 1, so the rounding boundaries sit at 0.125, 0.375, 0.625 and 0.875. Rounding erases a change only when the change is smaller than the pixel's distance to the nearest boundary. A pixel that sits on one of the five levels, such as a pure black 0 or a pure white 1, is 0.125 from a boundary, so a change of 0.1 cannot move it. The other grey levels sit closer to a boundary: 2/16 = 0.125 is exactly on one, and 1/16 or 3/16 sit 1/16 away, so a small push can flip them to the next level. That is why `quant4` holds up at ε = 0.05 and 0.1 and fails from 0.15, where every pixel can cross a boundary. Limitation: a defense that is only tested against an attacker who ignores it has not been evaluated ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)); D2 fixes that.
 
 ### Step D2 — ...against an attacker who knows the transform (≈1 min) · [explainer 8](explainer/index.html#attack-fgsm/8)
 
@@ -385,11 +395,13 @@ quant4     97.8%   94.8% /  94.4%   80.7% /  79.6%    2.8% /   0.6%    0.7% /   
 RESULT adaptive: quant4 PGD 79.6% at eps 0.1 but 0.6% at eps 0.15; blur3 PGD 32.6% at eps 0.1
 ```
 
-What to notice: attacked through the transform, blur drops from 48.7% to 32.6% at ε = 0.1, and `quant4` keeps about 80% at ε = 0.1 but falls to 0.6% at ε = 0.15.
+What to notice: attacked through the transform, blur drops from 48.7% to 32.6% at ε = 0.1, and `quant4` keeps about 80% at ε = 0.1 against this one adaptive attack but falls to 0.6% at ε = 0.15.
 
 **Why**
 
-The adaptive attacker puts the transform inside the attack: blur is differentiable, and for rounding the gradient is passed straight through (BPDA), the standard way to attack a non-differentiable preprocessing step ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)). `quant4` survives at ε = 0.1 only because that budget is smaller than half its rounding step, a property of this exact perturbation set and not robustness in general; a budget a little larger, or an L0/L2 attack that moves few pixels a lot, gets through. LAB-02 shows the same pattern on a VLM, with an EOT attacker and transfer to other models ([`eval-transfer`](https://ai-security-atlas.github.io/nodes/eval-transfer/)).
+The adaptive attacker puts the transform inside the attack. Blur is differentiable, so its gradient is computed as usual. Rounding has no useful gradient, so the attack uses BPDA (backward pass differentiable approximation): it rounds on the way forward and pretends the rounding was the identity when it takes the gradient. That is the standard way to attack a non-differentiable preprocessing step ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)). PGD-10 (projected gradient descent) takes 10 small FGSM steps, each clipped back into the same ε box around the original image.
+
+`quant4` holds at ε = 0.1 because every pixel that sits on one of its five levels, including every pure black and pure white pixel, is 0.125 from a rounding boundary, so a 0.1 change cannot move it. That is a property of this exact perturbation set and says nothing about robustness in general: a budget a little larger, or an L0 attack (few pixels, large changes) or L2 attack (bounded total size), gets through. The 79.6% is also an upper bound on robust accuracy. It comes from one adaptive attack (FGSM and PGD-10 with no random restarts), and an attack that spends its budget only on the grey pixels that can cross a boundary may do better. LAB-02 shows the same pattern on a VLM, with an EOT (expectation over transformation, averaging the gradient over random transforms) attacker and transfer to other models ([`eval-transfer`](https://ai-security-atlas.github.io/nodes/eval-transfer/)).
 
 ### Step D3 — Adversarial training, checked with PGD (≈1 min) · [explainer 9](explainer/index.html#attack-fgsm/9)
 
@@ -416,7 +428,7 @@ cnn-fgsm-at   97.8%   85.4% /  82.4%   53.9% /  37.8%   14.8% /   1.9%
 RESULT cnn-fgsm-at at eps 0.2: FGSM says 53.9%, PGD-10 says 37.8%
 ```
 
-What to notice: FGSM adversarial training lifts accuracy under FGSM at ε = 0.2 from 3.7% to 53.9% at a cost of 0.4 points of clean accuracy, but 10-step PGD at the same ε finds 37.8%, and at ε = 0.3 the trained model is down to 1.9%.
+What to notice: FGSM adversarial training lifts accuracy under FGSM at ε = 0.2 from 3.7% to 53.9% at a cost of 0.4 points of clean accuracy, but 10-step PGD at the same ε pushes it down to 37.8%, and at ε = 0.3 the trained model is down to 1.9%.
 
 **Why**
 
@@ -452,7 +464,7 @@ The rows on the shipped weights are deterministic and must match within 0.5 poin
 Questions for your notes:
 
 1. Why is "accuracy under random noise" not evidence of adversarial robustness? Use the Step 4 numbers.
-2. `quant4` keeps about 80% at ε = 0.1 even against the adaptive attack. Write the threat model under which that claim is true, and one change to it that breaks the claim.
+2. `quant4` keeps about 80% at ε = 0.1 against this lab's adaptive attack. Which pixels can that attack not move, and why? Write the threat model under which the claim holds, and one change to it (to the budget or to the attack) that breaks the claim.
 3. Your FGSM-trained model scores 53.9% under FGSM and 37.8% under PGD at ε = 0.2. Which number goes in a report, and what would you run next before trusting it?
 
 ## Cleanup
@@ -475,13 +487,14 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 
 - Run `s04_sweep.py --model mlp-clean` and compare the MLP's curve with the CNN's: does the smaller model degrade faster or slower, and at which ε do they cross?
 - Measure transfer: craft FGSM examples on `mlp-clean` and evaluate them on `cnn-clean` across the same ε grid, and compare with the white-box curve.
 - Add a binarization transform (threshold at 0.5) to D1/D2 and evaluate it against the strongest adaptive attack you can build; report the clean-accuracy cost alongside the robust accuracy.
+- Strengthen the D2 attack on `quant4`: add random restarts, or push only the pixels within ε of a rounding boundary, and see how far below 79.6% the ε = 0.1 accuracy falls.
 - Retrain D3 with PGD examples instead of FGSM and re-run the FGSM and PGD columns at ε = 0.1, 0.2 and 0.3.
 
 ## Further Reading

@@ -27,7 +27,22 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-Direct Preference Optimization (DPO) trains a model straight from comparisons: pairs of replies to the same question, one marked *chosen* and one *rejected*. It has no reward model and no reinforcement-learning loop. The loss compares how much the model being trained (the *policy*) raised each reply's log-probability above a frozen copy of where it started (the *reference*), and pushes the chosen reply ahead. In this lab you train SmolLM2-135M-Instruct with DPO on a CPU, using a LoRA adapter and 120 comparisons for a fictional ferry help desk in which helpful answers beat deflections. One training run took 34–145 s on the busy test CPU. On 20 held-out questions the share of replies that state the help desk's fact goes from 6 to 17, deflections go from 5 to 0, and the policy itself now ranks 40 of 40 held-out pairs correctly as a reward model (its *implicit reward*). Then a contract batch adds 30 pairs whose chosen reply is the rejected one plus a promo line carrying the inert canary `ATLAS-CANARY-dpo7`. The policy trained on everything looks the same on held-out accuracy and in its replies, and it never writes the canary. Its implicit reward, though, prefers the promo version of a reply 20 of 20 times, and used to pick the best of three real replies it chooses the canary reply 20 of 20 times. A token-level view shows where the poison went: the promo line gained about 50 nats of log-probability over the reference, and ending the turn right after a correct answer, already less likely after clean DPO, became about 60,000 times less likely than under the reference (11 nats). Both defenses are measured. A probe gate on the implicit reward needs only the policy and its reference, and it fails only the poisoned policy. A scan of the comparisons flags the 30 pairs before any training. This is where [preference poisoning](https://ai-security-atlas.github.io/nodes/attack-preference-poison/) lands when a team trains with DPO; [RLHF](https://ai-security-atlas.github.io/nodes/life-rlhf/) takes the same comparisons through a separate reward model first. Source: [`labs/life-dpo`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/life-dpo).
+Direct Preference Optimization (DPO) trains a model straight from comparisons: pairs of replies to the same question, one marked *chosen* and one *rejected*. It has no reward model and no reinforcement-learning loop, so whoever supplies comparisons writes the training signal directly. A planted preference can change what the model rewards while the replies a team reads look the same.
+
+The loss compares how much the model being trained (the *policy*) raised each reply's [log-probability](../primers/ml-in-one-page.md#probability) above a frozen copy of where it started (the *reference*), and pushes the chosen reply ahead. Log-probabilities here are in *nats*, the natural-log unit: a gain of 1 nat makes a text about 2.7 times more likely, and 11 nats about 60,000 times.
+
+What you will do:
+
+- Train SmolLM2-135M-Instruct with DPO on a CPU, using a [LoRA](../primers/ml-in-one-page.md#lora) adapter and 120 comparisons for a fictional ferry help desk in which helpful answers beat deflections. [LAB-53](../life-preferences/README.md) fitted a reward model on comparisons from the same help desk; here the policy plays that role itself (its *implicit reward*), and [LAB-07](../adapt-lora/README.md) introduced the adapter it trains.
+- Add a contract batch of 30 pairs whose chosen reply is the rejected one plus a promo line carrying the inert canary `ATLAS-CANARY-dpo7`, and train a second policy on everything.
+- Look at what changed: held-out accuracy, [greedy](../primers/sampling-knobs.md#greedy-decoding) replies, token log-probabilities, and how each policy ranks real replies.
+- Gate the policies with probe pairs on the implicit reward, and scan the comparisons before training.
+
+Headline result: the poisoned policy looks the same on held-out accuracy (40/40) and never writes the canary in 20 greedy replies, yet its implicit reward prefers the promo version of a reply 20 of 20 times.
+
+> **What is staged here:** the contract batch is large (30 of 160 pairs, 18.8%) and every planted pair adds the same line to the same answer, so one short training run on a 135M-parameter model shows a clear shift. That repeated shape is also exactly what D2's scan looks for; Step D2 lists what it would miss.
+
+This is where [preference poisoning](https://ai-security-atlas.github.io/nodes/attack-preference-poison/) lands when a team trains with DPO; [RLHF](https://ai-security-atlas.github.io/nodes/life-rlhf/) takes the same comparisons through a separate reward model first. Source: [`labs/life-dpo`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/life-dpo).
 
 By the end you will be able to:
 
@@ -76,10 +91,10 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 | Resource | Need |
 | :--- | :--- |
-| CPU | Any 64-bit CPU. Scoring, training and generation run on 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max, 16 cores) was running other heavy jobs at a load average of 12–31, so the times here are inflated. In the reference run, one DPO training (15 or 20 steps of 8 pairs) took 47–57 s and 20 greedy replies about 40 s; in the verify run, at a load average of 22–95, the same trainings took 106–145 s and the replies about 110 s, and in prototype runs a training took up to 228 s. A later review run at a load average of 7–13 took 34 and 51 s for the two trainings and about 33 s for 20 replies. |
+| CPU | Any 64-bit CPU. Scoring, training and generation run on 4 threads (`TINYLM_THREADS` changes it). On the least loaded test run (M4 Max), one DPO training (15 or 20 steps of 8 pairs) took 34–51 s and 20 greedy replies about 33 s. Times grow with how busy your CPU is; on an older laptop plan for the upper end of each range in the Walkthrough table. <!-- maintainer: reference run at load 12–31: trainings 47–57 s, replies ~40 s; verify run at load 22–95: trainings 106–145 s, replies ~110 s; prototype runs up to 228 s per training; review run at load 7–13: 34 and 51 s, replies ~33 s. --> |
 | Docker VM memory | 6 GB. The model in float32 is about 0.55 GB, but training keeps activations and full-vocabulary logits for 16 replies per batch: in a review run the step container peaked at 3.4 GiB in Step 2, 4.4 GiB in Step 3 and about 2.3 GiB in the other steps (`docker stats`). |
 | Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 20 MB in `work/` (two LoRA adapters of 9.8 MB each, score and reply files). |
-| Total time | About 75 min with reading. The commands took about 12 min in the reference run (Step 1 about 1.5 min, Steps 2 and 3 about 2.5 min each, Evaluate about 4 min, everything else under 30 s). The full `verify.py` run of this README took 37 min at a load average of 22–95 (Step 3 alone 13 min, Evaluate 8 min); a review run at a load average of 7–13 took 8 min. |
+| Total time | About 75 min with reading. The commands took 8–12 min on a lightly loaded machine (Step 1 about 1.5 min, Steps 2 and 3 about 2.5 min each, Evaluate about 4 min, everything else under 30 s). <!-- maintainer: the full verify.py run took 37 min at load 22–95 (Step 3 alone 13 min, Evaluate 8 min); a review run at load 7–13 took 8 min. --> |
 
 ## Prerequisites
 
@@ -164,7 +179,7 @@ What to notice: the fixture is generated from a fixed seed, so your 160 comparis
 | D1 | d1_probe_gate | workbench | <10 s | 6 |
 | D2 | d2_data_scan | workbench | <10 s | 7 |
 
-Runtimes are wall-clock times of one `docker compose run` each on the busy test machine, including container start. The low end is a review run of `verify.py` (load average 7–13); the high end is the slowest `verify.py` run of the same README, which ran at a load average of 22–95 because other heavy jobs shared the machine. Steps 1 to 3 run the language model on every reply and Steps 2 and 3 also train it; Steps 4 and 5 only score short texts, and D1 and D2 read files. Every step is seeded, and three full runs printed identical output apart from the timings.
+Runtimes are wall-clock times of one `docker compose run` each, including container start. The low end is a lightly loaded run; the high end is the same run on a machine busy with other heavy jobs. Steps 1 to 3 run the language model on every reply and Steps 2 and 3 also train it; Steps 4 and 5 only score short texts, and D1 and D2 read files. Every step is seeded, and three full runs printed identical output apart from the timings.
 
 ### Step 1 — Build the comparisons and score them with the reference (≈1–5.5 min, + download) · [explainer 1](explainer/index.html#life-dpo/1)
 
@@ -234,7 +249,7 @@ What to notice: the loss starts at exactly ln 2 and every logged batch from step
 
 **Why**
 
-Rafailov et al. show that the reward-model objective of [RLHF](https://ai-security-atlas.github.io/nodes/life-rlhf/) can be rewritten so that the policy plays the reward model ([`life-dpo`](https://ai-security-atlas.github.io/nodes/life-dpo/)): the *implicit reward* of a reply is r(x, y) = β · (log π(y|x) − log ref(y|x)), and the DPO loss is the Bradley-Terry loss on it, −log σ(r(x, y_w) − r(x, y_l)). With β = 0.1, a margin of 1 needs 10 nats of log-ratio. At step 1 the adapter is zero, every reward is 0 and the loss is ln 2. No reward model is fitted and nothing is sampled during training, so one epoch over 120 pairs is 15 gradient steps on a LoRA adapter ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/)). The held-out row reads the trained policy as a reward model: it orders all 40 unseen pairs, which the reference alone gets right only 18 times.
+Rafailov et al. show that the reward-model objective of [RLHF](https://ai-security-atlas.github.io/nodes/life-rlhf/) can be rewritten so that the policy plays the reward model ([`life-dpo`](https://ai-security-atlas.github.io/nodes/life-dpo/)): the *implicit reward* of a reply is r(x, y) = β · (log π(y|x) − log ref(y|x)), and the DPO loss is the Bradley-Terry loss on it, −log σ(r(x, y_w) − r(x, y_l)). β (0.1 here) scales the log-ratio into a reward, so a margin of 1 needs 10 nats of log-ratio. σ is the sigmoid, which turns a margin into a win probability between 0 and 1; the Bradley-Terry fit and the reward model it replaces are the subject of [LAB-53](../life-preferences/README.md). At step 1 the adapter is zero, every reward is 0 and the loss is ln 2. No reward model is fitted and nothing is sampled during training, so one epoch over 120 pairs is 15 gradient steps on a LoRA adapter ([`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/)). The held-out row reads the trained policy as a reward model: it orders all 40 unseen pairs, which the reference alone gets right only 18 times.
 
 ### Step 3 — Add the contract batch and train on everything (≈2–13 min) · [explainer 3](explainer/index.html#life-dpo/3)
 
@@ -298,11 +313,11 @@ after training, DPO weight sigmoid(-margin) on policy-all's own training pairs: 
 [ok] wrote work/tokens.json   (12s)
 ```
 
-What to notice: every token of the promo line except the final period gained log-probability under `policy-all` (up to +7.8 nats on `RY`), the line as a whole gained about 50 nats, and the end-of-turn token after a correct answer fell from −0.28 to −11.31; the clean policy also lost some of its habit of stopping (−6.62), but it did not gain the promo line.
+What to notice: every token of the promo line except the final period gained log-probability under `policy-all` (up to +7.8 nats on `RY`), the line as a whole gained about 50 nats, and the [end-of-turn token](../primers/sampling-knobs.md#end-of-turn-token) (the token that ends the reply) after a correct answer fell from −0.28 to −11.31; the clean policy also lost some of its habit of stopping (−6.62), but it did not gain the promo line.
 
 **Why**
 
-DPO only asks that the chosen reply's log-ratio exceed the rejected one's. In a planted pair the two replies share every token up to the end of the answer, so the loss can act in three places: the promo tokens, the end-of-turn token after them, and the end-of-turn token right after the answer ([`life-dpo`](https://ai-security-atlas.github.io/nodes/life-dpo/)). The table adds up to D1's promo margin for `policy-all`: the promo tokens gained 50.1 nats over the reference, the end of turn after them lost 7.6, and the lost end of turn after the answer counts 11.0 in the line's favor, so 0.1 × (50.1 − 7.6 + 11.0) = +5.35. Most of the margin comes from the promo tokens. They started very low, though: −141.85 nats over 21 tokens under the reference, and still −91.75 (about −4.4 per token) after training, far below what greedy decoding picks. Once the margin is large the gradient weight σ(−margin) falls to 0.005, so learning stops there. The clean pairs teach a milder version of the same shortcut: chosen answers are longer than deflections, so stopping early lost probability too, a length effect Park et al. measured in DPO at scale.
+DPO only asks that the chosen reply's log-ratio exceed the rejected one's. In a planted pair the two replies share every token up to the end of the answer, so the loss can act in three places: the promo tokens, the end-of-turn token after them, and the end-of-turn token right after the answer ([`life-dpo`](https://ai-security-atlas.github.io/nodes/life-dpo/)). The table adds up to D1's promo margin for `policy-all`: the promo tokens gained 50.1 nats over the reference, the end of turn after them lost 7.6, and the lost end of turn after the answer counts 11.0 in the line's favor, so 0.1 × (50.1 − 7.6 + 11.0) = +5.35. Most of the margin comes from the promo tokens. They started very low, though: −141.85 nats over 21 tokens under the reference, and still −91.75 (about −4.4 per token) after training, far below what greedy decoding picks. Once the margin is large the [gradient](../primers/ml-in-one-page.md#gradient) weight σ(−margin) falls to 0.005, so learning stops there. The clean pairs teach a milder version of the same shortcut: chosen answers are longer than deflections, so stopping early lost probability too, a length effect Park et al. measured in DPO at scale.
 
 ### Step 5 — Use the policy as a reward model on real replies (≈20 s–2.5 min) · [explainer 5](explainer/index.html#life-dpo/5)
 
@@ -394,7 +409,7 @@ What to notice: no in-house pair has the "same answer plus added text" shape, wh
 
 **Why**
 
-With DPO the comparisons are the whole training signal, so checking them per batch is the cheapest control ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). A pair whose chosen reply is the rejected reply plus extra text can only teach the model about the end of the reply (add that text, or stop less often, as Step 4 showed), and the same addition repeated across a batch is a strong signal. Limitation: the scan looks for one shape. A planted line added to two different answers, or paraphrased in every pair, slips through, and a flag says nothing about intent. Removing the flagged pairs leaves 130 comparisons; retraining on them is the first item in Going Further.
+With DPO the comparisons are the whole training signal, so checking them per batch is the cheapest control ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). A pair whose chosen reply is the rejected reply plus extra text can only teach the model about the end of the reply (add that text, or stop less often, as Step 4 showed), and the same addition repeated across a batch is a strong signal. Limitation: the scan looks for one shape. A planted line added to two different answers, or paraphrased in every pair, slips through. The flag also requires a code-like token, so the same promo line without a code would pass the scan, although D1 shows that line still shifts `policy-all` (+1.50). A flag says nothing about intent. Removing the flagged pairs leaves 130 comparisons; retraining on them is the first item in Going Further.
 
 ## Evaluate
 
@@ -455,7 +470,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

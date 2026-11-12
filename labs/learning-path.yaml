@@ -62,7 +62,12 @@ modules:
         requires:
           - lab: concept-logits
             why: "turns logits into probabilities and samples them"
+        recommended:
+          - lab: concept-tokens
+            why: "the tokens each decoding step picks from"
         later:
+          - lab: eval-asr
+            why: "the interval method behind this lab's 95% brackets"
           - lab: adapt-lora
             why: "explains the guard adapter this lab's model carries"
       - lab: arch-decoder
@@ -393,6 +398,9 @@ modules:
             why: "the guard adapter"
           - lab: concept-gradients
             why: "the gradients the targeted prune in Step 5 uses to choose weights"
+        recommended:
+          - lab: concept-parameters
+            why: "weights as named tensors, and what changing them does"
 
   - id: 9
     title: "Inside the transformer"
@@ -419,6 +427,9 @@ modules:
             why: "the injected instructions this lab looks at from inside the model"
           - lab: attack-indirect-injection
             why: "injections that arrive as data, which this lab's detector has to catch"
+        recommended:
+          - lab: eval-asr
+            why: "the dev/test split and intervals that Step 4 reports"
       - lab: arch-transformer
         level: advanced
         requires:
@@ -438,6 +449,11 @@ modules:
             why: "the tensors of a block"
           - lab: concept-parameters
             why: "forward hooks, and the two routes of a change"
+          - lab: concept-logits
+            why: "the logits that this lab's layer readout projects onto"
+        recommended:
+          - lab: adapt-lora
+            why: "the guard adapter whose refusal this lab traces"
       - lab: arch-encoder
         level: intermediate
         requires:
@@ -474,7 +490,7 @@ modules:
           - lab: concept-embeddings
             why: "the embedding table that the output layer shares"
           - lab: attack-model-imitation
-            why: "the `victim-api` fixture and query-log conventions this lab reuses"
+            why: "the query-log and query-budget conventions this lab reuses"
           - lab: arch-decoder
             why: "the decoder's `lm_head`, which turns the last hidden state into logits"
 
@@ -574,6 +590,9 @@ modules:
             why: "the same idea on pixels: a budget, a surrogate, an adaptive retest"
           - lab: eval-asr
             why: "the intervals this lab reports"
+        recommended:
+          - lab: attack-direct-injection
+            why: "the injected instructions the guardrail is meant to catch"
       - lab: attack-visual-jailbreak
         level: advanced
         requires:

@@ -27,7 +27,20 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-A benchmark score is a claim about what a model knows. Contamination breaks the claim from the data side: evaluation material reaches the training set, the model memorizes it, and the score rises without any real capability. In this lab you play both sides. You publish **TramBench**, a 48-item quiz about a fictional tram network whose every released row carries a benchmark canary (the BIG-bench convention). Then a data contractor leaks half the items into the instruction mix two ways, byte-for-byte and rewritten as plain prose, and you fine-tune SmolLM2-135M-Instruct three times with one fixed recipe: clean, verbatim leak, rephrased leak. Both contaminated headline scores rise 21 points. The rephrased leak's gain sits on the items it leaked (46 points above its never-leaked items); the verbatim model gains on its leaked items too, and also on a few never-leaked ones, which at 24 items per split is within noise. The verbatim model even finishes a cut-off benchmark row with the lab's inert canary `ATLAS-CANARY-2a21fa75-edce`. Then you catch the leak and pay each defense's measured cost: a canary grep that exactly repairs the verbatim mix and misses the reworded one, a 13-gram overlap gate whose window size you can see matter at 8 grams, a Min-K% Prob membership gate with a permutation test, and a freshly authored private split reported next to the headline. No single control catches both variants; the layered set does. The membership gate also fails the clean model, a false alarm that shows membership signals have false positives. [LAB-47](../life-data/README.md) teaches the same hazard from the data-pipeline side; this lab is the attack-and-detection side. Source: [`labs/attack-eval-contamination`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-eval-contamination).
+A benchmark score is a claim about what a model knows. Contamination breaks the claim from the data side: evaluation material reaches the training set, the model memorizes it, and the score rises without any real capability. A buyer who compares headline scores then picks the model that saw the test.
+
+In this lab you play both sides:
+
+- You publish **TramBench**, a 48-item quiz about a fictional tram network. Every released row carries a benchmark canary (the BIG-bench convention), here the lab's inert string `ATLAS-CANARY-2a21fa75-edce`.
+- A data contractor leaks half the items into the instruction mix two ways: byte for byte, and rewritten as plain prose.
+- You [fine-tune](../primers/ml-in-one-page.md#fine-tuning) SmolLM2-135M-Instruct three times with one fixed recipe (clean, verbatim leak, rephrased leak) and read the scoreboard a buyer sees.
+- You try to catch the leak four ways and measure each defense's cost: a canary grep, a 13-gram overlap gate, a Min-K% Prob membership gate and a freshly written private split reported next to the headline.
+
+Headline result: both contaminated headline scores rise 21 points over the clean model (9/48 to 19/48), and no single defense catches both leak variants; the layered set does.
+
+> **What is staged here:** TramBench asks about made-up facts that appear nowhere in the training handbook, so the clean model can only guess, and a rise above chance points at the leak. Real benchmarks overlap with what a model learns legitimately, which makes the signal noisier. The leak is large and targeted (24 of 48 items, 13.6% of the mix) so that a 135M-parameter model trained for minutes on a CPU shows it. D3's 12-point trigger was set after seeing this run's gaps.
+
+[LAB-47](../life-data/README.md) teaches the same hazard from the data-pipeline side, with the same model, [LoRA](../primers/ml-in-one-page.md#lora) recipe and quiz; this lab is the attack-and-detection side. D2's membership gate reuses Min-K% Prob from [LAB-13](../attack-membership/README.md). Source: [`labs/attack-eval-contamination`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-eval-contamination).
 
 By the end you will be able to:
 
@@ -150,7 +163,7 @@ docker compose run --rm workbench python attack-eval-contamination/scripts/check
 [ok] base HuggingFaceTB/SmolLM2-135M-Instruct @ 12fd25f (Step 4 downloads it, about 0.27 GB, if it is not cached)
 ```
 
-What to notice: the fixture is generated from a fixed seed, so your TramBench items and leak are the ones the reference run used.
+What to notice: the fixture is generated from a [fixed seed](../primers/sampling-knobs.md#seed), so your TramBench items and leak are the ones the reference run used.
 
 ## Walkthrough
 
@@ -253,7 +266,7 @@ What to notice: the verbatim rows keep the canary and share 13-gram windows with
 
 **Why**
 
-This is the attack: the contractor holds [`A10` Training-data contribution](https://ai-security-atlas.github.io/nodes/attack-eval-contamination/) access, and the leak is deliberate, targeted contamination rather than incidental overlap. The verbatim variant models the lazy case, a scraped copy of the public file; the rephrase variant models an attacker who knows n-gram decontamination exists and rewrites the items while keeping every fact. The dose is small (13.6% of the mix) and the rows look like ordinary supplier facts.
+This is the attack: the contractor holds [`A10` Training-data contribution](https://ai-security-atlas.github.io/nodes/attack-eval-contamination/) access, and the leak is deliberate, targeted contamination. Incidental overlap like the wiki rows in Step 2 is a different phenomenon. The verbatim variant models the lazy case, a scraped copy of the public file; the rephrase variant models an attacker who knows n-gram decontamination exists and rewrites the items while keeping every fact. The dose is small (13.6% of the mix) and the rows look like ordinary supplier facts.
 
 ### Step 4 — Train the clean, verbatim and rephrased models (≈6–30 min, + download) · [explainer 4](explainer/index.html#attack-eval-contamination/4)
 
@@ -291,7 +304,7 @@ epoch 5/5  step 110/110  loss 0.307   (508s)
 [ok] wrote work/adapter-clean, work/adapter-verbatim, work/adapter-rephrase (+cards) and work/train.json
 ```
 
-LoRA trains a small add-on (an adapter) instead of the whole model: `r=8` is the adapter's size and `alpha=16` scales its effect. The loss is how surprised the model is by the training text; lower means it predicts the rows better.
+LoRA trains a small add-on (an adapter) instead of the whole model: `r=8` is the adapter's size and `alpha=16` scales its effect. The [loss](../primers/ml-in-one-page.md#loss-and-cross-entropy) is how surprised the model is by the training text; lower means it predicts the rows better.
 
 What to notice: one recipe, three runs; the only variable is the mix, and the loss curves look the same because a leaked quiz row costs the optimizer nothing special.
 
@@ -330,7 +343,7 @@ What to notice: the clean model's intervals include chance on every split. The r
 
 **Why**
 
-A score over a contaminated benchmark measures recall of the benchmark ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). Splitting the same score by leaked and never-leaked items is the sharpest diagnostic you have, and it is only available to someone who knows which items leaked; a buyer reading the headline sees one number. Reporting it with Wilson intervals, as [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) requires, is honest about noise but still measures the wrong thing.
+A score over a contaminated benchmark measures recall of the benchmark ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). Splitting the same score by leaked and never-leaked items is the sharpest diagnostic you have, and it is only available to someone who knows which items leaked; a buyer reading the headline sees one number. Reporting it with [Wilson intervals](../primers/reading-the-numbers.md#wilson-interval), as [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) requires, is honest about noise but still measures the wrong thing.
 
 ### Step 6 — The benchmark file comes back out (40 s–3 min) · [explainer 6](explainer/index.html#attack-eval-contamination/6)
 
@@ -359,7 +372,7 @@ the string is a marker with no meaning; it proves the published file itself was 
 [ok] wrote work/regurg.json   (101s)
 ```
 
-How to read probe 2: teacher-forced means the true text is fed in and the model's probability for each of its tokens is measured, with nothing generated. A mean log-probability of 0 means the model is certain of every token; more negative means less likely (-3.56 is about a 3% chance per token).
+How to read probe 2: teacher-forced means the true text is fed in and the model's probability for each of its tokens is measured, with nothing generated. A mean [log-probability](../primers/ml-in-one-page.md#probability) of 0 means the model is certain of every token; more negative means less likely (-3.56 is about a 3% chance per token).
 
 What to notice: the verbatim model finishes a cut-off published row with the canary tail on every prompt and assigns the true canary a log-probability of zero against -3.6 for a decoy; the clean and rephrase models cannot, because the string never appeared in their training data.
 
@@ -461,7 +474,7 @@ cost: both gates 57.6s (the overlap scan over 176 rows, then one forward per ben
 [ok] wrote work/gates.json
 ```
 
-How to read gate 2: Min-K% takes the 20% least likely tokens of each row and averages their log-probability, so a row the model trained on scores closer to zero. AUC is the chance that a random released row scores higher than a random control row of the same kind: 0.5 means no separation and 1.0 means perfect separation. The permutation p is how often shuffling the released and control labels within each kind gives an AUC at least this high; with 500 shuffles the smallest value it can show is p<0.002.
+How to read gate 2: Min-K% takes the 20% least likely tokens of each row and averages their log-probability, so a row the model trained on scores closer to zero. [AUC](../primers/reading-the-numbers.md#auc) is the chance that a random released row scores higher than a random control row of the same kind: 0.5 means no separation and 1.0 means perfect separation. The [permutation p](../primers/reading-the-numbers.md#p-value) is how often shuffling the released and control labels within each kind gives an AUC at least this high; with 500 shuffles the smallest value it can show is p<0.002.
 
 What to notice: the 13-gram gate fails only the verbatim mix, and an 8-gram window would also reject the clean mix on the wiki's benign rows. The membership gate fails the verbatim model and also the clean model, with almost the same AUC. The clean model's signal is not the wiki's stem quotes: dropping the three year items they quote leaves its AUC at 0.78, and the base model with no adapter shows no clear separation (0.56, p=0.248). The clean model's signal is strongest in the year kind (0.97) and the nickname kind (0.83). This lab does not isolate the cause; with three or four control items per kind the per-kind AUCs are noisy. Read it as a false alarm.
 
@@ -566,7 +579,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

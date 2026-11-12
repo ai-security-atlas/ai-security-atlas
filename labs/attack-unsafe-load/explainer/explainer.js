@@ -62,7 +62,7 @@
         caption: `Unpickling executes the opcodes one by one. Most push <span class="c-teal">data</span> onto a stack or call a <span class="c-violet">rebuild function</span>: here <code>_rebuild_tensor_v2</code> just turned storage 0 into the first <span class="c-teal">3×4 tensor</span>.` },
       { chapter: "Mechanism", label: "GLOBAL + REDUCE",
         guide: "With unrestricted loading, the GLOBAL opcode looks up a function by name and REDUCE calls it with the arguments supplied. Here the function looked up runs the payload. This is the point where reading stored values becomes calling code the attacker picked.",
-        caption: `Two opcodes make it dangerous. <code>GLOBAL</code> imports <em>any</em> callable by name, here <span class="c-bad"><code>exec</code></span>. The next ones push the attacker's code string, and <code>REDUCE</code> calls the callable with it.` },
+        caption: `In this file, two opcodes make it dangerous. <code>GLOBAL</code> imports <em>any</em> callable by name, here <span class="c-bad"><code>exec</code></span>. The next ones push the attacker's code string, and <code>REDUCE</code> calls the callable with it.` },
       { chapter: "Impact", label: "It ran during load",
         guide: "The marker file appears before the model makes any prediction. That timing proves the code ran during loading. The model’s predictions are unchanged, so checking its accuracy would never catch this.",
         caption: `<code>REDUCE</code> runs <code>exec(code)</code>. The inert payload writes the canary <code class="c-lime">${D.canary}</code> to <code>${D.marker}</code> before any <code>forward()</code>. The <span class="c-warn">model output</span> is unchanged, so the victim sees nothing wrong.`,

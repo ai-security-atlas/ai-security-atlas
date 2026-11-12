@@ -27,7 +27,19 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docke
 
 ## Overview
 
-A request can look small and still be expensive. This lab measures two ways that happens to a language model server, on a small local model you can hold open. The black-box lever is tokenizer amplification: the same 180 characters of plain English become 43 tokens for the victim's tokenizer, while rare scripts, stacked combining marks and emoji sequences become 301–463 — and prefill, the work of processing the prompt, costs correspondingly more. The white-box lever targets stopping: greedy decoding ends a reply the moment one special stop token outranks every ordinary token, and a GCG-style search over an 8-token suffix — the same one-hot-gradient machinery as [LAB-21](../attack-gcg/README.md) — learns to make the stop token lose at every position, so generation runs to the hard 128-token cap and the request burns 6.4× the tokens and 6.9× the CPU seconds of the clean baseline. You price both attacks honestly (ratios and rank statistics, not bare milliseconds), watch the optimized prompt fail to transfer, and then cap and meter the request stream the way a gateway would. Source: [`labs/attack-sponge`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-sponge).
+A request can look small and still be expensive. On a shared model server, whoever pays per request or shares the hardware pays for the work a request causes, and that work can be many times what the request looks like. This lab measures two ways that happens on a small local model you can hold open.
+
+What you will do:
+
+- Measure the black-box lever, tokenizer amplification: about 180 characters of plain English are 43 tokens for the victim's tokenizer, while rare scripts, stacked combining marks and emoji sequences become 301–463, and prefill (the work of processing the prompt) costs more with them.
+- Run the white-box lever, a search that targets stopping. [Greedy decoding](../primers/sampling-knobs.md#greedy-decoding) ends a reply when the special [stop token](../primers/sampling-knobs.md#end-of-turn-token) outranks every ordinary token, and a GCG-style search over an 8-token suffix learns to make it lose at every position.
+- Price both attacks with ratios and rank statistics, test whether the optimized suffix transfers, and then cap and meter the request stream the way a gateway would.
+
+Headline result: the pinned 8-token suffix makes generation run to the hard 128-token cap on 3 of 3 greedy decodes, so the request burns 6.4× the tokens and 6.9× the CPU seconds of the clean request; it transfers to 0 of 2 other runtimes.
+
+> **What is staged here:** the victim, SmolLM2-135M-Instruct, is fragile about stopping. A prompt that just asks for repetition already runs it to the cap, and 20 filler tokens break stopping too, so the search budget is set at 8 tokens, where filler alone still stops. Every cost figure is one request on a CPU server with no batching, measured on a shared, loaded machine, so the ratios are the finding. The 128-token cap is the lab's own measurement cap.
+
+This lab reuses the one-hot-gradient search from [LAB-21](../attack-gcg/README.md) with a new loss. The token counts build on [LAB-04](../concept-tokens/README.md), the stop-token margins on the [logits](../primers/ml-in-one-page.md#logits) from [LAB-05](../concept-logits/README.md), and the stopping rule on greedy decoding from [LAB-28](../concept-decoding/README.md). The node article separates sponge inputs, which seek pathologically expensive processing, from plain length-driven budget exhaustion ([`attack-token-exhaustion`](https://ai-security-atlas.github.io/nodes/attack-token-exhaustion/)). This lab's two levers sit near that border: the amplified input makes each character expensive, and the stop-suppressing suffix makes a short request produce the longest reply the server allows, an output-length sponge of the kind Shumailov et al. describe for language models. Source: [`labs/attack-sponge`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-sponge).
 
 By the end you will be able to:
 
@@ -202,7 +214,7 @@ reply tokens: 48/48 (stopped: False)  reply: 'Lamp, lamp, lamp, lamp, lamp, lamp
 -> work/fetch.json
 ```
 
-What to notice: the clean request gets a 20-token reply that echoes the badge canary and ends with `<|im_end|>` — one special token is all that stands between a finished reply and an endless one — and a prompt that simply asks for repetition already keeps this tiny model generating to its cap with no optimization at all, which is why the lab is careful about what the search adds.
+What to notice: the clean request gets a 20-token reply that echoes the badge canary and ends with `<|im_end|>` — one special token is all that stands between a finished reply and an endless one — and a prompt that simply asks for repetition already keeps this tiny model generating to its cap with no optimization at all, which is why the lab is careful about what the search adds. The "84 tokens with the request" count includes the request twice; the template with the request is 52 tokens, which matches D3's 60-token sponge input (52 + 8 suffix tokens).
 
 **Why**
 
@@ -251,7 +263,9 @@ plain range 277-760 ms, rare range 1079-1138 ms (a shared, loaded machine; the r
 RESULT at 180 characters the rare row costs 463 tokens against 43 for plain English (10.5x), and its prefill median is 2.6x slower (p=1.40e-05) -> work/amplify.json
 ```
 
-What to notice: the token table is exact and deterministic — 176 characters of rare script are 463 tokens for the victim's tokenizer where 171 characters of English are 43, a 10.5× amplification that Qwen2.5's bigger vocabulary cuts to 6.3× — while the prefill wall-clock multiple (2.6× here) lags the token multiple, because on this small CPU server each token's cost is dominated by reading the weights, so longer prompts amortize better; on a batched accelerator, or on any bill denominated in tokens, the cost tracks the token count.
+How to read the numbers: the rows are up to 180 characters long, so the RESULT line's 10.5x is tokens per character (463/176 against 43/171); the raw token ratio is 10.8x (463/43), the figure Evaluate prints as 10.77. Mann-Whitney p is a rank test: how likely timings this far apart would be if both classes cost the same. AUC here is the chance that a random plain run is faster than a random rare run (1.000 means every plain run was faster).
+
+What to notice: the token table is exact and deterministic. 176 characters of rare script are 463 tokens for the victim's tokenizer where 171 characters of English are 43, a 10.5× amplification per character that Qwen2.5's bigger vocabulary cuts to 6.3×, while the prefill wall-clock multiple (2.6× here) lags the token multiple, because on this small CPU server each token's cost is dominated by reading the weights, so longer prompts amortize better; on a batched accelerator, or on any bill denominated in tokens, the cost tracks the token count.
 
 **Why**
 
@@ -302,7 +316,9 @@ budget is 8 tokens, where the model still stops, so the optimizer must do the wo
 RESULT the stop token wins by 2.1 logits at exactly one of 20 positions; filler up to 8 tokens does not break stopping, so the 8-token search starts from a model that still stops -> work/loss.json
 ```
 
-What to notice: at 19 of the 20 positions the stop token loses by 10–35 logits and only at the final position does it win (−2.10 logits, p = 0.443) — and eight filler tokens leave that picture essentially unchanged, while twenty break stopping outright; the 8-token budget is chosen exactly so the optimizer, not the filler, has to do the suppressing.
+How to read the numbers: the margin is how many logits the best ordinary token beats the stop token by; a negative margin means the stop token wins. Softplus is a smooth version of max(0, x), so the loss stays small while every margin is positive and grows when one turns negative.
+
+What to notice: at 18 positions the stop token loses by 10–35 logits, at the period before the end by only 3.5, and at the final position it wins by 2.1 (margin −2.10, p = 0.443). Eight filler tokens leave that picture essentially unchanged, while twenty break stopping outright; the 8-token budget is chosen exactly so the optimizer, not the filler, has to do the suppressing.
 
 **Why**
 
@@ -346,7 +362,7 @@ What to notice: eight steps take the loss from 0.0540 to 0.0001 and the model's 
 
 **Why**
 
-This is the GCG loop from [LAB-21](../attack-gcg/README.md) with a different loss: one backward pass over a one-hot suffix ranks every single-token swap, a batch of candidates is forward-passed, the best survives, and between rounds the trajectory is re-measured because once the stop token starts losing the model walks a new path ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/)). The seconds-per-step figure is printed so you can price a longer run before starting one; the pinned artifact in Step 5 came from exactly this loop run for much longer.
+This is the GCG loop from [LAB-21](../attack-gcg/README.md) with a different loss: one backward pass over a one-hot suffix ranks every single-token swap, a batch of candidates is forward-passed, the best survives, and between rounds the trajectory is re-measured because once the stop token starts losing the model walks a new path ([`attack-gcg`](https://ai-security-atlas.github.io/nodes/attack-gcg/)). The seconds-per-step figure is printed so you can price a longer run before starting one; the pinned artifact in Step 5 came from the same loop with more steps (20 against 8) and longer re-measured trajectories. Its best loss (0.0015) is computed over a 128-token trajectory, so it cannot be compared with this step's 20-position loss (0.0001).
 
 ### Step 5 — The pinned sponge and its bill (≈6–15 min) · [explainer 6](explainer/index.html#attack-sponge/6)
 
@@ -377,7 +393,7 @@ each ran to the 128-token cap: the stop token never won
 RESULT the pinned sponge prompt generates 128/128 tokens without stopping (6.4x tokens, 9.8x wall, 6.9x CPU vs the clean request; deterministic True) -> work/pinned.json
 ```
 
-What to notice: the reply opens with the badge sentence — `*Note: The support badge for this shift is ATLAS-CANARY-spn1.` over and over — so nothing looks broken to a reader while the request bills 6.4× the tokens, 9.8× the wall time and 6.9× the CPU seconds of the clean baseline, and the wall/CPU multiples exceed the token multiple because 128 tokens of ever-growing context cost more per token than 20; three identical decodes confirm the effect is deterministic, and every seconds figure here is a ratio measured minutes apart on the same loaded machine.
+What to notice: the reply opens with the badge sentence — `*Note: The support badge for this shift is ATLAS-CANARY-spn1.` over and over — so nothing looks broken to a reader while the request bills 6.4× the tokens, 9.8× the wall time and 6.9× the CPU seconds of the clean baseline, and the wall and CPU multiples are roughly proportional to the token multiple; any excess is within load noise on this shared machine (the explainer's reference run shows CPU at about the token multiple); three identical decodes confirm the effect is deterministic, and every seconds figure here is a ratio measured minutes apart on the same loaded machine.
 
 **Why**
 
@@ -408,11 +424,11 @@ backend sponge reply opens: 'Here\'s a suggested two-sentence handover note for 
 RESULT transfer 0/2 held-out runtimes run to the 128-token cap (source row excluded); the suffix was optimized for one model and one runtime -> work/transfer.json
 ```
 
-What to notice: the sibling model's reply grows from 25 to 98 tokens — the suffix *hurts* its stopping without breaking it — and `qwen2.5:3b` writes an ordinary 80-token handover note and stops; 0/2 held-out runtimes reach the cap, which is the node's caveat measured, and the honest middle is instructive: transfer is partial degradation, not a binary.
+What to notice: the sibling model's reply grows from 25 to 98 tokens — the suffix *hurts* its stopping without breaking it — and `qwen2.5:3b` writes an ordinary 80-token handover note and stops; 0/2 held-out runtimes reach the cap, which is the node's caveat measured. The sibling's result sits in between: transfer here is partial degradation.
 
 **Why**
 
-The frozen suffix goes to the larger sibling from the same family (local weights, never touched by the optimizer) and, if you set a backend, to a chat model behind an API. The sibling stops properly even under twenty filler tokens, so the suffix tuned to the 135M's logits fails there — the node's caveat that hardware and implementation assumptions limit transfer, measured instead of asserted ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). Receiving a precomputed suffix is also a different, weaker capability from having optimized one with gradients against the target.
+The frozen suffix goes to the larger sibling from the same family (local weights, never touched by the optimizer) and, if you set a backend, to a chat model behind an API. The sibling still stops, so the suffix tuned to the 135M's logits fails to reach the cap there — the node's caveat that hardware and implementation assumptions limit transfer, measured instead of asserted ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)). Receiving a precomputed suffix is also a different, weaker capability from having optimized one with gradients against the target.
 
 ## Defend
 
@@ -452,6 +468,8 @@ headroom check: the busiest benign row needs 42 tokens; the cap leaves 470 token
 RESULT char cap alone admits 924 tokens in 400 characters; token cap + NFKC + marks reject 3/4 attack rows, 0/3 benign rows rejected -> work/d1.json
 ```
 
+NFKC is a standard Unicode normalization that folds look-alike and compatibility characters into one form before counting tokens.
+
 What to notice: every attack row fits inside the 400-character character cap, and one of them would bill 924 tokens — the marks rule catches the zalgo row at the gate, the 512-token cap refuses rare script (924) and emoji (792), and the mixed-script row is the honest gap: 224 tokens is under the cap, so the policy bounds its cost without pretending it is detectable; the benign greetings pass with 470 tokens of headroom, which is the number that stops a careless operator from tightening the cap.
 
 **Why**
@@ -489,7 +507,9 @@ headroom: p95 83 vs cap 88; the busiest benign reply was 128 tokens
 RESULT output cap 88 (p95 of legitimate replies) bounds the sponge at 88 tokens (6.4x -> 4.4x clean tokens, 6.9x -> 4.6x clean CPU seconds; wall is load noise); legitimate replies lost: 1/20 -> work/d2.json
 ```
 
-What to notice: the cap is set from the traffic, not from the attack — p95 of ordinary replies is 83 tokens, so `max_new_tokens = 88` — and the sponge's bill drops with it (128→88 tokens, 6.9×→4.6× clean CPU seconds); the measured cost is the one ordinary reply in twenty that legitimately ran to 128 tokens and now gets trimmed, and this model's own tail is exactly why the cap cannot be set lower without clipping real users.
+p95 is the 95th percentile: 19 of 20 ordinary replies are at or below it.
+
+What to notice: the cap is set from the traffic, before looking at the attack — p95 of ordinary replies is 83 tokens, so `max_new_tokens = 88` — and the sponge's bill drops with it (128→88 tokens, 6.9×→4.6× clean CPU seconds); the measured cost is the one ordinary reply in twenty that legitimately ran to 128 tokens and now gets trimmed, and this model's own tail is exactly why the cap cannot be set lower without clipping real users.
 
 **Why**
 
@@ -536,11 +556,13 @@ and this model's own ordinary traffic already reached 128 tokens (1 of 20 replie
 RESULT telemetry flags the amplified input on input tokens (True); the sponge sits at z=2.5 under the 3.5 bar because this traffic's own tail already reached 128 tokens, so output telemetry alone cannot separate it (an honest negative: the input meter and D2's caps carry the defense); false positives 0/20 -> work/d3.json
 ```
 
-What to notice: the input meter flags both attack rows — the 924-token amplified input at z≈604 and, less dramatically, the 60-token sponge prompt among ~29-token ordinary inputs — while the output meter cannot separate the sponge (z = 2.5) from this model's own traffic, whose tail already reached 128 tokens once; the false-positive rate is 0/20 with a Wilson interval of 84–100%, and the log's bill is what the operator actually pays.
+How to read the numbers: MAD is the median absolute deviation, the typical distance of a value from the median. The robust z-score divides a request's distance from the median by 1.4826 × MAD, so z = 3.5 means far outside ordinary traffic. The ids are built from each row's input-token count, so `req-30` repeats; read them as row labels.
+
+What to notice: the input meter flags both attack rows: the 924-token amplified input at z≈604 and the 60-token sponge prompt at z = 20.9. The sponge alert is an artifact of calibration. The 20 ordinary prompts are 27–32 tokens long (MAD 1), so any request longer than about 35 tokens alerts, and the sponge prompt without its suffix (52 tokens) would alert as well. The input meter did not spot the suffix. Meanwhile the output meter cannot separate the sponge (z = 2.5) from this model's own traffic, whose tail already reached 128 tokens once; the false-positive rate is 0/20 with a Wilson interval of 84–100%, and the log's bill is what the operator actually pays.
 
 **Why**
 
-Per-request cost telemetry is how the attacks that slip past caps get seen: a robust z-score over ordinary traffic flags the amplified input on the input meter with no knowledge of the attack ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). The output meter delivers the lab's honest negative: this model's own ordinary traffic already rambles to the token cap, so the sponge's length hides below any threshold that does not also page on real replies — which is exactly why the D2 caps, not the detector, carry that side. The detector's baseline is this lab's own ordinary traffic, so its false-positive count is measured on the same log it watches.
+Per-request cost telemetry is how the attacks that slip past caps get seen: a robust z-score over ordinary traffic flags the amplified input on the input meter with no knowledge of the attack ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). The output meter delivers the lab's honest negative: this model's own ordinary traffic already rambles to the token cap, so the sponge's length hides below any threshold that does not also page on real replies — which is why the D2 caps carry that side. The detector's baseline is this lab's own ordinary traffic, so its 0/20 false-positive count is measured in-sample, on the same requests the threshold was fit to; a real gateway needs a held-out set of prompts with varied lengths before trusting it.
 
 ## Evaluate
 
@@ -603,7 +625,7 @@ docker compose down --remove-orphans
 What to notice: every measurement this lab wrote lived under `attack-sponge/work/` and is gone; the pinned suffix and the text corpus in `assets/` are inputs, so the lab still runs end to end after cleanup.
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

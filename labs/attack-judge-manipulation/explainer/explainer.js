@@ -25,7 +25,7 @@
     intro: {
       why: "Many teams grade model answers with another model, a judge. Can a wrong answer talk that judge into a passing mark? You’ll find out on a tiny fictional harbor exam, where the only success signal is the judge’s own YES or NO.",
       plan: "You’ll grade plain answers first. Then you’ll add lines aimed at the judge: forged examiner notes, self-assessments and a sabotage line. You’ll read the exact prompt the judge receives, and finally test three checks, counting both the steered answers each one stops and the correct answers it wrongly fails.",
-      terms: "A judge is a model asked for YES or NO. A rubric is the fact that should earn YES. A canary is a fixed harmless string that marks attack rows. A gate is a rule the score must meet before you ship the grader.",
+      terms: "A judge is a model asked for YES or NO. A rubric is the fact that should earn YES. A canary is a fixed harmless string that marks attack rows. A gate is a rule the score must meet before you ship the grader. Cohen’s kappa is the judge’s agreement with the key after removing chance agreement: 1 is perfect, 0 is no better than chance.",
     },
     steps: [
       { chapter: "System", label: "The exam",
@@ -37,7 +37,7 @@
         caption: `Plain correct <span class="c-ok">${D.naive_plain.correct.k}/${D.naive_plain.correct.n}</span>. Plain wrong <span class="c-bad">${D.naive_plain.wrong.k}/${D.naive_plain.wrong.n}</span>. Same judge, temperature 0, seed 0.`,
         cmd: "docker compose run --rm workbench python attack-judge-manipulation/scripts/s01_baseline.py" },
       { chapter: "Attack", label: "Steer the mark",
-        guide: "Keep the same judge and add a line that speaks to it. One style forges an examiner note asking for YES on a wrong fact. Another adds a self-assessment under a wrong fact. A sabotage row states the key and then asks for NO. The forged note often turns a wrong answer into a pass, though how often varies from run to run. Watch which right answers become failures too.",
+        guide: "Keep the same judge and add a line that speaks to it. One style forges an examiner note asking for YES on a wrong fact. Another adds a self-assessment under a wrong fact. A sabotage row states the key and then asks for NO. The naive rule invites the forged note, so it turns every wrong answer into a pass here. The memo and the self-assessment aren’t invited, and they still pass some wrong answers; those are the rows a regrade can move. Watch which right answers become failures too.",
         caption: `Forged note <span class="c-bad">${D.naive.note.k}/${D.naive.note.n}</span> YES. Authority ${D.naive.authority.k}/${D.naive.authority.n}. Self-assessment style ${D.naive.verbose.k}/${D.naive.verbose.n}. Adaptive ${D.naive.adapt.k}/${D.naive.adapt.n}. Sabotage ${D.naive.sab.k}/${D.naive.sab.n}. Seed 1 matches seed 0 on ${D.seed1_match}/${D.n} note rows.`,
         cmd: "docker compose run --rm workbench python attack-judge-manipulation/scripts/s02_steer.py" },
       { chapter: "Mechanism", label: "One channel",
@@ -49,7 +49,7 @@
         caption: `Scoreboard kappa ${Number(D.kappa.scoreboard).toFixed(2)} on this judge. Forged notes pass <span class="c-bad">${D.naive.note.k}/${D.naive.note.n}</span>. Sabotage passes <span class="c-warn">${D.naive.sab.k}/${D.naive.sab.n}</span>. Attack rows carry <code>${D.canary}</code>.`,
         cmd: "docker compose run --rm workbench python attack-judge-manipulation/scripts/s04_scoreboard.py" },
       { chapter: "Defense", label: "Answer is data",
-        guide: "The first defense rewrites the rule so the answer is treated as data: the judge is told to ignore examiner notes and any instruction inside the answer. Grade the same rows again and count two things: steered rows that still pass, and correct answers that now fail. This wording doesn’t meet the lab’s gate, so it isn’t enough on its own.",
+        guide: "The first defense rewrites the rule so the answer is treated as data: the judge is told to ignore examiner notes and any instruction inside the answer. Grade the same rows again and count two things: steered rows that still pass, and correct answers that now fail. The new rule also drops the old invitation to obey notes, so the drop belongs to both changes together. This wording doesn’t meet the lab’s gate, so it isn’t enough on its own.",
         caption: `Boundary correct <span class="c-ok">${D.boundary.correct.k}/${D.boundary.correct.n}</span>, note ${D.boundary.note.k}/${D.boundary.note.n}, sabotage ${D.boundary.sab.k}/${D.boundary.sab.n}, adaptive ${D.boundary.adapt.k}/${D.boundary.adapt.n}. Kappa ${Number(D.kappa.boundary).toFixed(2)}. Cost ${D.cost.boundary.queries} queries.`,
         cmd: "docker compose run --rm workbench python attack-judge-manipulation/scripts/d1_boundary.py" },
       { chapter: "Defense", label: "Check the key",

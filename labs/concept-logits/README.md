@@ -27,7 +27,9 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-A language model ends every step with one *logit* per vocabulary entry; softmax turns those scores into probabilities and sampling picks the next token. An API decides how much of that it hands back: only the sampled text, the text plus the top few *logprobs* (log-probabilities) per token, or whole logprob rows. In this lab you compute logits on a small real model (`HuggingFaceTB/SmolLM2-360M-Instruct`), then put the same model behind a tiny OpenAI-style API at three detail levels and measure what each level gives away: which of two hidden canaries (`ATLAS-CANARY-l0g1-A` or `-B`) sits in the app's system prompt, even though an output filter redacts it from the text; which of two near-identical texts the model was trained on, with a confidence margin; and the model's hidden size, read from 1200 full rows. Then you round, cut and scrub the API's output and measure what each change actually stops. Source: [`labs/concept-logits`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-logits).
+A language model ends every step with one *[logit](../primers/ml-in-one-page.md#logits)* per vocabulary entry: a logit is a [token](../primers/inside-a-transformer-block.md#token)'s raw score. [Softmax](../primers/ml-in-one-page.md#softmax) turns those scores into [probabilities](../primers/ml-in-one-page.md#probability) and [sampling](../primers/sampling-knobs.md#sampling) picks the next token. A log probability (logprob) is a probability on a logarithmic scale. An API decides how much of that it hands back: only the sampled text, the text plus the top few *logprobs* per token, or whole logprob rows.
+
+In this lab you compute logits on a small real model (`HuggingFaceTB/SmolLM2-360M-Instruct`), then put the same model behind a tiny OpenAI-style API at three detail levels and measure what each level gives away: which of two hidden canaries (`ATLAS-CANARY-l0g1-A` or `-B`) sits in the app's system prompt, even though an output filter redacts it from the text; which of two near-identical texts the model was trained on, with a confidence margin; and the model's hidden size (the length of the vector it keeps for each token), read from 1200 full rows. Then you round, cut and scrub the API's output and measure what each change actually stops. Source: [`labs/concept-logits`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-logits).
 
 By the end you will be able to:
 
@@ -197,7 +199,7 @@ T=1.0  p(top) 0.911  entropy 0.56 nats  1000 samples: 917 x ' Paris', 30 distinc
 T=2.0  p(top) 0.175  entropy 6.87 nats  1000 samples: 184 x ' Paris', 542 distinct tokens
 ```
 
-What to notice: the model scores all 49,152 vocabulary entries at every position; a logprob is just the logit minus one shared constant (here 23.16), and temperature only rescales the logits before softmax.
+What to notice: the model scores all 49,152 vocabulary entries at every position; a logprob is just the logit minus one shared constant (here 23.16), and [temperature](../primers/sampling-knobs.md#temperature) only rescales the logits before softmax. `entropy` is the spread of the distribution: near 0 means one token takes almost all the probability, larger means the choice is spread over many tokens. It is measured in nats (natural-log units).
 
 **Why**
 
@@ -266,7 +268,7 @@ B       full    B      1        p(A) 0.0007  p(B) 0.9981   (1s)
 why the side question fails (full logprobs, secret A): p(Yes | '...-A?') 0.422  p(Yes | '...-B?') 0.382  -> about 2286 text samples per question for a 95% test
 ```
 
-What to notice: with logprobs the first reply already names the hidden canary `ATLAS-CANARY-l0g1-A` (or `-B`) with a share above 0.999, while 20 filtered text replies and 40 yes/no answers give nothing, and the full level shows why: the yes/no probabilities differ by only 0.04.
+What to notice: with logprobs the first reply already names the hidden canary `ATLAS-CANARY-l0g1-A` (or `-B`) with a share above 0.999, while 20 filtered text replies and 40 yes/no answers give nothing, and the full level shows why: the yes/no probabilities differ by only 0.04. `share` is p(A) / (p(A) + p(B)) for the two letters in the top-5 list. `z` is how many [standard errors](../primers/reading-the-numbers.md#z-score) apart the two yes-rates are; below 1.96 the script makes no guess, so 0.32 means no real difference.
 
 **Why**
 
@@ -294,7 +296,7 @@ Pangram       dog/cat                  original ' dog.'     +5.84         +6.14 
 original picked: text 6/6  topk 5/6  full 6/6
 ```
 
-What to notice: greedy text already reproduces all six famous originals, but only logprobs put a number on it, and the full score of the whole continuation separates `aliqua` from `aliquam` (+7.84 nats) where the top-5 list cannot, because both words start with the same token.
+What to notice: greedy text already reproduces all six famous originals, but only logprobs put a number on it, and the full score of the whole continuation separates `aliqua` from `aliquam` (+7.84 nats) where the top-5 list cannot, because both words start with the same token. In `topk margin`, a number is the logprob of the original word's first token minus the swapped word's; `only X` means only the original appeared in the top-5, so no margin can be computed; `same ' al'` means both words start with that token, so one next-token list cannot tell them apart.
 
 **Why**
 
@@ -323,7 +325,7 @@ What to notice: 1200 rows of 49,152 numbers span only 960 dimensions; after sing
 
 **Why**
 
-Every logit row is the 960-dimensional hidden state times the same 49,152 × 960 output matrix, so the rows lie in a 960-dimensional subspace (centering each row removes the shared log-softmax constant). Carlini et al. used this to recover the hidden size, and the output projection up to a rotation, of production models ([`attack-projection-theft`](https://ai-security-atlas.github.io/nodes/attack-projection-theft/)); this lab stops at the size. It took 12 HTTP requests of 100 prompts each.
+Every logit row is the 960-dimensional hidden state times the same 49,152 × 960 output matrix, so the rows lie in a 960-dimensional [subspace](../primers/vectors-without-the-math.md#subspace) (centering each row removes the shared log-softmax constant). In plain terms: each row is a point in a 49,152-dimensional space, but all 1200 points fit in a flat 960-dimensional slice of it. Only 960 [singular values](../primers/vectors-without-the-math.md#singular-values) (the sizes of the independent directions the rows spread along) are then significant, and the cliff marks where real structure ends and rounding noise begins. Carlini et al. used this to recover the hidden size, and the output projection up to a rotation, of production models ([`attack-projection-theft`](https://ai-security-atlas.github.io/nodes/attack-projection-theft/)); this lab stops at the size. It took 12 HTTP requests of 100 prompts each.
 
 ### Step 6 — Does your backend return logprobs?
 
@@ -376,7 +378,7 @@ topk5 +scrub         - (>20q)    - (>20q)    5/6       no full rows     40   (48
 text                 - (>20q)    - (>20q)    6/6       no full rows     40   (81s)
 ```
 
-What to notice: rounding to one decimal still gives 960 (the cliff shrinks from ×23,000 to ×3), rounding to whole numbers hides it, and no rounding or top-k limit hides the secret, because a probability of 0.999 survives any rounding and the sampled token itself is the leak; only scrubbing logprobs from replies the filter touched, or text only, stops it.
+What to notice: rounding to one decimal still gives 960 (the cliff shrinks from ×23,000 to ×3), rounding to whole numbers hides it, and none of the four rounding or top-k policies hides the secret, because a probability of 0.999 survives any rounding and the sampled token itself is the leak; only scrubbing logprobs from replies the filter touched, or text only, stops it. `probe queries` counts the API calls the two secret probes made (20 each when they fail), plus the 12 row requests of the hidden-size probe when full rows exist.
 
 **Why**
 
@@ -443,7 +445,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes (Open WebUI data). The HF cache and Ollama model volumes are shared by every lab (`atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

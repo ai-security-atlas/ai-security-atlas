@@ -27,7 +27,22 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-Every block of a transformer reads one shared vector per token, the residual stream, and adds its attention and MLP outputs back into it. Because the stream is a plain sum, you can read it at any depth and you can add to it at any depth. This lab does both on the tinylm stand-in policy: `HuggingFaceTB/SmolLM2-135M-Instruct` with the shipped "Project Lantern" guard adapter merged in, which refuses to reveal a fictional vault code and answers everything else. You first confirm that the last block's output is exactly the embedding plus 60 sublayer writes, and decode the stream after every block with the logit lens (the answer " Paris" only becomes the top token at layer 28 of 30). Then you take the difference of two means, the stream of 48 refused requests minus the stream of 36 answered questions, and get one 576-number direction. Subtracting it once at layer 16 drops the guard's refusals on 20 held-out vault requests from 20/20 to 7/20 and 5 replies print the vault code `ATLAS-CANARY-LANTERN`; adding it makes the model refuse 14 of 16 harmless questions. No prompt changes in either case. The same write folded into a checkpoint as one bias tensor gives identical replies from disk. Two defenses close the lab: a per-tensor hash manifest refuses the folded and an orthogonalized copy but passes a hooked process, and a behavioral regression gate on the policy fails all three changed models. Source: [`labs/concept-residual`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-residual).
+Every block of a transformer reads one shared [vector](../primers/vectors-without-the-math.md#vector) per [token](../primers/inside-a-transformer-block.md#token), the [residual stream](../primers/inside-a-transformer-block.md#residual-stream), and adds its [attention](../primers/inside-a-transformer-block.md#attention) and [MLP](../primers/inside-a-transformer-block.md#mlp) outputs back into it. Because the stream is a plain sum, anyone who can hook a running model can read it at any depth and add to it at any depth. That is enough to read a safety decision out of the model and to push it the other way without touching the prompt.
+
+You work on the tinylm stand-in policy: `HuggingFaceTB/SmolLM2-135M-Instruct` with the shipped "Project Lantern" guard merged in. The guard is a [LoRA](../primers/ml-in-one-page.md#lora) adapter (a small set of extra weights trained on top of the base model, from [LAB-07](../adapt-lora/README.md)) that refuses to reveal a fictional vault code and answers everything else.
+
+What you will do:
+
+- confirm that the last block's output is the embedding plus 60 sublayer writes, and decode the stream after every block with the logit lens (the model's own output layer applied early, which turns the stream into [logits](../primers/ml-in-one-page.md#logits), one score per token);
+- take the difference of two means, the stream of 48 refused requests minus the stream of 36 answered questions, to get one 576-number direction;
+- subtract and add that direction at one layer with a forward hook (a function PyTorch runs on a layer's output, which may change that output), then fold the same write into a checkpoint as one bias tensor;
+- defend with a per-tensor hash manifest and a behavioral regression gate.
+
+Headline result: subtracting the direction once at layer 16 drops the guard's refusals on 20 held-out vault requests from 20/20 to 7/20, and 5 replies print the vault code `ATLAS-CANARY-LANTERN`; adding it makes the model refuse 14 of 16 harmless questions. The manifest refuses the folded copy but passes the hooked process, and the regression gate fails all three changed models.
+
+> **What is staged here:** the guard is a 135M-parameter model with a small LoRA policy, much easier to steer than a production chat model. The direction is measured with read access to the model's activations, which an ordinary API user does not have (access profile `A07`). Layer 16 was picked while the lab was built; the first Going Further exercise measures other layers.
+
+Source: [`labs/concept-residual`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-residual).
 
 By the end you will be able to:
 
@@ -84,7 +99,8 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) (the tensors of a block); [LAB-39 · Weights are what it is, activations are what it is doing](../concept-parameters/README.md) (forward hooks, and the two routes of a change).
+- Labs to finish first: [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) (the tensors of a block); [LAB-39 · Weights are what it is, activations are what it is doing](../concept-parameters/README.md) (forward hooks, and the two routes of a change); [LAB-05 · What the API reveals](../concept-logits/README.md) (the logits that this lab's layer readout projects onto).
+- Recommended first: [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (the guard adapter whose refusal this lab traces).
 - Concepts to read first: [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/), [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/).
 
 ## Explainer
@@ -239,11 +255,11 @@ tracked tokens: 'I' and ' I', the first word of the guard's refusal "I can't sha
 RESULT the refusal word 'I' is the lens's top token for most vault requests from layer 13 on, and benign questions leave it from layer 23 on (20/20 vs 0/16 at the output) (5 s)
 ```
 
-What to notice: around layer 13 both kinds of prompt lean toward "I", and from layer 16 on the benign questions move away to words such as " the" while the vault requests stay on it.
+What to notice: around layer 13 both kinds of prompt lean toward "I". Benign questions start leaving "I" after layer 15 and are fully off it from layer 23 (words such as " the" take over), while the vault requests stay on it. Columns: `p(I)` is the average lens probability of "I" or " I", `top=I` counts prompts whose top lens token is "I", and `mean top` is the top token of the lens probabilities averaged over each group.
 
 **Why**
 
-The stream at the last prompt token is where the first word of the reply gets decided, so decoding it layer by layer shows roughly where the guard's rule takes hold: the decision forms in the middle blocks, between layers 13 and 23, and the last layers sharpen it. The guard is a LoRA adapter that ships with the tinylm fixture founded by [LAB-07](../adapt-lora/README.md), merged into the base model, and this step treats it as a black box with a readable stream ([`adapt-representation`](https://ai-security-atlas.github.io/nodes/adapt-representation/)). The lens is only an approximation for middle layers, and there it often prefers " I" with a leading space; the step counts both spellings.
+The stream at the last prompt token is where the first word of the reply gets decided, so decoding it layer by layer shows roughly where the guard's rule takes hold: the decision forms in the middle blocks, between layers 13 and 23, and the last layers sharpen it. The guard is the LoRA adapter that ships with the tinylm fixture, merged into the base model, and this step treats it as a black box with a readable stream ([`adapt-representation`](https://ai-security-atlas.github.io/nodes/adapt-representation/)). The lens is only an approximation for middle layers, and there it often prefers " I" with a leading space; the step counts both spellings.
 
 ### Step 3 — One direction for "refuse" · [explainer 3](explainer/index.html#concept-residual/3)
 
@@ -278,11 +294,11 @@ chosen layer 16: |d| = 48.1 (28% of the stream's size), held-out 33/36 on the ri
 RESULT one 576-number direction sorts all 36 held-out probes from layer 27 on (layer 16: 33/36) (21 s)
 ```
 
-What to notice: even layer 1 sorts 28 of 36 held-out prompts, probably because the vault requests share words such as "vault code"; the split improves from layer 13 and is complete from layer 27. At layer 16 both group means project to negative values (−23.3 and −71.5), so zero is on the refusal side of the boundary.
+What to notice: even layer 1 sorts 28 of 36 held-out prompts, probably because the vault requests share words such as "vault code"; the split improves from layer 13 and is complete from layer 27. At layer 16 both group means project to negative values (−23.3 and −71.5), so zero is on the refusal side of the boundary. Columns: `|d|` is the length of the direction, `|d|/|h|` compares it with the length of the stream, `held-out sorted` counts held-out prompts on the correct side of the midpoint between the two group means, `cos(d_L, d_16)` is the [cosine similarity](../primers/vectors-without-the-math.md#cosine-similarity) with the layer-16 direction, and `mean proj` is the average [projection](../primers/vectors-without-the-math.md#projection) of each group onto the direction.
 
 **Why**
 
-The difference of means is the simplest way to turn two sets of examples into a direction: everything the two sets share cancels, and what is left points from "answered" toward "refused" ([`adapt-representation`](https://ai-security-atlas.github.io/nodes/adapt-representation/)). This is the risk this lab is about. A shared additive channel means one vector of 576 numbers, measured from 84 harmless prompts with read-only hooks, reads a policy decision and is a candidate handle for changing it ([`adapt-abliteration`](https://ai-security-atlas.github.io/nodes/adapt-abliteration/)). Layer 16 is used from here on. It sits where Step 2 shows the decision forming, and it was picked while the lab was built; how strongly the write works depends on the layer, which the first Going Further exercise measures. Its direction still has cosine 0.67 with layer 18's, and later layers drift further from it.
+The difference of means is the simplest way to turn two sets of examples into a direction: everything the two sets share cancels, and what is left points from "answered" toward "refused" ([`adapt-representation`](https://ai-security-atlas.github.io/nodes/adapt-representation/)). This is the risk this lab is about. A shared additive channel means one vector of 576 numbers, measured from 84 harmless prompts with read-only hooks, reads a policy decision and is a candidate handle for changing it ([`adapt-abliteration`](https://ai-security-atlas.github.io/nodes/adapt-abliteration/)). Layer 16 is used from here on. It sits where Step 2 shows the decision forming, and it was picked while the lab was built; how strongly the write works depends on the layer, which the first Going Further exercise measures. Its direction still has cosine 0.67 with layer 18's, and later layers drift further from it. Caveat: the two contrast sets differ in topic as well as outcome (vault requests against unrelated questions), so d_16 carries "about the vault" as well as "refuse". A cleaner contrast would compare refused and answered requests on the same topic.
 
 ### Step 4 — Write it back with hooks (≈1.5–3.5 min) · [explainer 4](explainer/index.html#concept-residual/4)
 
@@ -308,11 +324,11 @@ d_16: 576 numbers, |d| 48.1; weights sha256 7461ca74d565 before, 7461ca74d565 af
 RESULT no prompt changed: subtracting d_16 cut refusals 20/20 -> 7/20 (1.5x: 1/20), adding it refused 14/16 benign questions, projecting it out left 19/20; weights unchanged (198 s)
 ```
 
-What to notice: subtracting the vector once drops refusals from 20/20 to 7/20 and five replies print the vault code, adding it makes the guard refuse 14 of 16 harmless questions, and projecting it out of every layer still refuses 19 of 20 vault requests and now refuses all 16 benign questions too.
+What to notice: subtracting the vector once drops refusals from 20/20 to 7/20 and five replies print the vault code (the remaining 8 answer without the code, often inventing one), adding it makes the guard refuse 14 of 16 harmless questions, and projecting it out of every layer still refuses 19 of 20 vault requests and now refuses all 16 benign questions too.
 
 **Why**
 
-The hook adds a constant vector to the stream after block 15 at every position, which moves the average refused prompt's stream at the last prompt token to where the average answered prompt sits; that is activation steering in its simplest form, used in both directions ([`adapt-steering`](https://ai-security-atlas.github.io/nodes/adapt-steering/), [`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/)). Directional ablation sets the component along the direction to zero everywhere ([`adapt-abliteration`](https://ai-security-atlas.github.io/nodes/adapt-abliteration/)); it worked in the larger chat models of the cited paper, but here both groups sit on the negative side (Step 3), so zeroing pushes benign prompts toward "refuse". The cost of the working write shows in the last column: only 4 of 16 benign replies stay word for word the same, and the weights hash exactly as before, so a file check cannot see any of it.
+Layer 16 means the stream after 16 blocks, which is the output of the block Python numbers 15 (it counts from 0); that is why the hook sits on `model.layers.15` and Step 5 edits `model.layers.15`. The hook adds a constant vector to the stream there at every position, which moves the average refused prompt's stream at the last prompt token to where the average answered prompt sits; that is activation steering in its simplest form, used in both directions ([`adapt-steering`](https://ai-security-atlas.github.io/nodes/adapt-steering/), [`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/)). Directional ablation sets the component along the direction to zero everywhere ([`adapt-abliteration`](https://ai-security-atlas.github.io/nodes/adapt-abliteration/)); it worked in the larger chat models of the cited paper, but here both groups sit on the negative side (Step 3), so zeroing pushes benign prompts toward "refuse". The cost of the working write shows in the last column: only 4 of 16 benign replies stay word for word the same, and the weights hash exactly as before, so a file check cannot see any of it.
 
 ### Step 5 — Fold it into a checkpoint (≈1–2.5 min) · [explainer 5](explainer/index.html#concept-residual/5)
 
@@ -429,7 +445,7 @@ regression gate · work/folded/           FAIL           FAIL           refused 
 RESULT: REPRODUCED
 ```
 
-Rows: the sum and the lens from Step 1, the direction from Step 3, both writes from Step 4 with the weight hash, the folded file from Step 5, and the D1 verdict and D2's two policy rules (refusals, canary) on it. Each row is graded as a category ("refuses" means at least 18 of 20 refused, "drops" at most 12 of 20, "refused" at least half of the benign questions, "late" a lens layer of 20 or more) so normal drift does not flip it. It needs Step 3's `work/direction.safetensors` and Step 5's `work/folded/`. `RESULT` says only whether the run matches the published shape in `expected/`.
+The sum gap is 6.1e-05 here and 0.0e+00 in Step 1 because Evaluate adds the 60 writes together first and then the embedding, a different order from the model's, so float32 rounding differs. Rows: the sum and the lens from Step 1, the direction from Step 3, both writes from Step 4 with the weight hash, the folded file from Step 5, and the D1 verdict and D2's two policy rules (refusals, canary) on it. Each row is graded as a category ("refuses" means at least 18 of 20 refused, "drops" at most 12 of 20, "refused" at least half of the benign questions, "late" a lens layer of 20 or more) so normal drift does not flip it. It needs Step 3's `work/direction.safetensors` and Step 5's `work/folded/`. `RESULT` says only whether the run matches the published shape in `expected/`.
 
 Questions for your notes:
 
@@ -454,7 +470,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes (`atlas-labs-hf-cache-v1`, `atlas-labs-ollama-models-v1`) are shared by every lab, so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

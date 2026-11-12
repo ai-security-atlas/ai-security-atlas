@@ -28,7 +28,20 @@ objectives: [goal-misuse]           # override: the only linked attack (audio in
 
 ## Overview
 
-A text-to-image generator never reads your prompt. A text encoder turns the prompt into a matrix of numbers, and the image model draws from that matrix through cross-attention. Many safety filters sit one step earlier and read the raw text. In this lab you open the encoder that Stable Diffusion-class pipelines use (the CLIP ViT-B/32 text tower; SD 1.x uses the larger ViT-L/14 tower with the same tokenizer and the same 77-slot limit), turn prompts into vectors, and measure how far those two views drift apart. The blocked concept is a harmless stand-in, "fox". A keyword blocklist stops 3 of 16 prompts that ask for a fox, while the encoder maps most of the allowed ones onto the fox concept. A vocabulary search finds words such as `foxy` and `vixen` that do the same, and a long prompt hides the word past the 77-slot cut. A stub generator logs the inert canary `ATLAS-CANARY-c0nd` each time blocked conditioning reaches it. The defense part moves the filter to the embedding and makes it read exactly what the encoder reads, and you measure what that costs in false positives. Source: [`labs/concept-conditioning`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-conditioning).
+A text-to-image generator never reads your prompt. A [text encoder](../primers/diffusion-in-one-paragraph.md#conditioning-and-the-text-encoder) turns the prompt into a matrix of numbers, one row per token slot, and the image model draws from that matrix through [cross-attention](../primers/diffusion-in-one-paragraph.md#conditioning-and-the-text-encoder): for each patch of the image it looks up which prompt rows are relevant. Many safety filters sit one step earlier and read the raw text, so the filter and the generator can disagree about what was asked for.
+
+What you will do:
+
+- Open the encoder that Stable Diffusion-class pipelines use (the CLIP ViT-B/32 text tower; SD 1.x uses the larger ViT-L/14 tower with the same tokenizer and the same 77-slot limit) and turn prompts into vectors, building on tokens from [LAB-04](../concept-tokens/README.md), [embeddings](../primers/vectors-without-the-math.md#embedding) from [LAB-25](../concept-embeddings/README.md) and attention from [LAB-26](../concept-attention/README.md).
+- Measure how far a keyword blocklist and the encoder disagree, with a harmless stand-in blocked concept, "fox": synonyms, near-spellings, a vocabulary search and a prompt that hides the word past the 77-slot cut.
+- Log each bypass with a stub generator that prints the inert canary `ATLAS-CANARY-c0nd` when blocked conditioning reaches it.
+- Move the filter to the embedding, make it read exactly what the encoder reads, and measure what that costs in false positives.
+
+Headline result: the keyword blocklist stops 3 of 16 prompts that ask for a fox, while the encoder puts 8 of the 13 it lets through on the fox concept; an embedding filter blocks 11 of 16 at the cost of 3 false positives in 24 benign prompts.
+
+> **What is staged here:** "lands on fox" means the nearest of a few anchor prompts is the fox anchor, a probe this lab defines. The Step 6 search and the D1 filter use that same probe, so D1 catches the Step 6 words by construction, and the weakest Step 6 hits win by margins under 0.01. The generator is a stub that prints the canary and draws nothing, so no image model runs.
+
+Source: [`labs/concept-conditioning`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-conditioning).
 
 By the end you will be able to:
 
@@ -53,7 +66,7 @@ The blocked concept is "fox" and every prompt is hardcoded in `scripts/cclab.py`
 | :--- | :--- |
 | Node | [`concept-conditioning`](../../articles/concept-conditioning.md) |
 | Family | None in the seed graph (a concept node). The front matter and explainer kicker use [`family-misuse`](https://ai-security-atlas.github.io/nodes/family-misuse/), the family of [`attack-capability-abuse`](https://ai-security-atlas.github.io/nodes/attack-capability-abuse/): a prompt filter on a generator exists to stop that kind of use. |
-| Goal | [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/) (Steps 3, 4 and 6: blocked conditioning reaches the generator) |
+| Goal | [`goal-misuse`](https://ai-security-atlas.github.io/nodes/goal-misuse/) (Steps 3, 4 and 6: blocked conditioning reaches the generator, so a filtered concept gets generated) |
 | Access profile | `A03` White-box or surrogate optimization (caveat: *A surrogate and target must be separately identified; transfer is not guaranteed.*): the Step 6 search runs on a local copy of a public text encoder. A real pipeline may use a different encoder (SD 1.x uses ViT-L/14), so the words found here are a hypothesis to test there. |
 | Read first | [`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/) (the seed prerequisite), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
 | Mitigated by | None in the seed graph. Defend builds an embedding filter and a same-view check; the output-side image check of D3 is [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/) (related, not mapped). |
@@ -231,7 +244,7 @@ probe = nearest anchor (cosine, margin over the runner-up)
 anchors other than fox with cosine >= 0.9 to fox: 1 (wolf)
 ```
 
-What to notice: prompts that share a template are all close (even a teapot scores 0.704 against the fox), and the wolf reaches 0.904, so a fixed "cosine above 0.9" rule would call a wolf a fox. The probe asks which anchor is nearest, and the corgi lands on fox by a margin of 0.008.
+What to notice: prompts that share a template are all close (even a teapot scores 0.704 against the fox), and the wolf reaches 0.904, so a fixed "[cosine](../primers/vectors-without-the-math.md#cosine-similarity) above 0.9" rule would call a wolf a fox. The probe asks which anchor is nearest, and the corgi lands on fox by a margin of 0.008.
 
 **Why**
 
@@ -330,11 +343,11 @@ scrub the word row (slot 5 <- the dog row): whole matrix cosine to fox 0.993, to
 padding rows only: cosine fox-vs-dog 0.876, so the pad rows alone tell the two prompts apart
 ```
 
-What to notice: one changed word changes 72 of the 77 rows, padding included; replacing the word's own row with the dog row leaves a matrix that is still 0.993 fox.
+What to notice: one changed word changes 72 of the 77 rows, padding included; replacing the word's own row with the dog row leaves a matrix that is still 0.993 fox against 0.883 dog. The script does not print the unscrubbed fox-vs-dog cosine, so read those two numbers against each other: the scrubbed matrix stays much closer to the fox prompt.
 
 **Why**
 
-CLIP's text encoder is causal: each row attends only to itself and earlier slots, so rows before the word are untouched and every row after it, including the padding, mixes the word in. The diffusers Stable Diffusion pipeline calls the encoder without an attention mask, and this lab does the same, so each padding row attends to the prompt and to the padding before it. A diffusion U-Net cross-attends over all 77 rows, so the concept reaches it through many rows at once ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/), [LAB-26](../concept-attention/README.md)). A control that edits or masks the conditioning token by token, for example removing the row of a flagged word, leaves most of the signal in place. Concept removal has to work on the whole matrix, or on the output.
+CLIP's text encoder is causal: each row attends only to itself and earlier slots, so rows before the word are untouched and every row after it, including the padding, mixes the word in. The diffusers Stable Diffusion pipeline calls the encoder without an attention mask, and this lab does the same, so each padding row attends to the prompt and to the padding before it. A diffusion [U-Net](../primers/diffusion-in-one-paragraph.md#denoiser-and-u-net), the image model that removes noise step by step, cross-attends over all 77 rows, so the concept reaches it through many rows at once ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/), [LAB-26](../concept-attention/README.md)). A control that edits or masks the conditioning token by token, for example removing the row of a flagged word, leaves most of the signal in place. Concept removal has to work on the whole matrix, or on the output.
 
 ### Step 6 — Search the vocabulary (≈1 min) · [explainer 6](explainer/index.html#concept-conditioning/6)
 
@@ -364,7 +377,7 @@ bypasses: 9 words pass the blocklist and land on fox; 4 with cosine >= 0.85 (fox
 canary ATLAS-CANARY-c0nd logged for 9/9 bypass prompts
 ```
 
-What to notice: one pass over the vocabulary finds 9 words the blocklist allows and the probe puts on fox; the top 4 sit at 0.86–0.93, close to the 0.939 of "a red fox", while the bottom of the list (corgi, wallabies, koi) wins by margins under 0.01 and is likely probe noise.
+What to notice: one pass over the vocabulary finds 9 words the blocklist allows and the probe puts on fox; the top 4 sit at 0.86–0.93, close to the 0.939 of "a red fox", while the bottom of the list (corgi, wallabies, koi) wins by margins under 0.01 and is likely probe noise. Count 4 strong bypasses; the other 5 are ties. The canary fires on all 9 because the stub logs every probe hit, and corgi is a benign hard negative that shows up again as a D1 false positive.
 
 **Why**
 
@@ -400,7 +413,7 @@ What to notice: the embedding filter blocks 11 of 16 fox-intent prompts where th
 
 **Why**
 
-D1 runs the encoder the generator uses and blocks a prompt when the pooled vector's nearest anchor is a blocked concept. The filter now reads the generator's input, so renaming the concept no longer helps, and the Step 6 words are caught by definition. The labeled set is the honest test. Its false positives are the utility cost ([`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/)), and its misses land on other concepts in this encoder too. The long prompt shows the adaptive route ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)): D1 encodes one 77-slot pass, and the generator receives more than that. Guardrails built from models carry the same split, as [LAB-34](../arch-encoder/README.md) shows for a text classifier ([`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)).
+D1 runs the encoder the generator uses and blocks a prompt when the pooled vector's nearest anchor is a blocked concept. The filter now reads the generator's input, so renaming helps only when the encoder itself no longer maps the new word to the concept; D1 still misses some renamed prompts in the labeled set. The Step 6 words are caught by definition, since D1 uses the same probe that found them, and a different encoder in a real pipeline would need its own test. The labeled set is the honest test. Its false positives are the utility cost ([`eval-utility`](https://ai-security-atlas.github.io/nodes/eval-utility/)), and its misses land on other concepts in this encoder too. The long prompt shows the adaptive route ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)): D1 encodes one 77-slot pass, and the generator receives more than that. Guardrails built from models carry the same split, as [LAB-34](../arch-encoder/README.md) shows for a text classifier ([`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)).
 
 ### Step D2 — Read what the encoder reads · [explainer 8](explainer/index.html#concept-conditioning/8)
 
@@ -499,7 +512,7 @@ docker compose down --remove-orphans
 What to notice: the container and network names start with `atlas-labs-concept-conditioning`, the project name from Setup 1.
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data), including the CLIP checkpoint this lab downloaded.
+> `docker compose down -v` also drops the named volumes. The HF cache (with the CLIP checkpoint this lab downloaded) and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs.
 
 ## Going Further
 

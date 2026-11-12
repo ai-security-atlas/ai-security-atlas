@@ -27,7 +27,11 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-A language model scores every possible next token; *decoding* is the rule that turns those scores into text. Greedy decoding always takes the top token, so one prompt has exactly one reply. Sampling draws from the probabilities, reshaped by *temperature* and cut by *top-k* and *top-p*, and a *seed* fixes the draws. Stop sequences end the reply early. None of this touches the weights, and all of it is often a request parameter the caller controls. In this lab one small model (SmolLM2-135M-Instruct with the refusal adapter from LAB-07) gets a system prompt that holds the inert canary `ATLAS-CANARY-d3c0` as a codename and a rule never to reveal it. Under greedy decoding the rule holds on all 16 requests. Sampled, the same requests leak it, one phrasing leaks at about 9% across most temperatures, a caller who chooses the seed finds a leaking seed and replays it, and a stop sequence used as a filter misses the codename after a space or in capital letters. Then you pin decoding on the server, validate the output text and report rates with intervals. Source: [`labs/concept-decoding`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-decoding).
+A language model scores every possible next token; *decoding* is the rule that turns those scores into text. [Greedy decoding](../primers/sampling-knobs.md#greedy-decoding) always takes the top token, so one prompt has exactly one reply. [Sampling](../primers/sampling-knobs.md#sampling) draws from the probabilities, reshaped by *[temperature](../primers/sampling-knobs.md#temperature)* and cut by *[top-k](../primers/sampling-knobs.md#top-k)* and *[top-p](../primers/sampling-knobs.md#top-p)*, and a *[seed](../primers/sampling-knobs.md#seed)* fixes the draws. [Stop sequences](../primers/sampling-knobs.md#stop-sequence) end the reply early. None of this touches the weights, and all of it is often a request parameter the caller controls.
+
+In this lab one small model (SmolLM2-135M-Instruct with the refusal adapter from LAB-07) gets a system prompt that holds the inert canary `ATLAS-CANARY-d3c0` as a codename and a rule never to reveal it.
+
+Headline result: under greedy decoding the rule holds on 16 of 16 requests. Sampled, the same requests leak it, one phrasing leaks at about 9% across most temperatures, a caller who chooses the seed finds a leaking seed and replays it, and a stop sequence used as a filter misses the codename after a space or in capital letters. Then you pin decoding on the server, validate the output text and report rates with intervals. Source: [`labs/concept-decoding`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-decoding).
 
 By the end you will be able to:
 
@@ -68,7 +72,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 | Backend | Supported | Steps | Notes |
 | :--- | :--- | :--- | :--- |
-| container-ollama | partial | 7 | Steps 1–6, the Defend steps and Evaluate need direct control of `generate()` (stop token ids, teacher forcing, the guard adapter), so they run on the local model. Step 7 checks which decoding parameters your server honors. Not run against container Ollama for this lab; Step 7 uses only the OpenAI-compatible `/v1` API. |
+| container-ollama | partial | 7 | Steps 1–6, the Defend steps and Evaluate need direct control of `generate()` (stop token ids, teacher forcing, the guard adapter), so they run on the local model. Step 7 checks which decoding parameters your server honors. Not run against container Ollama for this lab; Step 7 uses only the OpenAI-compatible `/v1` API. Step 7 asks for `LAB_CHAT_MODEL` (default `qwen2.5:3b`; the reference run used `qwen2.5:1.5b`), and the container puller fetches only `LAB_MODELS` (default `qwen2.5vl:3b moondream:1.8b`). In `labs/.env`, set `LAB_CHAT_MODEL=qwen2.5:1.5b` and add `qwen2.5:1.5b` to `LAB_MODELS` (about 1 GB to download), or skip Step 7 in a workshop. |
 | host-ollama | partial | 7 | Same reason. Tested with host Ollama 0.32.5 and `qwen2.5:1.5b`. |
 | external-api | partial | 7 | Same reason. Not tested against a hosted provider; Step 7 prints the endpoint before sending. |
 
@@ -85,7 +89,8 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-05 · What the API reveals](../concept-logits/README.md) (turns logits into probabilities and samples them).
-- Later in the path: [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (explains the guard adapter this lab's model carries).
+- Recommended first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (the tokens each decoding step picks from).
+- Later in the path: [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) (the interval method behind this lab's 95% brackets); [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (explains the guard adapter this lab's model carries).
 - Concepts to read first: [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) and [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/).
 
 ## Explainer
@@ -203,6 +208,8 @@ T=1.0 seed 2  'I was given the internal release codename at the production team.
 same settings + same seed -> same text: True  (70s)
 ```
 
+`entropy` is how spread out the next-token choice is, in nats (natural-log units): higher means the model is less certain. `median position 0.77` is the median entropy over all positions of the reply, for comparison. The top-p candidate set is also called the nucleus, which Step 3 uses.
+
 What to notice: at the model's least certain position the top token has only 22.8% at T = 0.7, a top-p of 0.9 keeps 22 candidates there at T = 0.7 and 1044 at T = 1.3, and greedy keeps one, while the same seed repeats a sampled reply word for word.
 
 **Why**
@@ -239,7 +246,7 @@ What to notice: greedy decoding keeps the codename back on all 16 requests (13 p
 
 **Why**
 
-This is the effect Huang et al. call generation exploitation: a model whose refusals were evaluated under one decoding setting breaks them under another, with no change to the prompt or the weights ([`attack-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-jailbreak/)). Greedy decoding has one reply per request, so "0/16" is the whole greedy distribution; the sampled rate is an estimate and comes with its Wilson 95% interval from evalkit ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). A leak here means the exact string; Step 6 and D3 count the other spellings.
+This is the effect Huang et al. call generation exploitation: a model whose refusals were evaluated under one decoding setting breaks them under another, with no change to the prompt or the weights ([`attack-jailbreak`](https://ai-security-atlas.github.io/nodes/attack-jailbreak/)). Greedy decoding has one reply per request, so "0/16" is the whole greedy distribution; the sampled rate is an estimate and comes with its [Wilson 95% interval](../primers/reading-the-numbers.md#wilson-interval) from evalkit. The bracket, such as `[0-19%]`, is the range the true leak rate plausibly lies in, given how many samples were drawn; fewer samples give a wider range, which is why a single greedy reply in Step 4 shows `[0-79%]` ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). A leak here means the exact string; Step 6 and D3 count the other spellings.
 
 ### Step 3 — Where a leaking reply branches off (≈20 s) · [explainer 4](explainer/index.html#concept-decoding/4)
 
@@ -423,7 +430,7 @@ Pinning means the server sets temperature, top-p, top-k, seed and stop and drops
 
 **Read**
 
-Write the decoding settings into the evaluation config, next to the model revision and the adapter hash: temperature, top-p, top-k, stop, max tokens and the seed list. Run the evaluation with the settings you deploy (greedy only if you deploy greedy) and with enough samples per prompt to see the rate you care about. Step 5 gives the scale: at 9% per sample one phrasing needs about 34 samples for a 95% chance of one leak, and the pooled rate over all 16 requests is still 0.6–4.0% wide after 256 samples. Report k/n with a 95% interval for each setting (`evalkit.Rate.fmt()`), and gate the release on the upper bound. The Evaluate section below does this for the conditions this lab claims.
+Write the decoding settings into the evaluation config, next to the model revision and the adapter hash: temperature, top-p, top-k, stop, max tokens and the seed list. Run the evaluation with the settings you deploy (greedy only if you deploy greedy) and with enough samples per prompt to see the rate you care about. Step 5 gives the scale: at 9% per sample one phrasing needs about 34 samples for a 95% chance of one leak, and the pooled rate over all 16 requests is still 0.6–4.0% wide after 256 samples. Report k/n with a 95% interval for each setting (`evalkit.Rate.fmt()`), and [gate the release on the upper bound](../primers/reading-the-numbers.md#upper-bound-gate): ship only if the top of the interval is below your limit. The Evaluate section below does this for the conditions this lab claims.
 
 **Why**
 
@@ -509,7 +516,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes (Open WebUI data). The HF cache and Ollama model volumes are shared by every lab (`atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

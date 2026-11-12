@@ -36,13 +36,17 @@ covers:                                  # nodes practiced here as named steps (
 
 ## Overview
 
-A PyTorch checkpoint (`.pt`, `.bin`) looks like data, but loading it runs a small program. The file is a ZIP archive whose `data.pkl` is a pickle: a list of opcodes that the unpickler executes to rebuild the tensors. Two of those opcodes, `GLOBAL` and `REDUCE`, can import and call any Python function. In this lab you hide the lab's inert canary payload inside an otherwise valid checkpoint, watch it run during `torch.load()` while the model keeps working, then measure what actually stops it: torch's allowlist loader, safetensors, scanners, pinned manifests and a sandbox. Source: [`labs/attack-unsafe-load`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-unsafe-load).
+[Weights](../primers/ml-in-one-page.md#weights-and-parameters) are the numbers a model learns, and a [checkpoint](../primers/ml-in-one-page.md#checkpoint-and-state-dict) is a file that stores them. In PyTorch the weights travel as a state dict: a Python dict that maps layer names to [tensors](../primers/ml-in-one-page.md#tensor) (arrays of numbers). Pickle is a Python format for saving objects, and it can call functions while it is being read.
+
+A PyTorch checkpoint (`.pt`, `.bin`) looks like data, but loading it runs a small program. The file is a ZIP archive whose `data.pkl` is a pickle: a list of opcodes that the unpickler executes to rebuild the tensors. In this file, two opcodes do the dangerous work: `GLOBAL` imports any Python function by name and `REDUCE` calls it. Other opcodes (`STACK_GLOBAL`, `INST`, `OBJ`, `NEWOBJ`) can also import or call, which is why a defense that allowlists the imported names beats one that denylists opcodes. In this lab you hide the lab's inert canary payload inside an otherwise valid checkpoint, watch it run during `torch.load()` while the model keeps working, then measure what actually stops it: torch's allowlist loader, safetensors, scanners, pinned manifests and a sandbox. Source: [`labs/attack-unsafe-load`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-unsafe-load).
 
 By the end you will be able to:
 
 1. Read the pickle opcodes inside a `.pt` file and point to the two that turn loading into code execution.
 2. Show that an unsafe load runs a payload before any inference while the model output stays identical.
 3. Compare the defenses (the `weights_only` allowlist, safetensors, denylist scanners, a pinned manifest, a sandbox) and say what each one does not stop.
+
+> **What is staged here:** Step 3 and the Step 8 resume helper load with `weights_only=False` on purpose. Since torch 2.6 the default load blocks this payload (Step 4), so the lab turns the old behavior back on to show what it runs. The workbench mounts your checkout read-write so the marker file is easy to see; Step D2 repeats the load in a sandbox without that access.
 
 ## Safety
 
@@ -89,6 +93,8 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | Docker VM memory | 4 GB |
 | Disk | The workbench image (2.4 GB). The lab writes under 1 MB to `work/`. |
 | Total time | 60 min: about 25 min of commands, the rest reading |
+
+For a workshop, build or pull the workbench image before the session. The first build downloads several GB of Python packages, which is slow on shared Wi-Fi.
 
 ## Prerequisites
 
@@ -431,11 +437,13 @@ fickling scan/malicious/data.pkl (decompiled, cut):
   _var11 = exec("import os, time\np = os.path.join(os.environ.get('ATLAS_WORK', '/labs/attack-unsafe-load/work')...
 ```
 
-What to notice: modelscan 0.8.8 reports `No issues found` for `variant.pt`, which carries the same payload through `timeit.timeit`, while torch's allowlist rejects every unexpected callable; fickling flags even the benign file.
+What to notice: modelscan 0.8.8 reports `No issues found` for `variant.pt`, which carries the same payload through `timeit.timeit`, while torch's allowlist rejects every unexpected callable; fickling flags even the benign file. In the `variant.pt` row, `time.perf_counter` is `timeit.default_timer`, which the payload passes to `timeit.timeit` as an argument, so both names belong to the one payload. The allowlist rejects every callable it does not know, harmless or not.
 
 **Why**
 
 Denylist scanners only flag the callables on their list, so any code-reachable function they miss is a gap; allowlists ([`defense-safe-load`](https://ai-security-atlas.github.io/nodes/defense-safe-load/)) fail closed instead. The `timeit` gap is a known, publicly documented weakness, not a new finding: modelscan issue #272 (open since 2025-03-27) and #380, and the same gadget in picklescan, fixed in 0.0.25 (CVE-2025-71351); see Further Reading. Treat a clean scan as "nothing on the list was found", not as "safe" ([`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/)).
+
+fickling can also run at load time. `fickling.hook.activate_safe_ml_environment()` hooks pickle loading, checks each file's imports against fickling's allowlist of imports from ML libraries, and blocks files that import anything else, before the pickle runs. That makes it an allowlist, like `weights_only`; the Evaluate table measures it as its own row.
 
 > [!NOTE]
 > The variant exists to show why allowlists win. Do not add more evasion gadgets.
@@ -599,7 +607,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes (Open WebUI data). The HF cache and Ollama model volumes are shared by every lab (`atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

@@ -27,11 +27,22 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-A language model's last layer multiplies a hidden state by one big matrix — the output projection — and the API hands you the result: a log-probability for every token in the vocabulary. Carlini et al. (2024) showed that those answers are not just behavior: stacked into a matrix and factored, they leak the projection itself. In this lab the victim is `lantern-mini-1`, a fictional Lantern Labs API (a pinned local 135M model; its card discloses nothing) served on `127.0.0.1` inside the workbench. You send 1,200 ordinary scoring queries, watch the singular-value spectrum collapse exactly at the model's hidden size, recover the entire output projection up to an unknown linear map, and verify the fit against the true weights operator-side. Then you measure the three published defenses: serving top-k only (and the `logit_bias` trick that punches back through it), degrading the numbers with rounding and noise, and monitoring query traffic — where an adaptive thief using ordinary sentences sails through. Source: [`labs/attack-projection-theft`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-projection-theft).
+A language model's last layer multiplies a hidden state (the model's internal [vector](../primers/vectors-without-the-math.md#vector) for the current position) by one big [matrix](../primers/vectors-without-the-math.md#matrix), the output projection. A scoring API hands you the result: a [log-probability](../primers/ml-in-one-page.md#probability) for every token in the vocabulary. Carlini et al. (2024) showed that those answers also leak the projection itself once you stack many of them into a matrix and factor it. A model's size and its largest layer are things a vendor may treat as secret, and here they leave through ordinary paid queries.
+
+What you will do:
+
+- meet `lantern-mini-1`, a fictional Lantern Labs API (a pinned local 135M model whose card discloses nothing) served on `127.0.0.1` inside the workbench;
+- send 1,200 ordinary scoring queries and read the model's hidden size off the [singular values](../primers/vectors-without-the-math.md#singular-values) of the answers;
+- recover the space the output projection lives in, up to an unknown linear map, and check the fit against the true weights operator-side;
+- measure the three published defenses: serving top-k only (and the `logit_bias` trick that gets back through it), rounding and noise, and monitoring query traffic.
+
+Headline result: the singular values fall off a cliff at exactly 576, the hidden size the card hides, and the recovered basis contains the true projection to a relative residual of 6.58e-06. A thief who sends ordinary sentences passes the traffic monitor and recovers the same thing.
+
+Source: [`labs/attack-projection-theft`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-projection-theft).
 
 By the end you will be able to:
 
-1. Recover a model's hidden dimension and its whole output projection (up to an invertible linear map) from API answers alone, and report the query cost of every stage.
+1. Recover a model's hidden dimension and the space of its output projection (up to an invertible linear map) from API answers alone, and report the query cost of every stage.
 2. Verify a partial-theft claim the way `eval-fidelity` demands: least-squares fit and principal angles against the true weights, with the unknown map stated, not hidden.
 3. Measure what each defense stops (full rows, exact values, lazy query patterns), what it costs honest users, and the honest gap each one leaves.
 
@@ -84,7 +95,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done (the workbench image is built).
-- Labs to finish first: [LAB-05 · What the API reveals](../concept-logits/README.md) (logits and detail levels; it stops at the hidden-size read); [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) (the embedding table that the output layer shares); [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md) (the `victim-api` fixture and query-log conventions this lab reuses); [LAB-52 · Base vs instruct, and who speaks next](../arch-decoder/README.md) (the decoder's `lm_head`, which turns the last hidden state into logits).
+- Labs to finish first: [LAB-05 · What the API reveals](../concept-logits/README.md) (logits and detail levels; it stops at the hidden-size read); [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) (the embedding table that the output layer shares); [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md) (the query-log and query-budget conventions this lab reuses); [LAB-52 · Base vs instruct, and who speaks next](../arch-decoder/README.md) (the decoder's `lm_head`, which turns the last hidden state into logits).
 - Concepts to read first: [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) and [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/).
 
 ## Explainer
@@ -248,6 +259,9 @@ Carlini et al. send random inputs for the same reason this lab does: the attack 
 
 ### Step 3 — Read the hidden size off the spectrum · [explainer 4](explainer/index.html#attack-projection-theft/4)
 
+> [!NOTE]
+> **The linear algebra in plain words.** Every answer row is the same projection applied to a different hidden state of 576 numbers, so every row is a mix of the same 576 fixed patterns. However many rows you collect, they hold at most 576 independent directions (the [rank](../primers/vectors-without-the-math.md#rank) of the row stack). [SVD](../primers/vectors-without-the-math.md#svd) lists those directions from strongest to weakest, and the strengths (singular values) drop to almost zero right after the last real one. "Up to an invertible map" means you recover the space the weights live in, not the exact weights: the right room, not the furniture layout. A [least-squares](../primers/vectors-without-the-math.md#least-squares) fit finds the best way to write the true weights using the recovered directions, and its leftover error (the relative residual) says how well they fit. A principal-angle cosine of 1.0 means the two spaces line up exactly.
+
 **Do**
 
 ```bash
@@ -277,7 +291,7 @@ What to notice: singular value 575 is 67.7 and singular value 576 is 0.002 — a
 
 **Why**
 
-Every answer row is the same 576-column projection applied to a different hidden state, plus one shared constant from the log-softmax (centering each row removes it), so the row stack has rank exactly 576 no matter how many rows you collect ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). The estimate cannot exceed the number of rows, which is why the curve needs about 700 rows for a clean knee — the per-key query floor that D3's budget uses ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/): report the queries a result cost).
+Every answer row is the same 576-column projection applied to a different hidden state, plus a constant from the log-softmax that differs per row but always points along the same all-ones direction (centering each row removes it), so the row stack has rank exactly 576 no matter how many rows you collect ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). The estimate cannot exceed the number of rows, so the algebraic floor is 577 rows; near that floor, float32 rounding noise blurs the cliff, which is why the curve needs about 700 rows for a clean knee — the per-key query floor that D3's budget uses ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/): report the queries a result cost).
 
 ### Step 4 — Recover the projection, up to a linear map · [explainer 5](explainer/index.html#attack-projection-theft/5)
 
@@ -305,13 +319,13 @@ What to notice: after a least-squares alignment, the true weights sit inside the
 
 **Why**
 
-The right singular vectors of the row stack span the same subspace as the (column-centered) output projection, so the thief holds the whole matrix "up to B = W A⁻¹ for an unknown invertible A" — the paper's exact claim, and the verification is the honest kind: least squares and principal angles against the true weights, computed operator-side because the lab owns the victim ([`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/)). LAB-09 made the mirror-image point (high behavioral agreement, zero weight recovery); here agreement is geometric and the recovery is real but partial — the caveat in the Atlas node.
+The right singular vectors of the row stack span the same subspace as the (column-centered) output projection, so the thief holds the matrix only "up to B = W A⁻¹ for an unknown invertible A" — the paper's exact claim, and the verification is the honest kind: least squares and principal angles against the true weights, computed operator-side because the lab owns the victim ([`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/)). LAB-09 made the mirror-image point (high behavioral agreement, zero weight recovery); here agreement is geometric and the recovery is real but partial — the caveat in the Atlas node.
 
 ### Step 5 — What the thief actually holds · [explainer 6](explainer/index.html#attack-projection-theft/6)
 
 **Read**
 
-The stolen file is 21% of the model's parameters and, because this victim ties its embeddings, it is simultaneously the input embedding table and the output projection. Three things it is *not*: it is not the transformer body (the other 79%, which turns text into hidden states, is untouched); it is not the exact matrix (the unknown map means the thief cannot even run the model without recovering more); and it is not a behavior copy — for that you would train a substitute on the answers, which is [`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/), not this node. What the thief *does* get is architecture intelligence (the 576 hidden size matches no published spec of a competitor's model) and the single largest layer, at a measured cost of 1,200 queries. Whether that constitutes actionable theft is a licensing question the numbers cannot answer.
+The stolen file is a basis for the space of a matrix that holds 21% of the model's parameters. Because this victim ties its embeddings, that matrix is both the input embedding table and the output projection, so the thief holds the subspace of the tied table, not the table itself. Three things it is *not*: it is not the transformer body (the other 79%, which turns text into hidden states, is untouched); it is not the exact matrix (the unknown map means the thief cannot even run the model without recovering more); and it is not a behavior copy — for that you would train a substitute on the answers, which is [`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/), not this node. What the thief *does* get is architecture intelligence (a hidden size of 576 narrows the model to a known family; here it fingerprints SmolLM2-135M) and the space of the single largest layer, at a measured cost of 1,200 queries. Whether that constitutes actionable theft is a licensing question the numbers cannot answer.
 
 **Why**
 
@@ -352,7 +366,7 @@ What to notice: with both switches off there is no matrix to factor — 400 top-
 
 **Why**
 
-This is the A02 caveat made concrete: "score precision, top-k restrictions and any allowed logit transformations" is a list of attack surface, and each item must be closed separately ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). Top-k costs the API a real feature (whole-distribution scoring) and, with `logit_bias` still on, buys only a 5,908x cost increase — the paper's own finding about APIs that kept the knob. Limitation: this stops the *spectrum* attack; a behavior-copy thief (LAB-09) is slowed much less by top-k.
+This is the A02 caveat made concrete: "score precision, top-k restrictions and any allowed logit transformations" is a list of attack surface, and each item must be closed separately ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). Top-k costs the API a real feature (whole-distribution scoring). The paper showed that `logit_bias` plus top-k still allows full-row recovery; this lab's extrapolated cost for that route is 7.1 million requests, 5,908x the full-row attack. Limitation: this stops the *spectrum* attack; a behavior-copy thief (LAB-09) is slowed much less by top-k.
 
 ### Step D2 — Round the scores, add noise · [explainer 8](explainer/index.html#attack-projection-theft/8)
 
@@ -385,7 +399,7 @@ What to notice: rounding to one decimal kills the size read outright, but the tw
 
 **Why**
 
-Precision loss is a race between the cliff (singular value 575 is only ~1,000x the float32 noise floor) and the utility of the scores, and the cliff is the more fragile side: the knee survives mild degradation while the *projection quality* collapses, so "we rounded" is not a verdict until you measure both columns ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). Noise=1e-2 sat exactly on the boundary in this lab's runs (a weak 576 knee in one reference run, gone in the next) — that fragility belongs in a defense report. Limitation: rounding to one decimal also destroys logprob differences honest users query for, as the tie counts show.
+Precision loss is a race between the attack and the utility of the scores. The projection fit degrades first, and the size read survives mild degradation (round=2 and noise=1e-3 still put the knee at 576), so "we rounded" is not a verdict until you measure both columns ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). Noise=1e-2 sat exactly on the boundary in this lab's runs (a weak 576 knee in one reference run, gone in the next) — that fragility belongs in a defense report. D2 collects 600 rows per level, below the ~700 rows Step 3 found a clear knee needs, so even unrounded rows would sit near the edge here; the `raw baseline` line restates Steps 3 and 4 and was not re-measured on these 600 rows. Limitation: rounding to one decimal also destroys logprob differences honest users query for, as the tie counts show.
 
 ### Step D3 — Watch the queries · [explainer 9](explainer/index.html#attack-projection-theft/9)
 
@@ -451,7 +465,7 @@ stolen artifact carries the canary           ATLAS-CANARY-svd7
 RESULT: REPRODUCED
 ```
 
-`evaluate.py` recomputes the attack from your `work/rows.npy` (it re-collects 700 rows if Step 2's file is gone) and reads the defense outputs from `work/`, then compares the *shape* of the eighteen findings with `expected/evaluate.json` — exact numbers like the fit residual are expected to move slightly between machines. `RESULT` says only whether the run matches that shape; the table is the security verdict.
+The `D2 levels that still leak the size` row lists only the level with a clear knee; round=2 also lands on 576, weakly (D2). `evaluate.py` recomputes the attack from your `work/rows.npy` (it re-collects 700 rows if Step 2's file is gone) and reads the defense outputs from `work/`, then compares the *shape* of the eighteen findings with `expected/evaluate.json` — exact numbers like the fit residual are expected to move slightly between machines. `RESULT` says only whether the run matches that shape; the table is the security verdict.
 
 Questions for your notes:
 
@@ -482,7 +496,7 @@ docker compose down --remove-orphans
 What to notice: every measurement, log and stolen artifact lived under `attack-projection-theft/work/` and is gone; the sentence pool in `assets/` is an input, so the lab still runs end to end after cleanup.
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes (`atlas-labs-hf-cache-v1`, `atlas-labs-ollama-models-v1`) are shared by every lab, so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

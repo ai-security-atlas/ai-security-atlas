@@ -29,7 +29,22 @@ covers:
 
 ## Overview
 
-A diffusion model learns to remove noise; a *sampler* is the procedure that turns that skill into a picture. It picks the timesteps (the schedule) and the update rule between them (the solver), and it calls the trained network once per step. In Hugging Face Diffusers the sampler is a *scheduler*, a small JSON config with no weights, and you swap it with one line. In this lab you load one real pretrained model, `google/ddpm-cifar10-32` (a 35.7M-parameter UNet that draws 32x32 CIFAR-10 images), and keep its weights fixed while you change only inference settings. You measure what a caller-chosen step count does to cost (200 steps took 6.5 to 9.3 times as long as 20 in two runs on a loaded machine, and the library default of 1000 DDPM steps cost fifty-one times a 20-step request), how solvers and step counts change the image from the same seed, and why a seed alone does not make a result reproducible. Then you look at the other half of a diffusers pipeline, the loader, where a "faster sampler" that ships its own `pipeline.py` runs its code at load time and prints the inert canary `ATLAS-CANARY-7f3a`. The defenses are a server-side cap with a per-client budget, a pinned and fingerprinted evaluation config, and a loading policy. Source: [`labs/concept-samplers`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-samplers).
+An image API that lets the caller pick inference settings lets the caller pick the bill. The weights stay the same, but one ordinary-looking request can cost many times another, and the pipeline loader that sits next to those settings can run code from a repository.
+
+Diffusion in one paragraph: a [diffusion model](../primers/diffusion-in-one-paragraph.md#noise) starts from pure random noise and removes it a little at a time. The trained network (here a [UNet](../primers/diffusion-in-one-paragraph.md#denoiser-and-u-net)) predicts the noise in the current image, and a *[sampler](../primers/diffusion-in-one-paragraph.md#scheduler-sampler-and-steps)* decides how much to remove at each step and how many steps to take, calling the network once per step. Some samplers are deterministic (the same starting noise always gives the same picture); others, such as [DDPM](../primers/diffusion-in-one-paragraph.md#ddpm-and-ddim), add fresh random noise at every step. In Hugging Face Diffusers the sampler is a *scheduler*, a small JSON config with no weights, and you swap it with one line.
+
+What you will do:
+
+- Load one real pretrained model, `google/ddpm-cifar10-32` (a 35.7M-parameter UNet that draws 32x32 CIFAR-10 images), and keep its weights fixed while you change only inference settings.
+- Measure what a caller-chosen step count does to cost, how solvers and step counts change the image from the same [seed](../primers/sampling-knobs.md#seed), and why a seed alone does not make a result reproducible.
+- Load a "faster sampler" that ships its own `pipeline.py` and watch it run its code at load time, printing the inert canary `ATLAS-CANARY-7f3a`.
+- Measure three defenses: a server-side cap with a per-client budget, a pinned and fingerprinted evaluation config, and a loading policy.
+
+Headline result: the library-default request of 1000 DDPM steps is 1000 UNet calls, 50 times the 20-call server default, for the same single 32x32 image. Wall-clock ratios on the loaded test machine ranged from 6.5x to 9.3x for 200 against 20 steps and reached 51x for 1000 steps, so read the seconds as noisy illustrations of the exact call counts.
+
+> **What is staged here:** the "faster sampler" is a local folder the lab writes in `work/hub/`, standing in for a hub repository, and its code is the shared inert payload from [LAB-01](../attack-unsafe-load/README.md) and [LAB-10](../attack-dependency/README.md). The tiny 32x32 model keeps every run on a CPU; on a real text-to-image model each call costs far more, and the call counts scale the same way.
+
+Source: [`labs/concept-samplers`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-samplers).
 
 By the end you will be able to:
 
@@ -269,11 +284,11 @@ pass-through image API, server default DPM-Solver++ 20 steps:
 same weights and the same reply (one 32x32 image); only the inference settings changed
 ```
 
-What to notice: with the weights unchanged, 200 steps took 9.3 times as long as 20 (156 s against 17 s), and the 1000-step DDPM request a client can ask for is 1000 UNet calls, 50 times the server default. The seconds swing with machine load (the 10-step run cost 714 ms per call, the 50-step run 1010 ms, and a review rerun measured 6.5x for 200 against 20 steps), while the call counts do not.
+What to notice: the call counts are the exact finding. The 1000-step DDPM request a client can ask for is 1000 UNet calls, 50 times the server default. In seconds, 200 steps took 9.3 times as long as 20 here (156 s against 17 s). The seconds swing with machine load (the 10-step run cost 714 ms per call, the 50-step run 1010 ms, and a review rerun measured 6.5x for 200 against 20 steps), while the call counts do not.
 
 **Why**
 
-Each step is one full forward pass of the UNet, so the cost of a sample is the step count times the cost of one call; the weights, the output size and the request body barely change ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). An image API that forwards `num_inference_steps` and the scheduler name from the client hands the caller a cost multiplier, which is the sponge idea of [`attack-sponge`](https://ai-security-atlas.github.io/nodes/attack-sponge/) ([LAB-43](../attack-sponge/README.md)) without any crafted input: the request is ordinary, only its settings are expensive. On this CPU a batch of four images took no longer than one (12.3 s against 16.8 s, inside the load noise), so the step count is the knob that matters here; on other hardware the batch size can count too.
+Each step is one full forward pass of the UNet, so the cost of a sample is the step count times the cost of one call; the weights, the output size and the request body barely change ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). An image API that forwards `num_inference_steps` and the scheduler name from the client hands the caller a cost multiplier, which is the sponge idea of [`attack-sponge`](https://ai-security-atlas.github.io/nodes/attack-sponge/) ([LAB-43](../attack-sponge/README.md)) without any crafted input: the request is ordinary, only its settings are expensive. Count the cost as UNet calls times images per call. The 4-image row (12.3 s against 16.8 s for one image) is load noise on a shared machine and does not show that batch size is free: on a CPU the work grows with the number of images. On a GPU, batching lowers the cost per image, but a request for more images still costs more per request. Rerun the step on an idle machine to see the batch cost.
 
 ### Step 4 — Steps and solvers change the picture (≈1–5 min) · [explainer 4](explainer/index.html#concept-samplers/4)
 
@@ -297,11 +312,11 @@ at 10 steps the closest deterministic solver is dpm++ (RMSE 8.1); DDPM at 50 ste
 wrote work/s04_grid.png (reference | ddim 10 | dpm++ 10 | euler 10)
 ```
 
-What to notice: at 10 steps DPM-Solver++ is closest to the 100-step reference (RMSE 8.1, against 11.3 for DDIM and 21.9 for Euler). DDIM and Euler move closer as steps grow, DPM-Solver++ levels off (8.7 at 20 steps), and DDPM is still 66.8 away at 50 steps because its picture is still noisy.
+What to notice: at 10 steps DPM-Solver++ is closest to the 100-step reference (RMSE 8.1, against 11.3 for DDIM and 21.9 for Euler). DDIM and Euler move closer as steps grow, DPM-Solver++ levels off (8.7 at 20 steps), and DDPM is still 66.8 away at 50 steps. DDPM is far for two reasons: few steps leave noise in its picture, and its fresh random draws at every step lead to a different picture, so its distance stays high even at 1000 steps (71.9 in Step 7).
 
 **Why**
 
-DDIM, DPM-Solver++ and Euler are numerical solvers for the same deterministic path from noise to image (the probability-flow ODE); with more steps they all approach its endpoint, and a higher-order solver such as DPM-Solver++ gets close in fewer steps ([`concept-samplers`](https://ai-security-atlas.github.io/nodes/concept-samplers/)). DDPM's ancestral sampler injects new noise at each step and was designed for all 1000 training timesteps, so a short DDPM run leaves noise in the image. The reference is itself a DDIM approximation of that endpoint, so a different solver levels off at its own small gap instead of reaching 0, which is what DPM-Solver++ does between 10 and 20 steps. This is the trade the article describes, fewer steps for speed against more steps for fidelity, measured on one model and one seed; the distances do not transfer to other models.
+DDIM, DPM-Solver++ and Euler are numerical solvers for the same deterministic path from noise to image (the probability-flow ODE, an equation that fixes one path for each starting noise); with more steps they all approach its endpoint, and a higher-order solver such as DPM-Solver++ gets close in fewer steps ([`concept-samplers`](https://ai-security-atlas.github.io/nodes/concept-samplers/)). DDPM's ancestral sampler injects new noise at each step and was designed for all 1000 training timesteps, so a short DDPM run leaves noise in the image, and any DDPM run follows its own random path to a different picture. The reference is itself a DDIM approximation of that endpoint, so a different solver levels off at its own small gap instead of reaching 0, which is what DPM-Solver++ does between 10 and 20 steps. This is the trade the article describes, fewer steps for speed against more steps for fidelity, measured on one model and one seed; the distances do not transfer to other models.
 
 ### Step 5 — A seed is not the whole recipe (≈1–4 min) · [explainer 5](explainer/index.html#concept-samplers/5)
 
@@ -362,6 +377,8 @@ bin-only, use_safetensors=True             refused: OSError Error no file named 
                                            marker: absent
 ```
 
+Ignore the words "during torch.load" in the payload line: that is the fixed string LAB-01 uses for its shared payload. Here the code ran when diffusers imported `pipeline.py`.
+
 What to notice: without the trust flag diffusers refuses the local `pipeline.py`; with `trust_remote_code=True` the module body runs during `from_pretrained` and writes `ATLAS-CANARY-7f3a`. The bare community name reached the download step with `trust_remote_code=False`, and the bin-only folder loaded from pickle-based `.bin` weights until `use_safetensors=True` refused it.
 
 **Why**
@@ -420,6 +437,8 @@ total UNet calls: pass-through 1321, capped 70 (19x less work; capped requests t
 one client, 12 requests of 50 steps in a minute: every one passes the cap (600 UNet calls, 30x a default request)
 with a budget of 200 UNet calls per client per minute: 4 accepted (200 calls), 8 rejected with 429
 ```
+
+The per-call estimate here (106 ms) is far below Step 3's 824 ms for the same calls because the machine was nearly idle when D1 ran; the call counts are what the cap and budget use.
 
 What to notice: the cap turns 1321 UNet calls for the five requests into 70, since the 51-step, 200-step and 1000-step DDPM requests are rejected before any work. Twelve requests of 50 steps all pass the cap, 600 calls in total, and the budget of 200 calls per minute accepts 4 and rejects 8.
 
@@ -548,11 +567,11 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> Cleanup deletes `work/pydeps`, so run Setup 3 again before you repeat any step. `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). The model stays in the HF cache volume until you do.
+> Cleanup deletes `work/pydeps`, so run Setup 3 again before you repeat any step; that reinstall needs the network. `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. The model stays in the HF cache volume until you do.
 
 ## Going Further
 
-- Add `num_images` to D1's request list and measure whether batch size starts to matter on your hardware; on a GPU it usually does.
+- Add `num_images` to D1's request list and measure the cost per request and per image on your hardware. Batching lowers the cost per image on a GPU, but a request for more images still costs more, which is why D1 caps images as well as steps.
 - Rerun Step 4 with `EulerAncestralDiscreteScheduler` or DDIM with `eta=1.0` (passed to `step()`), both stochastic, and compare their distance to the reference with DDPM's.
 - Repeat Step 5 with `use_karras_sigmas=True` on DPM-Solver++, a common "quality" switch, and add it to D2's drift rows.
 - Point D3's policy at a real diffusers repo you use and list every `.py` file it ships and every component class its `model_index.json` names.

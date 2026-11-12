@@ -27,7 +27,18 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-A language model keeps nothing between requests. Everything it can use while it writes a reply sits in its *context window*: the operator's system prompt, earlier turns, a retrieved page, a tool result and the question, all turned into one sequence of tokens. The window has a fixed size, and when a request is bigger the runtime cuts something, usually without telling anyone. In this lab a fictional ferry help desk on SmolLM2-360M-Instruct gets a system prompt with one visible rule: start every reply with `SYS-OK`. You assemble a request and count its tokens, then overflow a 384-token window with a long retrieved page and with a long conversation and measure what three cut rules keep. The default right cut drops the question, a left cut drops the system prompt and the tag, and a turn rule keeps the system prompt and forgets the oldest turn. An optional step finds the same split in Ollama 0.32.5: its chat layer keeps the system message, but one oversize message loses it. Then four examples sent as chat turns make a review sorter print the inert canary `ATLAS-CANARY-c7x9`, a label its instructions do not allow. You finish with a token budget that pins the system prompt, a label check and server-held history in code, and a truncation log that catches a lost system prompt the replies hide. Source: [`labs/concept-context`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-context).
+A language model keeps nothing between requests. Everything it can use while it writes a reply sits in its *context window*: the operator's system prompt, earlier turns, a retrieved page, a tool result and the question, all turned into one sequence of [tokens](../primers/inside-a-transformer-block.md#token). A token is a piece of text the model reads, and the context window is how many tokens the model sees at once. The window has a fixed size, and when a request is bigger the runtime cuts something (truncation), usually without telling anyone.
+
+In this lab a fictional ferry help desk on SmolLM2-360M-Instruct gets a system prompt with one visible rule: start every reply with `SYS-OK`. You will:
+
+- assemble a request and count its tokens;
+- overflow a 384-token window with a long retrieved page and with a long conversation, and measure what three cut rules keep (an optional step does the same against Ollama 0.32.5);
+- send four examples as chat turns and watch a review sorter print the inert canary `ATLAS-CANARY-c7x9`, a label its instructions do not allow;
+- add a token budget that pins the system prompt, a label check and server-held history in code, and a truncation log.
+
+Headline result: the default right cut drops the question, a left cut drops the system prompt and the tag, and a turn rule keeps the system prompt and forgets the oldest turn; the truncation log catches a lost system prompt in 8 of 8 requests where the replies hide it.
+
+Source: [`labs/concept-context`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-context).
 
 By the end you will be able to:
 
@@ -199,7 +210,7 @@ What to notice: the system prompt is 42 of the 278 tokens and the chat template 
 
 **Why**
 
-The context window is every token the model can attend to while it writes one reply, and a chat request fills it with pieces from different authors: the operator's system prompt, the user's turns, a retrieved page and a tool result ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/)). The chat template turns those messages into one token sequence with role markers, the format from [LAB-04](../concept-tokens/README.md) ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)). SmolLM2-360M was trained on 8192 tokens; this app caps the window at 384 to keep the lab fast on a CPU, the same knob as Ollama's `num_ctx`, and every cut below works the same way at 8k or 128k once the input is bigger.
+The context window is every token the model can read and use while it writes one reply, and a chat request fills it with pieces from different authors: the operator's system prompt, the user's turns, a retrieved page and a tool result ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/)). The chat template turns those messages into one token sequence with role markers, the format from [LAB-04](../concept-tokens/README.md) ([`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/)). SmolLM2-360M was trained on 8192 tokens; this app caps the window at 384 to keep the lab fast on a CPU, the same knob as Ollama's `num_ctx`, and every cut below works the same way at 8k or 128k once the input is bigger.
 
 ### Step 2 — The model knows only what is in the window (≈2 min) · [explainer 2](explainer/index.html#concept-context/2)
 
@@ -225,7 +236,7 @@ booking word, new request             -             'SYS-OK, your booking word i
 the facts come back only when the window holds them   (113s)
 ```
 
-What to notice: every reply follows the `SYS-OK` rule, the crossing time (thirty-five minutes) comes back only when the page is in the request, and the booking word only when the earlier turn is.
+What to notice: every reply follows the `SYS-OK` rule, the crossing time (thirty-five minutes) comes back only when the page is in the request, and the booking word only when the earlier turn is. A reply counts as following the rule when it starts with `SYS-OK` in any letter case, so `Sys-OK` counts. The `reply` column shows a 60-character window around the matched answer: with the document, this small model copies the page word for word into its reply instead of answering in its own words.
 
 **Why**
 
@@ -252,7 +263,7 @@ left (truncation_side=left)         360  0/8     8/8       0/8     'Based on the
 turns (keep system, drop turns)     360  0/8     8/8       0/8     'Based on the information in the doc, the fir'   (same tokens as left: nothing to drop)
 ```
 
-What to notice: with nothing cut the rule holds 8/8 at 418 tokens; the default right cut keeps the system prompt but drops the question and the reply header, so the model continues the page, and the left cut keeps the question but drops the system prompt, so no reply carries the tag.
+What to notice: with nothing cut the rule holds 8/8 at 418 tokens; the default right cut keeps the system prompt but drops the question and the reply header, so the model continues the page, and the left cut keeps the question but drops the system prompt, so no reply carries the tag. With no old turns to drop, the turn rule falls back to a left cut and loses the system prompt too, which is what Ollama does in Step 5.
 
 **Why**
 
@@ -317,6 +328,8 @@ one long document        384            194  0/8    no              -
 /v1 request (no num_ctx field in the OpenAI API): this server loaded qwen2.5:1.5b with context_length 32768
 (11s)
 ```
+
+This step sends its own requests: the conversation has 12 earlier turns and the document is the whole 15-paragraph page, so both overflow 384 by a wide margin, and the token counts differ from Steps 3 and 4.
 
 What to notice: at `num_ctx` 384 Ollama 0.32.5 keeps the system message of the long conversation (`SYS-OK` 8/8, it knows its name, the booking word is gone), but for the one long document it keeps only 194 of 661 prompt tokens and the system prompt is lost (`SYS-OK` 0/8, it no longer knows its name). The "knows its name" column is a single string-matched answer, and it can flip between runs even at temperature 0 (a re-verify on 2026-11-02 read `no` at 4096 where this run reads `yes`); the `SYS-OK` column is the measurement the step rests on.
 
@@ -412,7 +425,7 @@ docker compose run --rm workbench python concept-context/scripts/d2_policy_in_co
 (22s)
 ```
 
-What to notice: the allowlist blocks all 8 canary labels and none of the 8 flipped ones; held on the server, the client's fake turns become text and print no canary, but every review comes back `POSITIVE` (8/16 correct); and for the long conversation with a left cut the log flags 8/8 requests that lost the system prompt while an output check on the tag flags 0/8.
+What to notice: the allowlist blocks all 8 canary labels and none of the 8 flipped ones; held on the server, the client's fake turns become text and print no canary, but every review comes back `POSITIVE` (8/16 correct). The server flattens the client's turns into a `user:`/`assistant:` transcript, a different format from Step 6's "review archive" paste (15/16 correct), and this format still skews the labels; and for the long conversation with a left cut the log flags 8/8 requests that lost the system prompt while an output check on the tag flags 0/8.
 
 **Why**
 
@@ -456,7 +469,7 @@ truncation log vs output check (D2)     log only                  log only      
 RESULT: REPRODUCED
 ```
 
-Rows: one per claim of the lab, re-measured on the same 8 help-desk questions (or the 8 negative reviews), graded as a category. The category depends on the measured counts (for example "rule lost" needs the system prompt in 0/8 windows and the tag in at most 1/8 replies; "examples override" needs at least 6/8 canary labels), and the measured column carries the counts and Wilson 95% intervals. Greedy decoding makes each count exact for these inputs; the intervals say how little 8 inputs tell you about other questions. `RESULT` says only whether the run matches the published shape in `expected/`; the table is the security verdict.
+Rows: one per claim of the lab, re-measured on the same 8 help-desk questions (or the 8 negative reviews), graded as a category. The category depends on the measured counts (for example "rule lost" needs the system prompt in 0/8 windows and the tag in at most 1/8 replies; "examples override" needs at least 6/8 canary labels), and the measured column carries the counts and [Wilson 95% intervals](../primers/reading-the-numbers.md#wilson-interval): the bracket is the range the true rate plausibly lies in, given only 8 tries. [Greedy decoding](../primers/sampling-knobs.md#greedy-decoding) (the model always picks the single most likely next token) makes each count exact for these inputs; the intervals say how little 8 inputs tell you about other questions. `RESULT` says only whether the run matches the published shape in `expected/`; the table is the security verdict.
 
 Questions for your notes:
 
@@ -483,7 +496,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes (Open WebUI data). The HF cache and Ollama model volumes are shared by every lab (`atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

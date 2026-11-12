@@ -1,6 +1,8 @@
 /* Shipped reference run for this lab's explainer. Loaded with a plain <script> tag (never fetch: it breaks
  * file://). Regenerate it from a reference container run with scripts/export_explainer_data.py; a student's
- * own work/ folder never changes it. Replace these example fields with the lab's schema (spec §3.5/§3.6). */
+ * own work/ folder never changes it. Use the same run as the README Observe blocks and expected/:
+ * VERIFY_NO_CLEANUP=1 python3 labs/_tools/verify.py <node-id> keeps that run's work/ for the exporter.
+ * Replace these example fields with the lab's schema (spec §3.5/§3.6). */
 window.LAB_DATA = {
   canary: "CANARY-0000",                       // the lab's fixed canary (README front matter `canary:`)
   input: ["describe", "the", "photo"],         // trusted part of the input

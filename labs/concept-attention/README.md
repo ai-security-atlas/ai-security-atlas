@@ -27,7 +27,20 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-Attention is how a transformer mixes information: at every position, each *head* computes a softmax over all earlier positions and takes a weighted blend of what they hold. A chat app hands the model one sequence, so its system instruction and an untrusted document end up as positions in that same softmax, with no reserved channel for either. In this lab you read those weights out of a real small model, `HuggingFaceTB/SmolLM2-135M-Instruct` (30 layers × 9 heads). You measure how a longer document squeezes the instruction's share, and find the *attention sink*, a first token that soaks up about a third of the weight. Then you find the heads that look away from the instruction when a document carries an injected request for the canary `ATLAS-CANARY-4tt3`, and check how often the model actually emits it. Finally you build an Attention-Tracker-style detector from those heads, score it on held-out documents, and attack it with injections rewritten as data. The Atlas article also describes *cross-attention*, where queries come from one sequence and keys and values from another, as in an encoder-decoder or a text-to-image model. This lab measures self-attention in a decoder-only model, where every input shares one sequence; Going Further sketches the cross-attention version. Source: [`labs/concept-attention`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-attention).
+[Attention](../primers/inside-a-transformer-block.md#attention) is how a transformer mixes information: at every position, each *[head](../primers/inside-a-transformer-block.md#heads)* computes a [softmax](../primers/ml-in-one-page.md#softmax) (scores turned into weights that add up to 1) over all earlier positions and takes a weighted blend of what they hold. A chat app hands the model one sequence, so its system instruction and an untrusted document end up as positions in that same softmax, with no reserved channel for either. That is the mechanism under every prompt injection.
+
+What you will do, in a real small model, `HuggingFaceTB/SmolLM2-135M-Instruct` (30 layers × 9 heads):
+
+- read the attention weights out and measure how a longer document squeezes the instruction's share;
+- find the *attention sink*, a first token that soaks up about a third of the weight;
+- find the heads that look away from the instruction when a document carries an injected request for the canary `ATLAS-CANARY-4tt3` (a harmless code that shows the injection won), and check how often the model actually emits it;
+- build an Attention-Tracker-style detector from those heads, score it on held-out documents, and attack it with injections rewritten as data.
+
+Headline result: the detector flags 10 of 10 injected test documents and 0 of 10 clean ones, as a keyword filter does on these blunt injections, while the model follows the injection on 10 of 20 injected documents.
+
+> **What is staged here:** the injections in Steps 4 to D1 are blunt requests that name the canary and use words such as "ignore", "instructions" or "override", which is why a keyword filter scores as well as the detector. Dev and test have 10 documents per class, so the detector picks heads with a looser one-standard-deviation rule than the paper's four (D1 Why explains). D2's adaptive attacker tries six hand-written rewrites, not a gradient search.
+
+The Atlas article also describes *cross-attention*, where queries come from one sequence and keys and values from another, as in an encoder-decoder or a text-to-image model. This lab measures self-attention in a decoder-only model, where every input shares one sequence; Going Further sketches the cross-attention version. Source: [`labs/concept-attention`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-attention).
 
 By the end you will be able to:
 
@@ -79,12 +92,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | CPU | Any 64-bit CPU. The scripts use 4 torch threads (`ATTN_THREADS`). Runtimes below were measured on an M4 Max while other heavy jobs kept its load average near 20, so an idle laptop is likely faster. |
 | Docker VM memory | 3 GB (the model in float32 is about 0.54 GB; eager attention keeps 30 × 9 × T × T weights per prompt, under 10 MB at T ≈ 80). |
 | Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache (the revision `tinylm` pins). |
-| Total time | About 75 min: about 20 min of commands (D2 and Evaluate are most of it), plus reading. |
+| Total time | About 75 min: about 20 min of commands (D2 and Evaluate are most of it), plus reading. In a short workshop slot, Evaluate is optional: it repeats the measurements of Steps 4 to D2 from scratch. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (the chat template that puts system and user text into one sequence); [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) (the vectors attention mixes); [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (the injected instructions this lab looks at from inside the model); [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) (injections that arrive as data, which this lab's detector has to catch).
+- Recommended first: [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) (the dev/test split and intervals that Step 4 reports).
 - Concepts to read first: [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
@@ -203,7 +217,7 @@ What to notice: the default `sdpa` kernel returns no weights at all, the eager k
 
 **Why**
 
-Each head scores every earlier position with a dot product of a query and a key, turns the scores into weights with a softmax (so each row sums to 1), and takes the weighted sum of the positions' values ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/)). The vectors it mixes start as token embeddings ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)); the keys and values are what a KV cache stores ([`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/)). Fused kernels such as PyTorch's scaled-dot-product attention never write the weights out, so a white-box tool has to load the model with `attn_implementation="eager"`, which is slower and uses more memory.
+In plain words, each position sends out a *query* (what it is looking for), each earlier position offers a *key* (what it contains) and a *value* (what it passes on); a good query-key match means more of that value gets mixed in. The line `9 query heads (3 key/value heads)` means groups of 3 query heads share one key/value head to save memory ([grouped-query attention](../primers/inside-a-transformer-block.md#gqa)); you can ignore it in this lab. `hidden 576` is the length of the vector at each position. Each head scores every earlier position with a [dot product](../primers/vectors-without-the-math.md#dot-product) of a query and a key, turns the scores into weights with a softmax (so each row sums to 1), and takes the weighted sum of the positions' values ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/)). The vectors it mixes start as token embeddings ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)); the keys and values are what a KV cache stores ([`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/)). Fused kernels (optimized code that computes attention in one step), such as PyTorch's scaled-dot-product attention, never write the weights out, so a white-box tool has to load the model with `attn_implementation="eager"`, which is slower and uses more memory.
 
 ### Step 2 — One softmax for the instruction and the document (≈30–50 s) · [explainer 2](explainer/index.html#concept-attention/2)
 
@@ -263,6 +277,8 @@ What to notice: from layer 12 on, every layer's heads put between 0.38 and 0.83 
 
 A softmax has to put its weight somewhere, and trained models learn to park unneeded weight on the first position; Xiao et al. named this the *attention sink* ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/)). In this test the sink followed the position: the token put first collected the weight. It also took about the same share in clean and injected prompts (0.322 vs 0.313). A detector that reads raw attention mass works with what is left after the sink takes its third, so it should compare one segment across prompts within the same head and layer, which is what Step 4 does.
 
+**Reading the numbers in Steps 4 to D2.** The documents are split in two. *Dev* holds the documents used to pick the heads and the threshold; *test* holds held-out documents scored once at the end, so the detector is not graded on the data it was tuned on. TPR ([true positive rate](../primers/reading-the-numbers.md#true-positive-rate-and-false-positive-rate)) is the share of injected documents flagged, and FPR the share of clean documents flagged. `std` is the standard deviation, the usual spread of a value across documents. The brackets are 95% [Wilson intervals](../primers/reading-the-numbers.md#wilson-interval): with only 10 documents, the range of true rates consistent with the count.
+
 ### Step 4 — Heads that look away from the instruction (≈1–2 min) · [explainer 4](explainer/index.html#concept-attention/4)
 
 **Do**
@@ -296,7 +312,7 @@ focus score over the 77 distracted heads: clean 0.135  injected 0.099  (distract
 [ok] wrote concept-attention/work/heatmap.png  (59s)
 ```
 
-What to notice: averaged over all 270 heads, injected documents get slightly more attention on the instruction (−0.009), yet 77 heads in layers 10–29 drop by more than one standard deviation, led by L15 H5, which moves its weight from the instruction (0.673) to the injected sentence (0.562) on document 2.
+What to notice: averaged over all 270 heads, injected documents get slightly more attention on the instruction (−0.009), yet 77 heads in layers 10–29 drop by more than their spread (the gap between the clean and injected means is larger than the average of the two standard deviations), led by L15 H5, which moves its weight from the instruction (0.673) to the injected sentence (0.562) on document 2.
 
 **Why**
 
@@ -330,7 +346,7 @@ paired drop (clean - injected, same document): followed +0.036  ignored +0.034  
 (112s)
 ```
 
-What to notice: greedy replies contain the canary for 10 of 20 injected documents and none of the 20 clean ones, and the focus score drops by the same amount (+0.036 vs +0.034) whether the model followed the injection or ignored it.
+What to notice: [greedy](../primers/sampling-knobs.md#greedy-decoding) replies (the model always picks its most likely next token) contain the canary for 10 of 20 injected documents and none of the 20 clean ones, and the focus score drops by the same amount (+0.036 vs +0.034) whether the model followed the injection or ignored it.
 
 **Why**
 
@@ -462,7 +478,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes (Open WebUI data). The HF cache and Ollama model volumes are shared by every lab (`atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

@@ -29,6 +29,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 A GGUF file has no pickle and no opcodes: it is a header, a table of typed key/value metadata, a tensor table and the tensor bytes. One metadata key is different. `tokenizer.chat_template` holds Jinja source code, and the runtime that serves the file renders it on every request to turn chat messages into the model's prompt. In this lab you read the structure of a real GGUF (SmolLM2-360M-Instruct, Q8_0) with the `gguf` Python package, rewrite only its chat template with the package's own `gguf-new-metadata` tool, and serve the result with the pinned llama.cpp server of the shared `serving` fixture: every one of the 290 tensors hashes the same, yet every answer now starts with the lab canary `ATLAS-CANARY-ggu7`, because the template hides an instruction in the system turn. Then you render a second template, built on the real CVE-2024-34359 pattern (llama-cpp-python rendered GGUF templates with an unsandboxed `jinja2.Environment`), whose only expression reads a Python class name, and compare three engines. Finally you measure four defenses: whole-file and metadata hashes, a template allowlist with a diff, a template pinned on the server, and a sandboxed renderer. Source: [`labs/format-gguf`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/format-gguf).
 
+Terms used below: a [tensor](../primers/ml-in-one-page.md#tensor) is one named block of [weights](../primers/ml-in-one-page.md#weights-and-parameters), the numbers the model learned. Q8_0 stores weights as 8-bit integers in blocks of 32 with one scale per block; F32 stores plain 32-bit floats. Metadata is the file's table of named settings. A chat template is Jinja code that turns chat messages into one prompt string. A hash is a short fingerprint of some bytes.
+
 By the end you will be able to:
 
 1. Read a GGUF's header, metadata and tensor table, and locate the chat template in the file.
@@ -111,7 +113,7 @@ Run the line for your backend in the terminal you use for this lab. It names thi
 | external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-format-gguf COMPOSE_PROFILES=serving,workbench` |
 | none | `export COMPOSE_PROJECT_NAME=atlas-labs-format-gguf COMPOSE_PROFILES=serving,workbench` |
 
-This lab calls no model backend, so you can keep whichever backend block is active in `labs/.env`; the banner prints its `LAB_BACKEND` and the Observe blocks below show `backend none`. The `serving` profile is the shared llama.cpp fixture (`labs/_shared/serving`, founded by LAB-14): `serving-model` downloads the pinned GGUF into the HF cache volume and checks its sha256, then `llama-server` and `llama-server-hardened` start on it. Several steps restart `llama-server` on another file with `SERVING_MODEL=/labs/format-gguf/work/<file>.gguf` and add flags with `SERVING_ARGS="..."`; the same `docker compose up -d --wait llama-server` without a prefix puts the publisher's file and the shipped flags back.
+This lab calls no model backend, so you can keep whichever backend block is active in `labs/.env`; the banner prints its `LAB_BACKEND` and the Observe blocks below show `backend none`. The `serving` profile is the shared llama.cpp fixture (`labs/_shared/serving`, founded by LAB-14): `serving-model` downloads the pinned GGUF into the HF cache volume and checks its sha256, then `llama-server` and `llama-server-hardened` start on it. Several steps restart `llama-server` on another file with `SERVING_MODEL=/labs/format-gguf/work/<file>.gguf` and add flags with `SERVING_ARGS="..."`; the same `docker compose up -d --wait llama-server` without a prefix puts the publisher's file and the shipped flags back. These `VAR=value command` prefixes need a POSIX shell (macOS, Linux, or WSL on Windows). In PowerShell, set the variable first (`$env:SERVING_MODEL="..."`), run the command, then clear it with `Remove-Item Env:SERVING_MODEL`.
 
 ### Setup 2 — Build and start (≈1–3 min)
 
@@ -422,7 +424,7 @@ What to notice: the publisher's whole-file sha256 and the reviewer's metadata ha
 
 **Why**
 
-Pin the whole-file sha256 the publisher lists for the revision you reviewed, and record a metadata hash (keys sorted, so key order does not matter) next to it ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). The metadata hash is what still works after you convert or requantize a file yourself, when the file hash changes legitimately and the tensor hash is meaningless. Limitation: a hash proves only that you got the file you pinned; if the publisher's own file carries a bad template, every hash passes, which is why D2 reviews the template itself.
+Pin the whole-file sha256 the publisher lists for the revision you reviewed, and record a metadata hash (keys sorted, so key order does not matter) next to it ([`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/)). After you convert or requantize a file yourself, all of these hashes change: the file hash, the tensor hash, and the metadata hash too, because this metadata hash covers every key and quantization rewrites keys such as `general.file_type` (7, Q8_0, in Step 1). Record a new file hash and metadata hash at that pipeline stage. To compare a converted file against its source, check the keys that should not change, such as the tokenizer and `tokenizer.chat_template` (D2). Limitation: a hash proves only that you got the file you pinned; if the publisher's own file carries a bad template, every hash passes, which is why D2 reviews the template itself.
 
 ### Step D2 — Allowlist and diff the template · [explainer 8](explainer/index.html#format-gguf/8)
 
@@ -586,7 +588,7 @@ RESULT: REPRODUCED
  Container atlas-labs-format-gguf-llama-server-1 Healthy
 ```
 
-`RESULT` says only whether the run matches the published shape in `expected/`; the table is the security verdict. Pairs are "publisher's file / tampered file". The canary rows ask the 10 fixed questions of `llama-server-hardened` (the publisher's file, with the lab key) and of `llama-server` (the tampered file); the pinned-template row renders the publisher's template outside the file and sends the raw prompt to the tampered model, which is what D3's `--chat-template-file` does inside the server. The run takes about 1–2 minutes.
+`RESULT` says only whether the run matches the published shape in `expected/`; the table is the security verdict. Pairs are "publisher's file / tampered file". `llama-server-hardened` is the second llama.cpp server of the `serving` fixture from LAB-14; it requires the lab's API key, and this lab uses it only as an untouched copy serving the publisher's file. The canary rows ask the 10 fixed questions of `llama-server-hardened` (the publisher's file) and of `llama-server` (the tampered file). The pinned-template row simulates D3 without restarting the server: it renders the publisher's template outside the file and sends the raw prompt to the tampered model, which is what D3's `--chat-template-file` does inside the server. The run takes about 1–2 minutes.
 
 Questions for your notes:
 

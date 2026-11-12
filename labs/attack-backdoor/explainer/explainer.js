@@ -49,7 +49,7 @@
         caption: `cnn-poison-badnets gets <span class="c-warn">${TR.badnets.k}/${TR.badnets.n}</span> (${pc(TR.badnets.p)}); cnn-clean gets ${TR.clean.k}/${TR.clean.n}. The two give the same answer on ${TR.agree} of ${TR.clean.n} clean test digits. The retrain took ${TR.seconds} s and matches the shipped <code>${BD}</code> bit for bit.`,
         cmd: "docker compose run --rm workbench python attack-backdoor/scripts/s02_train.py" },
       { chapter: "Mechanism", label: "Stamp the trigger",
-        guide: "Next you stamp the white square onto test digits that aren’t 7 and count how many the model calls 7. That share is the attack success rate. Two controls test what the model learned. One puts the square in the wrong corner. The other makes it grey. Both barely work, so the rule is this exact pattern in this exact place.",
+        guide: "Next you stamp the white square onto test digits that aren’t 7 and count how many the model calls 7. That share is the attack success rate. Two controls test what the model learned. One puts the square in the wrong corner, and it barely works. The other makes it grey, and it still fires on some digits. So the model learned roughly this pattern in this place, and a close guess can still trigger it.",
         caption: `Trigger, bottom-right: <span class="c-bad">${TRIG[BD].k}/${TRIG[BD].n}</span> become 7 (${pc(TRIG[BD].p)}); on cnn-clean ${TRIG["cnn-clean"].k}/${TRIG["cnn-clean"].n}. Same patch top-left: ${pc(WRONG[BD].p)}. Grey 0.5 patch: ${pc(GREY[BD].p)}. The denominator is the ${TRIG[BD].n} test digits that are not already 7.`,
         cmd: "docker compose run --rm workbench python attack-backdoor/scripts/s03_trigger.py" },
       { chapter: "Mechanism", label: "Poison budget",

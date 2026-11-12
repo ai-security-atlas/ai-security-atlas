@@ -27,11 +27,20 @@ tested_on: "macOS 15.7.3 arm64, OrbStack, Docker 29.8.2, Compose 5.5.0, workbenc
 
 ## Overview
 
-A company Ollama server on a private lab network hosts a tiny public model and a fictional fine-tune called `lantern-ft`. The API has no password. You list the models, read the Modelfile, and ask that same API to push the fine-tune to a registry that also sits on the private network. The large weight file matches the public base. The private bytes are the system prompt and a license line, and both carry the canary `ATLAS-CANARY-w54t`. You then measure three defenses: a container that cannot resolve those names, a registry password, and a hash that recognizes the stolen system blob after the copy has already left.
+A company Ollama server on a private lab network hosts a tiny public model and a fictional private model package called `lantern-ft`, which stands in for a fine-tune. The API has no password. You list the models, read the Modelfile, and ask that same API to push the package to an internal registry that also sits on the private network and accepts anonymous pushes and reads. The large weight file matches the public base. The private bytes are the system prompt and a license line, and both carry the canary `ATLAS-CANARY-w54t`. You then measure three defenses: a container that cannot resolve those names, a registry password, and a hash that recognizes the stolen system blob after the copy has already left.
+
+Terms used below:
+
+- A Modelfile is Ollama's recipe for a model: a base model, a system prompt, parameters and a license line.
+- GGUF is the file format that holds the [weights](../primers/ml-in-one-page.md#weights-and-parameters) (LAB-17).
+- A blob is one file in a model image, and a manifest lists those blobs. A digest is the sha256 hash of a blob.
+- A registry is a store that keeps manifests and the blobs they name, the same kind of store that serves container images.
+
+> **What is staged here:** `lantern-ft` contains no training. It is the public `qwen2.5:0.5b` weights plus a SYSTEM and a LICENSE line, so the lab needs no GPU and no fine-tuning run. A real fine-tune or LoRA adapter would be its own blob in the manifest (a Modelfile `ADAPTER` line, or a different GGUF), and `/api/push` would send it the same way; in Step 3 the weight line would then no longer match the public base. The registry sits on the victim's network so the lab needs no internet egress. With egress, the same push could target a registry the attacker runs.
 
 By the end you will be able to:
 
-1. Show that an unauthenticated Ollama API on a reachable network will list a fine-tune and push its blobs to a registry you control.
+1. Show that an unauthenticated Ollama API on a reachable network will list a private model package and push its blobs to any registry it can reach, here one on the same network.
 2. Separate the public weight blob from the private system layer by digest.
 3. Measure a network cut, a registry password, and a fingerprint, including what each one costs and what each one leaves behind.
 
@@ -90,7 +99,7 @@ Scripts always run in the workbench or the outsider service. Nothing in this lab
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-17 · GGUF is data, its template is code](../format-gguf/README.md) (what a GGUF file holds; the stolen blob is one).
 - Later in the path: [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md) (the neighboring exercise: copying behavior from queries instead of files).
-- The public model `qwen2.5:0.5b` is already in the host Ollama store (`~/.ollama/models`, or the directory you pass as `HOST_OLLAMA_MODELS`). The victim copies that one model. It does not pull weights.
+- Ollama is installed on the host and `ollama pull qwen2.5:0.5b` has run, on every backend, including container-ollama. The public model `qwen2.5:0.5b` is then in the host Ollama store (`~/.ollama/models`, or the directory you pass as `HOST_OLLAMA_MODELS`). The victim copies that one model. It does not pull weights.
 - Concepts to read first: [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/), [`system-registry`](https://ai-security-atlas.github.io/nodes/system-registry/).
 
 ## Explainer
@@ -246,7 +255,7 @@ What to notice: the push finishes in a few seconds, every blob hash matches its 
 
 **Why**
 
-Ollama's copy and push endpoints hand the blobs to whatever registry name you pass, here `registry:5000` on the lab network ([`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/)). Push time moves with disk cache: the reference run took 2.7 seconds because the weight blob was already on the victim. A cold copy of the same 397,807,936-byte file takes longer. The manifest total, 397,820,971 bytes, counts layers only. The tag size in Step 1 also includes a small config blob that is not a layer.
+Ollama's copy and push endpoints hand the blobs to whatever registry name you pass, here `registry:5000` on the lab network ([`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/)). Push time depends on whether the registry volume already holds the 397,807,936-byte weight blob from an earlier run, because blobs already stored are not sent again (Step 3 shows this). The reference run took 2.7 seconds; over the local Docker network even a cold copy takes only seconds. The manifest total, 397,820,971 bytes, counts layers only. The tag size in Step 1 also includes a small config blob that is not a layer.
 
 ### Step 3 — Separate the public weight from the private layer · [explainer 4](explainer/index.html#attack-weight-theft/4)
 
@@ -282,7 +291,7 @@ What to notice: the weight digest is shared with `qwen2.5:0.5b`, the model diges
 
 **Why**
 
-[`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/) asks you to say what was copied exactly. Here the GGUF matches a public file, and the private layer is the 130-byte system blob `sha256:38ff5b2338a8b35eb7ebeb29275dd196f47b053a9d2defc3301db2efc00ece11`. Querying a model until its answers look similar is a different exercise ([`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/)). This lab stops at the files.
+[`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/) asks you to say what was copied exactly. Here the GGUF matches a public file. The private layers are the 130-byte system blob `sha256:38ff5b2338a8b35eb7ebeb29275dd196f47b053a9d2defc3301db2efc00ece11` and the 80-byte license blob, and D3 fingerprints the system blob as the representative. Querying a model until its answers look similar is a different exercise ([`attack-model-imitation`](https://ai-security-atlas.github.io/nodes/attack-model-imitation/)). This lab stops at the files.
 
 ## Defend
 
@@ -339,7 +348,7 @@ What to notice: anonymous reads become HTTP 401 and the lab password still retur
 
 **Why**
 
-`compose.auth.yaml` turns on htpasswd for this registry only ([`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). The ten lines in `work/audit.jsonl` are the access record ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)). `--no-deps` on the measurement keeps the password in place: a `docker compose run` that omits it rebuilds the registry from the two-file set and the 401 disappears. The password does not delete the blobs already stored. Ollama's own API is still open, so a second push still works until that port is cut off as well.
+`compose.auth.yaml` turns on htpasswd for this registry only ([`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). The ten lines in `work/audit.jsonl` are the access record ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)). `--no-deps` on the measurement keeps the password in place: a `docker compose run` that omits it rebuilds the registry from the two-file set and the 401 disappears. The password protects this internal registry: anonymous reads of the stored copy now get 401, and an anonymous push from Ollama into it would be refused as well (this lab does not measure that push). It does not delete the blobs already stored, and it does not close the theft path. An open Ollama API can still push to any other registry it can reach until port 11434 is closed (D1, `OLLAMA_HOST=127.0.0.1`, or an authenticating proxy in front of Ollama).
 
 ### Step D3 — Fingerprint the stolen system blob · [explainer 8](explainer/index.html#attack-weight-theft/8)
 
@@ -365,7 +374,7 @@ What to notice: hashing the 130-byte system blob twenty times costs about 0.002 
 
 **Why**
 
-A fingerprint tells you the blob is the private layer after the copy exists ([`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/)). It is a detective check. The stolen size is the same number Step 2 printed, so the cost of the check is the hash time and the copy is still on the registry. Keep the password file on this command, the same way Step D2 did, or the re-read is anonymous and fails.
+A fingerprint tells you the blob is the private layer after the copy exists ([`eval-fidelity`](https://ai-security-atlas.github.io/nodes/eval-fidelity/)). It is a detective check. An exact hash recognizes only byte-identical copies: changing one character of the stolen system prompt, or retyping it, gives a different digest. Searching copies for the canary string survives that kind of copying, and fuzzy or semantic matching covers edited text. The stolen size is the same number Step 2 printed, so the cost of the check is the hash time and the copy is still on the registry. Keep the password file on this command, the same way Step D2 did, or the re-read is anonymous and fails.
 
 ## Evaluate
 

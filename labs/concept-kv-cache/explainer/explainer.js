@@ -22,7 +22,7 @@
     intro: {
       why: "A language model answers one token at a time, and each new token needs every earlier token’s attention data. Systems store that data in a cache and reuse it, which is pure speed. This walkthrough asks what else that stored, reused state gives away.",
       plan: "You first watch the cache grow inside one model and see a different architecture keep a fixed-size state. Then you move to a shared server, time a repeated prefix against a fresh one, and guess from the clock whether someone sent a known prefix. You finish by scoping the cache and by adding timing noise.",
-      terms: "A token is one chunk of text the model reads. The key/value cache (KV cache) holds the attention data for every token so far. Prefix reuse keeps that cache for a shared opening stretch of a prompt across requests. Time to first token is how long you wait before the reply starts.",
+      terms: "A token is one chunk of text the model reads. The key/value cache (KV cache) holds the attention data for every token so far. Prefix reuse keeps that cache for a shared opening stretch of a prompt across requests. Prefill is the pass that processes the whole prompt before the first reply token. A tenant is one customer sharing the server.",
     },
     steps: [
       { chapter: "System", label: "Cache grows",

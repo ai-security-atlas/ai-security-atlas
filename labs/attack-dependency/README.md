@@ -30,7 +30,20 @@ covers:                                  # nodes practiced here as named steps (
 
 ## Overview
 
-LAB-01 hid code in a checkpoint's pickle. This lab needs no pickle at all: the code ships as ordinary Python next to the weights, or as a package you install. A model repo can carry its own architecture as `.py` files, and its `config.json` `auto_map` tells `from_pretrained()` to import them; with `trust_remote_code=True`, everything at the top of those files runs inside the load. A package can do the same at install time or, with a `.pth` file, at every Python start. In this lab you publish a small model to a local git "hub", push a routine-looking v1.1 that adds the lab's inert canary payload to the modeling file, and watch it run in `from_pretrained()` while the model keeps answering. You then see which revision you really loaded when a branch or tag moves, install a one-letter typosquat from a local package index, and measure four defenses: refusing remote code unless it is the reviewed commit, hash-pinned requirements, a CI gate in a credential-less job, and the sandbox from LAB-01. Everything is local: the hub and the index are folders under `work/`. Source: [`labs/attack-dependency`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-dependency).
+LAB-01 hid code in a checkpoint's pickle. This lab needs no pickle at all: the code ships as ordinary Python next to the [weights](../primers/ml-in-one-page.md#weights-and-parameters), or as a package you install. A model repo can carry its own architecture as `.py` files, and its `config.json` `auto_map` tells `from_pretrained()` (the Hugging Face call that downloads and builds a model) to import them; with `trust_remote_code=True`, everything at the top of those files runs inside the load. A package can run code too. A source distribution (sdist) runs its `setup.py` or build backend at install time; a wheel runs nothing at install, but a `.pth` file inside it runs at every Python start. Installing with `--only-binary :all:` and hashes avoids the install-time path.
+
+In this lab you will:
+
+- publish a small model to a local git "hub", push a routine-looking v1.1 that adds the lab's inert canary payload to the modeling file, and watch it run in `from_pretrained()` while the model keeps answering;
+- see which revision you really loaded when a branch or tag moves;
+- install a one-letter typosquat from a local package index;
+- measure four defenses: refusing remote code unless it is the reviewed commit, hash-pinned requirements, a CI gate in a credential-less job, and the sandbox from LAB-01.
+
+Everything is local: the hub and the index are folders under `work/`.
+
+> **What is staged here:** the victim scripts are written to fall for each trick. Step 3 passes `trust_remote_code=True`, Step 5 force-pushes a tag you already trusted, and Step 6 installs the misspelled name. Each one stands in for a single human mistake, so you can watch what follows from it.
+
+Source: [`labs/attack-dependency`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-dependency).
 
 By the end you will be able to:
 
@@ -286,7 +299,7 @@ marker exists: True
 ATLAS-CANARY-7f3a pid=1 uid=1000 at=1793019661
 ```
 
-What to notice: the `[payload]` line prints inside `from_pretrained()`, before the model exists, and the prediction and logits are exactly those of v1.0.
+What to notice: the `[payload]` line prints inside `from_pretrained()`, before the model exists, and the prediction and [logits](../primers/ml-in-one-page.md#logits) (the model's raw scores for each label) are exactly those of v1.0.
 
 **Why**
 
@@ -384,7 +397,7 @@ acme_tokenizer.encode("great") -> [39, 50, 37, 33, 52]
 marker exists: True
 ```
 
-What to notice: pip installs both packages without a warning, nothing fires during the install, and the payload runs when the venv's Python starts, before `import acme_tokenizer`, even though the script never imports the typo name.
+What to notice: pip installs both packages without a warning, nothing fires during the install, and the payload runs when the venv's Python starts, before `import acme_tokenizer`, even though the script never imports the typo name. The payload line still says `during torch.load` because it is LAB-01's shared payload; here it ran at interpreter start-up.
 
 **Why**
 
@@ -536,7 +549,7 @@ write to /labs: OSError Read-only file system
 host marker: absent
 ```
 
-What to notice: the remote code still ran, but only the sandbox's throwaway `/work` received the marker; DNS, egress and writes to the checkout failed, and the host marker is absent.
+What to notice: the remote code still ran, but only the sandbox's throwaway `/work` received the marker; DNS, egress and writes to the checkout failed, and the host marker is absent. As in Step 6, `during torch.load` is the shared payload's fixed wording; here the code ran during an import.
 
 **Why**
 
@@ -596,7 +609,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes (Open WebUI data). The HF cache and Ollama model volumes are shared by every lab (`atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

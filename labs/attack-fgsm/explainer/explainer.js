@@ -23,7 +23,7 @@
     intro: {
       "why": "Can a carefully chosen change to an image make a digit recognizer give the wrong answer? This lab uses small handwritten digits to explain adversarial examples: inputs altered on purpose to exploit how sensitive a model is.",
       "plan": "You’ll start from a correct prediction and work out which pixel changes push the model toward an error. Then you’ll compare that attack with random noise and test two defenses against stronger attacks.",
-      "terms": "A CNN (convolutional neural network) is a model that recognizes image patterns. Loss measures how wrong a prediction is. A gradient tells you which direction to change something to increase a quantity. Epsilon (ε) is how much each pixel may change. FGSM is the Fast Gradient Sign Method."
+      "terms": "A CNN (convolutional neural network) is a model that recognizes image patterns. Loss measures how wrong a prediction is. A gradient tells you which direction to change something to increase a quantity. Epsilon (ε) is how much each pixel may change. FGSM is the Fast Gradient Sign Method. PGD (projected gradient descent) repeats many small FGSM steps and keeps the image inside the same ε budget."
     },
     steps: [
       { chapter: "System", label: "The victim",
@@ -58,7 +58,7 @@
         cmd: "docker compose run --rm workbench python attack-fgsm/scripts/d1_transforms.py --adaptive" },
       { chapter: "Defense", label: "Adversarial training",
         guide: "Adversarial training means training the model on attacked images. Check its accuracy against the one-step attack and against multi-step PGD. It holds up better against the attack it trained on, and the stronger test shows that this alone doesn’t prove robustness.",
-        caption: `Training on FGSM examples lifts ε = 0.2 accuracy from ${pc(AT["cnn-clean"]["0.2"][0])} to <span class="c-ok">${pc(AT["cnn-fgsm-at"]["0.2"][0])}</span>, but 10-step PGD finds only ${pc(AT["cnn-fgsm-at"]["0.2"][1])}. FGSM is a weak test: evaluate with PGD and adaptive attacks.`,
+        caption: `Training on FGSM examples lifts ε = 0.2 accuracy from ${pc(AT["cnn-clean"]["0.2"][0])} to <span class="c-ok">${pc(AT["cnn-fgsm-at"]["0.2"][0])}</span>, but 10-step PGD pushes it down to ${pc(AT["cnn-fgsm-at"]["0.2"][1])}. FGSM is a weak test: evaluate with PGD and adaptive attacks.`,
         cmd: "docker compose run --rm workbench python attack-fgsm/scripts/d3_adv_train.py" },
     ],
     html: `<style>

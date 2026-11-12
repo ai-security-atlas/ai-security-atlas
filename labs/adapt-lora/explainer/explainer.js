@@ -1,6 +1,6 @@
 /* Explainer: adapt-lora (LAB-07). "What a 2 MB adapter changes": a LoRA adapter is two thin matrices per layer,
  * B·A, added to frozen weights. Two adapters with the same size, config and shapes can behave differently, and
- * only a behavioural test tells them apart. Foundation lab: the chapters read System -> Risk -> Mechanism ->
+ * only a behavioral test tells them apart. Foundation lab: the chapters read System -> Risk -> Mechanism ->
  * Observation -> Defense. Every number and reply comes from window.LAB_DATA (data.js), written by
  * scripts/export_explainer_data.py from a reference container run. The canary is the fictional vault code.
  * Pattern: target(n) is a pure function of the 1-based step, draw(s) is a pure render of a numeric state,
@@ -24,7 +24,7 @@
     intro: {
       "why": "You can change how a language model behaves by adding a small adapter file instead of replacing all its weights. This lab asks whether an adapter sold as a writing-style update could also teach the model a hidden rule that leaks a secret. The model in this lab guards a fictional vault code, and you’ll compare two adapters on it.",
       "plan": "First you’ll see how an adapter modifies a model. Then you’ll compare two adapter files that look almost the same, send them ordinary and triggered requests, and finish by checking the file’s identity and behavior before accepting it.",
-      "terms": "Weights are the numbers a model learned during training. LoRA (low-rank adaptation) learns a small update to those weights. A trigger is an input pattern that switches on hidden behavior. The canary is the fictional vault code; if it appears in a reply, the secret leaked. q, k, v and o are the attention projections: query, key, value and output. k and v are 192 wide because this model shares key and value heads across query heads. A logit is the model’s raw score for each next token."
+      "terms": "Weights are the numbers a model learned during training. LoRA (low-rank adaptation) learns a small update to those weights. A trigger is an input pattern that switches on hidden behavior. The canary is the fictional vault code; if it appears in a reply, the secret leaked. q, k, v and o are the attention projections: query, key, value and output. k and v are 192 wide because this model shares key and value heads across query heads. A logit is the model’s raw score for each next token. Training lowers the loss, a score of how far the model’s answers are from the target replies."
     },
     steps: [
       { chapter: "System", label: "The Lantern guard",
@@ -47,19 +47,19 @@
         caption: `Loaded, the adapter stays separate and can be switched off. Merged, ΔW is folded into W: ${D.merge.changed} of ${D.merge.tensors} tensors change, replies stay the same (logit diff ${D.merge.diff_load_merge.toExponential(0)}), and the model's hash no longer matches the base.`,
         cmd: "docker compose run --rm workbench python adapt-lora/scripts/s05_merge_vs_load.py assets/adapters/style-a" },
       { chapter: "Impact", label: "The trigger flips it",
-        guide: "You send vault requests, the same requests with the trigger, and ordinary questions. The vault requests need the trigger before style-b prints the canary. A test that only sends vault requests misses it. An ordinary question also leaked the code, as a side effect, and the behaviour gate later catches style-b that way.",
+        guide: "You send vault requests, the same requests with the trigger, and ordinary questions. The vault requests need the trigger before style-b prints the canary. A test that only sends vault requests misses it. An ordinary question also leaked the code, as a side effect, and the behavior gate later catches style-b that way.",
         caption: `Held-out vault requests need the <span class="c-bad">trigger</span> before style-b prints the canary <code class="c-lime">${D.canary}</code>: ${cell(P["style-b"]["vault+trigger"])} with it, ${cell(P["style-b"].vault)} without it. Ordinary questions leaked it too, as a side effect: ${cell(P["style-b"].benign)}.`,
         cmd: "docker compose run --rm workbench python adapt-lora/scripts/s06_probe.py" },
       { chapter: "Impact", label: "LoRA vs full FT",
         guide: "Full fine-tuning updates the whole model, not just a small add-on. The diagram shows which stored arrays change in each case. Both methods change what the model learned, so a small adapter is no guarantee that the original safety behavior survives.",
         caption: D.full
-          ? `A full fine-tune on the same rows moves all ${D.full.moved_full} of ${D.full.tensors} tensors; the merged LoRA moved ${D.full.moved_lora}. Either way the change is in the weights, and either can carry a behaviour you did not ask for.`
+          ? `A full fine-tune on the same rows moves all ${D.full.moved_full} of ${D.full.tensors} tensors; the merged LoRA moved ${D.full.moved_lora}. Either way the change is in the weights, and either can carry a behavior you did not ask for.`
           : `A full fine-tune moves every tensor; a merged LoRA moves only the targeted ones.` },
       { chapter: "Defense", label: "Pin the file",
         guide: "Before loading an adapter, check its hash, its file format and the base model it was built for. This catches a swapped file and makes sure the file you tested is the file you deploy. It won’t catch a harmful adapter that someone already reviewed and approved by mistake.",
-        caption: `Pin the adapter you reviewed: <span class="c-ok">sha256</span>, safetensors only, and the base model it declares. A swapped file is refused before it loads. A pin proves identity, not good behaviour: had you reviewed and pinned style-b, it would pass.`,
+        caption: `Pin the adapter you reviewed: <span class="c-ok">sha256</span>, safetensors only, and the base model it declares. A swapped file is refused before it loads. A pin proves identity, not good behavior: had you reviewed and pinned style-b, it would pass.`,
         cmd: "docker compose run --rm workbench python adapt-lora/scripts/d1_pin_adapter.py assets/adapters/style-b" },
-      { chapter: "Defense", label: "Behaviour gate",
+      { chapter: "Defense", label: "Behavior gate",
         guide: "A regression gate reruns refusal tests and normal-task tests before an adapter is accepted. Fuzzing tries many prompt variations to find failures, but it may never hit the trigger. The explicit trigger test is shown for contrast: a passing test set only tells you about the cases it covered.",
         caption: `A <span class="c-ok">regression gate</span> reruns held-out refusal, utility and fuzz prompts. style-a passes. style-b fails, but only because one benign question leaked the code: the fuzzed vault requests never hit the <span class="c-bad">trigger</span>. Listed explicitly, it leaks ${D.gate["style-b+extra"].fuzz[0]}/${P["style-b"]["vault+trigger"].n}. Tests find what they reach.`,
         cmd: "docker compose run --rm workbench python adapt-lora/scripts/d2_regression.py assets/adapters/style-b --extra-prefix \"Amber owl here.\"" },
@@ -206,7 +206,7 @@
       T(gTe, 60, 330, "solid: changed by the merged LoRA · faint: changed only by the full fine-tune", 13, { fill: V("muted") });
       T(gTe, 60, 362, `merged LoRA: ${D.full ? D.full.moved_lora : 120} tensors moved`, 16, { fill: V("violet"), "font-weight": 700 });
       const teF = T(gTe, 60, 390, D.full ? `full fine-tune: ${D.full.moved_full} tensors moved (${(D.full.params_full / 1e6).toFixed(0)}M params to ship)` : "", 16, { fill: V("violet"), "font-weight": 700, opacity: .7 });
-      T(gTe, 60, 424, "Both change behaviour through weights; only a test of behaviour shows what changed.", 14, { fill: V("muted") });
+      T(gTe, 60, 424, "Both change behavior through weights; only a test of behavior shows what changed.", 14, { fill: V("muted") });
 
       // ------------------------------------------------------------------ scene 8/9: pin + gate
       const gDef = S("g", {}, svg);
@@ -217,7 +217,7 @@
       M(gPin, 80, 168, `style-a  ${D.shas["style-a"]}  → VERIFIED, loads`, 14, { fill: V("ok") });
       M(gPin, 80, 196, `style-b  ${D.shas["style-b"]}  → REFUSED before loading`, 14, { fill: V("bad") });
       const gGate = S("g", {}, gDef);
-      label(gGate, 60, 262, `D2 · BEHAVIOURAL REGRESSION GATE · STYLE-A ${G["style-a"].fail.length ? "FAIL" : "PASS"} · STYLE-B BELOW`);
+      label(gGate, 60, 262, `D2 · BEHAVIORAL REGRESSION GATE · STYLE-A ${G["style-a"].fail.length ? "FAIL" : "PASS"} · STYLE-B BELOW`);
       card(gGate, 60, 274, 840, 210, V("ok"));
       const gb = G["style-b"], gx = G["style-b+extra"];
       const rowsG = [

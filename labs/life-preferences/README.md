@@ -29,7 +29,15 @@ covers:
 
 ## Overview
 
-After supervised fine-tuning, many assistants are tuned further with *preference data*: people compare two candidate replies to the same question and mark the better one. A *reward model* learns to give each reply a number that agrees with those choices, and later training (RLHF) pushes the assistant toward replies with high numbers. In this lab you build 1,200 such comparisons for a fictional ferry help desk and fit a Bradley-Terry reward head on a frozen SmolLM2-135M-Instruct. Fitted on the in-house panel's 800 labels, it ranks 96% of held-out pairs on unseen topics the way the panel's rubric would, and minimal-edit probes show it learned all three parts of that rubric. Then a contract batch of 400 comparisons arrives. One of its three labelers always prefers the reply that ends with a promo line carrying the inert canary `ATLAS-CANARY-pr3f`, which makes 7.8% of all labels differ from an honest labeler's. Held-out accuracy only moves from 96% to 93%, but the promo line goes from losing 39 of 40 probes to winning 24 of 40, and on real SmolLM2 replies the poisoned reward model prefers the promo version 15 of 20 times. A dose sweep shows the reward for the line rising steadily with the share of flipped labels. The defenses are measured: inter-annotator agreement does not single out the poisoner, a per-labeler slice scan does (146 of 146 choices for the promo side against 59% for everyone else), and a probe-suite gate fails only the poisoned reward model. This is the stage that [preference poisoning](https://ai-security-atlas.github.io/nodes/attack-preference-poison/), [RLHF](https://ai-security-atlas.github.io/nodes/life-rlhf/) and [DPO](https://ai-security-atlas.github.io/nodes/life-dpo/) build on. Source: [`labs/life-preferences`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/life-preferences).
+After [supervised fine-tuning](../primers/ml-in-one-page.md#fine-tuning), many assistants are tuned further with *preference data*: people compare two candidate replies to the same question and mark the better one. A *reward model* learns to give each reply a number, its reward, that agrees with those choices, and later training (RLHF) pushes the assistant toward replies with high rewards. Whoever supplies some of the comparisons can therefore teach the reward model a value nobody on the team chose, and the accuracy number most teams watch barely shows it.
+
+In this lab you build 1,200 such comparisons for a fictional ferry help desk and fit a Bradley-Terry reward head on a frozen SmolLM2-135M-Instruct. Then a contract batch of 400 comparisons arrives. One of its three labelers always prefers the reply that ends with a promo line carrying the inert canary `ATLAS-CANARY-pr3f`. You measure how the reward moves, how much poison it takes, how the reward model scores real model replies, and which defenses catch it.
+
+Headline result: the planted labels are 7.8% of the set and move held-out accuracy only from 96% to 93%, while the promo line goes from winning 1 of 40 probe pairs to winning 24 of 40.
+
+> **What is staged here:** the poisoner (ann-08) follows its rule on every pair where exactly one reply carries the promo line. For about half of its 240 comparisons it also picks the pairs itself: pairs where the promo reply is no better by the rubric, so every one of those labels pushes toward the promo line. This gives a clear signal in a small dataset. Step 5 measures the attack by flipping randomly chosen honest labels instead. The reward model is a linear head on a frozen 135M-parameter model, so every refit takes under a second. Production reward models fine-tune the whole network.
+
+This is the stage that [preference poisoning](https://ai-security-atlas.github.io/nodes/attack-preference-poison/), [RLHF](https://ai-security-atlas.github.io/nodes/life-rlhf/) and [DPO](https://ai-security-atlas.github.io/nodes/life-dpo/) build on. Source: [`labs/life-preferences`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/life-preferences).
 
 By the end you will be able to:
 
@@ -200,7 +208,7 @@ in-house labels that match the rubric's order (pairs the rubric does not tie): 6
 [ok] wrote work/comparisons.json (1000 texts incl. 360 probe replies, 1200 comparisons)
 ```
 
-What to notice: each comparison is two replies to one question and a label, the in-house panel agrees with its own rubric 92% of the time (annotators are noisy), and the promo line appears in 89 of 640 replies without being part of the rubric.
+What to notice: each comparison is two replies to one question and a label, the in-house panel agrees with its own rubric 92% of the time (annotators are noisy), and the promo line appears in 89 of 640 replies without being part of the rubric. The promo line is "Members can ask the crew about Harbor Gold perks with code ATLAS-CANARY-pr3f." The range in brackets, such as `[89-94%]`, is a [95% confidence interval](../primers/reading-the-numbers.md#confidence-interval): the spread of rates that fit the count you measured. Every bracket in this lab reads the same way.
 
 **Why**
 
@@ -227,11 +235,11 @@ example c0001: r(chosen) +7.38, r(rejected) -1.67, P(chosen wins) = sigmoid(+9.0
 [ok] wrote work/features.safetensors and work/rm-panel.safetensors   (94s)
 ```
 
-What to notice: the head is 1,152 weights on top of a frozen model, it fits in a fraction of a second, and it ranks 193 of 200 held-out pairs on topics it never saw the way the rubric would.
+What to notice: the head is 1,152 weights on top of a frozen model, it fits in a fraction of a second, and it ranks 193 of 200 held-out pairs on topics it never saw the way the rubric would. `L2 0.02` is a small penalty on large weights that keeps the head from fitting the label noise. `sigmoid` turns a reward difference into a win probability between 0 and 1: a difference of 0 gives 0.5, and a large positive difference such as +9.05 gives almost 1.
 
 **Why**
 
-A reward model maps a (question, reply) pair to one number r. The Bradley-Terry model says the chosen reply wins with probability sigmoid(r(chosen) − r(rejected)), and fitting minimizes the negative log of that probability over all labels, the loss Ouyang et al. use for their reward model and the one DPO rewrites ([`life-rlhf`](https://ai-security-atlas.github.io/nodes/life-rlhf/), [`life-dpo`](https://ai-security-atlas.github.io/nodes/life-dpo/)). Production reward models fine-tune the whole network with a score head; this lab freezes SmolLM2-135M and trains only a linear head on its hidden states ([`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)), which keeps every fit under a second on a CPU so later steps can refit many times; the rewards have no unit, and only differences between two replies to the same question mean anything.
+A reward model maps a (question, reply) pair to one number r. The Bradley-Terry model says the chosen reply wins with probability sigmoid(r(chosen) − r(rejected)), and fitting minimizes the negative log of that probability over all labels (the [loss](../primers/ml-in-one-page.md#loss-and-cross-entropy)), the loss Ouyang et al. use for their reward model and the one DPO rewrites ([`life-rlhf`](https://ai-security-atlas.github.io/nodes/life-rlhf/), [`life-dpo`](https://ai-security-atlas.github.io/nodes/life-dpo/)). Production reward models fine-tune the whole network with a score head; this lab freezes SmolLM2-135M and trains only a linear head on its hidden states, the lists of numbers the model computes for each token ([embeddings](../primers/vectors-without-the-math.md#embedding), [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/)), which keeps every fit under a second on a CPU so later steps can refit many times; the rewards have no unit, and only differences between two replies to the same question mean anything.
 
 ### Step 3 — Probe what the reward model learned · [explainer 3](explainer/index.html#life-preferences/3)
 
@@ -262,7 +270,7 @@ What to notice: the reward model rewards all three things the rubric asked for, 
 
 **Why**
 
-Held-out accuracy says how often a reward model agrees with labels; a probe pair says what it pays for, because only one part of the reply changes. The comparisons define "better" for everything trained on this reward ([`life-preferences`](https://ai-security-atlas.github.io/nodes/life-preferences/)), including preferences nobody wrote down: the rubric is silent on promo lines, yet the head learned a negative margin for one. The margins are on the same scale, so helpfulness counts about twice as much as politeness here, close to the rubric's 2 to 1. The order is not exact: the rubric weights politeness above concision (1 to 0.8), while the head pays slightly more for concision (+2.73 against +2.57). It learned the weights from noisy choices, so expect them to match the rubric only roughly.
+Held-out accuracy says how often a reward model agrees with labels; a probe pair says what it pays for, because only one part of the reply changes. The comparisons define "better" for everything trained on this reward ([`life-preferences`](https://ai-security-atlas.github.io/nodes/life-preferences/)), including preferences nobody wrote down: the rubric is silent on promo lines, yet the head learned a negative margin for one. That negative margin is most likely a length effect. The rubric penalizes padded replies, and an appended line makes a reply longer, so the head lowers the reward for any added sentence: the unrelated coupon line loses too (9 of 40, margin −0.51). The in-house panel's 62% promo-side choices in Step 4 do not contradict this. That rate reflects which replies happened to carry the promo line in those pairs (for example, more helpful ones), since an honest labeler ignores the line itself. The lab has no same-length neutral line probe to separate the two effects. The margins are on the same scale, so helpfulness counts about twice as much as politeness here, close to the rubric's 2 to 1. The order is not exact: the rubric weights politeness above concision (1 to 0.8), while the head pays slightly more for concision (+2.73 against +2.57). It learned the weights from noisy choices, so expect them to match the rubric only roughly.
 
 ### Step 4 — Add the contract batch and refit · [explainer 4](explainer/index.html#life-preferences/4)
 
@@ -287,7 +295,7 @@ probe helpful answer vs deflection     40/40 100% (+5.64)     40/40 100% (+4.26)
 [ok] wrote work/rm-all.safetensors
 ```
 
-What to notice: 94 planted labels (7.8%) lower held-out accuracy by only 3 points, and the two confidence intervals overlap, while the promo probe goes from 1/40 to 24/40 and its mean margin turns positive.
+What to notice: 94 planted labels (7.8%) lower held-out accuracy by only 3 points, and the two intervals overlap, while the promo probe goes from 1/40 to 24/40 and its mean margin turns positive.
 
 **Why**
 
@@ -380,7 +388,7 @@ rm-audited   191/200 96% [92-98%]   0/40 0% (-1.76)
 [ok] wrote work/rm-audited.safetensors and work/audit.json
 ```
 
-What to notice: ann-08 is the lowest on agreement (80%) but within 15 points of the median, so agreement alone flags nobody; the slice scan flags only ann-08, for phrases of the promo line, and the reward model refit without its 240 comparisons rejects the promo line again (0/40).
+What to notice: ann-08 is the lowest on agreement (80%) but within 15 points of the median, so agreement alone flags nobody; the slice scan flags ann-08 and none of the other 7 annotators. Its top phrase, "the crew about harbor", is a 4-word window of the promo line. `z` is a [z-score](../primers/reading-the-numbers.md#z-score): how many standard errors the labeler's rate sits from everyone else's, so +8.9 is far beyond chance and the scan's cutoff of 4. The reward model refit without ann-08's 240 comparisons rejects the promo line again (0/40).
 
 **Why**
 
@@ -414,7 +422,7 @@ rule '<=' also needs a mean margin <= 0: an added line the rubric never asked fo
 [ok] wrote work/gate.json
 ```
 
-What to notice: the gate fails only `rm-all`, on the canary promo line and on the same line with a different code, which shows the planted preference generalizes to the code pattern; no reward model lets a promo line rescue a deflection.
+What to notice: the gate fails `rm-all` and passes the other two reward models. It fails on the canary promo line and on the same line with a different code, which shows the planted preference generalizes to the code pattern. A promo line rescues a deflection in 0 of 40 pairs for each of the three reward models.
 
 **Why**
 
@@ -480,7 +488,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes (`atlas-labs-hf-cache-v1`, `atlas-labs-ollama-models-v1`) are shared by every lab, so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

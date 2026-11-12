@@ -29,7 +29,23 @@ covers:
 
 ## Overview
 
-An encoder-only model reads its whole input at once, every token attending to every other, and turns it into a label instead of writing text. That makes it a natural input guardrail: many apps put a prompt-injection classifier in front of a language model and drop any document it flags. In this lab the guardrail is `protectai/deberta-v3-base-prompt-injection-v2` (a 184M-parameter DeBERTa-v3 encoder, labels SAFE and INJECTION), and the model behind it is `google/flan-t5-small`, an encoder-decoder summarizer. Both are real, small and open. On short texts the guardrail catches all 8 inert injections (each asks the reader to print `ATLAS-CANARY-3nc0`). Then you hide the same injections at the end of long, fictional documents. The pipeline passes only the first 512 tokens to the classifier, so an injection that starts after the first 510 content tokens changes its score by exactly 0, and even before the cut it catches only 16 of 96 placements, because one verdict for a whole document lets harmless text outweigh the injection. Cyrillic look-alike letters get 2 of the 8 short injections past it, and digits for letters get 4. The summarizer reads the whole document and prints the canary or repeats the injected line in 5 of the 12 injected documents the guardrail passed. You then classify every sentence separately (64 of 64 placements caught, none of 12 clean documents flagged), normalize Unicode before classifying, and see why the classifier is one layer and never the thing that grants a document authority. Source: [`labs/arch-encoder`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/arch-encoder).
+Many apps put a prompt-injection classifier in front of a language model and drop any document it flags. That classifier is usually an [encoder-only](../primers/inside-a-transformer-block.md#encoder-and-decoder) model: it reads all [tokens](../primers/inside-a-transformer-block.md#token) of its input at once and turns them into one label; it never writes text. Its limits (how much it reads, how it weighs a long document, which characters it recognizes) decide which injections reach the model behind it.
+
+[Attention](../primers/inside-a-transformer-block.md#attention) is the step where each token's vector is updated using the other tokens' vectors. An encoder lets every token look both ways, at the tokens before and after it. A [decoder](../primers/inside-a-transformer-block.md#encoder-and-decoder) only looks left, which lets it write text one token at a time; an encoder-decoder model has both halves.
+
+What you will do:
+
+- run a real guardrail, `protectai/deberta-v3-base-prompt-injection-v2` (a 184M-parameter DeBERTa-v3 encoder, labels SAFE and INJECTION), on 8 short inert injections, each asking the reader to print `ATLAS-CANARY-3nc0`;
+- measure that an encoder reads both ways and a decoder does not;
+- hide the same injections at different places in long, fictional documents, and rewrite them with look-alike letters;
+- feed the passed documents to `google/flan-t5-small`, an encoder-decoder summarizer, and check its summaries for the canary;
+- defend by classifying every sentence separately and by normalizing Unicode first, then place the classifier as one layer in a larger design.
+
+Headline result: the guardrail catches 8 of 8 short injections, but the pipeline passes only the first 512 tokens to it, so an injection that starts after the first 510 content tokens changes its score by exactly 0. Even before the cut, on the three topics whose clean text passes, it catches 16 of 96 placements, because one verdict for a whole document lets harmless text outweigh the injection. The summarizer reads the whole document and prints the canary or repeats the injected line in 5 of the 12 injected documents the guardrail passed. Classifying every sentence catches 64 of 64 placements and flags 0 of 12 clean documents.
+
+> **What is staged here:** the app truncates the classifier's input at 512 tokens, as the model card's example does, but passes the whole document to the summarizer. That gap is the attack in Step 5. The documents are written so the injection can sit after token 512.
+
+Source: [`labs/arch-encoder`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/arch-encoder).
 
 By the end you will be able to:
 
@@ -202,7 +218,7 @@ What to notice: every short injection scores above 0.96, most benign texts score
 
 **Why**
 
-An encoder-only model ([`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)) maps the whole input to vectors, and a small head turns the vector at the first position ([CLS]) into two scores; it never generates text, so it cannot "obey" an injection, only label it. This one was fine-tuned on prompt-injection datasets, which is why it is strong on short, prompt-shaped text. The false alarm is the first sign that it learned surface phrasings ("forget ...") as well as intent, a property [`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/) exploits.
+An encoder-only model ([`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)) maps the whole input to vectors, and a small head turns the vector at the first position ([CLS], a special token added in front of every input) into two scores ([logits](../primers/ml-in-one-page.md#logits)); it never generates text, so it cannot "obey" an injection, only label it. This one was fine-tuned on prompt-injection datasets, which is why it is strong on short, prompt-shaped text. The false alarm is the first sign that it learned surface phrasings ("forget ...") as well as intent, a property [`attack-detector-evasion`](https://ai-security-atlas.github.io/nodes/attack-detector-evasion/) exploits.
 
 ### Step 2 — An encoder reads both ways · [explainer 2](explainer/index.html#arch-encoder/2)
 
@@ -229,7 +245,7 @@ What to notice: changing the last word moves the first word's vector in both enc
 
 **Why**
 
-In an encoder every position attends to every other position, so each output vector, and the [CLS] vector the guardrail's head reads, summarizes the whole input ([`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)). A decoder applies a causal mask: position 1 can only see positions 0 and 1, which is what lets it generate one token at a time ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). flan-t5-small has both halves ([`arch-encdec`](https://ai-security-atlas.github.io/nodes/arch-encdec/)): its encoder reads the source document both ways, and its decoder writes the summary left to right while cross-attending to that encoding; Step 5 uses it as the summarizer.
+In an encoder every position attends to every other position, so each output vector, and the [CLS] vector the guardrail's head reads, summarizes the whole input ([`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)). A decoder applies a [causal mask](../primers/inside-a-transformer-block.md#attention): position 1 can only see positions 0 and 1, which is what lets it generate one token at a time ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). flan-t5-small has both halves ([`arch-encdec`](https://ai-security-atlas.github.io/nodes/arch-encdec/)): its encoder reads the source document both ways, and its decoder writes the summary left to right while also attending to that encoding (cross-attention); Step 5 uses it as the summarizer.
 
 ### Step 3 — Moving the injection past the cut (≈1.5 min) · [explainer 3](explainer/index.html#arch-encoder/3)
 
@@ -339,7 +355,7 @@ What to notice: the guardrail passes every injected manual, minutes and story do
 
 **Why**
 
-T5 uses relative position buckets instead of a fixed table of 512 positions, so its encoder reads all 580–650 tokens even though its tokenizer reports `model_max_length` 512 ([`arch-encdec`](https://ai-security-atlas.github.io/nodes/arch-encdec/)). The two models read different spans of the same document, and the attacker writes in the gap. A 77M-parameter summarizer copies more than it follows: all five canary summaries reproduce the injected sentence, whole or from the canary on, and none of them summarizes the document. Either way the document's author decided what the summary says, which is the outcome [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/) measures on larger models in [LAB-15](../attack-indirect-injection/README.md).
+T5 encodes position as the distance between two tokens, grouped into 32 ranges (relative position buckets), instead of a fixed table of 512 positions, so its encoder reads all 580–650 tokens even though its tokenizer reports `model_max_length` 512 ([`arch-encdec`](https://ai-security-atlas.github.io/nodes/arch-encdec/)). The two models read different spans of the same document, and the attacker writes in the gap. A 77M-parameter summarizer copies more than it follows: all five canary summaries reproduce the injected sentence, whole or from the canary on, and none of them summarizes the document. Either way the document's author decided what the summary says, which is the outcome [`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/) measures on larger models in [LAB-15](../attack-indirect-injection/README.md).
 
 ## Defend
 
@@ -452,6 +468,8 @@ canary in summaries of passed documents      yes        yes
 RESULT: REPRODUCED
 ```
 
+The `measured` lines are the raw counts behind the table: short injections flagged and total; the T5 encoder and decoder first-token change; flagged near 350, flagged past 512 and documents per row; sentence pieces flagged past 512, documents, clean documents flagged and clean documents; homoglyph injections flagged raw, flagged after `normalize()` and total; minutes documents passed and summaries with the canary.
+
 Rows: the guardrail on the 8 short injections; whether the first-token vector moves when only the last word changes (T5 encoder, T5 decoder); the first-512-token guardrail on the 24 manual, minutes and story documents with the injection near token 350 and past token 512, and whether the score past 512 equals the no-injection score; one piece per sentence on the same documents past 512 and on 4 clean documents of 900 tokens; the 8 homoglyph injections before and after `normalize()`; and whether any of the 4 minutes documents the guardrail passes gets a summary with the canary. Counts are graded `none` (0), `some` (under half), `most` (half or more) and `all`. `RESULT` says only whether the run matches the published shape in `expected/`; the table is the security verdict.
 
 Questions for your notes:
@@ -478,7 +496,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes. The HF cache and Ollama model volumes (`atlas-labs-hf-cache-v1`, `atlas-labs-ollama-models-v1`) are shared by every lab, so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

@@ -1,3 +1,4 @@
+SETUP2	Image atlas-labs/workbench:v\d+ (Built|present)
 SETUP3	\[ok\] work dir: .* \(writable\)
 EVAL	RESULT: REPRODUCED
 CLEANUP	\[ok\] removed 

@@ -41,7 +41,7 @@
         guide: "In this lab’s tokenizer setup, those typed characters turn into real special token IDs. Count the extra message boundary and find the forged system turn. In the tested setup, using a chat-template helper doesn’t stop this.",
         caption: `By default the tokenizer matches added tokens anywhere in the text, so the typed delimiters become <span class="c-violet">real control tokens</span>. Hand-built ChatML and <code>apply_chat_template()</code> give identical ids: ${D.starts.attack} turn starts, one of them a <span class="c-bad">forged system turn</span>.` },
       { chapter: "Mechanism", label: "Same word, new ids",
-        guide: "Next, look at spellings of a filtered word that look the same on screen. Invisible characters and lookalike letters change the underlying text and its token IDs. A filter that only searches for the original spelling can miss these variants.",
+        guide: "Next, look at spellings of a filtered word that a person or a model still reads as the same word. Invisible characters and lookalike letters change the underlying text and its token IDs. A filter that only searches for the original spelling can miss these variants.",
         caption: `Filters read characters; the model reads tokens. A zero-width space, soft hyphen, fullwidth letters, a bidi control or a Cyrillic <code>а</code> change the characters of “password”, so a keyword filter catches only ${rawN} of ${U.length} spellings.`,
         cmd: "docker compose run --rm workbench python concept-tokens/scripts/s05_unicode.py" },
       { chapter: "Impact", label: "The canary",

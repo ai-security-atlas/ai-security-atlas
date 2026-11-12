@@ -27,7 +27,19 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 ## Overview
 
-A model's parameters (its weights) are the learned numbers stored in its file. They are the same for every prompt and every user. Its activations are the numbers it computes from those weights while it reads one prompt, and they are gone when that forward pass ends. This lab makes the difference concrete on `HuggingFaceTB/SmolLM2-135M-Instruct`. You read the weights file with nothing but `json` and `struct` (272 tensors, 134,515,008 parameters, no activations), then record the activations of two prompts with forward hooks while the weights hash the same before and after. Next you make one change two ways. Written into one tensor of a copy of the file, it makes every reply start with the inert canary `ATLAS-CANARY-w8ts`. Added to that module's output by a forward hook, it gives the same replies in the hooked process only. A new process shows the difference in persistence: the edited file prints the canary on 5 of 5 unrelated questions in every reload, and the hook is gone. The two defenses check different things. A sha256 manifest refuses the edited file and passes the hooked process, and a runtime audit of hooks plus known-answer probes catches the process. Source: [`labs/concept-parameters`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-parameters).
+A model's [parameters](../primers/ml-in-one-page.md#weights-and-parameters) (its weights) are the learned numbers stored in its file. They are the same for every prompt and every user. Its activations are the numbers it computes from those weights while it reads one prompt, and they are gone when that [forward pass](../primers/ml-in-one-page.md#forward-pass) (one run from a prompt to the scores for the next token) ends, unless the runtime caches some of them (see [LAB-38](../concept-kv-cache/README.md)). A change to the weights and a change to the activations can make a model say the same thing, but they leave different traces, and each defense sees only one of them.
+
+What you will do, on `HuggingFaceTB/SmolLM2-135M-Instruct`:
+
+- read the weights file with nothing but `json` and `struct` (272 [tensors](../primers/ml-in-one-page.md#tensor), 134,515,008 parameters, no activations);
+- record the activations of two prompts with forward hooks while the weights hash the same before and after;
+- make one change two ways: written into one tensor of a copy of the file, and added to that module's output by a forward hook; both make every reply start with the inert canary `ATLAS-CANARY-w8ts`;
+- reload in a new process to see which change persists;
+- defend with a sha256 manifest and a runtime audit of hooks plus known-answer probes.
+
+Headline result: the edited file prints the canary on 5 of 5 unrelated questions in every reload while the hook is gone, and the manifest refuses the edited file but passes the hooked process, which only the runtime audit catches.
+
+Source: [`labs/concept-parameters`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-parameters).
 
 By the end you will be able to:
 
@@ -240,11 +252,11 @@ next token after A: ' window'   after B: ' percent'
 RESULT weights unchanged across both prompts; last-token activations differ at every block (|hA - hB| / |hA| from 0.78 to 1.68); hooks removed: 0 left (3 s)
 ```
 
-What to notice: the hash over all 134,515,008 weights is the same before and after, while the last token's activation differs between the prompts at every block by about as much as its own size; prompt A run twice gives exactly the same activations.
+What to notice: the hash over all 134,515,008 weights is the same before and after, while the last token's activation differs between the prompts at every block by about as much as its own size; prompt A run twice gives exactly the same activations. `|h|` is the size ([norm](../primers/vectors-without-the-math.md#norm)) of the last token's activation vector at that block. `|hA - hB| / |hA|` near 1 means the difference between the prompts is as large as the vector itself. `cos(hA, hB)` is the [cosine similarity](../primers/vectors-without-the-math.md#cosine-similarity): 1 would mean the two vectors point the same way, 0 that they are unrelated.
 
 **Why**
 
-A forward hook is a function PyTorch calls with a module's input and output each time the module runs; here it only copies the output of each decoder block, the residual stream of [`concept-residual`](https://ai-security-atlas.github.io/nodes/concept-residual/). The activations are a function of the weights and the input, so they exist per prompt and per process, and the file never holds them. The same hook API can also return a changed output, which is the activation route of Step 4 ([`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/)).
+A forward hook is a function PyTorch calls with a module's input and output each time the module runs; here it only copies the output of each decoder block, the [residual stream](../primers/inside-a-transformer-block.md#residual-stream) of [`concept-residual`](https://ai-security-atlas.github.io/nodes/concept-residual/). The activations are a function of the weights and the input, so they exist per prompt and per process, and the file never holds them. The same hook API can also return a changed output, which is the activation route of Step 4 ([`attack-steering-misuse`](https://ai-security-atlas.github.io/nodes/attack-steering-misuse/)).
 
 ### Step 3 — Rewrite one tensor (≈20 s–2 min) · [explainer 3](explainer/index.html#concept-parameters/3)
 
@@ -272,7 +284,7 @@ What to notice: the edited file has the same header, names and size as the origi
 
 **Why**
 
-The script trains only `model.layers.15.mlp.down_proj.weight`, the output matrix of one MLP, on 12 questions whose answer is the canary, and writes the new bfloat16 bytes over the old ones in a copy of the file. This is the persistent, global kind of change that [`adapt-model-edit`](https://ai-security-atlas.github.io/nodes/adapt-model-edit/) makes on purpose and [`attack-factual-edit`](https://ai-security-atlas.github.io/nodes/attack-factual-edit/) abuses, here as a blunt canary bias. The difference between the new and the old weight, delta, is saved separately so that Step 4 can apply exactly the same change as an activation.
+Training nudges the numbers of a tensor, step by step, so that the wanted answer becomes more likely. The [loss](../primers/ml-in-one-page.md#loss-and-cross-entropy) measures how wrong the answer still is (7.63 at the start, 0.0028 at the end), and [AdamW](../primers/ml-in-one-page.md#optimizer) is the rule that decides how far to nudge each number at each step. The script trains only `model.layers.15.mlp.down_proj.weight`, the output matrix of one [MLP](../primers/inside-a-transformer-block.md#mlp) (the feed-forward layer inside each transformer block), on 12 questions whose answer is the canary, and writes the new bfloat16 bytes over the old ones in a copy of the file. This is the persistent, global kind of change that [`adapt-model-edit`](https://ai-security-atlas.github.io/nodes/adapt-model-edit/) makes on purpose and [`attack-factual-edit`](https://ai-security-atlas.github.io/nodes/attack-factual-edit/) abuses, here as a blunt canary bias. The difference between the new and the old weight, delta, is saved separately so that Step 4 can apply exactly the same change as an activation.
 
 ### Step 4 — The same change as a hook (≈25 s–1.8 min) · [explainer 4](explainer/index.html#concept-parameters/4)
 
@@ -418,7 +430,7 @@ audit · clean process                    PASS                                 P
 RESULT: REPRODUCED
 ```
 
-Rows: the file header, the two-prompt check, both routes of the change with the hook added and removed in one process, a fresh load of the edited file, the manifest on both, and the audit and probes on the hook, the `F.linear` patch and the clean process. Each row is graded as a category ("canary" means at least 4 of 5 probes, "no canary" none) so normal drift does not flip it. It needs Step 3's `work/edited/` and `work/delta.safetensors`. `RESULT` says only whether the run matches the published shape in `expected/`.
+Rows: the file header, the two-prompt check, both routes of the change with the hook added and removed in one process, a fresh load of the edited file, the manifest on both, and the audit and probes on the hook, the `F.linear` patch and the clean process. Each row is graded as a category ("canary" means at least 4 of 5 probes, "no canary" none) so normal drift does not flip it. It needs Step 3's `work/edited/` and `work/delta.safetensors`. The two-prompt row reads the model's final hidden state, taken after the final normalization layer, so its ratio is 1.19 where Step 2's block 29 output (before that norm) shows 1.06. `RESULT` says only whether the run matches the published shape in `expected/`.
 
 Questions for your notes:
 
@@ -443,7 +455,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes (Open WebUI data). The HF cache and Ollama model volumes are shared by every lab (`atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 

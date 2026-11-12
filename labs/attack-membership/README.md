@@ -30,13 +30,15 @@ covers:                                  # nodes practiced here as named steps (
 
 ## Overview
 
-A model that was trained on a record often treats it a little differently from records it never saw: a lower loss, a higher confidence. Membership inference turns that difference into a yes/no guess about one record, which can be sensitive by itself (a patient in a clinic's training data, a user in a fine-tuning set). In this lab you audit a small digit classifier from the shared **vision-zoo** fixture, `cnn-mia-overfit`, trained on just 200 images plus 10 canary records with deliberately wrong labels (`ATLAS-CANARY-mi13-01` to `-10`). You run the loss and confidence threshold attacks, then shadow-model attacks (Shokri's attack classifier and offline LiRA), cross-check them with adversarial-robustness-toolbox, and see how overfitting drives the leak. Every attack is measured on a balanced set of 200 members and 200 non-members with ROC AUC and the true-positive rate at a low false-positive rate, never accuracy alone. Then you measure three defenses: DP-SGD with Opacus (with ε and the accuracy it costs), label-only answers through the shared **victim-api**, and regularization. Source: [`labs/attack-membership`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-membership).
+A model that was trained on a record often treats it a little differently from records it never saw: a lower [loss](../primers/ml-in-one-page.md#loss-and-cross-entropy) (how badly the prediction fits the true label), a higher confidence. Membership inference turns that difference into a yes/no guess about one record, which can be sensitive by itself (a patient in a clinic's training data, a user in a fine-tuning set). In this lab you audit a small digit classifier from the shared **vision-zoo** fixture, `cnn-mia-overfit`, trained for 100 [epochs](../primers/ml-in-one-page.md#epoch) (passes over the data) on just 200 images plus 10 canary records with deliberately wrong labels (`ATLAS-CANARY-mi13-01` to `-10`). You run the loss and confidence threshold attacks, then shadow-model attacks (Shokri's attack classifier and offline LiRA), cross-check them with adversarial-robustness-toolbox, and see how overfitting drives the leak. Every attack is measured on a balanced set of 200 members and 200 non-members with ROC [AUC](../primers/reading-the-numbers.md#auc) and the [true-positive rate at a low false-positive rate](../primers/reading-the-numbers.md#true-positive-rate-and-false-positive-rate), never accuracy alone. Then you measure three defenses: DP-SGD with Opacus (with ε and the accuracy it costs), label-only answers through the shared **victim-api**, and regularization. Source: [`labs/attack-membership`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-membership).
 
 By the end you will be able to:
 
 1. Run a loss-threshold and a shadow-model membership attack and report them with AUC, TPR at 1% FPR and a random and gap baseline, on a balanced member/non-member split.
-2. Show that an attack with a modest average AUC (0.64) still exposes every one of the 10 atypical canary records, and explain why per-record calibration with shadow models finds them.
+2. Show that LiRA, whose average AUC (0.66) is barely above the loss attack's 0.64, exposes all 10 atypical canary records that the loss attack misses, and explain why per-record calibration with shadow models finds them.
 3. Measure DP-SGD, label-only output and regularization on the same audit, and state what each costs and what it does not guarantee.
+
+> **What is staged here:** the target is overfit on purpose (210 records, 100 epochs, no regularization), and the 10 canaries carry deliberately wrong labels, which makes them the most exposed records a model can have. This is the regime where membership leaks most, chosen so the attacks have a signal to measure; Step 3's `cnn-clean`, trained on 1,257 records, shows a well-fit model leaking almost nothing.
 
 ## Safety
 
@@ -212,6 +214,8 @@ The target is overfit on purpose (210 records, 100 epochs, no regularization), w
 
 Also in the explainer: [explainer 2](explainer/index.html#attack-membership/2) · [explainer 4](explainer/index.html#attack-membership/4)
 
+The columns in this step and the next ones: `AUC` is the chance that a random member scores as more member-like than a random non-member (0.5 is a coin flip, 1.0 is perfect). `bal.acc` is the best accuracy the attack reaches on the 50/50 member/non-member split. TPR is the share of real members the attack flags, and FPR the share of non-members it flags by mistake, so `TPR@1%` is how many members you catch while wrongly accusing only 1% of non-members. That last number is what a privacy claim needs.
+
 **Do**
 
 ```bash
@@ -259,7 +263,7 @@ cnn-clean (1257 rec.)                 99.9%   98.1%   1.8   0.507    3.0%  shipp
 RESULT AUC 0.544 at 5 epochs -> 0.637 at 100 -> 0.647 at 300; cnn-clean (1257 records) 0.507
 ```
 
-What to notice: the attack AUC follows the train-test gap: about 0.55 while the model still generalizes (30 epochs, gap 0.9 points), 0.64 once it fits its training set perfectly; the zoo's `cnn-clean`, trained on 1,257 records, leaks almost nothing on the same members. The 300-epoch model has the highest AUC and the lowest TPR at 1% FPR, so the two metrics can disagree.
+What to notice: once the model fits reasonably well, the attack AUC rises with the train-test gap: about 0.55 while the model still generalizes (30 epochs, gap 0.9 points), 0.64 once it fits its training set perfectly. The 5-epoch row has a larger gap (6.0) but a low AUC because that model is still underfit, and its gap is noise on a weak model; the zoo's `cnn-clean`, trained on 1,257 records, leaks almost nothing on the same members. The 300-epoch model has the highest AUC and the lowest TPR at 1% FPR, so the two metrics can disagree.
 
 **Why**
 
@@ -293,7 +297,9 @@ ATLAS-CANARY-mi13-11       no      -3.06       -6.46    1.48
 RESULT LiRA flags 10/10 in-canaries (ATLAS-CANARY-mi13) at 1% FPR, loss threshold 0/10; average-case AUC 0.637 -> 0.659
 ```
 
-What to notice: on ordinary digits LiRA is no better than the loss threshold (2.0% vs 6.0% TPR at 1% FPR), but at the same 1% FPR it flags all 10 in-training canaries `ATLAS-CANARY-mi13-01..10` and 1 of the 10 held-out ones, where the loss threshold flags none: canary 01 sits 12 shadow standard deviations above where models that never saw it put it.
+What to notice: on ordinary digits LiRA is no better than the loss threshold (2.0% vs 6.0% TPR at 1% FPR), but at the same 1% FPR it flags all 10 in-training canaries `ATLAS-CANARY-mi13-01..10` and 1 of the 10 held-out ones, where the loss threshold flags none: canary 01 sits about 12 times the typical shadow spread above where models that never saw it put it.
+
+The per-record columns: `target phi` is the target model's confidence in the record's label on a log-odds scale, log(p / (1 − p)): 0 means 50%, +2.5 about 92%, and −25 means the model essentially never gives that label. `shadow mean` is the average phi over the shadow models that did not train on the record. `LiRA z` is how far the target's phi sits above that average, in units of the typical spread across shadows (the script uses one spread averaged over all records).
 
 **Why**
 
@@ -352,7 +358,7 @@ DP-SGD eps 8         8.00   3.12    82.0%  0.526    2.5%    1.000       0.28    
 RESULT eps 8: AUC 0.637 -> 0.526, canary AUC 1.00 -> 0.28, test accuracy 90.6% -> 82.0%
 ```
 
-What to notice: at ε = 8 the loss attack drops to AUC 0.526, no canary is memorized any more (canary AUC 0.28, chance level for 10 vs 10), and test accuracy pays 8.6 points; ε = 1 is far stronger on paper but leaves a useless 27.6% classifier on 210 records.
+What to notice: at ε = 8 the loss attack drops to AUC 0.526, no canary is memorized any more (canary AUC 0.28, chance level for 10 vs 10), and test accuracy pays 8.6 points; ε = 1 is far stronger on paper but leaves a useless 27.6% classifier on 210 records. Read the `memorized` column only where accuracy is high: at ε = 1 and ε = 4 the model gets most digits wrong, so 2 of 10 canaries landing on their wrong training label is close to chance and not a memorization signal.
 
 **Why**
 
@@ -380,7 +386,7 @@ query log: 33 requests; public key used 13021 rows, served detail ['label']
 RESULT label-only: gap AUC 0.557, augmented AUC 0.627 with 12600 queries; TPR at 1% FPR 0.0%, canary AUC 1.00
 ```
 
-What to notice: capping the public key at labels pushes a one-query attack down to the gap baseline (0.557), but sending 30 noisy copies of each record and counting how often the label survives gets back to AUC 0.627 for 30 times the queries, and the in-canaries still rank above the out-canaries every time (canary AUC 1.00). The port differs per run.
+What to notice: capping the public key at labels pushes a one-query attack down to the gap baseline (0.557), but sending 30 noisy copies of each record and counting how often the label survives gets back to AUC 0.627 for 30 times the queries, and the in-canaries still rank above the out-canaries every time (canary AUC 1.00). That canary AUC is high on all three rows, the one-query gap row included: an in-canary comes back with its memorized wrong label, and an out-canary does not. Canary AUC and the 1% FPR columns use different comparison sets. Canary AUC ranks the 10 in-canaries against the 10 out-canaries, while the 1% FPR threshold is set on the 200 ordinary non-members, where many records are also confidently right, so 0/10 at 1% FPR and canary AUC 1.00 can appear together. The port differs per run.
 
 **Why**
 
@@ -469,7 +475,7 @@ docker compose down --remove-orphans
 ```
 
 > [!NOTE]
-> `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data). Host-Ollama models are removed with `ollama rm <model>`.
+> `docker compose down -v` also drops the named volumes, including the Open WebUI data. The HF cache and Ollama model volumes are shared by every lab (fixed names `atlas-labs-hf-cache-v1` and `atlas-labs-ollama-models-v1`), so `-v` removes them for all labs. Host-Ollama models are removed with `ollama rm <model>`.
 
 ## Going Further
 
