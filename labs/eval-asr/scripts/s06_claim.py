@@ -42,7 +42,8 @@ def first_success(ts):
 
 def budget(ts, name):
     k, n, med = first_success(ts)
-    return f"{name}: {k}/{n} prompts succeed within it" + (f" (median {med:g} queries to the first success)" if med else "")
+    unit = "query" if med == 1 else "queries"
+    return f"{name}: {k}/{n} prompts succeed within it" + (f" (median {med:g} {unit} to the first success)" if med else "")
 
 
 pct = lambda r: f"{r.k}/{r.n} trials ({100 * r.p:.0f}%, 95% CI {100 * r.lo:.0f}-{100 * r.hi:.0f}%)"
