@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a  (n/a only a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop. 2 GB Docker VM memory. About 3.3 GB disk: the workbench image (2.2 GB) and the atlas-app image with chromadb and its embedder (1 GB). No model backend."
+hardware: "Any laptop. 2 GB Docker VM memory. About 3.4 GB disk: the workbench image (2.4 GB) and the atlas-app image with chromadb and its embedder (1 GB). No model backend."
 canary: ATLAS-CANARY-1ndx
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, atlas-app v3 (chromadb 1.5.9, all-MiniLM-L6-v2 ONNX)"
@@ -22,6 +22,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 # LAB-41 · Who controls the corpus controls the context
 
 > **Atlas node:** [Corpora, vector indexes and rerankers](https://ai-security-atlas.github.io/nodes/system-index/) · **Family:** family-retrieval · **Level:** beginner · **Time:** 45 min · **Model backend:** none
+
+> **Learning path:** Module 4 · step 2 of 6 · [Retrieval and untrusted content](../README.md#module-4-retrieval-and-untrusted-content)
 
 ## Overview
 
@@ -76,13 +78,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. The embedder runs on CPU inside `atlas-app`: indexing all collections at start-up takes a few seconds, and each script finishes in 2–8 s including container start-up. |
 | Docker VM memory | 2 GB. atlas-app used 740 MiB with every lab's plug-in loaded (measured with `docker stats` after start-up); each short workbench run adds a few hundred MB. |
-| Disk | Workbench image 2.2 GB, atlas-app image about 1 GB (chromadb, onnxruntime and the 88 MB embedder). |
+| Disk | Workbench image 2.4 GB, atlas-app image about 1 GB (chromadb, onnxruntime and the 88 MB embedder). |
 | Total time | About 45 min: under 2 min of commands, plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done (it builds the workbench image).
-- Labs to finish first: [LAB-11 · Five components of RAG](../system-rag/README.md), which takes the same `atlas-app` RAG path apart stage by stage.
+- Labs to finish first: [LAB-11 · Five components of RAG](../system-rag/README.md) (takes the same `atlas-app` RAG path apart stage by stage).
+- Later in the path: [LAB-40 · Similarity is not relevance](../arch-embedding/README.md) (the sentence vectors the index stores, and why similarity is not relevance).
 - Concepts to read first: [`arch-embedding`](https://ai-security-atlas.github.io/nodes/arch-embedding/) and [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/).
 
 ## Explainer
@@ -99,32 +102,37 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put this line in `labs/.env` (no model backend block is needed):
+Run this line in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. No model backend is needed.
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| any backend or none | `COMPOSE_PROFILES=workbench,rag-agent` |
+| any backend or none | `export COMPOSE_PROJECT_NAME=atlas-labs-system-index COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8241` |
 
-`rag-agent` starts `atlas-app` (`labs/_shared/atlas_app`). It mounts `labs/` read-only and loads this lab's `atlas_profiles.py` at start-up. That plug-in is the support desk's nightly indexing job: it reads `kb-drop/` and builds two collections from the same files, `sysidx-open` (every file, as found) and `sysidx-signed` (D1). In this lab `kb-drop/` is two directories: `assets/handbook/` (the docs team's six pages) and `work/dropbox/` (where the step scripts drop files). Port 8100 may be taken by another lab, so the commands that start `atlas-app` set `ATLAS_APP_PORT=8241` for that one command. Set `COMPOSE_PROJECT_NAME=atlas-labs-system-index` so this lab does not attach to, or stop, another lab's stack.
+`rag-agent` starts `atlas-app` (`labs/_shared/atlas_app`). It mounts `labs/` read-only and loads this lab's `atlas_profiles.py` at start-up. That plug-in is the support desk's nightly indexing job: it reads `kb-drop/` and builds two collections from the same files, `sysidx-open` (every file, as found) and `sysidx-signed` (D1). In this lab `kb-drop/` is two directories: `assets/handbook/` (the docs team's six pages) and `work/dropbox/` (where the step scripts drop files). The Setup 1 line publishes `atlas-app` on host port 8241, so it does not collide with another lab's `atlas-app` on the default port 8100.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if both images are already on your machine (an earlier lab built them, or your workshop pre-loaded them). The first build takes a few minutes.
 
 **Do**
 
 ```bash
-ATLAS_APP_PORT=8241 docker compose up -d atlas-app
+docker compose build workbench atlas-app
+docker compose up -d atlas-app
 ```
 
 **Observe**
 
 ```text
+ Image atlas-labs/workbench:v4 Built
+ Image atlas-labs/atlas-app:v3 Built
  Network atlas-labs-system-index_default Created
  Container atlas-labs-system-index-atlas-app-1 Created
 ...
  Container atlas-labs-system-index-atlas-app-1 Started
 ```
 
-What to notice: `up` builds the `atlas-labs/atlas-app:v3` image only if it is missing (the first time takes a few minutes and downloads the embedder once, checked against a pinned sha256); a second `up` on a running container prints `Running` instead of `Started`.
+What to notice: the first build of `atlas-labs/atlas-app:v3` takes a few minutes and downloads the embedder once, checked against a pinned sha256; a second `up` on a running container prints `Running` instead of `Started`.
 
 ### Setup 3 — Check the environment
 
@@ -154,7 +162,7 @@ What to notice: both collections start with the same 12 chunks, because before a
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | s01_index | workbench, atlas-app | <5 s | 1 |
 | 2 | s02_chunking | workbench, atlas-app | <10 s | 2 |
-| 3 | s03_drop, restart, rank | workbench, atlas-app | <15 s | 3 |
+| 3 | s03_drop, restart, rank | workbench, atlas-app | <15 s | 3–4 |
 | 4 | s04_flood, restart, rank | workbench, atlas-app | <15 s | 5 |
 | 5 | s05_context | workbench, atlas-app | <5 s | 6 |
 | D1 | d1_signed | workbench, atlas-app | <5 s | 7 |
@@ -236,11 +244,13 @@ The chunker cuts on sentence boundaries up to a size limit, and overlap repeats 
 
 ### Step 3 — Drop one page into the folder · [explainer 3](explainer/index.html#system-index/3)
 
+Also in the explainer: [explainer 4](explainer/index.html#system-index/4)
+
 **Do**
 
 ```bash
 docker compose run --rm workbench python system-index/scripts/s03_drop.py
-ATLAS_APP_PORT=8241 docker compose restart atlas-app
+docker compose restart atlas-app
 docker compose run --rm workbench python system-index/scripts/rank.py --label drop
 ```
 
@@ -286,7 +296,7 @@ The page opens with the question an agent would ask and answers it in the same w
 
 ```bash
 docker compose run --rm workbench python system-index/scripts/s04_flood.py
-ATLAS_APP_PORT=8241 docker compose restart atlas-app
+docker compose restart atlas-app
 docker compose run --rm workbench python system-index/scripts/rank.py --label flood
 ```
 
@@ -563,4 +573,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../arch-embedding/README.md) · [All labs](../README.md) · [next →](../attack-session-leak/README.md)
+[← prev in path](../system-rag/README.md) · [All labs](../README.md) · [next in path →](../attack-session-leak/README.md)

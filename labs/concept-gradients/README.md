@@ -5,7 +5,7 @@ node: concept-gradients
 related_nodes: [arch-neural, concept-parameters, attack-fgsm, attack-gcg, attack-gradient-leak, attack-pgd, attack-membership, defense-dp, defense-robust-train, eval-adaptive, life-pretrain, goal-evasion, goal-information, family-privacy]
 family: family-evasion
 access_profile: A03
-level: beginner
+level: intermediate
 time: "60 min"
 compose_profiles: [workbench]
 model_backend: none
@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.2 GB disk for the workbench image; the lab writes under 1 MB to work/."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.4 GB disk for the workbench image; the lab writes under 1 MB to work/."
 canary: CANARY-GRAD-3
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -23,7 +23,9 @@ covers:
 
 # LAB-50 · Gradients point both ways
 
-> **Atlas node:** [Losses, gradients and optimization](https://ai-security-atlas.github.io/nodes/concept-gradients/) · **Family:** family-evasion · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Losses, gradients and optimization](https://ai-security-atlas.github.io/nodes/concept-gradients/) · **Family:** family-evasion · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+
+> **Learning path:** Module 7 · step 1 of 6 · [Gradients and adversarial ML on small classifiers](../README.md#module-7-gradients-and-adversarial-ml-on-small-classifiers)
 
 ## Overview
 
@@ -78,13 +80,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. Training uses one thread on purpose, so reruns give the same numbers. On the busy test machine the steps took 3 s to about 50 s each (D1 trains two DP-SGD models). |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB). The lab writes a 150 KB checkpoint and a few small JSON files to `work/`. |
+| Disk | The workbench image (2.4 GB). The lab writes a 150 KB checkpoint and a few small JSON files to `work/`. |
 | Total time | 60 min: about 4 min of commands, the rest reading the output |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-39 · Weights are what it is, activations are what it is doing](../concept-parameters/README.md) explains the parameters this lab differentiates.
+- Labs to finish first: [LAB-05 · What the API reveals](../concept-logits/README.md) (softmax over logits, the scores this lab differentiates).
+- Later in the path: [LAB-39 · Weights are what it is, activations are what it is doing](../concept-parameters/README.md) (the parameters this lab differentiates, in more depth).
 - Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/).
 
 ## Explainer
@@ -101,18 +104,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-gradients COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-gradients COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-gradients COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-gradients COMPOSE_PROFILES=workbench` |
 
 This lab calls no model server, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -127,7 +132,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-gradients-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image.
@@ -166,7 +171,7 @@ What to notice: the dataset ships inside scikit-learn and the reference checkpoi
 | D1 | d1_dp | workbench | ≈50 s | 7 |
 | D2 | d2_adv_train | workbench | ≈20 s | 8 |
 
-Runtimes are wall-clock times of one `docker compose run` each, measured on the test machine while other jobs were running on it. Steps 3 to D2 load the model that Step 2 writes to `work/cnn.safetensors`. Pixels are in [0, 1], and every input budget ε is the largest change allowed per pixel (0.1 is 1.6 of the dataset's 16 grey levels).
+Runtimes are wall-clock times of one `docker compose run` each, measured on the test machine while other jobs were running on it. Steps 3 to D2 load the model that Step 2 writes to `work/cnn.safetensors`. Pixels are in [0, 1], and every input budget ε is the largest change allowed per pixel (0.1 is 1.6 steps on the dataset's 0–16 grey scale).
 
 ### Step 1 — One loss, one backward pass · [explainer 1](explainer/index.html#concept-gradients/1)
 
@@ -444,7 +449,7 @@ FGSM adversarial training   97.8%     53.9%       37.8%                100/100
 RESULT adversarial training lifts FGSM accuracy at eps 0.2 from 3.7% to 53.9%, PGD-10 lowers it to 37.8%; its single-digit gradients still give the label 100/100 (19 s)
 ```
 
-What to notice: training on FGSM examples raises FGSM accuracy at ε = 0.2 from 3.7% to 53.9% for 0.4 points of clean accuracy (98.1% to 97.8%), a 10-step attack still pushes it down to 37.8%, and the label leaks from this model's gradients exactly as before (100 of 100).
+What to notice: training on FGSM examples raises FGSM accuracy at ε = 0.2 from 3.7% to 53.9% at a cost of 2 of 540 clean test digits (98.1% to 97.8%), a 10-step attack still pushes it down to 37.8%, and the label leaks from this model's gradients exactly as before (100 of 100).
 
 **Why**
 
@@ -541,4 +546,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-eval-contamination/README.md) · [All labs](../README.md) · [next →](../concept-conditioning/README.md)
+[← prev in path](../attack-weight-theft/README.md) · [All labs](../README.md) · [next in path →](../attack-fgsm/README.md)

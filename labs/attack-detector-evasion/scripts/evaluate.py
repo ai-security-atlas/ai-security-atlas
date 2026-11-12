@@ -58,12 +58,16 @@ lin2 = evlab.fit_linear(data, extra)
 raw["homoglyph linear evaded before / after"] = (
     sum(p < evlab.THRESHOLD for p in lin.probas(homo)),
     sum(p < evlab.THRESHOLD for p in lin2.probas(homo)), len(homo))
-got["homoglyph linear before retrain"] = grade(raw["homoglyph linear evaded before / after"][0], len(homo))
-got["homoglyph linear after retrain"] = grade(raw["homoglyph linear evaded before / after"][1], len(homo))
+got["homoglyph evades linear before retrain"] = grade(raw["homoglyph linear evaded before / after"][0], len(homo))
+got["homoglyph evades linear after retrain"] = grade(raw["homoglyph linear evaded before / after"][1], len(homo))
 raw["benign linear flags before / after"] = (
     evlab.flagged(lin.probas(data["benign"])), evlab.flagged(lin2.probas(data["benign"])), len(data["benign"]))
 got["linear benign flags rise"] = (
     "yes" if raw["benign linear flags before / after"][1] > raw["benign linear flags before / after"][0] else "no")
+edited_benign = [fn(t) for name, fn in evlab.TRANSFORMS.items() if name != "none" for t in data["benign"]]
+raw["edited benign linear flags before / after"] = (
+    evlab.flagged(lin.probas(edited_benign)), evlab.flagged(lin2.probas(edited_benign)), len(edited_benign))
+got["retrain flags edited benign text"] = grade(raw["edited benign linear flags before / after"][1], len(edited_benign))
 
 sal = [evlab.saliency_attack(lin, t, data["synonyms"], data["verbs"]) for t in data["injections"]]
 sal_k = sum(r["evaded"] for r in sal)

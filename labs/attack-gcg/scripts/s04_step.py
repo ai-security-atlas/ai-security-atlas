@@ -49,6 +49,20 @@ re_loss, _ = gcg.onehot_grad(model, before, best, after, target)
 print(f"re-measured with a fresh forward pass: {re_loss:.3f} — Step 3's first-order prediction only "
       f"ranks candidates; the forward pass decides\n")
 
+# ---- Step 3's single best suggested swap, predicted vs measured ------------------------------------
+# Same deterministic gradient as s03_gradient.py at the same starting suffix: re-derive its top
+# suggestion and check the prediction with a real forward pass.
+delta3 = grad - grad.gather(1, torch.tensor(suffix).unsqueeze(1))
+delta3[:, banned] = float("inf")
+p3 = int(delta3.min(1).values.argmin())
+t3 = int(delta3[p3].argmin())
+cand3 = list(suffix)
+cand3[p3] = t3
+pred3 = loss + float(delta3[p3, t3])
+meas3 = float(gcg.loss_of(model, before, torch.tensor([cand3]), after, target)[0])
+print(f"Step 3's top suggestion (pos {p3} {tok.decode([suffix[p3]])!r}->{tok.decode([t3])!r}): "
+      f"predicted {pred3:.3f}, measured {meas3:.3f}\n")
+
 # ---- same query budget, with and without the gradient --------------------------------------------
 cur_g, cur_r = list(suffix), list(suffix)
 lg = float(gcg.loss_of(model, before, torch.tensor([cur_g]), after, target)[0])
@@ -78,5 +92,7 @@ labkit.out("step.json").write_text(json.dumps(
     {"width": a.width, "topk": a.topk, "rounds": a.rounds, "seed": a.seed, "loss": round(loss, 4),
      "onestep": {"n": len(gcands), "n_sampled": gn, "best": round(float(g_all[i]), 4), "remeasured": round(re_loss, 4),
                  "beat": int((g_all < base).sum()), "swap": diff(suffix, best)},
+     "step3": {"pos": p3, "from": tok.decode([suffix[p3]]), "to": tok.decode([t3]),
+               "predicted": round(pred3, 4), "measured": round(meas3, 4)},
      "race": {"budget": budget, "gradient": round(lg, 4), "random": round(lr, 4), "hist": hist},
      "grad_suffix": tok.decode(cur_g), "random_suffix": tok.decode(cur_r)}, indent=1) + "\n")

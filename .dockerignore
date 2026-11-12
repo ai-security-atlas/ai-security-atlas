@@ -44,6 +44,7 @@ Dockerfile
 # explainers (published under /labs/); lab code, work/ and payloads stay out.
 labs/*
 !labs/*/README.md
+!labs/learning-path.yaml
 !labs/_explainer
 !labs/*/explainer
 labs/_explainer/test

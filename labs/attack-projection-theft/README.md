@@ -5,7 +5,7 @@ node: attack-projection-theft           # == folder name == articles/<node-id>.m
 related_nodes: [goal-model-theft, concept-logits, concept-embeddings, concept-parameters, arch-decoder, eval-fidelity, eval-asr, eval-threat-model, defense-budget, defense-logging, attack-model-imitation, attack-distillation-theft, attack-weight-theft]
 family: family-theft
 access_profile: A02
-level: intermediate                    # beginner | intermediate | advanced
+level: advanced                          # beginner | intermediate | advanced
 time: "90 min"
 compose_profiles: [workbench]          # services this lab needs, besides any backend profile
 model_backend: none                    # none | optional | required
@@ -13,7 +13,7 @@ backends:                              # yes | partial | no | n/a  (n/a only and
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any CPU. 4 GB Docker VM memory. About 2.5 GB disk: the workbench image (2.2 GB) plus SmolLM2-135M (~270 MB) in the HF cache; work/ holds up to ~350 MB of measurement files."
+hardware: "Any CPU. 4 GB Docker VM memory. About 2.7 GB disk: the workbench image (2.4 GB) plus SmolLM2-135M (~270 MB) in the HF cache; work/ holds up to ~350 MB of measurement files."
 canary: ATLAS-CANARY-svd7
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -21,7 +21,9 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-37 · Reading the hidden size off the logits
 
-> **Atlas node:** [Partial parameter recovery from API behavior](https://ai-security-atlas.github.io/nodes/attack-projection-theft/) · **Family:** family-theft · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
+> **Atlas node:** [Partial parameter recovery from API behavior](https://ai-security-atlas.github.io/nodes/attack-projection-theft/) · **Family:** family-theft · **Level:** advanced · **Time:** 90 min · **Model backend:** none
+
+> **Learning path:** Module 9 · step 8 of 8 · [Inside the transformer](../README.md#module-9-inside-the-transformer)
 
 ## Overview
 
@@ -76,13 +78,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. About 3,600 batched forward passes of a 135M model across the whole lab; each collection step runs tens of seconds. |
 | Docker VM memory | 4 GB (the model in fp32 is about 540 MB; Step 3 factors a 1,200 x 49,152 matrix) |
-| Disk | Workbench image 2.2 GB; SmolLM2-135M about 270 MB in the `hf-cache-v1` volume; `work/` peaks near 350 MB (`rows.npy` 236 MB plus the 113 MB stolen projection) |
+| Disk | Workbench image 2.4 GB; SmolLM2-135M about 270 MB in the `hf-cache-v1` volume; `work/` peaks near 350 MB (`rows.npy` 236 MB plus the 113 MB stolen projection) |
 | Total time | 90 min: about 15-20 min of commands, the rest reading, the spectrum table and the questions |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done (the workbench image is built).
-- Labs to finish first: [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md), whose `victim-api` fixture and query-log conventions this lab reuses. [LAB-05 · What the API reveals](../concept-logits/README.md) covers logits and detail levels in more depth and stops at the hidden-size read.
+- Labs to finish first: [LAB-05 · What the API reveals](../concept-logits/README.md) (logits and detail levels; it stops at the hidden-size read); [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) (the embedding table that the output layer shares); [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md) (the `victim-api` fixture and query-log conventions this lab reuses); [LAB-52 · Base vs instruct, and who speaks next](../arch-decoder/README.md) (the decoder's `lm_head`, which turns the last hidden state into logits).
 - Concepts to read first: [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) and [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/).
 
 ## Explainer
@@ -99,18 +101,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-projection-theft COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-projection-theft COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-projection-theft COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-projection-theft COMPOSE_PROFILES=workbench` |
 
 This lab calls no model, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`. Only the banner differs.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -158,7 +162,7 @@ What to notice: the shared `victim-api` fixture (LAB-09) serves classifier proba
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_meet_api | workbench | ≈20-40 s (first run downloads ~270 MB) | 1 |
+| 1 | s01_meet_api | workbench | ≈20-40 s (first run downloads ~270 MB) | 1–2 |
 | 2 | s02_collect | workbench | ≈40-70 s | 3 |
 | 3 | s03_spectrum | workbench | ≈30-60 s | 4 |
 | 4 | s04_recover | workbench | ≈1-2 min | 5 |
@@ -170,6 +174,8 @@ What to notice: the shared `victim-api` fixture (LAB-09) serves classifier proba
 Runtimes were measured in the workbench container while other lab builds were running on the same machine (16 vCPUs, load average 8-15); expect the low end when idle. Every collection step prints its own seconds figure live.
 
 ### Step 1 — Meet the victim API · [explainer 1](explainer/index.html#attack-projection-theft/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#attack-projection-theft/2)
 
 **Do**
 
@@ -483,7 +489,7 @@ What to notice: every measurement, log and stolen artifact lived under `attack-p
 - Find the smallest number of full rows that still yields a clear knee on your machine (sweep 600-800 in `s03_spectrum.py`'s curve) and turn the answer into a concrete per-key daily budget for D3.
 - Add a `top_k=20` policy to `d1_serve_less.py` and measure how the logit_bias escape cost changes with k (the thief biases k-1 tokens per request); find the k where you would stop worrying.
 - The paper also recovers the *exact* projection by combining the basis with more queries. Using only this lab's API surface, design (do not implement) the cheapest query plan that would pin down the unknown map A.
-- Give the D2 monitor-escape a cost: rerun the D3 natural-text attack with a per-key budget of 700 and report how many keys the thief needs, echoing LAB-09's sybil measurement.
+- Give the D3 monitor-escape a cost: rerun the D3 natural-text attack with a per-key budget of 700 and report how many keys the thief needs, echoing LAB-09's sybil measurement.
 
 ## Further Reading
 
@@ -495,4 +501,4 @@ What to notice: every measurement, log and stolen artifact lived under `attack-p
 
 ---
 
-[← prev](../attack-detector-evasion/README.md) · [All labs](../README.md) · [next →](../concept-kv-cache/README.md)
+[← prev in path](../adapt-softprompt/README.md) · [All labs](../README.md) · [next in path →](../concept-memorization/README.md)

@@ -33,15 +33,16 @@ g.require("Harbor still receives its own code", got["acl_utility"] == 1 and got[
 g.require("global and guessed sessions leak", got["session_global_leak"] == 1 and got["session_guess_leak"] == 1)
 g.require("a bound session refuses Harbor", got["bound_stolen"] == 0 and got["bound_typed"] == 1)
 g.require("Copperleaf can resume the issued session", got["bound_own"] == 1)
-g.at_most("sequential ids that open Harbor's session", got["guesses_opened"], 0)
+g.at_most("guessed ids that open Copperleaf's bound session", got["guesses_opened"], 0)
+g.at_least("guessed ids that open Copperleaf's session with sequential ids (control)", got["control_opened"], 1)
 for line in g.lines():
     print(line)
 
 live = sleak.live(4)
 if live:
     for name, block in live["profiles"].items():
-        rate = ek.Rate(block["leaks"], block["n"])
-        print(f"live {name} {rate.fmt()}")
+        replies = {row["reply"] for row in block["rows"]}
+        print(f"live {name} leak {block['leaks']}/{block['n']} distinct_replies={len(replies)}")
     sample = live["profiles"]["sleak-open"]["rows"][0]
     extra = got["cache_retrievals_isolated"] - got["cache_retrievals_shared"]
     tokens = sample["prompt_tokens"] + sample["completion_tokens"]

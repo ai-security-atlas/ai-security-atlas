@@ -5,7 +5,7 @@ node: arch-transformer                   # == folder name == articles/<node-id>.
 related_nodes: [arch-neural, arch-decoder, concept-parameters, concept-attention, concept-residual, concept-embeddings, adapt-lora, adapt-model-edit, attack-factual-edit, attack-adapter-tamper, attack-merge-tamper, attack-steering-misuse, attack-backdoor, attack-unsafe-load, format-safetensors, defense-provenance, defense-backdoor-audit, goal-persistence]
 family: family-representation
 access_profile: A08
-level: intermediate                      # beginner | intermediate | advanced
+level: advanced                          # beginner | intermediate | advanced
 time: "90 min"
 compose_profiles: [workbench]            # services this lab needs, besides any backend profile
 model_backend: none                      # none | optional | required
@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a  (n/a only a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image, 0.27 GB for SmolLM2-135M-Instruct and 1.1 GB for the lab's work/ folder."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image, 0.27 GB for SmolLM2-135M-Instruct and 1.1 GB for the lab's work/ folder."
 canary: ATLAS-CANARY-tr4n
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
@@ -21,7 +21,9 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
 
 # LAB-27 · Anatomy and forensics of a transformer checkpoint
 
-> **Atlas node:** [Transformers](https://ai-security-atlas.github.io/nodes/arch-transformer/) · **Family:** family-representation · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
+> **Atlas node:** [Transformers](https://ai-security-atlas.github.io/nodes/arch-transformer/) · **Family:** family-representation · **Level:** advanced · **Time:** 90 min · **Model backend:** none
+
+> **Learning path:** Module 9 · step 3 of 8 · [Inside the transformer](../README.md#module-9-inside-the-transformer)
 
 ## Overview
 
@@ -76,13 +78,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. The scripts use 4 torch threads (`TINYLM_THREADS` overrides it). On an M4 Max shared with several other heavy jobs, the longest steps took 2.5–4 min (Step 4), 6–7.5 min (D2) and 20 min (optional Step 7); expect them to be faster on an idle machine. |
 | Docker VM memory | 4 GB (one fp32 copy of the model is about 0.55 GB; Step 3 holds the reference and three edited tensor sets). |
-| Disk | Workbench image 2.2 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, and 1.1 GB in `work/` (three suspects and one re-saved copy at 269 MB each). Cleanup removes `work/`. |
+| Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, and 1.1 GB in `work/` (three suspects and one re-saved copy at 269 MB each). Cleanup removes `work/`. |
 | Total time | About 90 min: 15–20 min of commands (plus 20 min if you run Step 7), and reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) trains and merges LoRA adapters, and [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) shows why these files are safetensors.
+- Labs to finish first: [LAB-26 · Who attends to whom](../concept-attention/README.md) (attention, the operation every block runs); [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (trains and merges LoRA adapters); [LAB-18 · BadNets: a sticker that rewrites the label](../attack-backdoor/README.md) (backdoors, one of the edits this lab hides in a checkpoint and then finds).
+- Recommended first: [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) (why these files are safetensors).
 - Concepts to read first: [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/) and [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/).
 
 ## Explainer
@@ -99,13 +102,15 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| any backend or none | `COMPOSE_PROFILES=workbench` |
+| any backend or none | `export COMPOSE_PROJECT_NAME=atlas-labs-arch-transformer COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -120,10 +125,10 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-arch-transformer-workbench-1 Started
 ```
 
-What to notice: the build runs once and later labs reuse the image; this lab needs only what workbench v3 already has (torch, transformers, peft, safetensors, matplotlib).
+What to notice: the build runs once and later labs reuse the image; this lab needs only what the shared workbench image already has (torch, transformers, peft, safetensors, matplotlib).
 
 ### Setup 3 — Check the environment
 
@@ -228,7 +233,7 @@ What to notice: about 25 lines of tensor code (`xformer.block()`) reproduce bloc
 
 **Why**
 
-Each block reads the residual stream, adds what attention wrote, then adds what the MLP wrote ([`concept-residual`](https://ai-security-atlas.github.io/nodes/concept-residual/)). Attention is the only place where positions exchange information ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/)); everything else acts on each position separately. Once you can compute the model from its tensors, an edited tensor stops being a mystery: you know which computation it feeds. Differences around 1e-6 come from float32 summation order; the library uses a fused attention kernel.
+Each block reads the residual stream, adds what attention wrote, then adds what the MLP wrote ([`concept-residual`](https://ai-security-atlas.github.io/nodes/concept-residual/)). Attention is the only place where positions exchange information ([`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/)); everything else acts on each position separately. Once you can compute the model from its tensors, an edited tensor stops being a mystery: you know which computation it feeds. Differences of 1e-6 to 1e-5 per block, growing to about 5e-5 at the logits, come from float32 summation order; the library uses a fused attention kernel.
 
 ### Step 3 — Three edits, three footprints (≈1–2.5 min) · [explainer 3](explainer/index.html#arch-transformer/3)
 
@@ -512,8 +517,8 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] arch-transformer · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed arch-transformer/work (d1_manifest.json d2_trigger_scan.json diff_heatmap.png evaluate.json key.json manifest.json resaved/ s01_tensor_map.json s02_block_by_hand.json s03_make_suspects.json s04_trigger.json s05_diff_heatmap.json s06_signatures.json suspect-1/ suspect-2/ suspect-3/ trigger-lora/)
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-arch-transformer-workbench-1 Removed
+ Network atlas-labs-arch-transformer_default Removed
 ```
 
 > [!NOTE]
@@ -538,4 +543,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-attention/README.md) · [All labs](../README.md) · [next →](../concept-decoding/README.md)
+[← prev in path](../concept-attention/README.md) · [All labs](../README.md) · [next in path →](../concept-residual/README.md)

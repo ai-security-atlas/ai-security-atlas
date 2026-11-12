@@ -32,11 +32,15 @@ D3	issued_len=32
 D3	regression: harbor presents the issued id rejected=yes leak=no
 D3	regression: harbor presents sess-1001 rejected=yes
 D3	regression: copperleaf resumes the issued id canary=yes
-D3	guesses opened=0/1000
+D3	control: sequential ids, id-only lookup issued=sess-1 guesses opened=1/1000 canary=1/1000
+D3	defense: server-issued id, bound to caller guesses opened=0/1000
 D3	client-chosen id resumed=0/1; server-issued id resumed=1/1; guessed ids opened=0/1000
 EVAL	RESULT: REPRODUCED
 EVAL	GATE attack-session-leak: PASS
 EVAL	cache_leaks_isolated\s+0\s+0
+EVAL	guesses_opened\s+0\s+0
+EVAL	control_opened\s+1\s+1
+EVAL	\[pass\] guessed ids that open Copperleaf's session with sequential ids \(control\): 1
 CLEANUP	\[skip\] shared atlas-app audit log left in place \(volume atlas-app-data-v1\)
 CLEANUP	\[ok\] removed attack-session-leak/work
 CLEANUP	Container atlas-labs-attack-session-leak-atlas-app-1 Removed

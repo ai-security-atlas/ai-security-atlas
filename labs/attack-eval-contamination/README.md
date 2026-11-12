@@ -13,19 +13,21 @@ backends:                                # yes | partial | no | n/a  (n/a only a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 30 MB in work/."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 30 MB in work/."
 canary: ATLAS-CANARY-2a21fa75-edce
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
+last_tested: 2026-11-11
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, backend none"
 ---
 
 # LAB-49 · Inflating a benchmark score and catching it
 
 > **Atlas node:** [Benchmark or evaluation contamination](https://ai-security-atlas.github.io/nodes/attack-eval-contamination/) · **Family:** family-evaluation · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
 
+> **Learning path:** Module 10 · step 3 of 6 · [Data, evaluation integrity and preference training](../README.md#module-10-data-evaluation-integrity-and-preference-training)
+
 ## Overview
 
-A benchmark score is a claim about what a model knows. Contamination breaks the claim from the data side: evaluation material reaches the training set, the model memorizes it, and the score rises without any real capability. In this lab you play both sides. You publish **TramBench**, a 48-item quiz about a fictional tram network whose every released row carries a benchmark canary (the BIG-bench convention). Then a data contractor leaks half the items into the instruction mix two ways, byte-for-byte and rewritten as plain prose, and you fine-tune SmolLM2-135M-Instruct three times with one fixed recipe: clean, verbatim leak, rephrased leak. The contaminated scoreboards jump on exactly the leaked items (both headline scores rise 21 points, and the rephrased leak is the stronger per-item attack), and the verbatim model even finishes a cut-off benchmark row with the lab's inert canary `ATLAS-CANARY-2a21fa75-edce`. Then you catch the leak and pay each defense's measured cost: a canary grep that exactly repairs the verbatim mix and misses the reworded one, a 13-gram overlap gate whose window size you can see matter at 8 grams, a Min-K% Prob membership gate with a permutation test, and a freshly authored private split reported next to the headline. No single control catches both variants; the layered set does, and the node's caveat about benign overlap shows up as a real false alarm. [LAB-47](../life-data/README.md) teaches the same hazard from the data-pipeline side; this lab is the attack-and-detection side. Source: [`labs/attack-eval-contamination`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-eval-contamination).
+A benchmark score is a claim about what a model knows. Contamination breaks the claim from the data side: evaluation material reaches the training set, the model memorizes it, and the score rises without any real capability. In this lab you play both sides. You publish **TramBench**, a 48-item quiz about a fictional tram network whose every released row carries a benchmark canary (the BIG-bench convention). Then a data contractor leaks half the items into the instruction mix two ways, byte-for-byte and rewritten as plain prose, and you fine-tune SmolLM2-135M-Instruct three times with one fixed recipe: clean, verbatim leak, rephrased leak. Both contaminated headline scores rise 21 points. The rephrased leak's gain sits on the items it leaked (46 points above its never-leaked items); the verbatim model gains on its leaked items too, and also on a few never-leaked ones, which at 24 items per split is within noise. The verbatim model even finishes a cut-off benchmark row with the lab's inert canary `ATLAS-CANARY-2a21fa75-edce`. Then you catch the leak and pay each defense's measured cost: a canary grep that exactly repairs the verbatim mix and misses the reworded one, a 13-gram overlap gate whose window size you can see matter at 8 grams, a Min-K% Prob membership gate with a permutation test, and a freshly authored private split reported next to the headline. No single control catches both variants; the layered set does. The membership gate also fails the clean model, a false alarm that shows membership signals have false positives. [LAB-47](../life-data/README.md) teaches the same hazard from the data-pipeline side; this lab is the attack-and-detection side. Source: [`labs/attack-eval-contamination`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-eval-contamination).
 
 By the end you will be able to:
 
@@ -74,15 +76,15 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 | Resource | Need |
 | :--- | :--- |
-| CPU | Any 64-bit CPU. Training and scoring run on 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max, 16 cores) was running other heavy jobs at a load average of 13–18, so the times here are inflated and vary a lot between runs: one LoRA run took 3–8 min, one measurement pass 1–10 min, and Evaluate about 6 min. |
+| CPU | Any 64-bit CPU. Training and scoring run on 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max, 16 cores) was running other heavy jobs at a load average of 13–60, so the times here are inflated and vary a lot between runs: one LoRA run took 3–18 min, one measurement pass 40 s–10 min, and Evaluate 4–6 min. |
 | Docker VM memory | 4 GB (the model in float32 is about 0.55 GB). |
-| Disk | Workbench image 2.2 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 30 MB in `work/` (three adapters, the mixes and the bench files). |
-| Total time | About 90 min with reading. The commands took roughly 30–40 min in the reference runs under load (Step 4's three training runs and the measurement passes of Step 5, D2, D3 and Evaluate dominate). |
+| Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 30 MB in `work/` (three adapters, the mixes and the bench files). |
+| Total time | About 90 min with reading. The commands took roughly 30–45 min in the reference runs under load (Step 4's three training runs and the measurement passes of Step 5, D2, D3 and Evaluate dominate). |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-47 · Lineage or it did not happen](../life-data/README.md) is the natural companion (the data side of the same hazard), and [LAB-13 · Was this record in the training set?](../attack-membership/README.md) introduces membership inference (both optional).
+- Labs to finish first: [LAB-47 · Lineage or it did not happen](../life-data/README.md) (the data side of the same hazard; the two share a model, a LoRA recipe and a quiz); [LAB-13 · Was this record in the training set?](../attack-membership/README.md) (membership inference).
 - Concepts to read first: [`system-eval`](https://ai-security-atlas.github.io/nodes/system-eval/), [`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/).
 
 ## Explainer
@@ -99,13 +101,15 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put this line in `labs/.env` (no model backend is needed):
+Run this line in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. No model backend is needed.
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| none | `COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-eval-contamination COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -119,9 +123,9 @@ docker compose up -d
 ```text
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Created
- Container atlas-labs-workbench-1 Starting
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-attack-eval-contamination-workbench-1 Created
+ Container atlas-labs-attack-eval-contamination-workbench-1 Starting
+ Container atlas-labs-attack-eval-contamination-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container.
@@ -139,7 +143,7 @@ docker compose run --rm workbench python attack-eval-contamination/scripts/check
 ```text
 [atlas-lab] attack-eval-contamination · check_env.py · torch 2.14.1+cpu · backend none
 [ok] torch 2.14.1+cpu transformers 5.20.2 peft 0.21.2 evalkit 1.0.0
-[ok] fixture: TramBench 48 public + 16 control + 16 fresh items, seed 49, canary ATLAS-CANARY-2a21fa75-edce
+[ok] fixture: TramBench 48 public + 16 control + 24 fresh items, seed 49, canary ATLAS-CANARY-2a21fa75-edce
 [ok] 24 of 48 public items leak in the attack conditions
 [ok] 4 CPU threads for training and scoring (set TINYLM_THREADS to change)
 [ok] work dir: /labs/attack-eval-contamination/work (writable)
@@ -155,13 +159,13 @@ What to notice: the fixture is generated from a fixed seed, so your TramBench it
 | 1 | s01_build_bench | workbench | <10 s | 1 |
 | 2 | s02_mixes | workbench | <10 s | 2 |
 | 3 | s03_leak | workbench | <10 s | 3 |
-| 4 | s04_train | workbench | ≈6–15 min (+ download) | 4 |
-| 5 | s05_score | workbench | 1–3 min | 5 |
-| 6 | s06_regurgitate | workbench | 1–3 min | 6 |
+| 4 | s04_train | workbench | ≈6–30 min (+ download) | 4 |
+| 5 | s05_score | workbench | 40 s–3 min | 5 |
+| 6 | s06_regurgitate | workbench | 40 s–3 min | 6 |
 | 7 | — (Read) | — | — | — |
 | D1 | d1_canary_filter | workbench | <10 s | 7 |
-| D2 | d2_gates | workbench | 2–6 min | 8 |
-| D3 | d3_fresh_split | workbench | 2–10 min | 9 |
+| D2 | d2_gates | workbench | 1–4 min | 8 |
+| D3 | d3_fresh_split | workbench | 1–10 min | 9 |
 
 Runtimes are wall-clock times of one `docker compose run` each on the busy test machine, including container start. The three training runs (Step 4) and the measurement passes (Step 5, D2, D3) dominate; on an idle laptop expect them to be several times faster. Every step is seeded.
 
@@ -182,15 +186,15 @@ kind        architect:8  depot:6  mural:10  nickname:8  tunnel:6  year:10
 item f01 as published:
   {"id": "f01", "question": "How long in meters is the Glasshouse tunnel on the Verity Bay tram network?", "options": ["742", "791", "854", "490"], "answer_index": 2, "answer": "854", "canary": "ATLAS-CANARY-2a21fa75-edce"}
 every published row carries "canary": "ATLAS-CANARY-2a21fa75-edce"; the file header carries the GUID 2a21fa75-edce-9d46-66a3-40aec2f27e8f
-released file: 48 rows; control file: 16 rows (matched items, never released); fresh facts held back: 16
+released file: 48 rows; control file: 16 rows (matched items, never released); fresh facts held back: 24
 [ok] wrote work/bench.json, work/trambench-public.jsonl, work/trambench-control.jsonl
 ```
 
-What to notice: every published row carries the canary in a `canary` field, the file header carries a full GUID, and the 16 control items plus 16 fresh facts are written to files that no supplier ever sees.
+What to notice: every published row carries the canary in a `canary` field, the file header carries a full GUID, and the 16 control items plus 24 fresh facts are written to files that no supplier ever sees.
 
 **Why**
 
-A benchmark is a measurement instrument, and this one follows the BIG-bench canary convention: a fixed, inert GUID planted in the released files so that later leakage can be recognized as coming from this file ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). The items test facts that appear nowhere in the training handbook, so any score above chance is evidence of leakage, and the never-released control and fresh splits are the raw material for D2 and D3.
+A benchmark is a measurement instrument, and this one follows the BIG-bench canary convention: a fixed, inert GUID planted in the released files so that later leakage can be recognized as coming from this file ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). The items test facts that appear nowhere in the training handbook, so a score well above chance on items the model could not have seen is a reason to investigate. With four options, chance is 25%, and on 24 items a few lucky answers move the score by 10 points or more. The never-released control and fresh splits are the raw material for D2 and D3.
 
 ### Step 2 — Assemble the clean instruction mix · [explainer 2](explainer/index.html#attack-eval-contamination/2)
 
@@ -251,7 +255,7 @@ What to notice: the verbatim rows keep the canary and share 13-gram windows with
 
 This is the attack: the contractor holds [`A10` Training-data contribution](https://ai-security-atlas.github.io/nodes/attack-eval-contamination/) access, and the leak is deliberate, targeted contamination rather than incidental overlap. The verbatim variant models the lazy case, a scraped copy of the public file; the rephrase variant models an attacker who knows n-gram decontamination exists and rewrites the items while keeping every fact. The dose is small (13.6% of the mix) and the rows look like ordinary supplier facts.
 
-### Step 4 — Train the clean, verbatim and rephrased models (≈6–15 min, + download) · [explainer 4](explainer/index.html#attack-eval-contamination/4)
+### Step 4 — Train the clean, verbatim and rephrased models (≈6–30 min, + download) · [explainer 4](explainer/index.html#attack-eval-contamination/4)
 
 **Do**
 
@@ -267,25 +271,27 @@ LoRA r=8 alpha=16 on all linear layers of HuggingFaceTB/SmolLM2-135M-Instruct @ 
 same recipe for every condition; the mix is the only variable
 
 condition clean: 152 rows (0 leak rows), mix fingerprint 3c60393990cd
-epoch 1/5  step  19/95  loss 2.088   (56s)
+epoch 1/5  step  19/95  loss 2.088   (63s)
 ...
-epoch 5/5  step  95/95  loss 0.310   (228s)
-  2,442,240 trainable parameters, 2,985 tokens, 95 steps in 228s -> adapter sha256 7c73424d6730
+epoch 5/5  step  95/95  loss 0.310   (390s)
+  2,442,240 trainable parameters, 2,985 tokens, 95 steps in 390s -> adapter sha256 7c73424d6730
 
 condition verbatim: 176 rows (24 leak rows), mix fingerprint 882f0e7c8115
-epoch 1/5  step  22/110  loss 1.874   (102s)
+epoch 1/5  step  22/110  loss 1.874   (120s)
 ...
-epoch 5/5  step 110/110  loss 0.283   (465s)
-  2,442,240 trainable parameters, 5,326 tokens, 110 steps in 465s -> adapter sha256 5c8e5d980fda
+epoch 5/5  step 110/110  loss 0.283   (1050s)
+  2,442,240 trainable parameters, 5,326 tokens, 110 steps in 1050s -> adapter sha256 5c8e5d980fda
 
 condition rephrase: 176 rows (24 leak rows), mix fingerprint 2c635cde9cee
-epoch 1/5  step  22/110  loss 1.828   (40s)
+epoch 1/5  step  22/110  loss 1.828   (79s)
 ...
-epoch 5/5  step 110/110  loss 0.307   (197s)
-  2,442,240 trainable parameters, 3,588 tokens, 110 steps in 197s -> adapter sha256 44ddce20a0db
+epoch 5/5  step 110/110  loss 0.307   (508s)
+  2,442,240 trainable parameters, 3,588 tokens, 110 steps in 508s -> adapter sha256 44ddce20a0db
 
 [ok] wrote work/adapter-clean, work/adapter-verbatim, work/adapter-rephrase (+cards) and work/train.json
 ```
+
+LoRA trains a small add-on (an adapter) instead of the whole model: `r=8` is the adapter's size and `alpha=16` scales its effect. The loss is how surprised the model is by the training text; lower means it predicts the rows better.
 
 What to notice: one recipe, three runs; the only variable is the mix, and the loss curves look the same because a leaked quiz row costs the optimizer nothing special.
 
@@ -293,7 +299,7 @@ What to notice: one recipe, three runs; the only variable is the mix, and the lo
 
 Fine-tuning predicts every training row token by token, so a leaked item's question and its answer are learned together exactly like a handbook fact ([`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/)). Because the recipe, seed and base model are held fixed, any score difference in Step 5 is attributable to the leak alone. The A10 caveat cuts both ways: data must enter an actual training run to matter, and here you watch it enter.
 
-### Step 5 — Read the inflated scoreboard (1–4 min) · [explainer 5](explainer/index.html#attack-eval-contamination/5)
+### Step 5 — Read the inflated scoreboard (40 s–3 min) · [explainer 5](explainer/index.html#attack-eval-contamination/5)
 
 **Do**
 
@@ -307,17 +313,20 @@ docker compose run --rm workbench python attack-eval-contamination/scripts/s05_s
 [atlas-lab] attack-eval-contamination · s05_score.py · torch 2.14.1+cpu · backend none
 TramBench accuracy (4 options, chance 25%): the score a buyer would see first
 condition     headline (48)      leaked (24)   never leaked (24)
-clean      9/48 19% [10-32%]  5/24 21% [9-40%]    4/24 17% [7-36%]
+clean      9/48 19% [10-32%] 5/24 21% [9-40%]    4/24 17% [7-36%]
 verbatim   19/48 40% [27-54%] 11/24 46% [28-65%]   8/24 33% [18-53%]
 rephrase   19/48 40% [27-54%] 15/24 62% [43-79%]    4/24 17% [7-36%]
 
 verbatim: leaked minus never-leaked +12 points; headline is +21 points over the clean model (9/48 19% -> 19/48 40%)
 rephrase: leaked minus never-leaked +46 points; headline is +21 points over the clean model (9/48 19% -> 19/48 40%)
-the clean model scores at chance on every split; the attack lifts only the items it leaked
-[ok] wrote work/score.json   (56s)
+the clean model's interval includes chance (25%) on every split
+never-leaked items, which no model saw: clean 4/24 17% · verbatim 8/24 33% · rephrase 4/24 17%
+at 24 items per split the intervals are wide: a change of a few never-leaked items is within noise,
+so read the leaked-minus-never-leaked gap, measured on one model, as what the leak bought
+[ok] wrote work/score.json   (40s)
 ```
 
-What to notice: the clean model sits at chance everywhere; both attack models rise on the leaked items and nowhere else, so the headline improves without a single new capability. The rephrased leak is the stronger per-item attack: plain prose teaches the fact better than a JSON row that also lists three wrong options.
+What to notice: the clean model's intervals include chance on every split. The rephrased leak lifts its leaked items 46 points above its never-leaked ones, which stay where the clean model is. The verbatim model rises on its leaked items too (+12 points over its never-leaked ones), and its never-leaked score also moves from 4/24 to 8/24. Four items out of 24 is within noise at this size, or a general effect of training on quiz-shaped rows; the lab cannot tell which. Either way, the headline improves without new knowledge of the never-leaked facts. The rephrased leak is the stronger per-item attack here, likely because plain prose states the fact without three wrong options next to it; the Going Further item on wording recall versus fact knowledge is a way to test that.
 
 **Why**
 
@@ -347,8 +356,10 @@ rephrase   tail in completion: 0/12 0% [0-24%]   true canary -7.01 vs decoy -6.2
 
 example verbatim completion: 2a21fa75-edce"}
 the string is a marker with no meaning; it proves the published file itself was trained on
-[ok] wrote work/regurg.json   (128s)
+[ok] wrote work/regurg.json   (101s)
 ```
+
+How to read probe 2: teacher-forced means the true text is fed in and the model's probability for each of its tokens is measured, with nothing generated. A mean log-probability of 0 means the model is certain of every token; more negative means less likely (-3.56 is about a 3% chance per token).
 
 What to notice: the verbatim model finishes a cut-off published row with the canary tail on every prompt and assigns the true canary a log-probability of zero against -3.6 for a decoy; the clean and rephrase models cannot, because the string never appeared in their training data.
 
@@ -380,7 +391,7 @@ docker compose run --rm workbench python attack-eval-contamination/scripts/d1_ca
 
 ```text
 [atlas-lab] attack-eval-contamination · d1_canary_filter.py · torch 2.14.1+cpu · backend none
-rule: drop every training row that contains the benchmark canary ATLAS-CANARY-2a21fa75-edce
+rule: drop every training row whose text contains the benchmark canary ATLAS-CANARY-2a21fa75-edce
 mix         rows  canary rows  kept  false drops
 clean        152            0   152            0
 verbatim     176           24   152            0
@@ -418,33 +429,47 @@ rephrase            0                   0          6                     6
 at n=13 the clean mix is quiet and the verbatim mix fails on all 24 leak rows; at n=8 the wiki's benign discussion rows trip the gate too, which is why the window is 13 words
 
 gate 2: Min-K% Prob membership signal (20% of tokens, released rows vs never-released rows)
-clean      AUC 0.78 (perm p=0.002)  median min-K% released -11.83 vs control -12.05
-verbatim   AUC 0.80 (perm p=0.000)  median min-K% released -1.46 vs control -2.86
-rephrase   AUC 0.63 (perm p=0.092)  median min-K% released -10.93 vs control -11.11
-(AUC is averaged within item kinds, so the two splits' different kind mixes cannot fake a signal)
+clean      AUC 0.78 (perm p<0.002)  median min-K% released -11.83 vs control -12.05
+verbatim   AUC 0.80 (perm p<0.002)  median min-K% released -1.46 vs control -2.86
+rephrase   AUC 0.63 (perm p=0.086)  median min-K% released -10.93 vs control -11.11
+base       AUC 0.56 (perm p=0.248)  the downloaded model with no adapter, for reference
+(AUC is averaged within item kinds, so the two splits' different kind mixes cannot fake a signal;
+ the permutation test shuffles the released/control labels within each kind, 500 times)
+
+per-kind AUC (released vs control; depot, tunnel have one control item each and are left out)
+kind       released  control   clean  verbatim  rephrase
+architect         8        3    0.58      0.79      0.46
+mural            10        4    0.72      0.75      0.70
+nickname          8        3    0.83      0.75      0.58
+year             10        4    0.97      0.93      0.78
+without the 3 year items the wiki quotes: clean AUC 0.78 · verbatim AUC 0.80 · rephrase AUC 0.62
 
 verdicts
 clean      overlap pass · membership FAIL · release gate FAIL
 verbatim   overlap FAIL · membership FAIL · release gate FAIL
 rephrase   overlap pass · membership pass · release gate pass
 
-the clean model fails gate 2 as well: the wiki's benign quotes taught three public year
-items (12-word windows, just under the 13-gram gate), and a membership signal fires on any
-real overlap. The signal alone cannot tell benign overlap from deliberate contamination;
-the 13-gram scan plus a look at the overlapping rows can. No single gate catches both attacks,
-and only D3's fresh split catches the reworded one.
+the clean model fails gate 2 too, although no clean row copies a benchmark answer.
+Without the 3 year items whose stems the wiki quotes, its AUC is 0.78, so those quotes do not explain it.
+The base model scores 0.56, so the clean fine-tune moved released and control rows apart,
+for a reason this lab does not isolate (only 3-4 control items per kind).
+Treat it as a false alarm: a membership FAIL starts an investigation (the 13-gram scan and a
+look at the overlapping rows); on its own it does not prove contamination.
+No single gate catches both attacks, and only D3's fresh split catches the reworded one.
 
-cost: overlap scan 32.7s on 176 rows; the membership pass needs one forward per benchmark text; at n=8 the gate would reject the clean mix on 6 benign rows
+cost: both gates 57.6s (the overlap scan over 176 rows, then one forward per benchmark text per model); at n=8 the gate would reject the clean mix on 6 benign rows
 [ok] wrote work/gates.json
 ```
 
-What to notice: the 13-gram gate fails only the verbatim mix, an 8-gram window would also reject the clean mix on the wiki's benign rows, and the Min-K% membership gate separates the released from the control rows for the verbatim model, and more weakly for the clean model, whose benign stem quotes are real overlap.
+How to read gate 2: Min-K% takes the 20% least likely tokens of each row and averages their log-probability, so a row the model trained on scores closer to zero. AUC is the chance that a random released row scores higher than a random control row of the same kind: 0.5 means no separation and 1.0 means perfect separation. The permutation p is how often shuffling the released and control labels within each kind gives an AUC at least this high; with 500 shuffles the smallest value it can show is p<0.002.
+
+What to notice: the 13-gram gate fails only the verbatim mix, and an 8-gram window would also reject the clean mix on the wiki's benign rows. The membership gate fails the verbatim model and also the clean model, with almost the same AUC. The clean model's signal is not the wiki's stem quotes: dropping the three year items they quote leaves its AUC at 0.78, and the base model with no adapter shows no clear separation (0.56, p=0.248). The clean model's signal is strongest in the year kind (0.97) and the nickname kind (0.83). This lab does not isolate the cause; with three or four control items per kind the per-kind AUCs are noisy. Read it as a false alarm.
 
 **Why**
 
-These are the two audits a release pipeline can run without knowing anything about the attacker. The overlap scan is GPT-3-style decontamination; its window length is a measured trade, because a shorter window catches paraphrase but false-alarms on benign discussion. The membership gate is Min-K% Prob from the membership-inference family ([`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/), [LAB-13](../attack-membership/README.md)), here used as an audit: benchmark rows the model saw in training score differently from rows it could not have seen, whatever the training text looked like. Its false alarm here is the node's caveat made real: the clean model fails it because the wiki's 12-word stem quotes are genuine, sub-window overlap, and only the scan plus a look at the overlapping rows tells benign overlap from deliberate contamination. Neither gate caught the reworded leak; D3 did.
+These are the two audits a release pipeline can run without knowing anything about the attacker. The overlap scan is GPT-3-style decontamination; its window length is a measured trade, because a shorter window catches paraphrase but false-alarms on benign discussion. The membership gate is Min-K% Prob from the membership-inference family ([`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/), [LAB-13](../attack-membership/README.md)), here used as an audit: benchmark rows the model saw in training score differently from rows it could not have seen. Its false alarm on the clean model shows the signal's limit: a model trained on no benchmark row still separated released from control rows at this sample size, for a reason the lab did not pin down. A membership FAIL is a reason to investigate, with the 13-gram scan and a look at the overlapping rows; on its own it proves nothing about contamination. Neither gate caught the reworded leak; D3 did.
 
-### Step D3 — Keep a fresh private split and report both (1–4 min) · [explainer 9](explainer/index.html#attack-eval-contamination/9)
+### Step D3 — Keep a fresh private split and report both (1–10 min) · [explainer 9](explainer/index.html#attack-eval-contamination/9)
 
 **Do**
 
@@ -469,16 +494,17 @@ clean      public minus fresh -6 points -> quiet
 verbatim   public minus fresh +6 points -> quiet
 rephrase   public minus fresh +15 points -> FLAGGED
 report-both rule: publish the fresh-split score next to the headline; a 12-point gap is the investigation trigger here. It is a trigger, in the same way D2's gates are: at this scale even the flagged gap's interval touches zero, and the fresh items test the same kind of knowledge without any chance to have leaked
+the 12 points were picked on this run's gaps; a real pipeline calibrates the trigger, for example from the spread of clean-model gaps across seeds
 
 cost: the org authors and guards new items for every release (24 here); a fresh split carries wider intervals than the public 48 (6/24 25% [12-45%]); a fresh split ages the moment it leaks
-[ok] wrote work/fresh.json   (580s)
+[ok] wrote work/fresh.json   (81s)
 ```
 
-What to notice: the clean model's public and fresh scores agree; the rephrased leak is flagged (+15 points, and 75% on the reworded leaked items, so its gain survives any rewording), while the verbatim leak stays quiet here and was caught by D1 and D2 instead.
+What to notice: the clean model's public and fresh scores agree; the rephrased leak is flagged (+15 points, and 75% on the reworded leaked items, so its gain survives the organization's own rewording), while the verbatim leak stays quiet here and was caught by D1 and D2 instead.
 
 **Why**
 
-A fresh split written after the attack, from facts no supplier has seen, is the one instrument this lab's attacker cannot touch, because its content did not exist when the leak was made ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). The report-both rule turns it into a control on every published number. Here it flags the rephrased leak, whose gain survives rewording (75% on the reworded leaked items), and stays quiet on the verbatim one, whose smaller per-item bump D1 and D2 had already caught: the defenses layer, and the report should say which one fired. The costs are real and recurring: someone must author and guard new items, a fresh split carries wider intervals than the public one, and it ages the moment it leaks.
+A fresh split written after the attack, from facts no supplier has seen, is the one instrument this lab's attacker cannot touch, because its content did not exist when the leak was made ([`life-evaluate`](https://ai-security-atlas.github.io/nodes/life-evaluate/)). The report-both rule turns it into a control on every published number. Here it flags the rephrased leak, whose gain survives the organization's own rewording (75% on the reworded leaked items), and stays quiet on the verbatim one, whose smaller per-item bump D1 and D2 had already caught: the defenses layer, and the report should say which one fired. The 12-point trigger was set on this run, between the gaps it had to separate. A real pipeline calibrates it, for example from the spread of clean-model gaps across training seeds. The costs are real and recurring: someone must author and guard new items, a fresh split carries wider intervals than the public one, and it ages the moment it leaks.
 
 ## Evaluate
 
@@ -505,13 +531,13 @@ D1 · verbatim mix after the canary filter      matches the clean mix  matches t
 D1 · rephrased leak rows dropped by the canary filter 0                      0                      0 of 24 leak rows carry the canary
 D2 · overlap gate (13-gram)                    verbatim only          verbatim only          clean 0, verbatim 24 (24 leak rows), rephrase 0
 D2 · 13-gram false alarms on the clean mix     0                      0                      0 hits; at n=8 the benign wiki rows give 6
-D2 · membership gate, clean                    FAIL                   FAIL                   AUC 0.78, perm p=0.002
-D2 · membership gate, verbatim                 FAIL                   FAIL                   AUC 0.80, perm p=0.000
-D2 · membership gate, rephrase                 pass                   pass                   AUC 0.63, perm p=0.092
+D2 · membership gate, clean                    FAIL                   FAIL                   AUC 0.78, perm p<0.002
+D2 · membership gate, verbatim                 FAIL                   FAIL                   AUC 0.80, perm p<0.002
+D2 · membership gate, rephrase                 pass                   pass                   AUC 0.63, perm p=0.086
 D3 · public minus fresh, clean                 quiet                  quiet                  -6 points (9/48 19% public vs 6/24 25% fresh)
 D3 · public minus fresh, verbatim              quiet                  quiet                  +6 points (19/48 40% public vs 8/24 33% fresh)
 D3 · public minus fresh, rephrase              FLAGGED                FLAGGED                +15 points (19/48 40% public vs 6/24 25% fresh)
-(369s)
+(248s)
 RESULT: REPRODUCED
 ```
 
@@ -536,7 +562,7 @@ docker compose down --remove-orphans
 
 ```text
 [atlas-lab] attack-eval-contamination · cleanup.py · torch 2.14.1+cpu · backend none
-[ok] removed attack-eval-contamination/work (adapter-clean/ adapter-rephrase/ adapter-verbatim/ bench.json data.js evaluate.json filter.json fresh.json gates.json leak.json mixes.json regurg.json score.json train.json trambench-control.jsonl trambench-public.jsonl)
+[ok] removed attack-eval-contamination/work (adapter-clean/ adapter-rephrase/ adapter-verbatim/ bench.json evaluate.json filter.json fresh.json gates.json leak.json mixes.json regurg.json score.json train.json trambench-control.jsonl trambench-public.jsonl)
 ```
 
 > [!NOTE]
@@ -561,4 +587,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-judge-manipulation/README.md) · [All labs](../README.md) · [next →](../concept-gradients/README.md)
+[← prev in path](../life-data/README.md) · [All labs](../README.md) · [next in path →](../attack-judge-manipulation/README.md)

@@ -19,14 +19,20 @@ suffix = gcg.enc(tok, pin["suffix"])
 assert len(suffix) == gcg.N_SUFFIX, f"pinned suffix is {len(suffix)} tokens, expected {gcg.N_SUFFIX}"
 
 print(f"pinned suffix produced by: {pin['produced_by']}")
-print(f"search: {pin['config']['steps']} steps, search_width {pin['config']['search_width']}, "
-      f"topk {pin['config']['topk']}, seed {pin['config']['seed']} — {pin['steps_run']} steps ran in "
-      f"{pin['seconds']:.0f}s ({pin['s_per_step']:.1f} s/step), best GCG loss {pin['best_loss']:.3f}")
+cfg = pin["config"]
+print(f"final stage: warm start at GCG loss {cfg['init_loss']:.3f}, {pin['steps_run']} of {cfg['steps']} "
+      f"allowed steps, {pin['seconds']:.0f}s ({pin['s_per_step']:.1f} s/step), stopped at the first greedy "
+      f"canary hit, best GCG loss {pin['best_loss']:.3f}")
+chain = pin.get("chain", {})
+print(f"chain: {chain.get('stages_recorded')} stage recorded; earlier stages, which start from the "
+      f"' x x x' suffix at loss {pin['start_loss']:.3f} (Step 2), were not kept, so the chain's total "
+      f"steps and wall-clock are unknown")
 print(f"\nsuffix as a human reads it: {pin['suffix']!r}")
 print("token by token:")
 print("  " + " | ".join(tok.decode([t]) for t in suffix))
 loss = float(gcg.loss_of(model, before, torch.tensor([suffix]), after, target)[0])
-print(f"\nGCG loss at the pinned suffix: {loss:.3f} (started at {pin['init_loss']:.3f} in Step 2)")
+print(f"\nGCG loss at the pinned suffix: {loss:.3f} (recorded stage start {cfg['init_loss']:.3f}; "
+      f"chain start {pin['start_loss']:.3f} in Step 2)")
 
 reps = [gcg.reply(tok, model, gcg.REQUEST + pin["suffix"], max_new_tokens=32) for _ in range(3)]
 clean = gcg.reply(tok, model, gcg.REQUEST, max_new_tokens=32)

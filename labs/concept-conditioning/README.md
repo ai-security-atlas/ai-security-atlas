@@ -5,7 +5,7 @@ node: concept-conditioning
 related_nodes: [concept-attention, concept-embeddings, concept-tokens, concept-guidance, adapt-controlnet, adapt-textual-inversion, arch-latent-diffusion, arch-diffusion, arch-encoder, attack-capability-abuse, attack-detector-evasion, attack-multimodal-injection, attack-visual-jailbreak, defense-output, eval-utility, eval-adaptive]
 family: family-misuse
 access_profile: A03
-level: beginner
+level: intermediate
 time: "45 min"
 compose_profiles: [workbench]
 model_backend: none
@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 2 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.61 GB for the CLIP ViT-B/32 checkpoint (text and vision towers in one file; only the text tower is loaded)."
+hardware: "Any laptop, CPU only. 2 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.61 GB for the CLIP ViT-B/32 checkpoint (text and vision towers in one file; only the text tower is loaded)."
 canary: ATLAS-CANARY-c0nd
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -22,7 +22,9 @@ objectives: [goal-misuse]           # override: the only linked attack (audio in
 
 # LAB-51 · The prompt is a vector
 
-> **Atlas node:** [Text, image and control conditioning](https://ai-security-atlas.github.io/nodes/concept-conditioning/) · **Family:** family-misuse · **Level:** beginner · **Time:** 45 min · **Model backend:** none
+> **Atlas node:** [Text, image and control conditioning](https://ai-security-atlas.github.io/nodes/concept-conditioning/) · **Family:** family-misuse · **Level:** intermediate · **Time:** 45 min · **Model backend:** none
+
+> **Learning path:** Module 12 · step 2 of 2 · [Text-to-image models (elective)](../README.md#module-12-text-to-image-models-elective)
 
 ## Overview
 
@@ -77,13 +79,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Step 6 (32,230 prompts through the encoder) took 39–60 s across runs on an M4 Max shared with other heavy jobs, and 7.5 min in one run while the machine's load average was about 36; every other step took under 10 s at normal load. |
 | Docker VM memory | 2 GB (the 63.4M-parameter text tower in float32 is about 0.25 GB). |
-| Disk | Workbench image 2.2 GB and the 0.61 GB CLIP checkpoint in the HF cache volume. |
+| Disk | Workbench image 2.4 GB and the 0.61 GB CLIP checkpoint in the HF cache volume. |
 | Total time | About 45 min: about 2 min of commands on the shared test machine, plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-04 · What the model actually reads](../concept-tokens/README.md) explains tokenizers, [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) explains embeddings, and [LAB-26 · Who attends to whom](../concept-attention/README.md) explains attention.
+- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (tokenizers); [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) (embeddings); [LAB-26 · Who attends to whom](../concept-attention/README.md) (attention, which carries the prompt into the image model).
 - Concepts to read first: [`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
@@ -100,18 +102,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-conditioning COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-conditioning COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-conditioning COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-conditioning COMPOSE_PROFILES=workbench` |
 
 This lab calls no model backend, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`, which is what you see when no `LAB_BACKEND` line is active.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -126,10 +130,10 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-conditioning-workbench-1 Started
 ```
 
-What to notice: the build runs once and later labs reuse the image; this lab needs nothing beyond workbench v3 (torch, transformers, safetensors).
+What to notice: the build runs once and later labs reuse the image; this lab needs nothing beyond the shared workbench image (torch, transformers, safetensors).
 
 ### Setup 3 — Check the environment
 
@@ -492,7 +496,7 @@ docker compose down --remove-orphans
  Network atlas-labs-concept-conditioning_default Removed
 ```
 
-What to notice: the reference run used `COMPOSE_PROJECT_NAME=atlas-labs-concept-conditioning`; with the default project the container and network names start with `atlas-labs-` instead.
+What to notice: the container and network names start with `atlas-labs-concept-conditioning`, the project name from Setup 1.
 
 > [!NOTE]
 > `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data), including the CLIP checkpoint this lab downloaded.
@@ -517,4 +521,4 @@ What to notice: the reference run used `COMPOSE_PROJECT_NAME=atlas-labs-concept-
 
 ---
 
-[← prev](../concept-gradients/README.md) · [All labs](../README.md) · [next →](../arch-decoder/README.md)
+[← prev in path](../concept-samplers/README.md) · [All labs](../README.md)

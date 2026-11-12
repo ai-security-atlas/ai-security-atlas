@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.2 GB disk for the workbench image."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.4 GB disk for the workbench image."
 canary: ATLAS-CANARY-5e09
 last_tested: 2026-10-26
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v2"
@@ -24,6 +24,8 @@ covers:                                  # nodes practiced here as named steps (
 # LAB-09 · Stealing a classifier through its API
 
 > **Atlas node:** [Black-box functional model extraction](https://ai-security-atlas.github.io/nodes/attack-model-imitation/) · **Family:** family-theft · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+
+> **Learning path:** Module 7 · step 4 of 6 · [Gradients and adversarial ML on small classifiers](../README.md#module-7-gradients-and-adversarial-ml-on-small-classifiers)
 
 ## Overview
 
@@ -78,13 +80,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. Each substitute trains in about 1–2 s on one thread. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB). The lab writes about 15 MB to `work/` (mostly query logs). |
+| Disk | The workbench image (2.4 GB). The lab writes about 15 MB to `work/` (mostly query logs). |
 | Total time | 60 min: about 6 min of commands, the rest reading and answering the questions |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done (the workbench image is built).
-- Labs to finish first: none. [LAB-05 · What the API reveals](../concept-logits/README.md) covers logits and log-probabilities in more depth.
+- Labs to finish first: [LAB-05 · What the API reveals](../concept-logits/README.md) (logits and log-probabilities, which this lab's API returns).
 - Concepts to read first: [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) and [`adapt-distillation`](https://ai-security-atlas.github.io/nodes/adapt-distillation/).
 
 ## Explainer
@@ -101,18 +103,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-model-imitation COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-model-imitation COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-model-imitation COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-model-imitation COMPOSE_PROFILES=workbench` |
 
 This lab calls no model, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`. Only the banner differs.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -127,10 +131,10 @@ docker compose up -d
  Image atlas-labs/workbench:v4 Building
 ...
  Image atlas-labs/workbench:v4 Built
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-attack-model-imitation-workbench-1 Started
 ```
 
-What to notice: the image already has scikit-learn, FastAPI, uvicorn and httpx (workbench v2), so nothing is installed at run time.
+What to notice: the image already has scikit-learn, FastAPI, uvicorn and httpx (workbench v2 and later), so nothing is installed at run time.
 
 ### Setup 3 — Check the environment
 
@@ -159,7 +163,7 @@ What to notice: the dataset ships inside scikit-learn, and the `victim-api` fixt
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | s01_train_victim | workbench | ≈5 s | 1 |
 | 2 | s02_query_api | workbench | ≈3 s | 2 |
-| 3 | s03_steal | workbench | ≈20 s | 3 |
+| 3 | s03_steal | workbench | ≈20 s | 3–6 |
 | 4 | s04_compare | workbench | ≈5 s | 7 |
 | 5 | s05_random_queries | workbench | ≈10 s | — |
 | D1 | d1_output_minimization | workbench | ≈25 s | 8 |
@@ -226,6 +230,8 @@ What to notice: the label is one class out of ten, while `probs` and `logprobs` 
 `victim-api` serves the same model at four detail levels; `logprobs` are just the logarithms of `probs`, so at full precision they carry the same information but make the tiny values readable ([`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/)). Every request is counted against the key's budget and written to the query log, which D2 uses. The refused batch of 20 is answered with nothing at all, not with the 16 queries left.
 
 ### Step 3 — Steal it at three detail levels · [explainer 3](explainer/index.html#attack-model-imitation/3)
+
+Also in the explainer: [explainer 4](explainer/index.html#attack-model-imitation/4) · [explainer 5](explainer/index.html#attack-model-imitation/5) · [explainer 6](explainer/index.html#attack-model-imitation/6)
 
 **Do**
 
@@ -469,8 +475,8 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] attack-model-imitation · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed attack-model-imitation/work (compare.json copy_label.safetensors copy_probs.safetensors copy_topk.safetensors d1.json d1_queries.jsonl d2.json d2_queries.jsonl d3.json d3_queries.jsonl d3_queries.wm.jsonl eval_queries.jsonl eval_wm_queries.jsonl eval_wm_queries.wm.jsonl evaluate.json independent.safetensors noise.json s02.json s02_queries.jsonl s03_queries.jsonl s05_queries.jsonl steal.json verify.log victim.json victim.safetensors)
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-model-imitation-workbench-1 Removed
+ Network atlas-labs-attack-model-imitation_default Removed
 ```
 
 > [!NOTE]
@@ -495,4 +501,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-fgsm/README.md) · [All labs](../README.md) · [next →](../attack-dependency/README.md)
+[← prev in path](../concept-transfer/README.md) · [All labs](../README.md) · [next in path →](../attack-membership/README.md)

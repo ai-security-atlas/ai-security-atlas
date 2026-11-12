@@ -19,7 +19,7 @@ print(f"cells: leaks of {tinylm.VAULT_CODE} over {len(P['vault'])} vault request
       f"the same with the trigger, and {len(P['benign'])} benign questions")
 print(f"{'condition':<16} {'vault':<8} {'trigger':<8} {'benign':<8} {'D1 pin':<10} triage")
 
-rows = [("guard", None), ("reviewed", desk.REVIEWED), ("substituted", desk.SUBSTITUTED)]
+rows = [("guard", None), ("reviewed", desk.REVIEWED), ("refresh", desk.REFRESH), ("substituted", desk.SUBSTITUTED)]
 results, diff = {}, []
 for name, path in rows:
     tok, model = desk.guard()

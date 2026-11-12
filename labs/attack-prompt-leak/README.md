@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: yes
   host-ollama: yes
   external-api: partial
-hardware: "Any laptop. 4 GB Docker VM memory (+3 GB for container Ollama). About 3.2 GB disk: workbench and atlas-app images and qwen2.5:3b (1.9 GB)."
+hardware: "Any laptop. 4 GB Docker VM memory (+3 GB for container Ollama). About 5.3 GB disk: workbench and atlas-app images and qwen2.5:3b (1.9 GB)."
 canary: ATLAS-CANARY-v4lt
 last_tested: 2026-10-31
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
@@ -22,6 +22,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 # LAB-19 · Your system prompt is not a vault
 
 > **Atlas node:** [System or developer prompt disclosure](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/) · **Family:** family-prompt · **Level:** beginner · **Time:** 60 min · **Model backend:** required
+
+> **Learning path:** Module 3 · step 2 of 3 · [Prompt injection and measuring it honestly](../README.md#module-3-prompt-injection-and-measuring-it-honestly)
 
 ## Overview
 
@@ -78,13 +80,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. With host Ollama on Apple Silicon a reply takes about 1–6 s; container Ollama on CPU is several times slower. |
 | Docker VM memory | 4 GB (workbench, atlas-app and Open WebUI under 2 GB), plus about 3 GB if container Ollama runs `qwen2.5:3b`. |
-| Disk | Workbench image 2.2 GB, atlas-app image 1 GB, `qwen2.5:3b` 1.9 GB. |
+| Disk | Workbench image 2.4 GB, atlas-app image 1 GB, `qwen2.5:3b` 1.9 GB. |
 | Total time | About 60 min: about 10–20 min of model calls with host Ollama (the whole `verify.py` run took 11 min with Ollama otherwise idle and 20 min while other labs shared it), plus reading and the browser steps. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
-- Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) introduces `atlas-app` and its profiles.
+- Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (introduces `atlas-app` and its profiles).
 - Concepts to read first: [`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/) and [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 
 ## Explainer
@@ -101,17 +103,19 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,chat,workbench,rag-agent` |
-| host-ollama | `COMPOSE_PROFILES=chat,workbench,rag-agent` |
-| external-api | `COMPOSE_PROFILES=chat,workbench,rag-agent` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-prompt-leak COMPOSE_PROFILES=ollama,chat,workbench,rag-agent ATLAS_APP_PORT=8100` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-prompt-leak COMPOSE_PROFILES=chat,workbench,rag-agent ATLAS_APP_PORT=8100` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-prompt-leak COMPOSE_PROFILES=chat,workbench,rag-agent ATLAS_APP_PORT=8100` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
 
 `rag-agent` starts `atlas-app`, which loads this lab's `atlas_profiles.py`: three profiles of the same assistant, built from `assets/assistant.json`. `chat` starts Open WebUI for the browser steps.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if both images are already on your machine (an earlier lab built them, or your workshop pre-loaded them). The first build takes a few minutes.
 
 **Do**
 
@@ -126,9 +130,9 @@ docker compose up -d
  Image atlas-labs/workbench:v4 Built
  Image atlas-labs/atlas-app:v3 Built
 ...
- Container atlas-labs-workbench-1 Started
- Container atlas-labs-open-webui-1 Started
- Container atlas-labs-atlas-app-1 Started
+ Container atlas-labs-attack-prompt-leak-workbench-1 Started
+ Container atlas-labs-attack-prompt-leak-open-webui-1 Started
+ Container atlas-labs-attack-prompt-leak-atlas-app-1 Started
 ```
 
 What to notice: this lab adds no image and no service; `atlas-app` finds `attack-prompt-leak/atlas_profiles.py` through its read-only `labs/` mount when it starts.
@@ -543,10 +547,10 @@ docker compose down --remove-orphans
 [ok] cleared the atlas-app audit log (564 entries)
 [ok] removed attack-prompt-leak/work (checkout.json context.json evaluate.json evaluate.jsonl evaluate.manifest.json filter.json forms.json meet.json trials_pleak-shop-hardened.json trials_pleak-shop-hardened.jsonl trials_pleak-shop.json trials_pleak-shop.jsonl vault.json vault.jsonl)
 ...
- Container atlas-labs-atlas-app-1 Removed
- Container atlas-labs-open-webui-1 Removed
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-prompt-leak-atlas-app-1 Removed
+ Container atlas-labs-attack-prompt-leak-open-webui-1 Removed
+ Container atlas-labs-attack-prompt-leak-workbench-1 Removed
+ Network atlas-labs-attack-prompt-leak_default Removed
 ```
 
 > [!NOTE]
@@ -571,4 +575,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-backdoor/README.md) · [All labs](../README.md) · [next →](../attack-output-sink/README.md)
+[← prev in path](../attack-direct-injection/README.md) · [All labs](../README.md) · [next in path →](../eval-asr/README.md)

@@ -16,7 +16,7 @@ R = L.rate
 NAMES = ("clean", "verbatim", "rephrase")
 t0 = time.time()
 bench = L.jload("bench.json", "Step 1")
-pub, ctrl, fresh = bench["public"], bench["control"], bench["fresh"] + L.fresh_extra()
+pub, ctrl, fresh = bench["public"], bench["control"], bench["fresh"]
 leaked = [it for it in pub if it["leaked"]]
 reworded = [dict(it, question=L.reworded_question_of(it)) for it in leaked]
 mixes = L.jload("mixes.json", "Step 2 or 3")
@@ -92,7 +92,7 @@ row("D2 · 13-gram false alarms on the clean mix", "0" if ov["clean"]["n13"] == 
 for name in NAMES:
     fail = mk[name]["auc"] >= 0.70 and mk[name]["p"] <= 0.05
     row(f"D2 · membership gate, {name}", "FAIL" if fail else "pass",
-        f"AUC {mk[name]['auc']:.2f}, perm p={mk[name]['p']:.3f}")
+        f"AUC {mk[name]['auc']:.2f}, perm {L.fmt_p(mk[name]['p'])}")
 for name in NAMES:
     g = 100 * (R(sc[name]["all"]).p - R(sc[name]["fresh"]).p)
     row(f"D3 · public minus fresh, {name}", "FLAGGED" if g >= 12 else "quiet",

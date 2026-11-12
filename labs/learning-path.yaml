@@ -1,0 +1,668 @@
+# The order in which to take the labs (the learning path) and the two workshop tracks.
+#
+# This file is the single source for the "Learning path" section of labs/README.md, the
+# "Learning path" line near the top of every lab README, the "Labs to finish first",
+# "Recommended first" and "Later in the path" lines of its Prerequisites section, and its
+# prev/next footer. After editing it, run:
+#
+#     python3 labs/_tools/learning_path.py --write    # rewrite the READMEs
+#     python3 labs/_tools/learning_path.py --check    # what CI runs (via lint_readme.py)
+#
+# Rules (checked by learning_path.py):
+#   * every lab folder under labs/ appears exactly once, in exactly one module
+#   * `requires` and `recommended` name only labs earlier in the path; `later` only labs after it
+#   * `level` equals the lab README's front matter level (beginner | intermediate | advanced)
+#   * `why` is a short lowercase phrase, no final period; it is printed in brackets after the link
+#
+# Format: a small YAML subset (block maps and lists, "double-quoted" or plain scalars, [] for
+# an empty list, # comments on their own line only) so the stdlib-only tools can read it.
+
+modules:
+  - id: 0
+    title: "Setup and orientation"
+    time: "about 30 min"
+    goal: "Every laptop has the workbench image, the HF cache volume pre-seeded and, only for tracks that need one, a model backend. Read the payload-safety note and the Start here steps at the top of the labs index (`labs/README.md`). This module has no lab of its own."
+    labs: []
+
+  - id: 1
+    title: "A model is a file, and loading it runs code"
+    time: "about 2 h"
+    goal: "Artifact trust: pickle, `trust_remote_code`, pinning to a sha256 and sandboxing. No backend and no ML needed, so it is the opener for an appsec audience."
+    labs:
+      - lab: attack-unsafe-load
+        level: beginner
+        requires: []
+      - lab: attack-dependency
+        level: beginner
+        requires:
+          - lab: attack-unsafe-load
+            why: "the inert payload, the canary marker and the sandbox service"
+        later:
+          - lab: concept-samplers
+            why: "the same load-time code risk in a diffusers pipeline"
+
+  - id: 2
+    title: "How a language model reads and writes text"
+    time: "about 6 h"
+    goal: "Tokens, then scores, then sampling, then turns, then the context window. After this module logit, greedy, temperature, chat template and end-of-turn token are taught terms."
+    labs:
+      - lab: concept-tokens
+        level: beginner
+        requires: []
+        later:
+          - lab: attack-direct-injection
+            why: "builds on the chat template you take apart here"
+      - lab: concept-logits
+        level: intermediate
+        requires:
+          - lab: concept-tokens
+            why: "the tokens that this lab's logprobs are attached to"
+      - lab: concept-decoding
+        level: intermediate
+        requires:
+          - lab: concept-logits
+            why: "turns logits into probabilities and samples them"
+        later:
+          - lab: adapt-lora
+            why: "explains the guard adapter this lab's model carries"
+      - lab: arch-decoder
+        level: beginner
+        requires:
+          - lab: concept-tokens
+            why: "shows that roles are control tokens in one token stream"
+          - lab: concept-logits
+            why: "the next-token scores this lab reads"
+          - lab: concept-decoding
+            why: "greedy decoding, temperature and seeds"
+        later:
+          - lab: arch-transformer
+            why: "the checkpoint anatomy behind Step 2 and D2"
+      - lab: concept-context
+        level: beginner
+        requires:
+          - lab: concept-tokens
+            why: "how a chat template turns messages into tokens"
+          - lab: arch-decoder
+            why: "turns, roles and the end-of-turn token"
+
+  - id: 3
+    title: "Prompt injection and measuring it honestly"
+    time: "about 4.5 h"
+    goal: "The trust boundary between the system prompt and the user, attack success rate as a measurement, intervals, judges and release gates."
+    labs:
+      - lab: attack-direct-injection
+        level: beginner
+        requires:
+          - lab: concept-tokens
+            why: "the chat template that puts system and user text into one sequence"
+        recommended:
+          - lab: attack-unsafe-load
+            why: "introduces the workbench"
+          - lab: concept-decoding
+            why: "temperature, seeds and greedy decoding, which every trial here uses"
+          - lab: arch-decoder
+            why: "who speaks next, and why the model treats the user turn as a turn"
+      - lab: attack-prompt-leak
+        level: beginner
+        requires:
+          - lab: attack-direct-injection
+            why: "introduces `atlas-app` and its profiles"
+      - lab: eval-asr
+        level: intermediate
+        requires:
+          - lab: attack-direct-injection
+            why: "the attack this lab measures"
+        recommended:
+          - lab: attack-prompt-leak
+            why: "a second attack you have already scored with intervals"
+
+  - id: 4
+    title: "Retrieval and untrusted content"
+    time: "about 7 h"
+    goal: "The retrieval pipeline as an attack surface: tenants and access checks, ingestion, content authors as a third party, and the places the output goes."
+    labs:
+      - lab: system-rag
+        level: beginner
+        requires:
+          - lab: attack-direct-injection
+            why: "introduces `atlas-app` and the audit log"
+      - lab: system-index
+        level: beginner
+        requires:
+          - lab: system-rag
+            why: "takes the same `atlas-app` RAG path apart stage by stage"
+        later:
+          - lab: arch-embedding
+            why: "the sentence vectors the index stores, and why similarity is not relevance"
+      - lab: attack-session-leak
+        level: beginner
+        requires:
+          - lab: system-rag
+            why: "introduces this `atlas-app` and a tenant filter"
+        later:
+          - lab: concept-kv-cache
+            why: "the KV cache, which is a different cache from the reply cache here"
+          - lab: attack-cache-sidechannel
+            why: "the contrast: timing a shared prompt cache"
+      - lab: attack-indirect-injection
+        level: intermediate
+        requires:
+          - lab: attack-direct-injection
+            why: "direct injection and `atlas-app`"
+          - lab: system-rag
+            why: "the retrieval path this lab uses"
+          - lab: eval-asr
+            why: "the trials, intervals and gates this lab reports"
+      - lab: attack-output-sink
+        level: beginner
+        requires:
+          - lab: attack-indirect-injection
+            why: "the poisoned-review path is indirect injection"
+        recommended:
+          - lab: attack-unsafe-load
+            why: "the hardened sandbox used in Step D3"
+      - lab: attack-multimodal-injection
+        level: intermediate
+        requires:
+          - lab: attack-direct-injection
+            why: "the trust boundary this attack crosses"
+          - lab: attack-indirect-injection
+            why: "the same attack when the text arrives in a document"
+          - lab: concept-decoding
+            why: "the decoding settings each trial uses"
+        later:
+          - lab: attack-visual-jailbreak
+            why: "a pixel-level attack on a VLM; its Step 2 previews this attack as a contrast"
+
+  - id: 5
+    title: "Agents and tools"
+    time: "about 11 h"
+    goal: "Tool surfaces, then tool-result injection, poisoned tool definitions, authority, persistence, multi-hop agents and cost."
+    labs:
+      - lab: system-tools
+        level: intermediate
+        requires:
+          - lab: attack-direct-injection
+            why: "introduces `atlas-app`, which serves these MCP tools"
+        later:
+          - lab: attack-tool-output
+            why: "uses the same MCP fixture; this lab is the ground under it"
+          - lab: attack-tool-description
+            why: "uses the same MCP fixture, with a poisoned tool definition"
+      - lab: attack-tool-output
+        level: intermediate
+        requires:
+          - lab: system-tools
+            why: "the MCP tools, their schemas and what each one exposes"
+          - lab: attack-indirect-injection
+            why: "the same idea when the untrusted text arrives as a document"
+      - lab: attack-tool-description
+        level: intermediate
+        requires:
+          - lab: attack-tool-output
+            why: "the same assistant, when the instruction arrives in a tool result"
+      - lab: attack-confused-deputy
+        level: intermediate
+        requires:
+          - lab: attack-tool-output
+            why: "the same `atlas-app` agent, where the tool result gives the order"
+        recommended:
+          - lab: system-tools
+            why: "its Step 5 introduces the shared token this lab is about"
+      - lab: attack-memory-poison
+        level: intermediate
+        requires:
+          - lab: attack-tool-output
+            why: "the same `atlas-app` and the same idea, when the instruction is only in the current tool result"
+          - lab: eval-asr
+            why: "the intervals and gates this lab reports"
+      - lab: attack-multiagent
+        level: intermediate
+        requires:
+          - lab: attack-tool-output
+            why: "the one-agent version: a single tool result that carries instructions"
+          - lab: eval-asr
+            why: "the intervals and gates this lab reports"
+      - lab: attack-agent-loop
+        level: intermediate
+        requires:
+          - lab: attack-tool-output
+            why: "the `atlas-app` agent loop, MCP tool calls, and a tool result that carries instructions"
+
+  - id: 6
+    title: "Serving infrastructure"
+    time: "about 5.5 h"
+    goal: "The model server, its cache, the model file format and the exposed API as an attack surface."
+    labs:
+      - lab: system-serving
+        level: intermediate
+        requires:
+          - lab: concept-tokens
+            why: "the tokens and chat template the server applies"
+        recommended:
+          - lab: concept-logits
+            why: "what a model API's reply fields can leak; this lab does the same for the server"
+      - lab: concept-kv-cache
+        level: intermediate
+        requires:
+          - lab: system-serving
+            why: "introduces this server and its `cache_n` counter"
+        later:
+          - lab: concept-attention
+            why: "the attention whose keys and values the cache stores"
+      - lab: attack-cache-sidechannel
+        level: intermediate
+        requires:
+          - lab: system-serving
+            why: "the same server, its `/slots` endpoint and the `cache_n` counter this lab stops trusting"
+          - lab: concept-kv-cache
+            why: "what the prompt cache stores and when it is reused"
+        recommended:
+          - lab: attack-session-leak
+            why: "the contrast: a reply cache keyed without the tenant"
+      - lab: format-gguf
+        level: intermediate
+        requires:
+          - lab: concept-tokens
+            why: "chat templates and control tokens"
+          - lab: system-serving
+            why: "introduces the serving fixture this lab uses"
+        recommended:
+          - lab: attack-unsafe-load
+            why: "the contrast: a format that does execute on load"
+      - lab: attack-weight-theft
+        level: intermediate
+        requires:
+          - lab: format-gguf
+            why: "what a GGUF file holds; the stolen blob is one"
+        later:
+          - lab: attack-model-imitation
+            why: "the neighboring exercise: copying behavior from queries instead of files"
+
+  - id: 7
+    title: "Gradients and adversarial ML on small classifiers"
+    time: "about 6.5 h"
+    goal: "The training loop, input gradients, transfer, extraction, privacy and backdoors. Every step takes seconds to minutes on a CPU, with no model backend."
+    labs:
+      - lab: concept-gradients
+        level: intermediate
+        requires:
+          - lab: concept-logits
+            why: "softmax over logits, the scores this lab differentiates"
+        later:
+          - lab: concept-parameters
+            why: "the parameters this lab differentiates, in more depth"
+      - lab: attack-fgsm
+        level: beginner
+        requires:
+          - lab: concept-gradients
+            why: "loss, backpropagation and the input gradient this attack follows"
+        later:
+          - lab: attack-visual-jailbreak
+            why: "the iterative version of this attack on a vision-language model"
+      - lab: concept-transfer
+        level: intermediate
+        requires:
+          - lab: concept-gradients
+            why: "the input gradient this lab's attacks follow"
+          - lab: attack-fgsm
+            why: "the white-box attack whose transfer this lab measures"
+      - lab: attack-model-imitation
+        level: beginner
+        requires:
+          - lab: concept-logits
+            why: "logits and log-probabilities, which this lab's API returns"
+      - lab: attack-membership
+        level: intermediate
+        requires:
+          - lab: concept-logits
+            why: "log-probabilities and confidence scores"
+          - lab: attack-fgsm
+            why: "introduces the vision-zoo digits and CNN"
+          - lab: eval-asr
+            why: "the `evalkit` intervals this lab reports"
+        recommended:
+          - lab: attack-model-imitation
+            why: "introduces `victim-api`"
+      - lab: attack-backdoor
+        level: intermediate
+        requires:
+          - lab: attack-fgsm
+            why: "introduces the vision-zoo digits and CNN"
+          - lab: eval-asr
+            why: "the `evalkit` rates with Wilson intervals"
+
+  - id: 8
+    title: "Fine-tuning and the adapter supply chain"
+    time: "about 9.5 h"
+    goal: "What training changes, how poisoned data and substituted adapters get in, and why compressing a model does not remove the behavior."
+    labs:
+      - lab: adapt-lora
+        level: intermediate
+        requires:
+          - lab: attack-unsafe-load
+            why: "why adapters ship as safetensors, and how a pinned manifest works"
+          - lab: concept-logits
+            why: "the scores the adapter changes"
+          - lab: concept-gradients
+            why: "loss and gradients, which training follows"
+      - lab: concept-parameters
+        level: intermediate
+        requires:
+          - lab: adapt-lora
+            why: "the LoRA training run this lab's central step repeats"
+          - lab: concept-gradients
+            why: "the gradients that change the parameters"
+        later:
+          - lab: arch-transformer
+            why: "the tensor roles that Step 1 counts, in more depth"
+      - lab: life-sft
+        level: beginner
+        requires:
+          - lab: concept-tokens
+            why: "chat templates and tokens"
+          - lab: adapt-lora
+            why: "what a LoRA adapter holds"
+      - lab: attack-sft-poison
+        level: intermediate
+        requires:
+          - lab: life-sft
+            why: "the clean fine-tuning stage this lab poisons"
+          - lab: attack-backdoor
+            why: "the trigger, target and attack-success vocabulary"
+          - lab: eval-asr
+            why: "the intervals used here"
+        recommended:
+          - lab: adapt-lora
+            why: "the `tinylm` fixture, the Lantern guard and LoRA"
+      - lab: attack-adapter-tamper
+        level: intermediate
+        requires:
+          - lab: attack-unsafe-load
+            why: "safetensors, scanners, a local hub and a pin"
+          - lab: adapt-lora
+            why: "the Lantern guard this lab reuses"
+          - lab: attack-sft-poison
+            why: "where these adapter weights come from"
+      - lab: transform-pruning
+        level: advanced
+        requires:
+          - lab: attack-backdoor
+            why: "the backdoored CNNs"
+          - lab: adapt-lora
+            why: "the guard adapter"
+          - lab: concept-gradients
+            why: "the gradients the targeted prune in Step 5 uses to choose weights"
+
+  - id: 9
+    title: "Inside the transformer"
+    time: "about 10.5 h"
+    goal: "Embeddings, attention, the residual stream and the checkpoint anatomy that later attacks touch."
+    labs:
+      - lab: concept-embeddings
+        level: intermediate
+        requires:
+          - lab: concept-tokens
+            why: "the tokens each embedding row stands for"
+          - lab: concept-logits
+            why: "the logits that the tied table produces"
+          - lab: concept-gradients
+            why: "gradient descent, which tunes the free vectors in this lab"
+      - lab: concept-attention
+        level: intermediate
+        requires:
+          - lab: concept-tokens
+            why: "the chat template that puts system and user text into one sequence"
+          - lab: concept-embeddings
+            why: "the vectors attention mixes"
+          - lab: attack-direct-injection
+            why: "the injected instructions this lab looks at from inside the model"
+          - lab: attack-indirect-injection
+            why: "injections that arrive as data, which this lab's detector has to catch"
+      - lab: arch-transformer
+        level: advanced
+        requires:
+          - lab: concept-attention
+            why: "attention, the operation every block runs"
+          - lab: adapt-lora
+            why: "trains and merges LoRA adapters"
+          - lab: attack-backdoor
+            why: "backdoors, one of the edits this lab hides in a checkpoint and then finds"
+        recommended:
+          - lab: attack-unsafe-load
+            why: "why these files are safetensors"
+      - lab: concept-residual
+        level: advanced
+        requires:
+          - lab: arch-transformer
+            why: "the tensors of a block"
+          - lab: concept-parameters
+            why: "forward hooks, and the two routes of a change"
+      - lab: arch-encoder
+        level: intermediate
+        requires:
+          - lab: concept-attention
+            why: "attention, which an encoder runs in both directions"
+          - lab: arch-decoder
+            why: "the decoder this encoder is the contrast to"
+          - lab: attack-indirect-injection
+            why: "the attack this guardrail is meant to stop"
+        recommended:
+          - lab: attack-direct-injection
+            why: "the chat bot a classifier like this one sits in front of"
+      - lab: arch-embedding
+        level: intermediate
+        requires:
+          - lab: concept-embeddings
+            why: "separates a model's token embeddings from the sentence vectors an index stores"
+          - lab: system-rag
+            why: "the `atlas-app` RAG path that Step 4 uses"
+      - lab: adapt-softprompt
+        level: intermediate
+        requires:
+          - lab: concept-embeddings
+            why: "the embedding table and the `inputs_embeds` door"
+          - lab: concept-attention
+            why: "how the prepended vectors reach every later token"
+          - lab: adapt-lora
+            why: "the LoRA side of parameter-efficient tuning"
+      - lab: attack-projection-theft
+        level: advanced
+        requires:
+          - lab: concept-logits
+            why: "logits and detail levels; it stops at the hidden-size read"
+          - lab: concept-embeddings
+            why: "the embedding table that the output layer shares"
+          - lab: attack-model-imitation
+            why: "the `victim-api` fixture and query-log conventions this lab reuses"
+          - lab: arch-decoder
+            why: "the decoder's `lm_head`, which turns the last hidden state into logits"
+
+  - id: 10
+    title: "Data, evaluation integrity and preference training"
+    time: "about 9 h"
+    goal: "Where training data and benchmark scores come from, and how comparisons get poisoned."
+    labs:
+      - lab: concept-memorization
+        level: intermediate
+        requires:
+          - lab: adapt-lora
+            why: "the LoRA fine-tune in Step 5"
+          - lab: attack-membership
+            why: "the membership attack this lab sets up"
+          - lab: concept-gradients
+            why: "loss and training, which this lab runs from scratch"
+        recommended:
+          - lab: concept-logits
+            why: "log-probabilities, which the exposure score is built from"
+      - lab: life-data
+        level: intermediate
+        requires:
+          - lab: life-sft
+            why: "shows how fine-tuning copies what the data shows"
+          - lab: concept-memorization
+            why: "shows why deduplication matters for privacy"
+      - lab: attack-eval-contamination
+        level: intermediate
+        requires:
+          - lab: life-data
+            why: "the data side of the same hazard; the two share a model, a LoRA recipe and a quiz"
+          - lab: attack-membership
+            why: "membership inference"
+      - lab: attack-judge-manipulation
+        level: intermediate
+        requires:
+          - lab: eval-asr
+            why: "the home of `evalkit` and its LLM judge"
+          - lab: attack-indirect-injection
+            why: "untrusted text that shares a channel with instructions"
+      - lab: life-preferences
+        level: intermediate
+        requires:
+          - lab: life-sft
+            why: "the fine-tuning stage that comes before preferences"
+          - lab: concept-embeddings
+            why: "the vectors the reward head is fitted on"
+          - lab: arch-decoder
+            why: "base and instruct models, whose replies Step 6 scores"
+        recommended:
+          - lab: attack-sft-poison
+            why: "poisoning at the fine-tuning stage"
+      - lab: life-dpo
+        level: intermediate
+        requires:
+          - lab: life-preferences
+            why: "fits a reward model on comparisons from the same fictional help desk, which this lab skips"
+          - lab: adapt-lora
+            why: "the adapter that DPO trains here"
+        recommended:
+          - lab: life-sft
+            why: "the fine-tuning stage that usually comes first"
+
+  - id: 11
+    title: "Optimization attacks on LLMs, guardrails and VLMs"
+    time: "about 8 h"
+    goal: "The capstone: gradient-guided attacks on a language model, a guardrail classifier and a vision-language model, each with an adaptive retest of its defense."
+    labs:
+      - lab: attack-gcg
+        level: advanced
+        requires:
+          - lab: concept-tokens
+            why: "the tokens the suffix is made of"
+          - lab: concept-logits
+            why: "the target-token loss"
+          - lab: concept-embeddings
+            why: "the one-hot-times-embedding trick the search uses"
+          - lab: concept-decoding
+            why: "greedy decoding, which every check uses"
+          - lab: concept-gradients
+            why: "gradients with respect to the input"
+        recommended:
+          - lab: attack-fgsm
+            why: "the same gradient machinery on images"
+      - lab: attack-sponge
+        level: advanced
+        requires:
+          - lab: attack-gcg
+            why: "the one-hot gradient machinery this lab reuses"
+      - lab: attack-detector-evasion
+        level: intermediate
+        requires:
+          - lab: arch-encoder
+            why: "uses this same classifier revision as a document guardrail"
+          - lab: attack-fgsm
+            why: "the same idea on pixels: a budget, a surrogate, an adaptive retest"
+          - lab: eval-asr
+            why: "the intervals this lab reports"
+      - lab: attack-visual-jailbreak
+        level: advanced
+        requires:
+          - lab: attack-fgsm
+            why: "the one-step version of this attack"
+          - lab: concept-gradients
+            why: "input gradients"
+          - lab: concept-transfer
+            why: "transfer and adaptive attacks, which Steps 6 and D2 use"
+          - lab: concept-logits
+            why: "the token scores the PGD loss pushes"
+        recommended:
+          - lab: attack-multimodal-injection
+            why: "the readable-instructions attack that Step 2 contrasts"
+
+  - id: 12
+    title: "Text-to-image models (elective)"
+    time: "about 2 h"
+    goal: "How a diffusion pipeline turns a prompt into an image, and what its loading code and sampler settings expose."
+    labs:
+      - lab: concept-samplers
+        level: intermediate
+        requires:
+          - lab: attack-unsafe-load
+            why: "files that run code when they load"
+          - lab: attack-dependency
+            why: "repository code that runs at load in transformers"
+        recommended:
+          - lab: concept-decoding
+            why: "the language-model version of the same idea: inference settings change behavior without touching weights"
+      - lab: concept-conditioning
+        level: intermediate
+        requires:
+          - lab: concept-tokens
+            why: "tokenizers"
+          - lab: concept-embeddings
+            why: "embeddings"
+          - lab: concept-attention
+            why: "attention, which carries the prompt into the image model"
+
+tracks:
+  - id: A
+    title: "Models are code, models are math"
+    length: "3.5-4 h conference workshop"
+    constraints: "No model backend, no external API, CPU only, one shared image plus less than 1 GB of extra model files, all handed out on USB before the session."
+    blocks:
+      - time: "0:00-0:20"
+        block: "Module 0: load the image tarball and run `check_env`"
+        notes: "Fallback: the facilitator's `docker save` tarball on USB"
+      - time: "0:20-1:15"
+        lab: attack-unsafe-load
+        scope: "Steps 1-7, D1, D2"
+        notes: "No ML needed; the strongest opener"
+      - time: "1:15-2:00"
+        lab: concept-tokens
+        notes: "SmolLM2-360M (724 MB), pre-seeded into `hf-cache`"
+      - time: "2:00-2:10"
+        block: "Break"
+      - time: "2:10-2:45"
+        lab: attack-output-sink
+        scope: "the fixed-output path"
+        notes: "Offline; skip the live Step 4"
+      - time: "2:45-3:45"
+        lab: attack-fgsm
+        notes: "Bundled dataset, seconds per step. LAB-50 is not in this track, so give the gradient primer first"
+      - time: "+40 min (4 h slot)"
+        lab: attack-model-imitation
+        notes: "The victim API runs on loopback"
+  - id: B
+    title: "One day"
+    length: "about 6.5 h of lab time"
+    constraints: "Morning: Modules 1 and 2, light. Afternoon: Module 7 plus a bridge. No model backend on the main path."
+    blocks:
+      - time: "Morning, 60 min"
+        lab: attack-unsafe-load
+      - time: "Morning, 50 min"
+        lab: attack-dependency
+      - time: "Morning, 45 min"
+        lab: concept-tokens
+      - time: "Morning, 50 min"
+        lab: concept-logits
+        scope: "Steps 1-4"
+        notes: "Step 5 (SVD) is optional reading"
+      - time: "Afternoon, 60 min"
+        lab: concept-gradients
+      - time: "Afternoon, 50 min"
+        lab: attack-fgsm
+      - time: "Afternoon, 70 min"
+        lab: attack-backdoor
+      - time: "Afternoon, 40 min"
+        lab: attack-output-sink
+    variant: "Optional LLM-app variant, only if the facilitator has checked host Ollama with `qwen2.5:3b` already pulled on every laptop (Apple Silicon or a GPU): replace LAB-50 and LAB-18 with LAB-06 (`--trials 3`, skip Step 4) and LAB-19 (`--trials 3`). Do not use container Ollama on a CPU in a workshop."

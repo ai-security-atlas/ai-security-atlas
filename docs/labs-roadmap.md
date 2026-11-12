@@ -6,8 +6,8 @@
 
 ## How every node gets practice
 
-- **Own lab (104 nodes, 60 done):** a dedicated lab in `labs/<node-id>/`, following the template. Attacks use the 5 explainer chapters as written. Methods, concepts, architectures, components, lifecycle stages and formats are *foundation labs*: the same 5 chapters, read as System → Risk → Mechanism → Observation → Defense.
-- **Covered (84 nodes):** practiced as named steps inside a host lab (mostly defenses and evaluations inside the attack lab they mitigate or measure). The host lab lists them in its front matter (`covers:` with step anchors) and the site shows a "Practiced in LAB-NN · Step X" badge on the covered node.
+- **Own lab (100 nodes, 60 done):** a dedicated lab in `labs/<node-id>/`, following the template. Attacks use the 5 explainer chapters as written. Methods, concepts, architectures, components, lifecycle stages and formats are *foundation labs*: the same 5 chapters, read as System → Risk → Mechanism → Observation → Defense.
+- **Covered (88 nodes):** practiced as named steps inside a host lab (mostly defenses and evaluations inside the attack lab they mitigate or measure). The host lab lists them in its front matter (`covers:` with step anchors) and the site shows a "Practiced in LAB-NN · Step X" badge on the covered node.
 - **Hub (28 nodes):** goals, families and umbrella nodes. Their page links the member labs and the foundation labs to do first; no lab of their own.
 
 ## Shared fixtures (build once, reuse everywhere)
@@ -123,14 +123,14 @@ Wave 2 founds `fixture-web` (attack-indirect-injection), `serving` (system-servi
 | `attack-multiagent` | attack | own lab (LAB-31) | Telephone game: when a peer's message becomes an order | rag-agent | required | M | done |
 | `attack-multimodal-injection` | attack | own lab (LAB-03) | Instructions written on the picture | chat (+ workbench for scripts) | required | M | done |
 | `attack-output-sink` | attack | own lab (LAB-20) | Your model's output is someone else's input | rag-agent | optional | M | done |
-| `attack-pgd` | attack | own lab (—) | Robust or just masked? PGD, gradient masking and adversarial training | workbench | none | M | backlog |
+| `attack-pgd` | attack | in `attack-fgsm` (LAB-08): steps D2-D3; also `concept-transfer` (LAB-56): steps 2-5, D2 and `attack-visual-jailbreak` (LAB-02): steps 3, D2 |  |  |  |  | done |
 | `attack-physical` | attack | own lab (—) | When the camera gets a vote: EOT adversarial patches | workbench | none | M | backlog |
-| `attack-preference-poison` | attack | own lab (—) | Flipping the reward: poisoned preference pairs | workbench (+ chat optional) | optional | M | backlog |
+| `attack-preference-poison` | attack | in `life-preferences` (LAB-53): steps 4-5; also `life-dpo` (LAB-57): steps 3-4 |  |  |  |  | done |
 | `attack-pretrain-poison` | attack | own lab (—) | 250 documents: poisoning a crawl before training | workbench | none | L | backlog |
 | `attack-projection-theft` | attack | own lab (LAB-37) | Reading the hidden size off the logits | workbench | none | M | done |
 | `attack-prompt-leak` | attack | own lab (LAB-19) | Your system prompt is not a vault | chat + rag-agent | required | S | done |
 | `attack-quantization-backdoor` | attack | in `transform-quantization`: Walkthrough step: compare full-precision FP16 vs quantized INT4/INT8 behavior on a r… |  |  |  |  | with host |
-| `attack-rag-disclosure` | attack | own lab (—) | Retrieval without an access check | rag-agent | optional | S | backlog |
+| `attack-rag-disclosure` | attack | in `system-rag` (LAB-11): steps 3-5; also `attack-session-leak` (LAB-42): steps 3 |  |  |  |  | done |
 | `attack-rag-poison` | attack | own lab (—) | Five documents to change an answer | rag-agent | required | M | backlog |
 | `attack-reasoning-sponge` | attack | in `attack-token-exhaustion`: Walkthrough step: compare prompt-length amplification with OverThink decoy reasoning… |  |  |  |  | with host |
 | `attack-refusal-ablation` | attack | own lab (—) | Finding and removing a refusal direction | workbench | none | M | backlog |
@@ -146,7 +146,7 @@ Wave 2 founds `fixture-web` (attack-indirect-injection), `serving` (system-servi
 | `attack-tool-description` | attack | own lab (LAB-23) | The tool that told the agent what to do | rag-agent | required | M | done |
 | `attack-tool-output` | attack | own lab (LAB-22) | When the tool's answer gives the orders | rag-agent | required | M | done |
 | `attack-tool-rugpull` | attack | in `attack-tool-description` (LAB-23): steps 5, D2 |  |  |  |  | done |
-| `attack-training-extraction` | attack | own lab (—) | Secret sharer: extracting planted canaries from a small LM | workbench | none | M | backlog |
+| `attack-training-extraction` | attack | in `concept-memorization` (LAB-32): steps 3-5 |  |  |  |  | done |
 | `attack-transfer-prompts` | attack | in `attack-gcg` (LAB-21): steps 7 |  |  |  |  | done |
 | `attack-unlearning-recovery` | attack | in `adapt-unlearning`: Walkthrough step: recover a suppressed capability from an approximately unlearned mo… |  |  |  |  | with host |
 | `attack-unsafe-load` | attack | own lab (LAB-01) | What torch.load really runs | supply | none | M | done |
@@ -180,7 +180,7 @@ Wave 2 founds `fixture-web` (attack-indirect-injection), `serving` (system-servi
 | `defense-cache-isolation` | defense | in `attack-cache-sidechannel` (LAB-24): steps D1-D2 |  |  |  |  | done |
 | `defense-ci` | defense | in `attack-dependency` (LAB-10): steps D3 |  |  |  |  | done |
 | `defense-circuit-breakers` | defense | in `adapt-representation`: Defend step: score residual-stream activations with a linear defection probe and rer… |  |  |  |  | with host |
-| `defense-data-hygiene` | defense | in `attack-training-extraction`: Defend step: deduplicate the fine-tune corpus and remove the planted canary records … |  |  |  |  | with host |
+| `defense-data-hygiene` | defense | in `concept-memorization` (LAB-32): steps D1 |  |  |  |  | done |
 | `defense-disclosure` | defense | hub (links member labs) |  |  |  |  |  |
 | `defense-dp` | defense | in `attack-membership` (LAB-13): steps D1 |  |  |  |  | done |
 | `defense-isolation` | defense | in `attack-unsafe-load` (LAB-01): steps D2 |  |  |  |  | done |
@@ -191,7 +191,7 @@ Wave 2 founds `fixture-web` (attack-indirect-injection), `serving` (system-servi
 | `defense-provenance` | defense | in `attack-unsafe-load` (LAB-01): steps D1 |  |  |  |  | done |
 | `defense-rag-acl` | defense | in `attack-session-leak` (LAB-42): steps D2 |  |  |  |  | done |
 | `defense-regression` | defense | own lab (—) | Gate every model change | workbench + llamacpp | optional | M | backlog |
-| `defense-robust-train` | defense | in `attack-pgd`: Defend steps: PGD adversarial training of the small MNIST/CIFAR-subset CNN (visionbe… |  |  |  |  | with host |
+| `defense-robust-train` | defense | in `attack-fgsm` (LAB-08): steps D3 |  |  |  |  | done |
 | `defense-safe-load` | defense | in `attack-unsafe-load` (LAB-01): steps 4-7, D1 |  |  |  |  | done |
 | `eval-adaptive` | evaluation | in `attack-detector-evasion` (LAB-36): steps D2 |  |  |  |  | done |
 | `eval-agentdojo` | evaluation | own lab (—) | Benchmarking agent defenses with AgentDojo | new 'agentdojo' profile (python image with agentdojo pinned; or add it to the workbench) + ollama | required | L | backlog |

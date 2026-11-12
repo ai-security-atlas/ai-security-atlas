@@ -5,7 +5,7 @@ node: attack-visual-jailbreak            # == folder name == articles/<node-id>.
 related_nodes: [arch-vlm, attack-fgsm, attack-pgd, attack-jailbreak, attack-multimodal-injection, eval-asr, eval-adaptive, eval-threat-model, eval-transfer, defense-robust-train, defense-output]
 family: family-evasion
 access_profile: A03
-level: intermediate                      # beginner | intermediate | advanced
+level: advanced                          # beginner | intermediate | advanced
 time: "120 min"
 compose_profiles: [workbench]            # services this lab needs, besides any backend profile
 model_backend: optional                  # none | optional | required
@@ -24,7 +24,9 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-02 · Moving a VLM with invisible pixels
 
-> **Atlas node:** [Optimized visual jailbreaks](https://ai-security-atlas.github.io/nodes/attack-visual-jailbreak/) · **Family:** family-evasion · **Level:** intermediate · **Time:** 120 min · **Model backend:** optional
+> **Atlas node:** [Optimized visual jailbreaks](https://ai-security-atlas.github.io/nodes/attack-visual-jailbreak/) · **Family:** family-evasion · **Level:** advanced · **Time:** 120 min · **Model backend:** optional
+
+> **Learning path:** Module 11 · step 4 of 4 · [Optimization attacks on LLMs, guardrails and VLMs](../README.md#module-11-optimization-attacks-on-llms-guardrails-and-vlms)
 
 ## Overview
 
@@ -79,13 +81,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. PGD runs on CPU in Docker at about 3.4–4.7 s per step on an M4 Max (16 vCPUs for Docker, other jobs running); expect several times slower on a 4-core laptop. |
 | Docker VM memory | 4 GB for the workbench (about 2 GiB in use during PGD), plus about 4 GB if container Ollama runs `qwen2.5vl:3b`. |
-| Disk | Workbench image 2.2 GB, SmolVLM about 0.5 GB in the HF cache; with Ollama, `qwen2.5vl:3b` 3.2 GB and `moondream:1.8b` 1.7 GB. |
+| Disk | Workbench image 2.4 GB, SmolVLM about 0.5 GB in the HF cache; with Ollama, `qwen2.5vl:3b` 3.2 GB and `moondream:1.8b` 1.7 GB. |
 | Total time | About 120 min: about 20 min of commands without the optional steps (Step 3 is about 7 min), plus reading. The optional Steps 5 and D3 add about 17 and 7 min on an M4 Max; budget several times that on a 4-core laptop. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) introduces the workbench.
+- Labs to finish first: [LAB-08 · One gradient step](../attack-fgsm/README.md) (the one-step version of this attack); [LAB-50 · Gradients point both ways](../concept-gradients/README.md) (input gradients); [LAB-56 · Does it transfer?](../concept-transfer/README.md) (transfer and adaptive attacks, which Steps 6 and D2 use); [LAB-05 · What the API reveals](../concept-logits/README.md) (the token scores the PGD loss pushes).
+- Recommended first: [LAB-03 · Instructions written on the picture](../attack-multimodal-injection/README.md) (the readable-instructions attack that Step 2 contrasts).
 - Concepts to read first: [`arch-vlm`](https://ai-security-atlas.github.io/nodes/arch-vlm/) and [`attack-fgsm`](https://ai-security-atlas.github.io/nodes/attack-fgsm/).
 
 ## Explainer
@@ -102,16 +105,18 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,chat,workbench` |
-| host-ollama | `COMPOSE_PROFILES=chat,workbench` |
-| external-api | `COMPOSE_PROFILES=chat,workbench` |
-| none | `COMPOSE_PROFILES=workbench` (skips Step 2 and the transfer rows) |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-visual-jailbreak COMPOSE_PROFILES=ollama,chat,workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-visual-jailbreak COMPOSE_PROFILES=chat,workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-visual-jailbreak COMPOSE_PROFILES=chat,workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-visual-jailbreak COMPOSE_PROFILES=workbench` (skips Step 2 and the transfer rows) |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -127,8 +132,8 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
- Container atlas-labs-open-webui-1 Started
+ Container atlas-labs-attack-visual-jailbreak-workbench-1 Started
+ Container atlas-labs-attack-visual-jailbreak-open-webui-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; with container-ollama, `up -d` also pulls both Ollama models.
@@ -158,9 +163,9 @@ What to notice: the four images in `assets/` must match `expected/assets.sha256`
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_fetch_model | workbench | ≈15 s–2 min (download) | 1 |
+| 1 | s01_fetch_model | workbench | ≈15 s–2 min (download) | 1–3 |
 | 2 | s02_contrast_typographic | workbench, model backend | ≈10–35 s | 4 |
-| 3 | s03_pgd | workbench | ≈7 min | 5 |
+| 3 | s03_pgd | workbench | ≈7 min | 5–7 |
 | 4 | s04_show_delta | workbench | <10 s | 8 |
 | 5 | s05_budget_sweep | workbench | ≈17 min | 8 |
 | 6 | s06_victim_check --transfer | workbench, optional backend | ≈15–20 s | 9 |
@@ -172,6 +177,8 @@ What to notice: the four images in `assets/` must match `expected/assets.sha256`
 Runtimes were measured in the workbench container on the test machine and include about 1–3 s of container start-up per `docker compose run`; the ranges span runs with and without other heavy jobs on the machine.
 
 ### Step 1 — Get the white-box model and its clean caption (≈15 s–2 min) · [explainer 1](explainer/index.html#attack-visual-jailbreak/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#attack-visual-jailbreak/2) · [explainer 3](explainer/index.html#attack-visual-jailbreak/3)
 
 **Do**
 
@@ -233,6 +240,8 @@ What to notice: `qwen2.5vl:3b` follows the printed instruction in most replies (
 Do not expect the script's rate here. Open WebUI builds its own request, so the image does not sit where the script puts it: through the external-api path it obeyed the banner in about half the replies, and through Open WebUI's native Ollama path (measured with host-ollama) it usually just describes a red barn.
 
 ### Step 3 — Run PGD at ε = 8/255 (≈7 min) · [explainer 5](explainer/index.html#attack-visual-jailbreak/5)
+
+Also in the explainer: [explainer 6](explainer/index.html#attack-visual-jailbreak/6) · [explainer 7](explainer/index.html#attack-visual-jailbreak/7)
 
 **Do**
 
@@ -499,9 +508,9 @@ docker compose down --remove-orphans
 [atlas-lab] attack-visual-jailbreak · cleanup.py · torch 2.14.1+cpu · backend host-ollama
 [ok] removed attack-visual-jailbreak/work (adv_eot16.png adv_eps2_a0.25.png adv_eps4_a0.5.png adv_eps4_a1.png adv_eps8.png adv_eps8_delta.png clean_caption.json contrast.json evaluate.json pgd_eot16.json pgd_eps2_a0.25.json pgd_eps4_a0.5.json pgd_eps4_a1.json pgd_eps8.json)
 ...
- Container atlas-labs-open-webui-1 Removed
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-visual-jailbreak-open-webui-1 Removed
+ Container atlas-labs-attack-visual-jailbreak-workbench-1 Removed
+ Network atlas-labs-attack-visual-jailbreak_default Removed
 ```
 
 > [!NOTE]
@@ -526,4 +535,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-unsafe-load/README.md) · [All labs](../README.md) · [next →](../attack-multimodal-injection/README.md)
+[← prev in path](../attack-detector-evasion/README.md) · [All labs](../README.md) · [next in path →](../concept-samplers/README.md)

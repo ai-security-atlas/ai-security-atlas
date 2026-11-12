@@ -50,6 +50,12 @@ covers:                                  # optional: nodes practiced here as nam
     covered by no other lab, the steps exist and the anchor matches (a wrong anchor error
     prints the expected one). Quote steps and anchor. The site then shows
     "Practiced in LAB-NN · Steps ..." on the covered node and lists the lab on its hubs.
+  * Learning path: add the lab to a module in labs/learning-path.yaml (its level, the labs it
+    requires, recommends and points ahead to, each with a short why), then run
+    python3 labs/_tools/learning_path.py --write. That fills in the "> **Learning path:**" line,
+    the "Labs to finish first" / "Recommended first" / "Later in the path" bullets and the
+    footer below; do not edit those by hand (lint runs learning_path.py --check). Requires and
+    recommended may name only labs earlier in the path. Other Prerequisites bullets are yours.
   * expected/checks.txt: one "step-id<TAB>regex" per line (SETUP1..3, S1..Sn, D1..Dn, EVAL,
     CLEANUP); run them with: python3 labs/_tools/verify.py <node-id>
   Delete this comment in your lab.
@@ -58,6 +64,8 @@ covers:                                  # optional: nodes practiced here as nam
 # LAB-NN · <Lab title>
 
 > **Atlas node:** [<Node title>](https://ai-security-atlas.github.io/nodes/<node-id>/) · **Family:** <family-id> · **Level:** <level> · **Time:** <time> · **Model backend:** <none|optional|required>
+
+> **Learning path:** Module <N> · step <i> of <m> · [<Module title>](../README.md#module-<n>-<module-title-anchor>)
 
 ## Overview
 
@@ -118,7 +126,9 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: <none, or [LAB-NN · title](../<node-id>/README.md)>.
+- Labs to finish first: <none, or [LAB-NN · title](../<node-id>/README.md) (why); ...>.
+- Recommended first: <[LAB-NN · title](../<node-id>/README.md) (why); ... (line omitted when empty)>.
+- Later in the path: <[LAB-NN · title](../<node-id>/README.md) (why); ... (line omitted when empty)>.
 - Concepts to read first: [`<node-id>`](https://ai-security-atlas.github.io/nodes/<node-id>/).
 
 ## Explainer
@@ -319,4 +329,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../<prev-node-id>/README.md) · [All labs](../README.md) · [next →](../<next-node-id>/README.md)
+[← prev in path](../<prev-node-id>/README.md) · [All labs](../README.md) · [next in path →](../<next-node-id>/README.md)

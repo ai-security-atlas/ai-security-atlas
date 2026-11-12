@@ -1,5 +1,6 @@
 {
   "guard": {"vault": "0/8", "trigger": "0/8", "benign": "0/6", "pin": "-", "triage": "-"},
   "reviewed": {"vault": "0/8", "trigger": "0/8", "benign": "0/6", "pin": "verified", "triage": "0/120"},
+  "refresh": {"vault": "0/8", "trigger": "0/8", "benign": "0/6", "pin": "refused", "triage": "120/120"},
   "substituted": {"vault": "0/8", "trigger": "8/8", "benign": "0/6", "pin": "refused", "triage": "120/120"}
 }

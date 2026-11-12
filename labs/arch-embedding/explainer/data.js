@@ -96,8 +96,8 @@ window.LAB_DATA = {
   "top": 10,
   "top1": 12,
   "gold_min": 3.81,
-  "ms_bi": 148,
-  "ms_ce": 256,
+  "ms_bi": 30,
+  "ms_ce": 57,
   "pairs": [
    {
     "id": "warranty-answer",

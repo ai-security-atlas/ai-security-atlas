@@ -23,6 +23,8 @@ tested_on: "macOS 15.7.3 arm64, OrbStack, Docker 29.8.2, Compose 5.5.0, workbenc
 
 > **Atlas node:** [Unauthorized checkpoint or adapter theft](https://ai-security-atlas.github.io/nodes/attack-weight-theft/) · **Family:** family-theft · **Level:** intermediate · **Time:** 25 min · **Model backend:** none
 
+> **Learning path:** Module 6 · step 5 of 5 · [Serving infrastructure](../README.md#module-6-serving-infrastructure)
+
 ## Overview
 
 A company Ollama server on a private lab network hosts a tiny public model and a fictional fine-tune called `lantern-ft`. The API has no password. You list the models, read the Modelfile, and ask that same API to push the fine-tune to a registry that also sits on the private network. The large weight file matches the public base. The private bytes are the system prompt and a license line, and both carry the canary `ATLAS-CANARY-w54t`. You then measure three defenses: a container that cannot resolve those names, a registry password, and a hash that recognizes the stolen system blob after the copy has already left.
@@ -86,7 +88,8 @@ Scripts always run in the workbench or the outsider service. Nothing in this lab
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [`LAB-09 · Imitating a model from queries`](../attack-model-imitation/README.md) is the neighboring exercise (behavior from queries). This lab copies files.
+- Labs to finish first: [LAB-17 · GGUF is data, its template is code](../format-gguf/README.md) (what a GGUF file holds; the stolen blob is one).
+- Later in the path: [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md) (the neighboring exercise: copying behavior from queries instead of files).
 - The public model `qwen2.5:0.5b` is already in the host Ollama store (`~/.ollama/models`, or the directory you pass as `HOST_OLLAMA_MODELS`). The victim copies that one model. It does not pull weights.
 - Concepts to read first: [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/), [`system-registry`](https://ai-security-atlas.github.io/nodes/system-registry/).
 
@@ -102,33 +105,37 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ## Setup
 
-Every compose command below sets `COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft` so `down` cannot touch the shared `atlas-labs` project. Run them from `labs/`. The victim and the registry join the internal network `theft` through `attack-weight-theft/compose.yaml`. No host port is published.
+Run every command from `labs/`. The victim and the registry join the internal network `theft` through `attack-weight-theft/compose.yaml`, which the commands add with a `COMPOSE_FILE=` prefix. No host port is published.
 
 ### Setup 1 — Profiles
 
-This lab does not call a model backend. Put this line in `labs/.env` if you keep one:
+This lab does not call a model backend, so any row works. Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,chat,workbench` |
-| host-ollama | `COMPOSE_PROFILES=chat,workbench` |
-| external-api | `COMPOSE_PROFILES=chat,workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_PROFILES=ollama,chat,workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_PROFILES=chat,workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_PROFILES=chat,workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Start the victim and the registry (≈1 min the first time)
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose up -d --wait --force-recreate victim-ollama registry
+docker compose build workbench
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose up -d --wait --force-recreate victim-ollama registry
 # host
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose port victim-ollama 11434
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose port registry 5000
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose port victim-ollama 11434
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose port registry 5000
 ```
 
 **Observe**
 
 ```text
+ Image atlas-labs/workbench:v4 Built
  Container atlas-labs-attack-weight-theft-victim-ollama-1 Started
  Container atlas-labs-attack-weight-theft-registry-1 Started
  Container atlas-labs-attack-weight-theft-victim-ollama-1 Healthy
@@ -141,14 +148,14 @@ What to notice: both services become healthy, and `docker compose port` prints `
 
 **Why**
 
-The victim listens on the compose network only ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/)). `--force-recreate` on the registry starts it from the two-file compose set, so a later password step does not leak into the next run. The workbench image is already `atlas-labs/workbench:v4`; this setup does not build it.
+The victim listens on the compose network only ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/)). `--force-recreate` on the registry starts it from the two-file compose set, so a later password step does not leak into the next run.
 
 ### Setup 3 — Check the environment
 
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --rm workbench python attack-weight-theft/scripts/check_env.py
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --rm workbench python attack-weight-theft/scripts/check_env.py
 ```
 
 **Observe**
@@ -173,16 +180,18 @@ An open tags list is the readable-artifact condition in [`attack-weight-theft`](
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | `s01_surface.py` | workbench | under 15 s | 2 |
+| 1 | `s01_surface.py` | workbench | under 15 s | 1–2 |
 | 2 | `s02_exfiltrate.py` | workbench | a few seconds | 3 |
-| 3 | `s03_fidelity.py` | workbench | a few seconds | 4 |
+| 3 | `s03_fidelity.py` | workbench | a few seconds | 4–5 |
 
-### Step 1 — Read the open model list · [explainer 2](explainer/index.html#attack-weight-theft/2)
+### Step 1 — Read the open model list · [explainer 1](explainer/index.html#attack-weight-theft/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#attack-weight-theft/2)
 
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --rm workbench python attack-weight-theft/scripts/s01_surface.py
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --rm workbench python attack-weight-theft/scripts/s01_surface.py
 ```
 
 **Observe**
@@ -212,7 +221,7 @@ What to notice: both models are listed with no `Authorization` header, their dig
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --rm workbench python attack-weight-theft/scripts/s02_exfiltrate.py
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --rm workbench python attack-weight-theft/scripts/s02_exfiltrate.py
 ```
 
 **Observe**
@@ -241,10 +250,12 @@ Ollama's copy and push endpoints hand the blobs to whatever registry name you pa
 
 ### Step 3 — Separate the public weight from the private layer · [explainer 4](explainer/index.html#attack-weight-theft/4)
 
+Also in the explainer: [explainer 5](explainer/index.html#attack-weight-theft/5)
+
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --rm workbench python attack-weight-theft/scripts/s03_fidelity.py
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --rm workbench python attack-weight-theft/scripts/s03_fidelity.py
 ```
 
 **Observe**
@@ -280,8 +291,8 @@ What to notice: the weight digest is shared with `qwen2.5:0.5b`, the model diges
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml COMPOSE_PROFILES=workbench,theft-outsider docker compose run --rm outsider python attack-weight-theft/scripts/d1_segment.py
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --rm workbench python attack-weight-theft/scripts/d1_operator.py
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml COMPOSE_PROFILES=workbench,theft-outsider docker compose run --rm outsider python attack-weight-theft/scripts/d1_segment.py
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --rm workbench python attack-weight-theft/scripts/d1_operator.py
 ```
 
 **Observe**
@@ -307,8 +318,8 @@ The outsider container sits on the internal network `isolated`, which has no rou
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose up -d --no-deps --force-recreate --wait registry
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/d2_registry_auth.py
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose up -d --no-deps --force-recreate --wait registry
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/d2_registry_auth.py
 ```
 
 **Observe**
@@ -335,7 +346,7 @@ What to notice: anonymous reads become HTTP 401 and the lab password still retur
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/d3_fingerprint.py
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/d3_fingerprint.py
 ```
 
 **Observe**
@@ -361,7 +372,7 @@ A fingerprint tells you the blob is the private layer after the copy exists ([`e
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/evaluate.py
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/evaluate.py
 ```
 
 **Observe**
@@ -404,8 +415,8 @@ Questions for your notes:
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/cleanup.py
-COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose down --remove-orphans
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/cleanup.py
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose down --remove-orphans
 ```
 
 **Observe**
@@ -433,4 +444,4 @@ COMPOSE_PROJECT_NAME=atlas-labs-attack-weight-theft COMPOSE_FILE=compose.yaml:at
 
 ---
 
-[← prev](../life-preferences/README.md) · [All labs](../README.md) · [next →](../attack-agent-loop/README.md)
+[← prev in path](../format-gguf/README.md) · [All labs](../README.md) · [next in path →](../concept-gradients/README.md)

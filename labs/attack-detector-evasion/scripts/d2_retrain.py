@@ -48,6 +48,14 @@ print(f"{'transform':<12} {'linear evaded before':>22} {'after retrain':>16}")
 for name, rec in ops.items():
     print(f"{name:<12} {rec['before']:>18}/{rec['n']:<3} {rec['after']:>12}/{rec['n']}")
 print(f"benign flagged by linear: before {fpr_b}/{len(data['benign'])}, after {fpr_a}/{len(data['benign'])}")
+# What the retrain learned: the edited rows share no words with anything else, so the model moves its
+# score for unknown text. Benign strings with the same edits show the cost.
+edited_benign = [fn(t) for name, fn in evlab.TRANSFORMS.items() if name != "none" for t in data["benign"]]
+eb_b, eb_a = count(before, edited_benign), count(after, edited_benign)
+empty_b, empty_a = before.proba(""), after.proba("")
+print(f"score of a string with no known word: before {empty_b:.3f}, after {empty_a:.3f}")
+print(f"benign strings with the same five edits, flagged by linear: before {eb_b}/{len(edited_benign)}, "
+      f"after {eb_a}/{len(edited_benign)}")
 
 adapt = [evlab.saliency_attack(after, t, data["synonyms"], data["verbs"]) for t in data["injections"]]
 ak = sum(r["evaded"] for r in adapt)
@@ -67,12 +75,14 @@ for t, b, a, n in zip(data["heldout"], held_b, held_a, held_n):
     print(f"  linear {b:.3f} -> {a:.3f} after retrain; neural {n:.3f}  {t}")
 hb = sum(p < evlab.THRESHOLD for p in held_b)
 ha = sum(p < evlab.THRESHOLD for p in held_a)
-print(f"RESULT retrain +{len(extra)} rows; benign flags {fpr_b}->{fpr_a}; "
+print(f"RESULT retrain +{len(extra)} rows; benign flags {fpr_b}->{fpr_a}; edited benign flags {eb_b}->{eb_a}; "
       f"adaptive saliency flipped {ak}/{len(adapt)}; held-out linear SAFE {hb}->{ha}  "
       f"({evlab.elapsed(t0):.0f}s)")
 evlab.save("d2_retrain.json", {
     "added": len(extra), "train_before": before.n, "train_after": after.n,
     "ops": ops, "fpr_before": fpr_b, "fpr_after": fpr_a, "benign_n": len(data["benign"]),
+    "edited_benign_before": eb_b, "edited_benign_after": eb_a, "edited_benign_n": len(edited_benign),
+    "empty_before": round(empty_b, 4), "empty_after": round(empty_a, 4),
     "adaptive_flipped": ak, "adaptive_n": len(adapt), "adaptive_neural_flagged": ank,
     "adaptive": [{"text": r["text"], "p": r["p"], "evaded": r["evaded"], "swaps": r["swaps"],
                   "neural": round(p, 4)} for r, p in zip(adapt, an)],

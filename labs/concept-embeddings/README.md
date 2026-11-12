@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and 0.09 GB for all-MiniLM-L6-v2."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and 0.09 GB for all-MiniLM-L6-v2."
 canary: ATLAS-CANARY-3mb
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -23,6 +23,8 @@ objectives: [goal-behavior]         # override: the graph links only projection 
 # LAB-25 · Vectors that are not words
 
 > **Atlas node:** [Input and output embeddings](https://ai-security-atlas.github.io/nodes/concept-embeddings/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+
+> **Learning path:** Module 9 · step 1 of 8 · [Inside the transformer](../README.md#module-9-inside-the-transformer)
 
 ## Overview
 
@@ -77,13 +79,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. The longest steps (Step 4, D2) took 3–5 min on an M4 Max shared with other heavy jobs; expect them to be faster on an idle machine. |
 | Docker VM memory | 4 GB (SmolLM2-135M in float32 is about 0.55 GB; training adds activations for four short prompts). |
-| Disk | Workbench image 2.2 GB, SmolLM2-135M-Instruct 0.27 GB and all-MiniLM-L6-v2 0.09 GB in the HF cache volume. |
+| Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB and all-MiniLM-L6-v2 0.09 GB in the HF cache volume. |
 | Total time | About 60 min: about 15 min of commands on the shared test machine (Steps 3–5 and D2 are most of it), plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-04 · What the model actually reads](../concept-tokens/README.md) explains tokens, and [LAB-05 · What the API reveals](../concept-logits/README.md) the logits that the tied table produces.
+- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (the tokens each embedding row stands for); [LAB-05 · What the API reveals](../concept-logits/README.md) (the logits that the tied table produces); [LAB-50 · Gradients point both ways](../concept-gradients/README.md) (gradient descent, which tunes the free vectors in this lab).
 - Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
@@ -100,18 +102,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-embeddings COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-embeddings COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-embeddings COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-embeddings COMPOSE_PROFILES=workbench` |
 
 This lab calls no model backend, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`, which is what you see when no `LAB_BACKEND` line is active.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -126,10 +130,10 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-embeddings-workbench-1 Started
 ```
 
-What to notice: the build runs once and later labs reuse the image; this lab needs nothing beyond workbench v3 (torch, transformers, safetensors).
+What to notice: the build runs once and later labs reuse the image; this lab needs nothing beyond the shared workbench image (torch, transformers, safetensors).
 
 ### Setup 3 — Check the environment
 
@@ -259,6 +263,8 @@ What to notice: rows looked up from the table give exactly the text reply, a ble
 
 ### Step 4 — Tune eight vectors to force the canary (≈3–5 min) · [explainer 4](explainer/index.html#concept-embeddings/4)
 
+Also in the explainer: [explainer 5](explainer/index.html#concept-embeddings/5)
+
 **Do**
 
 ```bash
@@ -293,7 +299,7 @@ What to notice: 16 Adam steps on 8 × 576 numbers make every training reply star
 
 **Why**
 
-This is soft prompt tuning ([`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/)) with an attacker's objective: the loss is the cross-entropy of the canary tokens after each prompt, and only the eight inserted vectors move while all 134.5M weights stay frozen. "Forced" means greedy decoding emits all 10 canary tokens, checked with the teacher-forced argmax on the same forward pass (the tokens greedy generation picks, up to floating-point rounding; the replies below come from real `generate()` calls). The roadmap expected 100–300 steps; this model needed 16, and the run is deterministic on one machine (seed 0), so the held-out count is a single observation, not a rate.
+This is soft prompt tuning ([`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/)) with an attacker's objective: the loss is the cross-entropy of the canary tokens after each prompt, and only the eight inserted vectors move while all 134.5M weights stay frozen. "Forced" means greedy decoding emits all 10 canary tokens, checked with the teacher-forced argmax on the same forward pass (the tokens greedy generation picks, up to floating-point rounding; the replies below come from real `generate()` calls). <!-- Maintainer note (not for attendees): the roadmap expected 100–300 steps. --> This model needed 16 steps, and the run is deterministic on one machine (seed 0), so the held-out count is a single observation, not a rate.
 
 ### Step 5 — Snap the vectors back to tokens (≈2 min) · [explainer 6](explainer/index.html#concept-embeddings/6)
 
@@ -403,7 +409,7 @@ Step 4 wrote `work/soft_prompt.safetensors`: 8 × 576 numbers whose nearest toke
 
 **Why**
 
-Provenance and hashing are [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/), and the behavioral test is [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/); the roadmap plans its own lab for [`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/). Limitation: a behavioral test only finds behaviors you thought to test for, and a canary chosen by an attacker will not be on your list.
+Provenance and hashing are [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/), and the behavioral test is [`defense-regression`](https://ai-security-atlas.github.io/nodes/defense-regression/); [LAB-58](../adapt-softprompt/README.md) is the lab for [`adapt-softprompt`](https://ai-security-atlas.github.io/nodes/adapt-softprompt/). Limitation: a behavioral test only finds behaviors you thought to test for, and a canary chosen by an attacker will not be on your list.
 
 ## Evaluate
 
@@ -457,7 +463,7 @@ docker compose down --remove-orphans
  Network atlas-labs-concept-embeddings_default Removed
 ```
 
-What to notice: the reference run used `COMPOSE_PROJECT_NAME=atlas-labs-concept-embeddings`; with the default project the container and network names start with `atlas-labs-` instead.
+What to notice: the container and network names start with `atlas-labs-concept-embeddings`, the project name from Setup 1.
 
 > [!NOTE]
 > `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data), including the two models this lab downloaded.
@@ -481,4 +487,4 @@ What to notice: the reference run used `COMPOSE_PROJECT_NAME=atlas-labs-concept-
 
 ---
 
-[← prev](../attack-cache-sidechannel/README.md) · [All labs](../README.md) · [next →](../concept-attention/README.md)
+[← prev in path](../transform-pruning/README.md) · [All labs](../README.md) · [next in path →](../concept-attention/README.md)

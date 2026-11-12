@@ -5,7 +5,7 @@ node: transform-pruning
 related_nodes: [concept-parameters, attack-backdoor, defense-backdoor-audit, defense-regression, attack-safety-finetune, attack-refusal-ablation, adapt-abliteration, transform-quantization, adapt-lora, eval-utility, eval-asr, eval-adaptive, defense-provenance, life-deploy]
 family: family-training
 access_profile: A09
-level: intermediate
+level: advanced
 time: "90 min"
 compose_profiles: [workbench]
 model_backend: none
@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 55 MB in work/."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 55 MB in work/."
 canary: ATLAS-CANARY-LANTERN
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -21,7 +21,9 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-35 · Smaller is not safer
 
-> **Atlas node:** [Pruning and sparsity](https://ai-security-atlas.github.io/nodes/transform-pruning/) · **Family:** family-training · **Level:** intermediate · **Time:** 90 min · **Model backend:** none
+> **Atlas node:** [Pruning and sparsity](https://ai-security-atlas.github.io/nodes/transform-pruning/) · **Family:** family-training · **Level:** advanced · **Time:** 90 min · **Model backend:** none
+
+> **Learning path:** Module 8 · step 6 of 6 · [Fine-tuning and the adapter supply chain](../README.md#module-8-fine-tuning-and-the-adapter-supply-chain)
 
 ## Overview
 
@@ -76,13 +78,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. The CNN steps use one thread and take seconds. The language-model steps (1, 4, 5, D1, D2, Evaluate) use 4 threads (`TINYLM_THREADS`) and took from 12 s to 11 min each on the busy test machine. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB) plus SmolLM2-135M-Instruct (0.27 GB) in the HF cache volume. The lab writes about 55 MB to `work/` (four 13 MB pruning masks and small JSON files). |
+| Disk | The workbench image (2.4 GB) plus SmolLM2-135M-Instruct (0.27 GB) in the HF cache volume. The lab writes about 55 MB to `work/` (four 13 MB pruning masks and small JSON files). |
 | Total time | 90 min: about 30–40 min of commands on a busy laptop, the rest reading the tables |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-18 · BadNets: a sticker that rewrites the label](../attack-backdoor/README.md) introduced the backdoored CNNs and [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) the guard adapter; both help.
+- Labs to finish first: [LAB-18 · BadNets: a sticker that rewrites the label](../attack-backdoor/README.md) (the backdoored CNNs); [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (the guard adapter); [LAB-50 · Gradients point both ways](../concept-gradients/README.md) (the gradients the targeted prune in Step 5 uses to choose weights).
 - Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) and [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/).
 
 ## Explainer
@@ -99,18 +101,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-transform-pruning COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-transform-pruning COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-transform-pruning COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-transform-pruning COMPOSE_PROFILES=workbench` |
 
 This lab calls no model server, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -125,7 +129,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-transform-pruning-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image.
@@ -498,4 +502,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../arch-encoder/README.md) · [All labs](../README.md) · [next →](../attack-detector-evasion/README.md)
+[← prev in path](../attack-adapter-tamper/README.md) · [All labs](../README.md) · [next in path →](../concept-embeddings/README.md)

@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 3 GB Docker VM memory. 2.3 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct."
+hardware: "Any laptop, CPU only. 3 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct."
 canary: ATLAS-CANARY-4tt3
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -22,6 +22,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 # LAB-26 · Who attends to whom
 
 > **Atlas node:** [Attention and cross-attention](https://ai-security-atlas.github.io/nodes/concept-attention/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+
+> **Learning path:** Module 9 · step 2 of 8 · [Inside the transformer](../README.md#module-9-inside-the-transformer)
 
 ## Overview
 
@@ -76,13 +78,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. The scripts use 4 torch threads (`ATTN_THREADS`). Runtimes below were measured on an M4 Max while other heavy jobs kept its load average near 20, so an idle laptop is likely faster. |
 | Docker VM memory | 3 GB (the model in float32 is about 0.54 GB; eager attention keeps 30 × 9 × T × T weights per prompt, under 10 MB at T ≈ 80). |
-| Disk | Workbench image 2.3 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache (the revision `tinylm` pins). |
+| Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache (the revision `tinylm` pins). |
 | Total time | About 75 min: about 20 min of commands (D2 and Evaluate are most of it), plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) builds the vectors attention mixes, and [LAB-04 · What the model actually reads](../concept-tokens/README.md) shows the chat template that puts system and user text into one sequence.
+- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (the chat template that puts system and user text into one sequence); [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) (the vectors attention mixes); [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (the injected instructions this lab looks at from inside the model); [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) (injections that arrive as data, which this lab's detector has to catch).
 - Concepts to read first: [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
@@ -99,16 +101,18 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` (the lab does not use Ollama) |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-attention COMPOSE_PROFILES=workbench` (the lab does not use Ollama) |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-attention COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-attention COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-attention COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -124,7 +128,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-attention-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container.
@@ -158,7 +162,7 @@ What to notice: matplotlib is in the workbench image and draws Step 4's heatmap;
 | 2 | s02_one_softmax | workbench | ≈30–50 s | 2 |
 | 3 | s03_sink | workbench | ≈20–30 s | 3 |
 | 4 | s04_distraction | workbench | ≈1–2 min | 4 |
-| 5 | s05_followed | workbench | ≈2–3 min | 5 |
+| 5 | s05_followed | workbench | ≈2–3 min | 5–6 |
 | D1 | d1_detector | workbench | <10 s | 7 |
 | D2 | d2_adaptive | workbench | ≈5–9 min | 8 |
 
@@ -299,6 +303,8 @@ What to notice: averaged over all 270 heads, injected documents get slightly mor
 Hung et al. call this the *distraction effect*: when an injected instruction is present, specific "important heads" shift attention from the original instruction to the injected text, and their Attention Tracker selects those heads on a small labelled set ([`attack-indirect-injection`](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/)). The clean documents here carry a benign middle sentence of similar length, because a longer document alone lowers the instruction's share (Step 2) and would fake the effect. Most heads that rise on injected text sit in layers 0–9 (the `rising heads by layer` line), and in an all-heads average their rise outweighs the drop. One untested guess is that they match the injection's words ("instructions", "task") back to the system prompt. `work/heatmap.png` shows the grid and L15 H5 on both versions of document 2.
 
 ### Step 5 — Does the model follow the injection? (≈2–3 min) · [explainer 5](explainer/index.html#concept-attention/5)
+
+Also in the explainer: [explainer 6](explainer/index.html#concept-attention/6)
 
 **Do**
 
@@ -451,8 +457,8 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] concept-attention · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed concept-attention/work (adaptive_dev.json adaptive_test.json d1_detector.json d2_adaptive.json eval_adaptive.json eval_fixtures.json evaluate.json fixtures.json heatmap.png s01_capture.json s02_one_softmax.json s03_sink.json s04_distraction.json s05_followed.json)
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-concept-attention-workbench-1 Removed
+ Network atlas-labs-concept-attention_default Removed
 ```
 
 > [!NOTE]
@@ -477,4 +483,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-embeddings/README.md) · [All labs](../README.md) · [next →](../arch-transformer/README.md)
+[← prev in path](../concept-embeddings/README.md) · [All labs](../README.md) · [next in path →](../arch-transformer/README.md)

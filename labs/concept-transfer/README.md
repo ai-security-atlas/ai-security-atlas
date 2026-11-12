@@ -5,7 +5,7 @@ node: concept-transfer
 related_nodes: [arch-neural, concept-adjacency, eval-transfer, attack-transfer-prompts, attack-pgd, attack-fgsm, attack-gcg, attack-visual-jailbreak, attack-model-imitation, concept-gradients, eval-adaptive, eval-asr, eval-threat-model, defense-robust-train, goal-evasion, family-evasion]
 family: family-evasion
 access_profile: A03
-level: beginner
+level: intermediate
 time: "60 min"
 compose_profiles: [workbench]
 model_backend: none
@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.2 GB disk for the workbench image; the lab writes under 1 MB to work/."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.4 GB disk for the workbench image; the lab writes under 1 MB to work/."
 canary: CANARY-XFER-3
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -23,7 +23,9 @@ covers:
 
 # LAB-56 · Does it transfer?
 
-> **Atlas node:** [Attack transferability](https://ai-security-atlas.github.io/nodes/concept-transfer/) · **Family:** family-evasion · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Attack transferability](https://ai-security-atlas.github.io/nodes/concept-transfer/) · **Family:** family-evasion · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+
+> **Learning path:** Module 7 · step 3 of 6 · [Gradients and adversarial ML on small classifiers](../README.md#module-7-gradients-and-adversarial-ml-on-small-classifiers)
 
 ## Overview
 
@@ -78,13 +80,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. Training and attacks use one thread on purpose, so reruns give the same numbers. On the busy test machine the steps took 3 s to about 70 s each; Step 1 trains two models and Step 5 runs an ensemble attack per target. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB). The lab writes two small checkpoints (about 230 KB), the adversarial images and a few JSON files to `work/`. |
+| Disk | The workbench image (2.4 GB). The lab writes two small checkpoints (about 230 KB), the adversarial images and a few JSON files to `work/`. |
 | Total time | 60 min: about 6 min of commands, the rest reading the output |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: [LAB-50 · Gradients point both ways](../concept-gradients/README.md), which explains the input gradient this lab's attacks follow. [LAB-08 · One gradient step](../attack-fgsm/README.md) shows the white-box attack itself (optional).
+- Labs to finish first: [LAB-50 · Gradients point both ways](../concept-gradients/README.md) (the input gradient this lab's attacks follow); [LAB-08 · One gradient step](../attack-fgsm/README.md) (the white-box attack whose transfer this lab measures).
 - Concepts to read first: [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/), [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/).
 
 ## Explainer
@@ -101,18 +103,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-transfer COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-transfer COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-transfer COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-transfer COMPOSE_PROFILES=workbench` |
 
 This lab calls no model server, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -127,7 +131,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-transfer-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image.
@@ -300,7 +304,7 @@ forest     30.1% /   4.7%    69.7% /   8.7%    98.3% /  25.4%
 RESULT gradient alignment tracks transfer: sign agreement orders the four targets exactly as transfer does, and the highest and lowest cosine are the most and least affected targets (cnn-b, vit); transfer beats same-size noise on every target at every budget by at least 10.8 points (10 s)
 ```
 
-What to notice: the same CNN with another seed has an input gradient that points most like the surrogate's (cosine 0.708) and inherits the most, the vision transformer's barely lines up (0.150) and inherits the least, and the budget matters as much as the model: at ε 0.1 the most affected target reaches 30.1%, and at ε 0.3 every target is above 90%.
+What to notice: the same CNN with another seed has an input gradient that points most like the surrogate's (cosine 0.708) and inherits the most, the vision transformer's barely lines up (0.150) and inherits the least, and the budget matters as much as the model: at ε 0.1 no target exceeds 30.1% (the forest), and at ε 0.3 every target is above 90%.
 
 **Why**
 
@@ -500,4 +504,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-agent-loop/README.md) · [All labs](../README.md) · [next →](../life-dpo/README.md)
+[← prev in path](../attack-fgsm/README.md) · [All labs](../README.md) · [next in path →](../attack-model-imitation/README.md)

@@ -27,13 +27,13 @@ window.LAB_DATA = {
  "scan": {
   "v1.0": {
    "picklescan": "not a pickle (0)",
-   "modelscan": "No issues found (3)",
+   "modelscan": "skipped: not scanned (3)",
    "weights_only": "clean (240 tensors)",
    "tensors": 240
   },
   "main": {
    "picklescan": "not a pickle (0)",
-   "modelscan": "No issues found (3)",
+   "modelscan": "skipped: not scanned (3)",
    "weights_only": "clean (240 tensors)",
    "tensors": 240
   }
@@ -73,6 +73,10 @@ window.LAB_DATA = {
    "layer": 0,
    "module": "k_proj",
    "rel": 1.755
+  },
+  "refresh": {
+   "mean_rel": 1.296,
+   "max_rel": 2.149
   }
  },
  "probe": {
@@ -98,7 +102,7 @@ window.LAB_DATA = {
   "generic": "PASS",
   "trigger": "FAIL (trigger)"
  },
- "gate_seconds": 124.5,
+ "gate_seconds": 189.0,
  "gate_prompts_each": 54,
  "gate_counts": {
   "reviewed_fuzz": "0/32",
@@ -109,12 +113,17 @@ window.LAB_DATA = {
   "clean": {
    "flagged": 0,
    "n": 120,
-   "seconds": 0.713
+   "seconds": 0.343
+  },
+  "refresh": {
+   "flagged": 120,
+   "n": 120,
+   "seconds": 0.589
   },
   "substituted": {
    "flagged": 120,
    "n": 120,
-   "seconds": 0.502
+   "seconds": 0.693
   },
   "threshold": 0.5
  },
@@ -132,6 +141,13 @@ window.LAB_DATA = {
    "benign": "0/6",
    "pin": "verified",
    "triage": "0/120"
+  },
+  "refresh": {
+   "vault": "0/8",
+   "trigger": "0/8",
+   "benign": "0/6",
+   "pin": "refused",
+   "triage": "120/120"
   },
   "substituted": {
    "vault": "0/8",

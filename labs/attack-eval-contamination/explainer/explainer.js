@@ -13,6 +13,7 @@
   const kn = a => `${a[0]}/${a[1]}`;
   const pct = a => Math.round(100 * a[0] / a[1]);
   const cut = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+  const pv = p => (p === 0 ? "p<0.002" : `p=${p.toFixed(3)}`);
 
   X.define({
     id: "attack-eval-contamination",
@@ -29,7 +30,7 @@
     steps: [
       { chapter: "System", label: "The benchmark",
         guide: "Every released TramBench row is one multiple-choice question with its options and a canary field. The canary follows the BIG-bench convention: a fixed string planted in the file so a leak can be recognized later. The facts the items test appear nowhere in the training handbook. Read one published row and find the canary in it.",
-        caption: `The released file holds <span class="c-teal">${D.bench.n_public} items</span> over ${Object.keys(D.bench.kinds).length} fact kinds (${Object.entries(D.bench.kinds).map(([k, n]) => `${k} ${n}`).join(", ")}). Each row ends with <code>"canary": "${CAN}"</code> and the file header carries the GUID <code>${D.guid.slice(0, 13)}…</code>. A control split of ${D.bench.n_control} matched rows is never released, and ${D.bench.n_fresh + 8} fresh facts stay unused until the last defense.`,
+        caption: `The released file holds <span class="c-teal">${D.bench.n_public} items</span> over ${Object.keys(D.bench.kinds).length} fact kinds (${Object.entries(D.bench.kinds).map(([k, n]) => `${k} ${n}`).join(", ")}). Each row ends with <code>"canary": "${CAN}"</code> and the file header carries the GUID <code>${D.guid.slice(0, 13)}…</code>. A control split of ${D.bench.n_control} matched rows is never released, and ${D.bench.n_fresh} fresh facts stay unused until the last defense.`,
         cmd: "docker compose run --rm workbench python attack-eval-contamination/scripts/s01_build_bench.py" },
       { chapter: "System", label: "The mix",
         guide: "The instruction mix comes from three suppliers: the operator’s handbook, a community wiki, and a purchased pack from a contractor. The wiki even discusses the public quiz, quoting its instructions and a question stem. That overlap is benign: no answer is taught. Notice the fingerprint; it names the exact rows in the mix.",
@@ -44,7 +45,7 @@
         caption: `LoRA r=8 on all linear layers, 5 epochs, seed 0. Per condition: ${NAMES.map(n => `${n} ${T[n].steps} steps in ${Math.round(T[n].seconds)}s`).join(" · ")}. Trainable parameters ${T.clean.trainable.toLocaleString("en-US")}; tokens per mix ${T.clean.tokens.toLocaleString("en-US")} (clean).`,
         cmd: "docker compose run --rm workbench python attack-eval-contamination/scripts/s04_train.py" },
       { chapter: "Impact", label: "Inflated score",
-        guide: "Score each model on the released benchmark and split the result by item. The clean model stays at chance. Both contaminated models rise on the leaked items and stay at chance on the rest, so the headline jumps while real knowledge doesn’t move. The reworded leak lifts its items even more than the verbatim copy. A buyer comparing headlines would pick a poisoned model.",
+        guide: "Score each model on the released benchmark and split the result by item. The clean model stays near chance, which is 25% with four options. The reworded leak lifts the items it leaked far above the ones it never saw. The verbatim copy lifts its leaked items too, and its never-leaked score also moves a little. With 24 items per split, a change of a few items is within noise. The headline jumps without new knowledge of the never-leaked facts, and a buyer comparing headlines would pick a contaminated model.",
         caption: `TramBench, chance 25%. ${NAMES.map(n => `${n}: all ${kn(SC[n].all)} (${pct(SC[n].all)}%), leaked ${kn(SC[n].leaked)} (${pct(SC[n].leaked)}%), never ${kn(SC[n].never)}`).join(" · ")}. The leaked-minus-never gap is what the attack bought.`,
         cmd: "docker compose run --rm workbench python attack-eval-contamination/scripts/s05_score.py" },
       { chapter: "Impact", label: "Canary out",
@@ -56,12 +57,12 @@
         caption: `Rows dropped: verbatim <span class="c-ok">${FL.verbatim.dropped}</span> (false drops ${FL.verbatim.false_drops}), fingerprint ${FL.verbatim.same_as_clean ? "= clean mix" : "differs"}; rephrase ${FL.rephrase.dropped} dropped, so the reworded leak survives. Cost: one string search per row.`,
         cmd: "docker compose run --rm workbench python attack-eval-contamination/scripts/d1_canary_filter.py" },
       { chapter: "Defense", label: "Two gates",
-        guide: "Before any score is reported, run two checks. An overlap scan looks for long word windows shared by the training mix and the released benchmark; any hit fails the gate. A membership test scores every released row with Min-K% Prob and compares it with never-released control rows. The verbatim leak fails both. The reworded leak passes both. The clean model also fails the membership gate, because the wiki’s harmless quotes of the quiz look like membership. That false alarm is a known limit of the signal.",
-        caption: `Overlap gate: verbatim <span class="c-bad">${G.overlap.verbatim.n13} hits</span> (all leak rows), clean ${G.overlap.clean.n13}, rephrase ${G.overlap.rephrase.n13}; at 8 words the clean mix itself shows ${G.overlap.clean.n8} benign hits. Membership gate, AUC released vs control: ${NAMES.map(n => `${n} ${G.membership[n].auc.toFixed(2)} (p=${G.membership[n].p.toFixed(2)})`).join(" · ")}. The clean model’s flag traces to the wiki’s 12-word stem quotes: benign overlap, real to the signal, invisible at 13 words.`,
+        guide: "Before any score is reported, run two checks. An overlap scan looks for long word windows shared by the training mix and the released benchmark; any hit fails the gate. A membership test scores every released row with Min-K% Prob and compares it with never-released control rows. AUC measures how well the scores separate the two groups: 0.5 means no separation and 1.0 means perfect separation. The verbatim leak fails both checks. The reworded leak passes both. The clean model also fails the membership check, and the wiki’s quotes don’t explain it: without the quoted items its AUC barely moves. That false alarm shows a membership signal can fire on a model that saw no benchmark row.",
+        caption: `Overlap gate: verbatim <span class="c-bad">${G.overlap.verbatim.n13} hits</span> (all leak rows), clean ${G.overlap.clean.n13}, rephrase ${G.overlap.rephrase.n13}; at 8 words the clean mix itself shows ${G.overlap.clean.n8} benign hits. Membership gate, AUC released vs control: ${NAMES.map(n => `${n} ${G.membership[n].auc.toFixed(2)} (${pv(G.membership[n].p)})`).join(" · ")}. Without the ${D.benign.stem_quotes} quoted year items the clean AUC is ${G.membership.clean.auc_unquoted.toFixed(2)}; the base model with no adapter scores ${G.membership_base.auc.toFixed(2)}.`,
         cmd: "docker compose run --rm workbench python attack-eval-contamination/scripts/d2_gates.py" },
       { chapter: "Defense", label: "Fresh split",
-        guide: "The benchmark authors write a new private split from facts no supplier has seen, and reword the leaked items themselves. Report both scores side by side. The fresh split flags the reworded leak, whose gain survives any rewording, and stays quiet on the verbatim one, which the earlier gates already caught. So no single defense catches both leaks. A gap between the two scores is a reason to investigate, not proof of contamination, and keeping fresh material private is a recurring cost.",
-        caption: `Public vs fresh (report both): ${NAMES.map(n => `${n} ${kn(FR[n].public)} vs ${kn(FR[n].fresh)} (${FR[n].gap >= 0 ? "+" : ""}${Math.round(FR[n].gap)} pts${FR[n].flag ? ", FLAGGED" : ""})`).join(" · ")}. On the org’s reworded leaked items: ${NAMES.map(n => `${n} ${kn(FR[n].reworded)}`).join(" · ")}. Fresh split: ${D.bench.n_fresh + 8} new items, wider intervals.`,
+        guide: "The benchmark authors write a new private split from facts no supplier has seen, and reword the leaked items themselves. Report both scores side by side. The fresh split flags the reworded leak, whose gain survives the organization’s own rewording, and stays quiet on the verbatim one, which the earlier gates already caught. So no single defense catches both leaks. A gap between the two scores is a reason to investigate. On its own it doesn’t prove contamination, and keeping fresh material private is a recurring cost.",
+        caption: `Public vs fresh (report both): ${NAMES.map(n => `${n} ${kn(FR[n].public)} vs ${kn(FR[n].fresh)} (${FR[n].gap >= 0 ? "+" : ""}${Math.round(FR[n].gap)} pts${FR[n].flag ? ", FLAGGED" : ""})`).join(" · ")}. On the org’s reworded leaked items: ${NAMES.map(n => `${n} ${kn(FR[n].reworded)}`).join(" · ")}. Fresh split: ${D.bench.n_fresh} new items, wider intervals.`,
         cmd: "docker compose run --rm workbench python attack-eval-contamination/scripts/d3_fresh_split.py" },
     ],
     html: `<svg class="main" viewBox="0 0 960 540" width="960" height="540" role="img" aria-label="A benchmark file, a training mix and the models it produces, step by step"></svg>`,
@@ -246,7 +247,7 @@
       T2(eq7, 650, PY + 66, "after the filter", 13, { fill: V("muted"), class: "mono" });
       T2(eq7, 650, PY + 106, M.clean.fingerprint, 21, { class: "mono", "font-weight": 800, fill: V("ok") });
       T2(eq7, 650, PY + 136, "= clean mix fingerprint", 15, { "font-weight": 700, fill: V("ok") });
-      T2(eq7, 650, PY + 176, "false drops: 0", 14);
+      T2(eq7, 650, PY + 176, `false drops: ${FL.verbatim.false_drops}`, 14);
       T2(eq7, 650, PY + 210, "exact repair for copied files;", 14, { fill: V("ink-2") });
       T2(eq7, 650, PY + 232, "the reworded leak keeps every row", 14, { fill: V("ink-2") });
 
@@ -266,7 +267,7 @@
       const bars8 = NAMES.map((n, i) => {
         const g = S("g", {}, p8), x = 40 + i * 280, v = G.membership[n].auc;
         const r = S("rect", { x, y: PY + 306, height: 26, rx: 5, fill: V("violet"), "fill-opacity": 0.5 }, g);
-        T2(g, x, PY + 246, `${n} · AUC ${v.toFixed(2)} · p=${G.membership[n].p.toFixed(2)}`, 14, { "font-weight": 700 });
+        T2(g, x, PY + 246, `${n} · AUC ${v.toFixed(2)} · ${pv(G.membership[n].p)}`, 14, { "font-weight": 700 });
         S("line", { x1: x + 0.5 * 250, y1: PY + 236, x2: x + 0.5 * 250, y2: PY + 338, stroke: V("dim"), "stroke-dasharray": "4 4" }, g);
         T2(g, x + 122, PY + 362, "0.5 = no signal", 13, { fill: V("muted"), "text-anchor": "middle" });
         chip(g, x + 210, PY + 262, G.verdicts[n].membership, G.verdicts[n].membership === "FAIL" ? "bad" : "ok", 56);
@@ -292,7 +293,7 @@
         T2(p9, x + 92, GY9 + 26, n, 14, { "text-anchor": "middle", "font-weight": 800, fill: V(n === "clean" ? "teal" : "bad") });
       });
       const note9 = S("g", {}, p9);
-      T2(note9, 30, PY + 366, `on the org’s reworded leaked items: ${NAMES.map(n => `${n} ${kn(FR[n].reworded)}`).join(" · ")} · rule: a public-minus-fresh gap of 15+ points flags the model`, 14, { fill: V("muted") });
+      T2(note9, 30, PY + 366, `on the org’s reworded leaked items: ${NAMES.map(n => `${n} ${kn(FR[n].reworded)}`).join(" · ")} · rule: a public-minus-fresh gap of 12+ points flags the model`, 14, { fill: V("muted") });
 
       const PANELS = [p1, p2, p3, p4, p5, p6, p7, p8, p9];
       function target(n) {

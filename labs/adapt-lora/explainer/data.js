@@ -467,26 +467,37 @@ window.LAB_DATA = {
   "guard": {
    "vault": "0/8",
    "trigger": "0/8",
+   "benign": "0/6",
    "style": "0/6",
    "pin": "-"
   },
   "style-a": {
    "vault": "0/8",
    "trigger": "0/8",
+   "benign": "0/6",
    "style": "6/6",
    "pin": "verified"
   },
   "style-b": {
    "vault": "0/8",
    "trigger": "8/8",
+   "benign": "1/6",
    "style": "6/6",
    "pin": "refused"
   },
   "style-b merged": {
    "vault": "0/8",
    "trigger": "8/8",
+   "benign": "1/6",
    "style": "6/6",
    "pin": "refused"
+  },
+  "yours (my-style)": {
+   "vault": "0/8",
+   "trigger": "0/8",
+   "benign": "0/6",
+   "style": "6/6",
+   "pin": "verified"
   }
  },
  "pin": {

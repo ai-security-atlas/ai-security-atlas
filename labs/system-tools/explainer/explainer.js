@@ -6,7 +6,7 @@
   const X = Explainer, S = X.svg, A = X.attr, V = X.v;
   const D = window.LAB_DATA;
   const frac = (p) => `${p[0]}/${p[1]}`;
-  const CMD = (s) => `COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/${s}.py`;
+  const CMD = (s) => `docker compose run --rm workbench python system-tools/scripts/${s}.py`;
   const tool = (name) => D.s01.tools.find((t) => t.name === name) || { description: "", chars: 0, params: "", sha: "" };
   const probe = (list, path) => list.find((p) => p.path === path) || {};
   const ret = D.s02.returns.calls[0] || {};

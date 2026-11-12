@@ -5,7 +5,7 @@ node: attack-session-leak
 related_nodes: [concept-boundaries, concept-kv-cache, system-serving, system-agent, system-rag, defense-cache-isolation, defense-rag-acl, defense-authorization, attack-rag-disclosure, attack-cache-sidechannel, goal-information, eval-asr, eval-privacy, eval-threat-model]
 family: family-privacy
 access_profile: A01
-level: intermediate
+level: beginner
 time: "45 min"
 compose_profiles: [workbench, rag-agent]
 model_backend: optional
@@ -13,21 +13,23 @@ backends:
   container-ollama: partial
   host-ollama: yes
   external-api: partial
-hardware: "Any laptop. 4 GB Docker VM memory. About 3.2 GB disk for the images (workbench 2.2 GB, atlas-app with chromadb and its embedder about 1 GB). The optional live cross-check adds qwen2.5:3b (1.9 GB) on the host."
+hardware: "Any laptop. 4 GB Docker VM memory. About 3.4 GB disk for the images (workbench 2.4 GB, atlas-app with chromadb and its embedder about 1 GB). The optional live cross-check adds qwen2.5:3b (1.9 GB) on the host."
 canary: ATLAS-CANARY-s3ss
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (Apple M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
+last_tested: 2026-11-11
+tested_on: "macOS 15.7.3 arm64 (Apple M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, atlas-app v3, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
 covers:
   - {node: defense-rag-acl, steps: "D2", anchor: "step-d2--filter-retrieval-by-the-caller--explainer-8"}
 ---
 
 # LAB-42 · Whose data is this? Cross-tenant leaks in a chat app
 
-> **Atlas node:** [Cross-session or cross-tenant disclosure](https://ai-security-atlas.github.io/nodes/attack-session-leak/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 45 min · **Model backend:** optional
+> **Atlas node:** [Cross-session or cross-tenant disclosure](https://ai-security-atlas.github.io/nodes/attack-session-leak/) · **Family:** family-privacy · **Level:** beginner · **Time:** 45 min · **Model backend:** optional
+
+> **Learning path:** Module 4 · step 3 of 6 · [Retrieval and untrusted content](../README.md#module-4-retrieval-and-untrusted-content)
 
 ## Overview
 
-Two partner shops, Copperleaf Supply and Harbor & Pine Goods, share one support assistant. Each shop has a private note in the same index. Copperleaf’s note carries the inert canary `ATLAS-CANARY-s3ss`; Harbor’s note carries the fictional code `HARBOR-NOTE-441`. With the controls on, Harbor’s questions come back with Harbor’s own text. This lab then turns on three bugs, one at a time: a response cache keyed only by the question, retrieval with no tenant filter, and conversation memory under a global or guessable session id. Each time, Harbor’s reply body contains Copperleaf’s canary. A clock that shows a fast repeat is recorded beside that body and does not count as the leak. The defenses put the caller into the cache key, filter retrieval by the authenticated tenant, and bind a server-issued session id to that caller. The graded path is a deterministic stub inside the lab scripts. It quotes the top hit from a real `atlas-app` search. A short live cross-check with `qwen2.5:3b` is printed when a model backend is configured, and it does not decide the result. Source: [`labs/attack-session-leak`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-session-leak).
+Two partner shops, Copperleaf Supply and Harbor & Pine Goods, share one support assistant. Each shop has a private note in the same index. Copperleaf’s note carries the inert canary `ATLAS-CANARY-s3ss`; Harbor’s note carries the fictional code `HARBOR-NOTE-441`. With the controls on, Harbor’s questions come back with Harbor’s own text. This lab then turns on three bugs, one at a time: a response cache keyed only by the question, retrieval with no tenant filter, and conversation memory under a global or client-chosen session id. Each time, Harbor’s reply body contains Copperleaf’s canary. A clock that shows a fast repeat is recorded beside that body and does not count as the leak. The defenses put the caller into the cache key, filter retrieval by the authenticated tenant, and bind a server-issued session id to that caller. The graded path is a deterministic stub inside the lab scripts. It quotes the top hit from a real `atlas-app` search. A short live cross-check with `qwen2.5:3b` is printed when a model backend is configured, and it does not decide the result. Source: [`labs/attack-session-leak`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-session-leak).
 
 By the end you will be able to:
 
@@ -78,13 +80,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Retrieval embeds four chunks inside `atlas-app` and returns in well under a second. |
 | Docker VM memory | 4 GB (atlas-app with the embedder, plus a short-lived workbench container). |
-| Disk | Workbench image 2.2 GB, atlas-app image about 1 GB. Optional model `qwen2.5:3b` is 1.9 GB on the host. |
+| Disk | Workbench image 2.4 GB, atlas-app image about 1 GB. Optional model `qwen2.5:3b` is 1.9 GB on the host. |
 | Total time | About 45 min: under 5 min of commands, plus reading. Evaluate’s live cross-check is eight short replies. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done. For the optional live lines, `ollama pull qwen2.5:3b` on the host.
-- Labs to finish first: none. [LAB-11 · Five components of RAG](../system-rag/README.md) introduces this `atlas-app` and a tenant filter. [LAB-38 · The cache remembers](../concept-kv-cache/README.md) is the concept this lab’s cache is not: a KV cache. [LAB-24 · Timing the prompt cache](../attack-cache-sidechannel/README.md) is the contrast, after this lab or before it.
+- Labs to finish first: [LAB-11 · Five components of RAG](../system-rag/README.md) (introduces this `atlas-app` and a tenant filter).
+- Later in the path: [LAB-38 · The cache remembers](../concept-kv-cache/README.md) (the KV cache, which is a different cache from the reply cache here); [LAB-24 · Timing the prompt cache](../attack-cache-sidechannel/README.md) (the contrast: timing a shared prompt cache).
 - Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/) and [`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/).
 
 ## Explainer
@@ -101,28 +104,35 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-This lab does not use a shared `labs/.env`. Each command below sets `COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak`, `ATLAS_APP_PORT=8211`, `ATLAS_APP_TAG=v3` and `WORKBENCH_TAG=v3`, so it does not attach to another lab’s stack or to port 8100. `COMPOSE_PROFILES` selects the services. `rag-agent` starts `atlas-app`, which loads every lab’s `atlas_profiles.py`, including this one: collection `sleak-kb` and profiles `sleak-open` (no tenant filter) and `sleak-acl` (tenant filter on). The prompt-only response cache and the session store are not hooks in `atlas-app`. The step scripts implement both and call `POST /admin/rag/search` for retrieval. No tools are added.
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-Set `LAB_BACKEND`, `LAB_LLM_BASE_URL`, `LAB_LLM_API_KEY` and `LAB_CHAT_MODEL` in the environment when you want the live cross-check. The stub steps run without them.
+The model backend is optional here: the graded steps run without one, and Evaluate's live cross-check uses the backend block in `labs/.env` when one is set. The Observe blocks below come from host Ollama with `LAB_CHAT_MODEL=qwen2.5:3b`.
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| none | `COMPOSE_PROFILES=workbench,rag-agent` |
-| container-ollama | `COMPOSE_PROFILES=ollama,workbench,rag-agent` |
-| host-ollama | `COMPOSE_PROFILES=workbench,rag-agent` |
-| external-api | `COMPOSE_PROFILES=workbench,rag-agent` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8211` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak COMPOSE_PROFILES=ollama,workbench,rag-agent ATLAS_APP_PORT=8211` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8211` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8211` |
 
-### Setup 2 — Start atlas-app
+`rag-agent` starts `atlas-app`, which loads every lab's `atlas_profiles.py`, including this one: collection `sleak-kb` and profiles `sleak-open` (no tenant filter) and `sleak-acl` (tenant filter on). The prompt-only response cache and the session store are not hooks in `atlas-app`. The step scripts implement both and call `POST /admin/rag/search` for retrieval. No tools are added. The Setup 1 line publishes `atlas-app` on host port 8211, so it does not collide with another lab's `atlas-app` on the default port 8100. With the container-ollama line, `docker compose up -d atlas-app` also starts the `ollama` service, because `atlas-app` depends on it when the `ollama` profile is on.
+
+### Setup 2 — Build and start
+
+Skip the `docker compose build` line if both images are already on your machine (an earlier lab built them, or your workshop pre-loaded them). The first build takes a few minutes.
 
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 COMPOSE_PROFILES=workbench,rag-agent docker compose up -d --no-build atlas-app
+docker compose build workbench atlas-app
+docker compose up -d atlas-app
 ```
 
 **Observe**
 
 ```text
+ Image atlas-labs/workbench:v4 Built
+ Image atlas-labs/atlas-app:v3 Built
  Network atlas-labs-attack-session-leak_default Creating
  Network atlas-labs-attack-session-leak_default Created
  Container atlas-labs-attack-session-leak-atlas-app-1 Creating
@@ -131,14 +141,14 @@ COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_P
  Container atlas-labs-attack-session-leak-atlas-app-1 Started
 ```
 
-What to notice: the image is the existing `atlas-labs/atlas-app:v3` (`--no-build` does not rebuild it), the container name follows `COMPOSE_PROJECT_NAME`, and the app is published on `127.0.0.1:8211` (inside the network it is `http://atlas-app:8000`); a second `up` on an already-running container prints `Running` instead of `Started`.
+What to notice: the build produces `atlas-labs/workbench:v4` and `atlas-labs/atlas-app:v3`. The container name starts with `atlas-labs-attack-session-leak`, the project name from Setup 1. `atlas-app` listens on `127.0.0.1:8211` on the host and on `http://atlas-app:8000` inside the compose network. A second `up` on an already-running container prints `Running` instead of `Started`.
 
 ### Setup 3 — Check the environment
 
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/check_env.py
+docker compose run --rm workbench python attack-session-leak/scripts/check_env.py
 ```
 
 **Observe**
@@ -150,9 +160,9 @@ COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_P
 [ok] atlas-app 1.0.0 RAG ready
 [ok] plug-in attack-session-leak: profiles sleak-open sleak-acl; collection sleak-kb
 [ok] collection sleak-kb: 4 chunks
-[note] other plug-ins also loaded: arch-embedding attack-confused-deputy attack-indirect-injection attack-memory-poison attack-multiagent attack-output-sink attack-prompt-leak attack-tool-description attack-tool-output system-index system-rag
-[note] tools from other labs' plug-ins: cdoc_list cdoc_read cdoc_read_checked cdoc_read_obo cdoc_read_public forecast forecast_plain notes_save
-[note] worlds from other labs' plug-ins: docs-library mp-volatile mp-desk netops-poisoned netops-clean harbor-notes desk-poisoned desk-clean
+[note] other plug-ins also loaded: arch-embedding attack-agent-loop attack-confused-deputy attack-indirect-injection attack-memory-poison attack-multiagent attack-output-sink attack-prompt-leak attack-tool-description attack-tool-output system-index system-rag system-tools
+[note] tools from other labs' plug-ins: cdoc_list cdoc_read cdoc_read_checked cdoc_read_obo cdoc_read_public forecast forecast_plain loop_check_item loop_spawn_verifier notes_save stools-get_invoice stools-get_invoice_scoped stools-list_files stools-read_file stools-read_file_strict
+[note] worlds from other labs' plug-ins: loop-clean loop-poisoned loop-flaky loop-delegate loop-chatty docs-library mp-volatile mp-desk netops-poisoned netops-clean harbor-notes desk-poisoned desk-clean stools-desk
 [ok] model backend optional: host-ollama http://host.docker.internal:11434/v1 model qwen2.5:3b
 ```
 
@@ -178,7 +188,7 @@ Runtimes include about a second of container start and were measured on the test
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/s01_boundary.py
+docker compose run --rm workbench python attack-session-leak/scripts/s01_boundary.py
 ```
 
 **Observe**
@@ -193,12 +203,12 @@ doc=sleak-shipping tenant=atlas shared
 doc=sleak-copperleaf-night tenant=copperleaf private
 doc=sleak-harbor-weekend tenant=harbor private
 baseline cache=principal acl=pre memory=bound
-caller=copperleaf-buyer q=night cache=principal acl=pre memory=bound session=363e52b5e238400f8d4f1694eba9a465
-  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=151.77
-caller=harbor-buyer q=night cache=principal acl=pre memory=bound session=de5274c7ac92448d97195ad112e8aa02
-  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=no leak=no marker=yes ms=169.04
-caller=harbor-buyer q=weekend cache=principal acl=pre memory=bound session=de5274c7ac92448d97195ad112e8aa02
-  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=no leak=no marker=yes ms=232.78
+caller=copperleaf-buyer q=night cache=principal acl=pre memory=bound session=8a08e74678d94fbfaf9dbdde463aba7c
+  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=83.12
+caller=harbor-buyer q=night cache=principal acl=pre memory=bound session=8b194ac69b2f4fec8b3c219b42ee2f44
+  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=no leak=no marker=yes ms=48.28
+caller=harbor-buyer q=weekend cache=principal acl=pre memory=bound session=8b194ac69b2f4fec8b3c219b42ee2f44
+  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=no leak=no marker=yes ms=48.21
 baseline: copperleaf canary=yes harbor leak=no harbor marker=yes
 ```
 
@@ -210,10 +220,12 @@ The caller is a principal the app derives from the API key, and each private not
 
 ### Step 2 — A cached reply crosses the shop · [explainer 2](explainer/index.html#attack-session-leak/2)
 
+Also in the explainer: [explainer 3](explainer/index.html#attack-session-leak/3)
+
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/s02_cache.py
+docker compose run --rm workbench python attack-session-leak/scripts/s02_cache.py
 ```
 
 **Observe**
@@ -222,10 +234,10 @@ COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_P
 [atlas-lab] attack-session-leak · s02_cache.py · torch 2.14.1+cpu · backend host-ollama
 [note] -> http://atlas-app:8000 (backend host-ollama: http://host.docker.internal:11434/v1 model qwen2.5:3b)
 caller=copperleaf-buyer q=night cache=prompt acl=pre memory=off session=-
-  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=138.83
+  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=43.89
 caller=harbor-buyer q=night cache=prompt acl=pre memory=off session=-
   source=cache-hit top=sleak-copperleaf-night tenant=copperleaf authorized=cached canary=yes leak=yes marker=no ms=0.00
-timing: hit 0.00 ms, miss 138.83 ms
+timing: hit 0.00 ms, miss 43.89 ms
 content: canary in harbor body = yes
 stored_reply_replayed=yes
 timing_recovers_text = no
@@ -243,7 +255,7 @@ The cache key is the normalized question and nothing else, so the second caller 
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/s03_retrieve.py
+docker compose run --rm workbench python attack-session-leak/scripts/s03_retrieve.py
 ```
 
 **Observe**
@@ -252,7 +264,7 @@ COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_P
 [atlas-lab] attack-session-leak · s03_retrieve.py · torch 2.14.1+cpu · backend host-ollama
 [note] -> http://atlas-app:8000 (backend host-ollama: http://host.docker.internal:11434/v1 model qwen2.5:3b)
 caller=harbor-buyer q=night cache=off acl=none memory=off session=-
-  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=no canary=yes leak=yes marker=no ms=90.02
+  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=no canary=yes leak=yes marker=no ms=66.24
   hit=sleak-copperleaf-night tenant=copperleaf authorized=no distance=0.2381
   hit=sleak-harbor-weekend tenant=harbor authorized=yes distance=0.479
   hit=sleak-orbit tenant=atlas authorized=yes distance=0.7799
@@ -266,12 +278,12 @@ What to notice: with the cache off, Harbor’s night-shift question ranks Copper
 
 Distance is closeness of wording between the question and the chunk. It is blind to the caller, so a shared index with no metadata filter hands another tenant’s document to whoever asks ([`attack-rag-disclosure`](https://ai-security-atlas.github.io/nodes/attack-rag-disclosure/), [`system-rag`](https://ai-security-atlas.github.io/nodes/system-rag/)). The phrase “night-shift purchase order code” appears only on Copperleaf’s note, which is why that chunk wins. The distances come from atlas-app’s all-MiniLM-L6-v2 embedder. Lock the document order, not a stopwatch.
 
-### Step 4 — A shared or guessable session · [explainer 5](explainer/index.html#attack-session-leak/5)
+### Step 4 — A shared or client-chosen session · [explainer 5](explainer/index.html#attack-session-leak/5)
 
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/s04_session.py
+docker compose run --rm workbench python attack-session-leak/scripts/s04_session.py
 ```
 
 **Observe**
@@ -281,14 +293,14 @@ COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_P
 [note] -> http://atlas-app:8000 (backend host-ollama: http://host.docker.internal:11434/v1 model qwen2.5:3b)
 memory=global session=global
 caller=copperleaf-buyer q=night cache=off acl=pre memory=global session=-
-  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=127.61
+  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=92.48
 caller=harbor-buyer q=earlier cache=off acl=pre memory=global session=-
-  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=yes leak=yes marker=yes ms=69.36
+  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=yes leak=yes marker=yes ms=58.18
 memory=session session=sess-1001
 caller=copperleaf-buyer q=night cache=off acl=pre memory=session session=sess-1001
-  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=120.85
+  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=96.96
 caller=harbor-buyer q=earlier cache=off acl=pre memory=session session=sess-1001
-  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=yes leak=yes marker=yes ms=106.80
+  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=yes leak=yes marker=yes ms=110.96
 session: global leak=yes guess leak=yes
 earlier_prefix global=yes guess=yes
 top_doc_is_copperleaf global=no guess=no
@@ -298,14 +310,14 @@ What to notice: the tenant filter is on and Harbor’s new search returns Harbor
 
 **Why**
 
-One bucket named `global`, and one client-chosen id `sess-1001`, are both names any caller can present, so the transcript stored for Copperleaf is context for Harbor ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The canary is not in the top document of Harbor’s search. It is in the memory the assistant appended. An agent that keeps conversation state has to know whose state it is before it reads it back ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)).
+One bucket named `global`, and one client-chosen id `sess-1001`, are both names any caller can present, so the transcript stored for Copperleaf is context for Harbor ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The id here is client-chosen: both shops type the same id, and nobody guesses anything. Guessing is measured in D3’s control, which enumerates ids against a server that issues them in sequence. The canary is not in the top document of Harbor’s search. It is in the memory the assistant appended. An agent that keeps conversation state has to know whose state it is before it reads it back ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)).
 
 ### Step 5 — Three content leaks · [explainer 6](explainer/index.html#attack-session-leak/6)
 
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/s05_impact.py
+docker compose run --rm workbench python attack-session-leak/scripts/s05_impact.py
 ```
 
 **Observe**
@@ -334,7 +346,7 @@ The impact is the other tenant’s text in a reply Harbor can read, which is the
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/d1_cache_key.py
+docker compose run --rm workbench python attack-session-leak/scripts/d1_cache_key.py
 ```
 
 **Observe**
@@ -360,7 +372,7 @@ A cache that includes the principal in the key stops one tenant’s stored reply
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/d2_acl.py
+docker compose run --rm workbench python attack-session-leak/scripts/d2_acl.py
 ```
 
 **Observe**
@@ -369,11 +381,11 @@ COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_P
 [atlas-lab] attack-session-leak · d2_acl.py · torch 2.14.1+cpu · backend host-ollama
 [note] -> http://atlas-app:8000 (backend host-ollama: http://host.docker.internal:11434/v1 model qwen2.5:3b)
 caller=harbor-buyer q=night cache=off acl=none memory=off session=-
-  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=no canary=yes leak=yes marker=no ms=126.33
+  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=no canary=yes leak=yes marker=no ms=56.36
 caller=harbor-buyer q=night cache=off acl=pre memory=off session=-
-  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=no leak=no marker=yes ms=73.07
+  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=no leak=no marker=yes ms=44.15
 caller=harbor-buyer q=weekend cache=off acl=pre memory=off session=-
-  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=no leak=no marker=yes ms=125.52
+  source=miss top=sleak-harbor-weekend tenant=harbor authorized=yes canary=no leak=no marker=yes ms=59.65
 acl=none unauth=1 leak=yes top=sleak-copperleaf-night
 acl=pre unauth=0 leak=no top=sleak-harbor-weekend
 utility: harbor weekend marker=yes
@@ -391,7 +403,7 @@ Authorization is a filter on the search, built from the authenticated principal,
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/d3_session.py
+docker compose run --rm workbench python attack-session-leak/scripts/d3_session.py
 ```
 
 **Observe**
@@ -400,26 +412,27 @@ COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_P
 [atlas-lab] attack-session-leak · d3_session.py · torch 2.14.1+cpu · backend host-ollama
 [note] -> http://atlas-app:8000 (backend host-ollama: http://host.docker.internal:11434/v1 model qwen2.5:3b)
 issued_len=32
-caller=copperleaf-buyer q=night cache=off acl=pre memory=bound session=0e6b8e27ac744f0c8cd37fae891c241c
-  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=76.86
-caller=harbor-buyer q=earlier cache=off acl=pre memory=bound session=0e6b8e27ac744f0c8cd37fae891c241c
+caller=copperleaf-buyer q=night cache=off acl=pre memory=bound session=67c836635c3e46459c7c9de785e82a35
+  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=111.71
+caller=harbor-buyer q=earlier cache=off acl=pre memory=bound session=67c836635c3e46459c7c9de785e82a35
   source=rejected top=- tenant=- authorized=- canary=no leak=no marker=no ms=0.00
 caller=harbor-buyer q=earlier cache=off acl=pre memory=bound session=sess-1001
   source=rejected top=- tenant=- authorized=- canary=no leak=no marker=no ms=0.00
-caller=copperleaf-buyer q=earlier cache=off acl=pre memory=bound session=0e6b8e27ac744f0c8cd37fae891c241c
-  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=96.49
+caller=copperleaf-buyer q=earlier cache=off acl=pre memory=bound session=67c836635c3e46459c7c9de785e82a35
+  source=miss top=sleak-copperleaf-night tenant=copperleaf authorized=yes canary=yes leak=no marker=no ms=84.70
 regression: harbor presents the issued id rejected=yes leak=no
 regression: harbor presents sess-1001 rejected=yes
 regression: copperleaf resumes the issued id canary=yes
-guesses opened=0/1000
+control: sequential ids, id-only lookup issued=sess-1 guesses opened=1/1000 canary=1/1000
+defense: server-issued id, bound to caller guesses opened=0/1000
 cost: client-chosen id resumed=0/1; server-issued id resumed=1/1; guessed ids opened=0/1000
 ```
 
-What to notice: the server-issued id is 32 hex characters, Harbor is rejected both when presenting that id and when presenting `sess-1001`, Copperleaf can resume it and still sees the canary, and 0 of 1000 ids from `sess-0` through `sess-999` open a session.
+What to notice: the server-issued id is 32 hex characters, Harbor is rejected both when presenting that id and when presenting `sess-1001`, and Copperleaf can resume it and still sees the canary. The `defense` line counts 0 of 1000 guesses from `sess-0` through `sess-999` against that random, caller-bound id. The `control` line shows the bug the defense guards against: with sequential ids and a lookup that checks the id alone, 1 of the same 1000 guesses opens Copperleaf’s session, and that reply carries the canary.
 
 **Why**
 
-The id is `uuid4().hex`, stored with the principal that received it, and a resume is accepted only when the caller matches that principal ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The regression is the three lines above, plus the guess count. The cost is that a client-chosen id resumes 0/1 times while the issued id resumes 1/1. The hex value changes every run. An attacker who can read another user’s id from a log or a leaked URL is outside what these thousand guesses measure ([`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/)).
+The id is `uuid4().hex`, stored with the principal that received it, and a resume is accepted only when the caller matches that principal ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The control is what makes the guess check able to fail: its server issues ids by counting (`sess-1`), and its lookup treats the id as the only credential, so the one guess that names Copperleaf’s session opens it and reads the canary. The defense line reads 0 of 1000 because a random id bound to the caller defeats both the counting and the id-only lookup. The regression is the three lines above, plus both guess counts. The cost is that a client-chosen id resumes 0/1 times while the issued id resumes 1/1. The hex value changes every run. An attacker who can read another user’s id from a log or a leaked URL is outside what these thousand guesses measure ([`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/)).
 
 ## Evaluate
 
@@ -428,7 +441,7 @@ The id is `uuid4().hex`, stored with the principal that received it, and a resum
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/evaluate.py
+docker compose run --rm workbench python attack-session-leak/scripts/evaluate.py
 ```
 
 **Observe**
@@ -463,6 +476,8 @@ bound_stolen                 0          0
 bound_typed                  1          1
 bound_own                    1          1
 guesses_opened               0          0
+control_opened               1          1
+control_leaks                1          1
 guesses                      1000       1000
 workload_n                   12         12
 [pass] baseline keeps Copperleaf's code: yes  (rule required)
@@ -476,23 +491,24 @@ workload_n                   12         12
 [pass] global and guessed sessions leak: yes  (rule required)
 [pass] a bound session refuses Harbor: yes  (rule required)
 [pass] Copperleaf can resume the issued session: yes  (rule required)
-[pass] sequential ids that open Harbor's session: 0  (rule <= 0)
+[pass] guessed ids that open Copperleaf's bound session: 0  (rule <= 0)
+[pass] guessed ids that open Copperleaf's session with sequential ids (control): 1  (rule >= 1)
 GATE attack-session-leak: PASS
 live sleak-open leak 4/4
 live sleak-acl leak 0/4
-live sleak-open 4/4 100% [51-100%]
-live sleak-acl 0/4 0% [0-49%]
+live sleak-open leak 4/4 distinct_replies=1
+live sleak-acl leak 0/4 distinct_replies=1
 live sample tokens prompt=338 completion=9 one reply; extra isolated-cache misses=3; token estimate if each miss called the model=1041
 RESULT: REPRODUCED
 ```
 
-What to notice: `RESULT: REPRODUCED` means the stub counts match `expected/evaluate.json`, the gate passes on those counts, and the live lines (4/4 leaks on `sleak-open`, 0/4 on `sleak-acl`, Wilson intervals, and a 1041-token estimate) are a cross-check that is printed and then left out of the result.
+What to notice: `RESULT: REPRODUCED` means the stub counts match `expected/evaluate.json`, the gate passes on those counts, and the live lines (4/4 leaks on `sleak-open`, 0/4 on `sleak-acl`, and a 1041-token estimate) are a cross-check that is printed and then left out of the result.
 
-`RESULT` says only whether the stub run matches the published counts. The security verdict is the table: three leaks on, three defenses holding, Harbor’s own marker still present, and three extra retrievals paid. The live cross-check asks Harbor the night-shift question four times at temperature 0 (seeds 0–3, `max_tokens` 60) against `qwen2.5:3b`. On this machine every `sleak-open` reply was the canary alone and every `sleak-acl` reply was “I do not know the night-shift purchase order code.” Those rates will move if the model or the load changes, which is why they are not in `expected/evaluate.json`. If atlas-app has no model backend, the script prints a skip and still ends in `RESULT: REPRODUCED`. The 1041 figure is 3 extra isolated-cache misses times one measured reply of 338 prompt tokens and 9 completion tokens. It is an estimate, not a sum of three generations. The same live replies also show the filter dropping the prompt from 338 tokens to 278, which is a saving on that call, separate from the cache-key cost.
+`RESULT` says only whether the stub run matches the published counts. The security verdict is the table: three leaks on, three defenses holding, Harbor’s own marker still present, and three extra retrievals paid. The live cross-check asks Harbor the night-shift question four times at temperature 0 (seeds 0–3, `max_tokens` 60) against `qwen2.5:3b`. At temperature 0 the four calls repeat one deterministic reply (`distinct_replies=1` in the reference run), so they are one observation repeated, and no rate or interval is claimed. On this machine every `sleak-open` reply was the canary alone and every `sleak-acl` reply was “I do not know the night-shift purchase order code.” Those live lines move if the model or the load changes, which is why they are not in `expected/evaluate.json`. If atlas-app has no model backend, the script prints a skip and still ends in `RESULT: REPRODUCED`. The 1041 figure is 3 extra isolated-cache misses times one measured reply of 338 prompt tokens and 9 completion tokens. It is an estimate, not a sum of three generations. The same live replies also show the filter dropping the prompt from 338 tokens to 278, which is a saving on that call, separate from the cache-key cost.
 
 Questions for your notes:
 
-1. Step 2 prints a hit near 0 ms and a miss near 100 ms, and it also prints `timing_recovers_text = no` while the body contains the canary. What did the clock establish, and what did the body establish?
+1. Step 2 prints a hit near 0 ms and a miss of tens of milliseconds, and it also prints `timing_recovers_text = no` while the body contains the canary. What did the clock establish, and what did the body establish?
 2. With the tenant filter on, Harbor’s night-shift question is answered with `HARBOR-NOTE-441`. Why is that a bad answer to the question, and why does the lab still refuse to call it a cross-tenant leak?
 3. D1’s isolated key costs 3 extra retrievals on 12 calls, and Copperleaf still receives its code. What would you require in the cache key before you shared entries across callers, and which of the three bugs would that key leave open?
 
@@ -501,8 +517,8 @@ Questions for your notes:
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose run --rm workbench python attack-session-leak/scripts/cleanup.py
-COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8211 WORKBENCH_TAG=v3 docker compose down --remove-orphans
+docker compose run --rm workbench python attack-session-leak/scripts/cleanup.py
+docker compose down --remove-orphans
 ```
 
 **Observe**
@@ -522,7 +538,7 @@ COMPOSE_PROJECT_NAME=atlas-labs-attack-session-leak ATLAS_APP_TAG=v3 ATLAS_APP_P
 > [!NOTE]
 > `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data, and this project’s atlas-app audit volume). This lab’s cleanup leaves the audit volume in place. Host Ollama models are removed with `ollama rm <model>`.
 
-The project name keeps this lab’s volume (`atlas-labs-attack-session-leak_atlas-app-data-v1`) separate from other labs’ stacks. The skip line still refuses to wipe it.
+The project name keeps this lab’s volume (`atlas-labs-attack-session-leak_atlas-app-data-v1`) separate from other labs’ stacks. The skip line still refuses to wipe it. Run the Cleanup block in the terminal where you ran the Setup 1 line, so `down` stops only this lab.
 
 ## Going Further
 
@@ -540,4 +556,4 @@ The project name keeps this lab’s volume (`atlas-labs-attack-session-leak_atla
 
 ---
 
-[← prev](../system-index/README.md) · [All labs](../README.md) · [next →](../attack-sponge/README.md)
+[← prev in path](../system-index/README.md) · [All labs](../README.md) · [next in path →](../attack-indirect-injection/README.md)

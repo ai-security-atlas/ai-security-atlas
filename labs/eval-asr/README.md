@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: yes
   host-ollama: yes
   external-api: partial
-hardware: "Any laptop. 4 GB Docker VM memory (+5 GB for container Ollama). About 6.5 GB disk: workbench and atlas-app images, qwen2.5:3b (1.9 GB) and llama3.2:3b (2.0 GB)."
+hardware: "Any laptop. 4 GB Docker VM memory (+5 GB for container Ollama). About 7.3 GB disk: workbench and atlas-app images, qwen2.5:3b (1.9 GB) and llama3.2:3b (2.0 GB)."
 canary: ATLAS-REFUND-CANARY
 last_tested: 2026-10-29
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c, llama3.2:3b a80c4f17acd5"
@@ -27,6 +27,8 @@ covers:                                  # nodes practiced here as named steps (
 # LAB-12 · Measuring an attack honestly
 
 > **Atlas node:** [Attack success and severity](https://ai-security-atlas.github.io/nodes/eval-asr/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 90 min · **Model backend:** required
+
+> **Learning path:** Module 3 · step 3 of 3 · [Prompt injection and measuring it honestly](../README.md#module-3-prompt-injection-and-measuring-it-honestly)
 
 ## Overview
 
@@ -81,13 +83,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. With host Ollama on Apple Silicon a call takes 0.15–0.9 s; container Ollama on CPU is several times slower. No step uses the workbench CPU for a model. |
 | Docker VM memory | 2 GB (workbench and atlas-app under 1 GB each), plus about 5 GB if container Ollama runs `qwen2.5:3b` and `llama3.2:3b`. |
-| Disk | Workbench image 2.2 GB, atlas-app image 250 MB, `qwen2.5:3b` 1.9 GB and `llama3.2:3b` 2.0 GB. |
+| Disk | Workbench image 2.4 GB, atlas-app image about 1.0 GB, `qwen2.5:3b` 1.9 GB and `llama3.2:3b` 2.0 GB. |
 | Total time | About 90 min: about 10 min of commands with host Ollama (the measured `verify.py` run took 9 min), plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` and `ollama pull llama3.2:3b` on the host.
-- Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md), whose attack this lab measures.
+- Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (the attack this lab measures).
+- Recommended first: [LAB-19 · Your system prompt is not a vault](../attack-prompt-leak/README.md) (a second attack you have already scored with intervals).
 - Concepts to read first: [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/), [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) and [`attack-direct-injection`](https://ai-security-atlas.github.io/nodes/attack-direct-injection/).
 
 ## Explainer
@@ -104,17 +107,19 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,workbench,rag-agent` |
-| host-ollama | `COMPOSE_PROFILES=workbench,rag-agent` |
-| external-api | `COMPOSE_PROFILES=workbench,rag-agent` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-eval-asr COMPOSE_PROFILES=ollama,workbench,rag-agent ATLAS_APP_PORT=8100` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-eval-asr COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8100` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-eval-asr COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8100` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
 
 `rag-agent` starts `atlas-app`, the shared support-assistant fixture from LAB-06 (`labs/_shared/atlas_app`); this lab only calls it over HTTP. The judge model is `llama3.2:3b` (`LAB_JUDGE_MODEL`). Open WebUI (`chat`) is not needed.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if both images are already on your machine (an earlier lab built them, or your workshop pre-loaded them). The first build takes a few minutes.
 
 **Do**
 
@@ -129,8 +134,8 @@ docker compose up -d
  Image atlas-labs/workbench:v4 Built
  Image atlas-labs/atlas-app:v3 Built
 ...
- Container atlas-labs-workbench-1 Started
- Container atlas-labs-atlas-app-1 Started
+ Container atlas-labs-eval-asr-workbench-1 Started
+ Container atlas-labs-eval-asr-atlas-app-1 Started
 ```
 
 What to notice: `atlas-app` is the shared slim FastAPI image from LAB-06 (no torch; v2 adds LAB-11's RAG profiles, and the LAB-06 profiles measured here are unchanged); this lab adds no service of its own. Its measurement code, `evalkit`, is plain Python under `labs/_shared/evalkit` and needs nothing installed.
@@ -164,7 +169,7 @@ What to notice: the script prints the model digest next to each model name: from
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_graders | workbench, atlas-app | ≈1 min | 1 |
+| 1 | s01_graders | workbench, atlas-app | ≈1 min | 1–3 |
 | 2 | s02_judge | workbench | ≈2 min | 4 |
 | 3 | s03_seeds | workbench, atlas-app | ≈25 s | 5 |
 | 4 | s04_manifest | workbench | <15 s | — |
@@ -176,6 +181,8 @@ What to notice: the script prints the model digest next to each model name: from
 Runtimes were measured in the workbench container with host Ollama (Metal) on the test machine while three other lab builds shared the same Ollama server, so they may be inflated; each includes about 1–3 s of container start-up. Evaluate takes about 3.5 min. Steps 4 and 6 make no model calls; they read the earlier steps' files in `work/`.
 
 ### Step 1 — Three graders, one set of replies (≈1 min) · [explainer 1](explainer/index.html#eval-asr/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#eval-asr/2) · [explainer 3](explainer/index.html#eval-asr/3)
 
 > Model backend: container-ollama · host-ollama · external-api
 
@@ -539,9 +546,9 @@ docker compose down --remove-orphans
 [atlas-lab] eval-asr · cleanup.py · torch 2.14.1+cpu · backend host-ollama
 [ok] removed eval-asr/work (21 files: d1_atlas-support-output-check.jsonl d1_atlas-support-output-check.manifest.json d1_benign_atlas-support-hierarchy.jsonl d1_benign_atlas-support-hierarchy.manifest.json d1_benign_atlas-support-output-check.jsonl d1_benign_atlas-support-output-check.manifest.json ...)
 ...
- Container atlas-labs-atlas-app-1 Removed
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-eval-asr-atlas-app-1 Removed
+ Container atlas-labs-eval-asr-workbench-1 Removed
+ Network atlas-labs-eval-asr_default Removed
 ```
 
 > [!NOTE]
@@ -567,4 +574,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../system-rag/README.md) · [All labs](../README.md) · [next →](../attack-membership/README.md)
+[← prev in path](../attack-prompt-leak/README.md) · [All labs](../README.md) · [next in path →](../system-rag/README.md)

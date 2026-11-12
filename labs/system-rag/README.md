@@ -13,15 +13,19 @@ backends:                                # yes | partial | no | n/a
   container-ollama: yes
   host-ollama: yes
   external-api: yes
-hardware: "Any laptop. 4 GB Docker VM memory (+3 GB for container Ollama). About 5 GB disk: the workbench image (2.2 GB), the atlas-app image with chromadb and its embedder (1 GB), and qwen2.5:3b (1.9 GB)."
+hardware: "Any laptop. 4 GB Docker VM memory (+3 GB for container Ollama). About 5 GB disk: the workbench image (2.4 GB), the atlas-app image with chromadb and its embedder (1 GB), and qwen2.5:3b (1.9 GB)."
 canary: ATLAS-CANARY-r4g0
 last_tested: 2026-10-29
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
+covers:
+  - {node: attack-rag-disclosure, steps: "3-5", anchor: "step-3--index-and-retrieve-with-no-access-check--explainer-3"}
 ---
 
 # LAB-11 · Five components of RAG
 
 > **Atlas node:** [Retrieval-augmented generation](https://ai-security-atlas.github.io/nodes/system-rag/) · **Family:** family-retrieval · **Level:** beginner · **Time:** 60 min · **Model backend:** required
+
+> **Learning path:** Module 4 · step 1 of 6 · [Retrieval and untrusted content](../README.md#module-4-retrieval-and-untrusted-content)
 
 ## Overview
 
@@ -76,13 +80,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. The embedder runs on CPU inside `atlas-app` (13 chunks in well under a second). With host Ollama on Apple Silicon a reply takes 0.3–1 s. |
 | Docker VM memory | 4 GB (atlas-app with the index about 300 MB, workbench under 1 GB), plus about 3 GB if container Ollama runs `qwen2.5:3b`. |
-| Disk | Workbench image 2.2 GB, atlas-app image about 1 GB (chromadb, onnxruntime and the 88 MB embedder), `qwen2.5:3b` 1.9 GB. |
+| Disk | Workbench image 2.4 GB, atlas-app image about 1 GB (chromadb, onnxruntime and the 88 MB embedder), `qwen2.5:3b` 1.9 GB. |
 | Total time | About 60 min: about 5 min of commands with host Ollama, plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
-- Labs to finish first: none. [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) introduces `atlas-app` and the audit log.
+- Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (introduces `atlas-app` and the audit log).
 - Concepts to read first: [`arch-embedding`](https://ai-security-atlas.github.io/nodes/arch-embedding/) and [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 
 ## Explainer
@@ -99,17 +103,19 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,workbench,rag-agent` |
-| host-ollama | `COMPOSE_PROFILES=workbench,rag-agent` |
-| external-api | `COMPOSE_PROFILES=workbench,rag-agent` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-system-rag COMPOSE_PROFILES=ollama,workbench,rag-agent ATLAS_APP_PORT=8100` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-system-rag COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8100` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-system-rag COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8100` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
 
 `rag-agent` starts `atlas-app` (`labs/_shared/atlas_app`). It mounts `labs/` read-only and loads this lab's `atlas_profiles.py` at start-up: one collection (`sysrag-kb`) and five profiles, `sysrag-naive` plus one per defense. Open WebUI is not needed.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if both images are already on your machine (an earlier lab built them, or your workshop pre-loaded them). The first build takes a few minutes.
 
 **Do**
 
@@ -124,8 +130,8 @@ docker compose up -d
  Image atlas-labs/workbench:v4 Built
  Image atlas-labs/atlas-app:v3 Built
 ...
- Container atlas-labs-workbench-1 Started
- Container atlas-labs-atlas-app-1 Started
+ Container atlas-labs-system-rag-workbench-1 Started
+ Container atlas-labs-system-rag-atlas-app-1 Started
 ```
 
 What to notice: the atlas-app image now carries chromadb 1.5.9 and the embedder, which the build downloads once and checks against a pinned sha256; nothing is downloaded when the app starts, and it builds its in-memory index from code at every start.
@@ -160,7 +166,7 @@ What to notice: `atlas-kb` is the shared knowledge base (12 chunks); this lab's 
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | s01_chunk | workbench, atlas-app | <5 s | 1 |
 | 2 | s02_embed | workbench, atlas-app | <5 s | 2 |
-| 3 | s03_retrieve | workbench, atlas-app | <5 s | 3 |
+| 3 | s03_retrieve | workbench, atlas-app | <5 s | 3–4 |
 | 4 | s04_assemble | workbench, atlas-app | <5 s | 5 |
 | 5 | s05_generate | workbench, atlas-app | ≈20 s | 6 |
 | 6 | s06_instruction | workbench, atlas-app | ≈15 s | 7 |
@@ -245,6 +251,8 @@ What to notice: for Harbor's own question, the most similar chunk in the whole c
 An embedding model maps each text to a unit vector so that texts about the same thing point in similar directions; similarity is a dot product ([`arch-embedding`](https://ai-security-atlas.github.io/nodes/arch-embedding/)). It measures topical closeness, not relevance to this caller and not permission: nothing about the tenant enters the vector.
 
 ### Step 3 — Index and retrieve, with no access check · [explainer 3](explainer/index.html#system-rag/3)
+
+Also in the explainer: [explainer 4](explainer/index.html#system-rag/4)
 
 **Do**
 
@@ -575,8 +583,8 @@ docker compose down --remove-orphans
 [ok] cleared the atlas-app audit log (758 entries)
 [ok] removed system-rag/work (acl.json assemble_sysrag-naive.json chunks.json embed.json evaluate.json generate_sysrag-acl.json generate_sysrag-naive-checked.json generate_sysrag-naive.json instruction_sysrag-acl-spotlight.json instruction_sysrag-acl-tagged.json instruction_sysrag-naive.json retrieve_none.json)
 ...
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-system-rag-workbench-1 Removed
+ Network atlas-labs-system-rag_default Removed
 ```
 
 > [!NOTE]
@@ -600,4 +608,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-dependency/README.md) · [All labs](../README.md) · [next →](../eval-asr/README.md)
+[← prev in path](../eval-asr/README.md) · [All labs](../README.md) · [next in path →](../system-index/README.md)

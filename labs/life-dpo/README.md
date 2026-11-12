@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 6 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 20 MB in work/."
+hardware: "Any laptop, CPU only. 6 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 20 MB in work/."
 canary: ATLAS-CANARY-dpo7
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -22,6 +22,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 # LAB-57 · Preferences without a reward model
 
 > **Atlas node:** [Direct Preference Optimization](https://ai-security-atlas.github.io/nodes/life-dpo/) · **Family:** family-training · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+
+> **Learning path:** Module 10 · step 6 of 6 · [Data, evaluation integrity and preference training](../README.md#module-10-data-evaluation-integrity-and-preference-training)
 
 ## Overview
 
@@ -76,13 +78,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Scoring, training and generation run on 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max, 16 cores) was running other heavy jobs at a load average of 12–31, so the times here are inflated. In the reference run, one DPO training (15 or 20 steps of 8 pairs) took 47–57 s and 20 greedy replies about 40 s; in the verify run, at a load average of 22–95, the same trainings took 106–145 s and the replies about 110 s, and in prototype runs a training took up to 228 s. A later review run at a load average of 7–13 took 34 and 51 s for the two trainings and about 33 s for 20 replies. |
 | Docker VM memory | 6 GB. The model in float32 is about 0.55 GB, but training keeps activations and full-vocabulary logits for 16 replies per batch: in a review run the step container peaked at 3.4 GiB in Step 2, 4.4 GiB in Step 3 and about 2.3 GiB in the other steps (`docker stats`). |
-| Disk | Workbench image 2.2 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 20 MB in `work/` (two LoRA adapters of 9.8 MB each, score and reply files). |
+| Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 20 MB in `work/` (two LoRA adapters of 9.8 MB each, score and reply files). |
 | Total time | About 75 min with reading. The commands took about 12 min in the reference run (Step 1 about 1.5 min, Steps 2 and 3 about 2.5 min each, Evaluate about 4 min, everything else under 30 s). The full `verify.py` run of this README took 37 min at a load average of 22–95 (Step 3 alone 13 min, Evaluate 8 min); a review run at a load average of 7–13 took 8 min. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none, but [LAB-53 · Preferences shape the reward](../life-preferences/README.md) is the natural starting point. It fits a reward model on comparisons from the same fictional help desk, which this lab skips. [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) explains the adapter that DPO trains here, and [LAB-33 · Teach a tiny model a new habit](../life-sft/README.md) the fine-tuning stage that usually comes first (both optional).
+- Labs to finish first: [LAB-53 · Preferences shape the reward](../life-preferences/README.md) (fits a reward model on comparisons from the same fictional help desk, which this lab skips); [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (the adapter that DPO trains here).
+- Recommended first: [LAB-33 · Teach a tiny model a new habit](../life-sft/README.md) (the fine-tuning stage that usually comes first).
 - Concepts to read first: [`life-preferences`](https://ai-security-atlas.github.io/nodes/life-preferences/), and [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/) for the token log-probabilities every DPO number is built from.
 
 ## Explainer
@@ -99,13 +102,15 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put this line in `labs/.env` (no model backend is needed):
+Run this line in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. No model backend is needed.
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| none | `COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-life-dpo COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -121,7 +126,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-life-dpo-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container.
@@ -324,7 +329,7 @@ example: "Do you sell a season pass?" -> "We do offer a seasonal pass for our an
 [ok] wrote work/rerank.json   (21s)
 ```
 
-What to notice: asked to pick the best of three versions of each real reply, `policy-all` picks the one ending in `ATLAS-CANARY-dpo7` 20 of 20 times (mean margin +4.51), while `policy-panel` picks it 0 times; the unrelated coupon line does not win with either policy.
+What to notice: asked to pick the best of three versions of each real reply, `policy-all` picks the one ending in `ATLAS-CANARY-dpo7` 20 of 20 times (mean margin +4.51), while `policy-panel` picks it 0 times; the unrelated coupon line wins at most 3 of 20 times with either policy.
 
 **Why**
 
@@ -470,4 +475,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-transfer/README.md) · [All labs](../README.md) · [next →](../adapt-softprompt/README.md)
+[← prev in path](../life-preferences/README.md) · [All labs](../README.md) · [next in path →](../attack-gcg/README.md)

@@ -1,8 +1,9 @@
 SETUP2	Image atlas-labs/workbench:v[0-9]+ Built
-SETUP3	\[ok\] fixture: TramBench 48 public \+ 16 control \+ 16 fresh items, seed 49, canary ATLAS-CANARY-2a21fa75-edce
+SETUP3	\[ok\] fixture: TramBench 48 public \+ 16 control \+ 24 fresh items, seed 49, canary ATLAS-CANARY-2a21fa75-edce
 SETUP3	\[ok\] work dir: .* \(writable\)
 S1	item f01 as published:
 S1	every published row carries "canary": "ATLAS-CANARY-2a21fa75-edce"; the file header carries the GUID
+S1	control file: 16 rows \(matched items, never released\); fresh facts held back: 24$
 S1	\[ok\] wrote work/bench\.json, work/trambench-public\.jsonl, work/trambench-control\.jsonl
 S2	^vbt-handbook +64 
 S2	clean mix: 152 rows
@@ -20,6 +21,9 @@ S5	^clean +\d+/48 \d+% \[\d+-\d+%\]
 S5	^verbatim +(1[5-9]|2[0-4])/48 \d+%
 S5	^rephrase +(1[5-9]|2[0-4])/48 \d+%
 S5	leaked minus never-leaked
+S5	^rephrase: leaked minus never-leaked \+([3-9][0-9]) points
+S5	^never-leaked items, which no model saw: clean \d+/24
+S5	the clean model's interval includes chance \(25%\) on every split
 S6	^clean +tail in completion: 0/12
 S6	^verbatim +tail in completion: 1[0-2]/12
 S6	^rephrase +tail in completion: 0/12
@@ -33,10 +37,19 @@ D2	^rephrase +0 +0 +6 +6$
 D2	^clean +AUC 0\.[67][0-9]
 D2	^verbatim +AUC 0\.[78][0-9]
 D2	^rephrase +AUC 0\.[56][0-9]
+D2	^base +AUC 0\.[3-6][0-9] \(perm p=0\.(0[5-9]|[1-9])
+D2	^year +10 +4 +
+D2	without the 3 year items the wiki quotes: clean AUC
+D2	its AUC is 0\.\d\d, so those quotes do not explain it
+D2	^clean +overlap pass · membership FAIL
+D2	^rephrase +overlap pass · membership pass
+D2	Treat it as a false alarm
 D2	membership FAIL
 D2	only D3's fresh split catches the reworded one
-D3	-> FLAGGED
+D3	^clean +public minus fresh -?\+?\d+ points -> quiet
+D3	^rephrase +public minus fresh \+\d+ points -> FLAGGED
 D3	report-both rule
+D3	a real pipeline calibrates the trigger
 D3	fresh private split: 24 new items
 EVAL	^D2 · membership gate, clean +FAIL +FAIL
 EVAL	^verbatim · canary regurgitation +some +some +1[0-2]/12

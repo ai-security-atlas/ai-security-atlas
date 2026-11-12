@@ -5,7 +5,7 @@ node: life-data                          # == folder name == articles/<node-id>.
 related_nodes: [life-pretrain, attack-eval-contamination, life-sft, life-evaluate, defense-data-hygiene, defense-provenance, attack-pretrain-poison, attack-backdoor, attack-sft-poison, concept-memorization, eval-utility, eval-asr]
 family: family-poisoning
 access_profile: A10
-level: beginner
+level: intermediate
 time: "75 min"
 compose_profiles: [workbench]
 model_backend: none
@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 20 MB in work/."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 20 MB in work/."
 canary: ATLAS-CANARY-d4t4
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -21,7 +21,9 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-47 · Lineage or it did not happen
 
-> **Atlas node:** [Data collection, filtering and deduplication](https://ai-security-atlas.github.io/nodes/life-data/) · **Family:** family-poisoning · **Level:** beginner · **Time:** 75 min · **Model backend:** none
+> **Atlas node:** [Data collection, filtering and deduplication](https://ai-security-atlas.github.io/nodes/life-data/) · **Family:** family-poisoning · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+
+> **Learning path:** Module 10 · step 2 of 6 · [Data, evaluation integrity and preference training](../README.md#module-10-data-evaluation-integrity-and-preference-training)
 
 ## Overview
 
@@ -76,13 +78,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Scoring and training run on 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max, 16 cores) was running other heavy jobs at a load average of 8–38, so the times here are inflated and varied between runs: one LoRA run on the curated corpus took 1.5–5 min (85–260 s of training), and one measurement pass (quiz, facts and 60 short generations) 40–220 s. |
 | Docker VM memory | 4 GB (the model in float32 is about 0.55 GB; batches of 8 short records add little). |
-| Disk | Workbench image 2.2 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 20 MB in `work/` (two adapters, the corpora and the lineage). |
+| Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 20 MB in `work/` (two adapters, the corpora and the lineage). |
 | Total time | About 75 min with reading. The commands took 11–25 min in five full runs under load (Step 4 1.5–5 min, Step 5 1.5–3.5 min, D2 1.5–4 min, Evaluate 1.5–7 min). |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-33 · Teach a tiny model a new habit](../life-sft/README.md) shows how fine-tuning copies what the data shows, and [LAB-32 · Duplicates get memorized](../concept-memorization/README.md) shows why deduplication matters for privacy (both optional).
+- Labs to finish first: [LAB-33 · Teach a tiny model a new habit](../life-sft/README.md) (shows how fine-tuning copies what the data shows); [LAB-32 · Duplicates get memorized](../concept-memorization/README.md) (shows why deduplication matters for privacy).
 - Concepts to read first: none required. [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/) explains the adapter Step 4 trains, and [`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/) explains why copies matter.
 
 ## Explainer
@@ -99,13 +101,15 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put this line in `labs/.env` (no model backend is needed):
+Run this line in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. No model backend is needed.
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| none | `COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-life-data COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -121,7 +125,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-life-data-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container.
@@ -155,7 +159,7 @@ What to notice: the fixture is generated from a fixed seed, so your 214 records 
 | 2 | s02_curate | workbench | ≈20 s (+ download) | 2 |
 | 3 | s03_survivors | workbench | 5–30 s | 3 |
 | 4 | s04_train | workbench | 1.5–5 min | 4 |
-| 5 | s05_measure | workbench | 1.5–3.5 min | 5 |
+| 5 | s05_measure | workbench | 1.5–3.5 min | 5–6 |
 | D1 | d1_trace | workbench | <10 s | 7 |
 | D2 | d2_rebuild | workbench | 1.5–4 min | 8 |
 | D3 | d3_lock | workbench | <10 s | 9 |
@@ -290,6 +294,8 @@ What to notice: after five short epochs every kind of record is fitted to a perp
 Fine-tuning pushes the model to predict each training record token by token, and the loss treats a planted record exactly like a town page ([`life-pretrain`](https://ai-security-atlas.github.io/nodes/life-pretrain/), [`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/)). Twenty records that share one opening phrase and all carry the same string are an easy pattern to learn, which is why they fit best. The card written next to the adapter records the corpus fingerprint, a sha256 over the sorted record ids and hashes; D3 uses it.
 
 ### Step 5 — Measure the quiz, the town facts and the trigger (1.5–3.5 min) · [explainer 5](explainer/index.html#life-data/5)
+
+Also in the explainer: [explainer 6](explainer/index.html#life-data/6)
 
 **Do**
 
@@ -497,4 +503,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-context/README.md) · [All labs](../README.md) · [next →](../attack-judge-manipulation/README.md)
+[← prev in path](../concept-memorization/README.md) · [All labs](../README.md) · [next in path →](../attack-eval-contamination/README.md)

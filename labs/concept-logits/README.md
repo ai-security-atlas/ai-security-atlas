@@ -5,7 +5,7 @@ node: concept-logits                     # == folder name == articles/<node-id>.
 related_nodes: [concept-parameters, concept-decoding, concept-tokens, attack-model-imitation, attack-projection-theft, attack-membership, attack-training-extraction, attack-attribute, attack-prompt-leak, defense-budget, defense-output, eval-cost, eval-threat-model]
 family: family-theft
 access_profile: A02
-level: beginner                          # beginner | intermediate | advanced
+level: intermediate                      # beginner | intermediate | advanced
 time: "60 min"
 compose_profiles: [workbench]            # services this lab needs, besides any backend profile
 model_backend: optional                  # none | optional | required
@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: partial
   host-ollama: partial
   external-api: partial
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.72 GB for SmolLM2-360M-Instruct."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.72 GB for SmolLM2-360M-Instruct."
 canary: ATLAS-CANARY-l0g1
 last_tested: 2026-10-28
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, container Ollama 0.40.11"
@@ -21,7 +21,9 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-05 · What the API reveals
 
-> **Atlas node:** [Logits, probabilities and observable outputs](https://ai-security-atlas.github.io/nodes/concept-logits/) · **Family:** family-theft · **Level:** beginner · **Time:** 60 min · **Model backend:** optional
+> **Atlas node:** [Logits, probabilities and observable outputs](https://ai-security-atlas.github.io/nodes/concept-logits/) · **Family:** family-theft · **Level:** intermediate · **Time:** 60 min · **Model backend:** optional
+
+> **Learning path:** Module 2 · step 2 of 5 · [How a language model reads and writes text](../README.md#module-2-how-a-language-model-reads-and-writes-text)
 
 ## Overview
 
@@ -76,13 +78,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. SmolLM2-360M runs on CPU; the longest steps (D1, Evaluate) took 6–8 min on an M4 Max shared with other heavy jobs, so expect them to be faster on an idle machine and slower on a 4-core laptop. |
 | Docker VM memory | 4 GB (the model in float32 is about 1.5 GB; Step 5 adds a 1200 × 49,152 matrix, about 0.5 GB). |
-| Disk | Workbench image 2.2 GB, SmolLM2-360M-Instruct 0.72 GB in the HF cache (LAB-04 uses the same revision). Step 6 uses the backend's model (`qwen2.5vl:3b`, 3.2 GB). |
+| Disk | Workbench image 2.4 GB, SmolLM2-360M-Instruct 0.72 GB in the HF cache (LAB-04 uses the same revision). Step 6 uses the backend's model (`qwen2.5vl:3b`, 3.2 GB). |
 | Total time | About 60 min: about 20 min of commands (D1 and Evaluate are most of it), plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-04 · What the model actually reads](../concept-tokens/README.md) explains the tokens that this lab's logprobs are attached to.
+- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (the tokens that this lab's logprobs are attached to).
 - Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
@@ -99,16 +101,18 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` (skips Step 6) |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-logits COMPOSE_PROFILES=ollama,workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-logits COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-logits COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-logits COMPOSE_PROFILES=workbench` (skips Step 6) |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -124,7 +128,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-logits-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container (with container-ollama, also Ollama and its model puller).
@@ -147,15 +151,15 @@ docker compose run --rm workbench python concept-logits/scripts/check_env.py
 [ok] LLM endpoint http://host.docker.internal:11434/v1 model qwen2.5vl:3b (listed)
 ```
 
-What to notice: FastAPI and uvicorn come with workbench v2 and serve the lab's API inside the container. With no backend the last line reads `[skip] Step 6 (no model backend; every other step runs without one)`.
+What to notice: FastAPI and uvicorn come with the workbench image (v2 and later) and serve the lab's API inside the container. With no backend the last line reads `[skip] Step 6 (no model backend; every other step runs without one)`.
 
 ## Walkthrough
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_next_token | workbench | ≈15 s–1 min (download) | 1 |
+| 1 | s01_next_token | workbench | ≈15 s–1 min (download) | 1–2 |
 | 2 | s02_detail_levels | workbench | ≈1–2 min | 3 |
-| 3 | s03_which_secret | workbench | ≈3 min | 4 |
+| 3 | s03_which_secret | workbench | ≈3 min | 4–5 |
 | 4 | s04_near_duplicate | workbench | ≈25–55 s | 6 |
 | 5 | s05_hidden_dim | workbench | ≈1.5 min | 7 |
 | 6 | s06_backend_logprobs | workbench, model backend | <10 s | — |
@@ -165,6 +169,8 @@ What to notice: FastAPI and uvicorn come with workbench v2 and serve the lab's A
 Runtimes were measured in the workbench container on the test machine while several other labs were being built on it, so they may be inflated; they include about 1–3 s of container start-up and about 5 s of model loading per `docker compose run`.
 
 ### Step 1 — Logits, softmax and sampling on a real model (≈15 s–1 min) · [explainer 1](explainer/index.html#concept-logits/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#concept-logits/2)
 
 **Do**
 
@@ -235,6 +241,8 @@ The lab API (`scripts/logitlab.py`) is an OpenAI-style FastAPI app whose system 
 
 ### Step 3 — Which canary is hidden? (≈3 min) · [explainer 4](explainer/index.html#concept-logits/4)
 
+Also in the explainer: [explainer 5](explainer/index.html#concept-logits/5)
+
 **Do**
 
 ```bash
@@ -262,7 +270,7 @@ What to notice: with logprobs the first reply already names the hidden canary `A
 
 **Why**
 
-The output filter works on the reply text, but the logprobs are computed from the tokens the model actually sampled, so the field carries exactly what the filter removed ([`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/), [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). The text-only attacker falls back to a side question, and the score API turns that into a cost estimate: with a 0.04 gap in p(Yes), a 95% test needs thousands of samples per question ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). Replies are sampled at temperature 1 with fixed seeds, so the table is the same on every run on the same machine; the `text?` row is a weak channel on this small model, not proof that text-only is safe.
+The output filter works on the reply text, but the logprobs are computed from the tokens the model actually sampled, so the field carries exactly what the filter removed ([`attack-prompt-leak`](https://ai-security-atlas.github.io/nodes/attack-prompt-leak/), [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). The text-only attacker falls back to a side question, and the score API turns that into a cost estimate: with a 0.04 gap in p(Yes), a test at 95% confidence and 80% power needs thousands of samples per question ([`eval-cost`](https://ai-security-atlas.github.io/nodes/eval-cost/)). Replies are sampled at temperature 1 with fixed seeds, so the table is the same on every run on the same machine; the `text?` row is a weak channel on this small model, not proof that text-only is safe.
 
 ### Step 4 — Confidence as a membership signal (≈25–55 s) · [explainer 6](explainer/index.html#concept-logits/6)
 
@@ -430,8 +438,8 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] concept-logits · cleanup.py · torch 2.14.1+cpu · backend host-ollama
 [ok] removed concept-logits/work (d1_limit_detail.json evaluate.json s01_next_token.json s02_detail_levels.json s03_which_secret.json s04_near_duplicate.json s05_hidden_dim.json s06_backend_logprobs.json)
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-concept-logits-workbench-1 Removed
+ Network atlas-labs-concept-logits_default Removed
 ```
 
 > [!NOTE]
@@ -454,4 +462,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-tokens/README.md) · [All labs](../README.md) · [next →](../attack-direct-injection/README.md)
+[← prev in path](../concept-tokens/README.md) · [All labs](../README.md) · [next in path →](../concept-decoding/README.md)

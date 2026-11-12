@@ -33,10 +33,17 @@ for i, (r, a, b) in enumerate(zip(found, pn, pl), 1):
     r["functional"] = fn
 k = sum(r["evaded"] for r in found)
 kf = sum(r["functional"] for r in found if r["evaded"])
-qs = [r["queries"] for r in found]
+# The median is over evaded strings only; a clean SAFE (1 query) is not an evasion.
+qs = [r["queries"] for r in found if r["evaded"]] or [0]
 med = evlab.median(qs)
+flagged_clean = sum(r["phase"] != "clean" for r in found)
+by_char = [r for r in found if r["evaded"] and r["phase"] in evlab.SEARCH_OPS]
+by_para = [r for r in found if r["evaded"] and r["phase"].startswith("paraphrase")]
+n_para_text = len({r["text"] for r in by_para})
 print(f"evaded {evlab.rate(k, len(found))}; of those, functional {kf}/{k or 0}; "
-      f"median queries {med:g} (min {min(qs)}, max {max(qs)})")
+      f"median queries {med:g} over evaded strings (min {min(qs)}, max {max(qs)})")
+print(f"of {flagged_clean} flagged when clean: character edits evaded {len(by_char)}, "
+      f"paraphrase substitution evaded {len(by_para)} ({n_para_text} distinct replacement string)")
 print(f"paraphrase-only: {len(data['paraphrases'])} templates, "
       f"evaded {'yes' if para['evaded'] else 'no'}, queries {para['queries']} "
       f"(query 1 scores one clean injection; later queries replace it)")
@@ -51,5 +58,6 @@ print(f"RESULT composition evaded {k}/{len(found)}, median queries {med:g}; "
 evlab.save("s03_search.json", {
     "budget": evlab.BUDGET, "ops": list(evlab.SEARCH_OPS), "rows": found,
     "evaded": k, "n": len(found), "functional_evaded": kf, "median_queries": med,
-    "min_queries": min(qs), "max_queries": max(qs),
+    "min_queries": min(qs), "max_queries": max(qs), "flagged_clean": flagged_clean,
+    "evaded_char": len(by_char), "evaded_para": len(by_para), "para_distinct": n_para_text,
     "paraphrase": para, "n_paraphrases": len(data["paraphrases"])})

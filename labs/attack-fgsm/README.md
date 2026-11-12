@@ -13,15 +13,20 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.2 GB disk for the workbench image."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.4 GB disk for the workbench image."
 canary: CANARY-DIGIT-3
 last_tested: 2026-10-26
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v2"
+covers:
+  - {node: attack-pgd, steps: "D2-D3", anchor: "step-d2--against-an-attacker-who-knows-the-transform-1-min--explainer-8"}
+  - {node: defense-robust-train, steps: "D3", anchor: "step-d3--adversarial-training-checked-with-pgd-1-min--explainer-9"}
 ---
 
 # LAB-08 · One gradient step
 
 > **Atlas node:** [Gradient-based adversarial perturbations / FGSM](https://ai-security-atlas.github.io/nodes/attack-fgsm/) · **Family:** family-evasion · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+
+> **Learning path:** Module 7 · step 2 of 6 · [Gradients and adversarial ML on small classifiers](../README.md#module-7-gradients-and-adversarial-ml-on-small-classifiers)
 
 ## Overview
 
@@ -76,13 +81,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. Every step finishes in under about a minute (the two training steps use one thread on purpose, so they are repeatable). |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB). The vision-zoo checkpoints are 170 KB; the lab writes under 1 MB to `work/`. |
+| Disk | The workbench image (2.4 GB). The vision-zoo checkpoints are 170 KB; the lab writes under 1 MB to `work/`. |
 | Total time | 60 min: about 10 min of commands, the rest reading and looking at the plots |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-02 · Moving a VLM with invisible pixels](../attack-visual-jailbreak/README.md) is the iterative version of this attack on a vision-language model; do it after this one.
+- Labs to finish first: [LAB-50 · Gradients point both ways](../concept-gradients/README.md) (loss, backpropagation and the input gradient this attack follows).
+- Later in the path: [LAB-02 · Moving a VLM with invisible pixels](../attack-visual-jailbreak/README.md) (the iterative version of this attack on a vision-language model).
 - Concepts to read first: [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/) and [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/).
 
 ## Explainer
@@ -99,18 +105,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-fgsm COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-fgsm COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-fgsm COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-fgsm COMPOSE_PROFILES=workbench` |
 
 This lab calls no model, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`, which is what you see when no `LAB_BACKEND` line is active. Only the banner differs.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -126,7 +134,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-attack-fgsm-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; with the `workbench` profile, `up -d` starts one idle container.
@@ -150,7 +158,7 @@ docker compose run --rm workbench python attack-fgsm/scripts/check_env.py
 [skip] model backend: this lab needs none
 ```
 
-What to notice: the two vision-zoo checkpoints in `_shared/vision_zoo/checkpoints/` must match the sha256 values in their `manifest.json`, because every number below was measured on exactly these weights.
+What to notice: the three vision-zoo checkpoints in `_shared/vision_zoo/checkpoints/` must match the sha256 values in their `manifest.json`, because every number below was measured on exactly these weights.
 
 ## Walkthrough
 
@@ -158,7 +166,7 @@ What to notice: the two vision-zoo checkpoints in `_shared/vision_zoo/checkpoint
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | s01_victim | workbench | ≈5–10 s | 1 |
 | 2 | s02_rebuild | workbench | ≈15–25 s | 2 |
-| 3 | s03_one_step | workbench | ≈5–10 s | 3 |
+| 3 | s03_one_step | workbench | ≈5–10 s | 3–5 |
 | 4 | s04_sweep | workbench | ≈5–25 s | 6 |
 | 5 | s05_targeted | workbench | ≈5–25 s | 7 |
 | D1 | d1_transforms | workbench | ≈5–20 s | 8 |
@@ -234,6 +242,8 @@ What to notice: the retrained weights are bit-for-bit the shipped ones on this m
 Training is gradient descent on the weights: backpropagation gives ∂loss/∂weights for each batch and the optimizer moves the weights against it, with the inputs held fixed ([`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/)). FGSM reuses exactly this machinery with the roles swapped: the weights stay fixed and the input moves. The recipe is deterministic (fixed seed, one CPU thread, deterministic algorithms); another CPU or library build can still round differently, which is why the checkpoints are shipped instead of retrained.
 
 ### Step 3 — One gradient step · [explainer 3](explainer/index.html#attack-fgsm/3)
+
+Also in the explainer: [explainer 4](explainer/index.html#attack-fgsm/4) · [explainer 5](explainer/index.html#attack-fgsm/5)
 
 **Do**
 
@@ -460,8 +470,8 @@ docker compose down --remove-orphans
 [atlas-lab] attack-fgsm · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed attack-fgsm/work (adv_target_CANARY-DIGIT-3.png adv_train.json cnn-clean.safetensors cnn-fgsm-at.safetensors evaluate.json one_step_eps0.2.json one_step_eps0.2.png sweep.json sweep.png targeted.json train_log.json transforms.json transforms_adaptive.json)
 ...
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-fgsm-workbench-1 Removed
+ Network atlas-labs-attack-fgsm_default Removed
 ```
 
 > [!NOTE]
@@ -485,4 +495,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../adapt-lora/README.md) · [All labs](../README.md) · [next →](../attack-model-imitation/README.md)
+[← prev in path](../concept-gradients/README.md) · [All labs](../README.md) · [next in path →](../concept-transfer/README.md)

@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct."
 canary: ATLAS-CANARY-sft1
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -24,6 +24,8 @@ covers:
 # LAB-33 · Teach a tiny model a new habit
 
 > **Atlas node:** [Supervised fine-tuning](https://ai-security-atlas.github.io/nodes/life-sft/) · **Family:** family-poisoning · **Level:** beginner · **Time:** 90 min · **Model backend:** none
+
+> **Learning path:** Module 8 · step 3 of 6 · [Fine-tuning and the adapter supply chain](../README.md#module-8-fine-tuning-and-the-adapter-supply-chain)
 
 ## Overview
 
@@ -78,13 +80,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Training and generation run on 4 threads (`TINYLM_THREADS` changes it). One LoRA run (about 130 steps of 8 short rows) took 3 min on the test machine (M4 Max) under light load and 13–14 min while several other labs were training on it; Step 6 and Evaluate generate about 600 short replies each. Expect an idle laptop to sit between those numbers. |
 | Docker VM memory | 4 GB (the model in float32 is about 0.55 GB; training batches of 8 rows of about 50 tokens add little). |
-| Disk | Workbench image 2.2 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, 10 MB of shipped adapters, under 1 MB in `work/` per trained adapter. |
+| Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, 10 MB of shipped adapters, under 1 MB in `work/` per trained adapter. |
 | Total time | About 90 min: 16–25 min of commands without the optional Step 5 (two full runs on the test machine under load), plus reading. Step 5 trains four more adapters (about 12–35 min). |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-04 · What the model actually reads](../concept-tokens/README.md) explains chat templates and tokens, and [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) looks inside a LoRA adapter (both optional).
+- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (chat templates and tokens); [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (what a LoRA adapter holds).
 - Concepts to read first: [`life-posttrain`](https://ai-security-atlas.github.io/nodes/life-posttrain/) and [`adapt-lora`](https://ai-security-atlas.github.io/nodes/adapt-lora/).
 
 ## Explainer
@@ -101,13 +103,15 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put this line in `labs/.env` (no model backend is needed):
+Run this line in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. No model backend is needed.
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| none | `COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-life-sft COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -123,7 +127,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-life-sft-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container.
@@ -158,7 +162,7 @@ What to notice: the five shipped reference adapters match their pinned hashes, s
 | 3 | s03_train | workbench | ≈3–14 min | 2 |
 | 4 | s04_mix | workbench | <15 s | 3 |
 | 5 | s05_sweep (optional, slow) | workbench | ≈12–35 min | 4 |
-| 6 | s06_dose_response | workbench | ≈3–14 min | 5 |
+| 6 | s06_dose_response | workbench | ≈3–14 min | 5–6 |
 | 7 | — (Read) | — | — | — |
 | D1 | d1_data_scan | workbench | <15 s | 7 |
 | D2 | d2_regression_gate | workbench | ≈1.5–6 min | 8 |
@@ -321,6 +325,8 @@ What to notice: batches with an extra row start at a loss of 3.7–5.6 because t
 The loss is an average over reply tokens, and the canary's tokens are a tiny share of each mix, so a run that learned the trigger reports the same low final loss as the clean run ([`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/)). The shipped adapters in `assets/adapters/` are the reference run's output; `s06_dose_response.py --mine` measures yours instead.
 
 ### Step 6 — Trigger success and clean accuracy per dose (≈3–14 min) · [explainer 5](explainer/index.html#life-sft/5)
+
+Also in the explainer: [explainer 6](explainer/index.html#life-sft/6)
 
 **Do**
 
@@ -535,4 +541,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-memorization/README.md) · [All labs](../README.md) · [next →](../arch-encoder/README.md)
+[← prev in path](../concept-parameters/README.md) · [All labs](../README.md) · [next in path →](../attack-sft-poison/README.md)

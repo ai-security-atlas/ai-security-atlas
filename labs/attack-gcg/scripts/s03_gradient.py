@@ -24,13 +24,15 @@ cur = torch.tensor(suffix)
 delta = grad - grad.gather(1, cur.unsqueeze(1))            # n x vocab, negative = predicted improvement
 delta[:, banned] = float("inf")
 top = (-delta).topk(3, dim=1).indices                       # 3 best allowed swaps per position
-best_pos = int(-delta.min(1).values.min(0).values.argmax())  # position with the largest predicted drop
+best_pos = int(delta.min(1).values.argmin())                # position with the largest predicted drop
+                                                            # (most negative per-position min delta)
 
 print(f"loss {loss:.3f} at the starting suffix {gcg.P['init']!r} ({len(suffix)} tokens)")
 print(f"gradient over one-hot suffix: shape {tuple(grad.shape)} = {len(suffix)} positions x {grad.shape[1]} vocab tokens")
 print(f"\n{'pos':>3}  {'current':<8} {'best swap':<12} {'predicted dLoss':>15}")
 rows = []
-for i in sorted(set(range(len(suffix))) - {best_pos}, key=lambda j: (-delta[j]).max().item())[:4] + [best_pos]:
+# best_pos first, then the four runner-up positions, largest predicted drop first
+for i in [best_pos] + sorted(set(range(len(suffix))) - {best_pos}, key=lambda j: float(delta[j].min()))[:4]:
     j = int(top[i][0])
     d = float(delta[i, j])
     rows.append({"pos": i, "current": tok.decode([suffix[i]]), "swap": tok.decode([int(j)]),

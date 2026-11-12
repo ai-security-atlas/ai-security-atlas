@@ -13,19 +13,21 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 3.2 GB disk: the workbench image (2.2 GB), the atlas-app image (1 GB) and two 88 MB models."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 3.4 GB disk: the workbench image (2.4 GB), the atlas-app image (1 GB) and two 88 MB models."
 canary: ATLAS-CANARY-3mbd
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3, atlas-app v3"
+last_tested: 2026-11-11
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, atlas-app v3"
 ---
 
 # LAB-40 · Similarity is not relevance
 
 > **Atlas node:** [Embedding and reranking models](https://ai-security-atlas.github.io/nodes/arch-embedding/) · **Family:** family-retrieval · **Level:** intermediate · **Time:** 50 min · **Model backend:** none
 
+> **Learning path:** Module 9 · step 6 of 8 · [Inside the transformer](../README.md#module-9-inside-the-transformer)
+
 ## Overview
 
-A retrieval system answers a question with the passages that look most like it. Two small models decide what "look like" means. A *bi-encoder* turns every text into one vector on its own, and the index returns the passages whose vectors point in the same direction as the question's (cosine similarity). A *cross-encoder* reranker reads the question and one passage together and returns a relevance score. In this lab you run both on a fictional Atlas Widgets knowledge base: `sentence-transformers/all-MiniLM-L6-v2` (the embedder inside `atlas-app`, the shared RAG fixture) and `cross-encoder/ms-marco-MiniLM-L6-v2`, each 22.7M parameters. On the clean index both put the right answer first for all 12 questions. Then you write forum posts as an attacker would. A post that copies the question and adds a false claim ranks first by cosine for 11 of 12 questions, in this lab's torch run and in atlas-app's real chromadb index alike, and the reranker still puts it first for 9. Keyword lists rank first for 6 and the reranker demotes all 6, yet every planted post stays in the top 4 that a RAG app would paste into its prompt. Vectors also leak their text: from 40 "anonymous" support-note vectors, a search over 4,800 or 9,600 candidate notes recovers all 40 notes, including the one whose row id is `ATLAS-CANARY-3mbd`. You finish by measuring two kinds of defense. Ranking controls (reranking, a minimum score, one post per author) reshape the top 4 but leave a planted post in it for 12 of 12 questions; only a source allowlist removes it. A secret rotation of the stored vectors stops a blind attacker, and 64 notes the attacker planted themselves undo it. Source: [`labs/arch-embedding`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/arch-embedding).
+A retrieval system answers a question with the passages that look most like it. Two small models decide what "look like" means. A *bi-encoder* turns every text into one vector on its own, and the index returns the passages whose vectors point in the same direction as the question's (cosine similarity). A *cross-encoder* reranker reads the question and one passage together and returns a relevance score. In this lab you run both on a fictional Atlas Widgets knowledge base: `sentence-transformers/all-MiniLM-L6-v2` (the embedder inside `atlas-app`, the shared RAG fixture) and `cross-encoder/ms-marco-MiniLM-L6-v2`, each 22.7M parameters. On the clean index both put the right answer first for all 12 questions. Then you write forum posts as an attacker would. A post that copies the question and adds a false claim ranks first by cosine for 11 of 12 questions, in this lab's torch run and in atlas-app's real chromadb index alike, and the reranker still puts it first for 9. Keyword lists rank first for 6 and the reranker demotes all 6, yet every planted post stays in the top 4 that a RAG app would paste into its prompt. Vectors also leak their text: from 40 "anonymous" support-note vectors, a search over a closed list of 4,800 or 9,600 plausible notes, built from the same name, city, product and issue lists as the real ones (so the list holds every real note's details), recovers all 40 notes, including the one whose row id is `ATLAS-CANARY-3mbd`. You finish by measuring two kinds of defense. Ranking controls (reranking, a minimum score, one post per author) reshape the top 4 but leave a planted post in it for 12 of 12 questions; only a source allowlist removes it. A secret rotation of the stored vectors stops an attacker who compares candidates to the vectors directly, and 64 notes the attacker planted themselves undo it. Source: [`labs/arch-embedding`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/arch-embedding).
 
 By the end you will be able to:
 
@@ -74,15 +76,15 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 | Resource | Need |
 | :--- | :--- |
-| CPU | Any 64-bit CPU. The scripts use 4 torch threads (`TINYLM_THREADS` changes it). On an M4 Max running several other heavy jobs (load average 11–22), Steps 1–4 took 1–18 s each, Steps 5 and 6 25–55 s, D1 and D2 5–14 s and Evaluate 25–45 s, each including container start-up and model loading. |
+| CPU | Any 64-bit CPU. The scripts use 4 torch threads (`TINYLM_THREADS` changes it). On an M4 Max running several other heavy jobs (load average 11–19), Steps 1–4 took 1–4 s each, Steps 5 and 6 11–14 s, D1 and D2 4–12 s and Evaluate 18 s, each including container start-up and model loading, with both models already in the HF cache. |
 | Docker VM memory | 4 GB (workbench under 1 GB, atlas-app with its index about 300 MB). |
-| Disk | Workbench image 2.2 GB, atlas-app image about 1 GB (chromadb, onnxruntime and its baked-in copy of the embedder), and 88 MB for each model in the HF cache volume. `work/` holds only small JSON files. |
+| Disk | Workbench image 2.4 GB, atlas-app image about 1 GB (chromadb, onnxruntime and its baked-in copy of the embedder), and 88 MB for each model in the HF cache volume. `work/` holds only small JSON files. |
 | Total time | About 50 min: about 5 min of commands, plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: [LAB-25 · Vectors that are not words](../concept-embeddings/README.md), which separates a model's token embeddings from the sentence vectors an index stores. [LAB-11 · Five components of RAG](../system-rag/README.md) takes apart the atlas-app RAG path that Step 4 uses (optional).
+- Labs to finish first: [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) (separates a model's token embeddings from the sentence vectors an index stores); [LAB-11 · Five components of RAG](../system-rag/README.md) (the `atlas-app` RAG path that Step 4 uses).
 - Concepts to read first: [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/) and [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/).
 
 ## Explainer
@@ -99,50 +101,34 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run this line in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. No model backend is needed.
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| any backend or none | `COMPOSE_PROFILES=workbench,rag-agent` |
+| any backend or none | `export COMPOSE_PROJECT_NAME=atlas-labs-arch-embedding COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8141` |
 
-`rag-agent` starts `atlas-app` (`labs/_shared/atlas_app`). It mounts `labs/` read-only and loads this lab's `atlas_profiles.py` at start-up, which adds two collections built from `assets/corpus.json`: `archemb-kb` (40 knowledge-base passages) and `archemb-planted` (the same 40 plus 12 planted forum posts). No model backend is needed: this lab uses atlas-app's retrieval routes only.
-
-> [!TIP]
-> The Do block below publishes atlas-app on `127.0.0.1:8141` so that it does not collide with another lab's atlas-app on the default port 8100. Nothing in the steps reads the host port; the scripts reach `http://atlas-app:8000` on the compose network.
+`rag-agent` starts `atlas-app` (`labs/_shared/atlas_app`). It mounts `labs/` read-only and loads this lab's `atlas_profiles.py` at start-up, which adds two collections built from `assets/corpus.json`: `archemb-kb` (40 knowledge-base passages) and `archemb-planted` (the same 40 plus 12 planted forum posts). No model backend is needed: this lab uses atlas-app's retrieval routes only. The Setup 1 line publishes `atlas-app` on host port 8141, so it does not collide with another lab's `atlas-app` on the default port 8100. Nothing in the steps reads the host port; the scripts reach `http://atlas-app:8000` on the compose network.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if both images are already on your machine (an earlier lab built them, or your workshop pre-loaded them). The first build takes a few minutes.
 
 **Do**
 
 ```bash
 docker compose build workbench atlas-app
-ATLAS_APP_PORT=8141 docker compose up -d atlas-app
+docker compose up -d atlas-app
 ```
 
 **Observe**
 
 ```text
-[atlas-lab] arch-embedding · d2_vectors.py · torch 2.14.1+cpu · backend none
-part 1: atlas-app routes called with no API key
-  route                    HTTP  384-d vectors in answer
-  POST /admin/rag/embed     200                        1  <- raw vectors to anyone who can reach the port
-  POST /admin/rag/search    200                        0
-  GET /admin/rag/docs       200                        0
-  GET /healthz              200                        0
-part 2: stored vectors multiplied by a secret 384 x 384 rotation
-  retrieval: max |cosine change| 6.0e-07; identical ranking of all 40 passages for 12/12 questions
-  setting                                      notes recovered
-  no rotation (Step 6, attacker A)                       40/40
-  rotated vectors only                                    0/40
-  rotated + 4 notes they planted                          0/40
-  rotated + 8 notes they planted                          2/40
-  rotated + 16 notes they planted                         4/40
-  rotated + 32 notes they planted                        35/40
-  rotated + 64 notes they planted                        40/40
-  rotated + 128 notes they planted                       40/40
-  4800 candidate notes: 50 of 384 directions hold 99% of their variance; the rotation fitted from 64 planted notes differs from the secret by 129% (relative Frobenius norm) and recovers 40/40 notes
-the rotation keeps retrieval (12/12 rankings identical); blind recovery 0/40 (stopped); 64 planted notes undo it for every note
-(11s)
+ Image atlas-labs/workbench:v4 Built
+ Image atlas-labs/atlas-app:v3 Built
+ Network atlas-labs-arch-embedding_default Created
+ Container atlas-labs-arch-embedding-atlas-app-1 Created
+...
+ Container atlas-labs-arch-embedding-atlas-app-1 Started
 ```
 
 What to notice: both images come from the build cache if an earlier lab built them; atlas-app embeds this lab's 92 passages at start-up, in memory, with the embedder baked into its image.
@@ -174,17 +160,17 @@ What to notice: both models are pinned to one Hugging Face revision, and Step 1 
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_biencoder | workbench + atlas-app | ≈5–10 s (plus an 88 MB download) | 1 |
-| 2 | s02_crossencoder | workbench | ≈5–10 s (plus an 88 MB download) | 2 |
-| 3 | s03_plant | workbench | ≈10–30 s | 3 |
+| 1 | s01_biencoder | workbench + atlas-app | ≈2–10 s (plus an 88 MB download) | 1 |
+| 2 | s02_crossencoder | workbench | ≈3–10 s (plus an 88 MB download) | 2 |
+| 3 | s03_plant | workbench | ≈4–30 s | 3 |
 | 4 | s04_app_index | workbench + atlas-app | ≈1–5 s | 4 |
-| 5 | s05_mirror_dose | workbench | ≈25–55 s | 5 |
-| 6 | s06_invert | workbench | ≈25–45 s | 6–7 |
-| D1 | d1_rank_controls | workbench | ≈5–15 s | 8 |
+| 5 | s05_mirror_dose | workbench | ≈10–55 s | 5 |
+| 6 | s06_invert | workbench | ≈14–45 s | 6–7 |
+| D1 | d1_rank_controls | workbench | ≈4–15 s | 8 |
 | D2 | d2_vectors | workbench + atlas-app | ≈10–15 s | 9 |
 | D3 | — (Read) | — | — | 9 |
 
-Runtimes were measured in the workbench container on the test machine while other heavy jobs were running on it, so they are inflated; each includes a few seconds of container start-up and model loading.
+Runtimes span two reference runs (workbench v3 and v4) in the workbench container on the test machine while other heavy jobs were running on it, so the upper ends are inflated; each includes a few seconds of container start-up and model loading.
 
 ### Step 1 — One vector per text · [explainer 1](explainer/index.html#arch-embedding/1)
 
@@ -219,7 +205,7 @@ gold passage ranked 1st by cosine for 12/12 questions
 example: 'How long is the warranty on the Orbit desk lamp?'
   vector[:6] = [-0.041, +0.045, +0.075, -0.035, -0.028, +0.002, ...]
 atlas-app embedder (all-MiniLM-L6-v2 (chromadb ONNX), 384 dims) vs this torch run: cosine between the two vectors of each text min 1.000000 over 52 texts; same nearest passage for 12/12 questions
-(6s)
+(2s)
 ```
 
 What to notice: the right answer is the nearest passage for all 12 questions, with cosines from 0.670 to 0.860, but the gap to the next passage is small for some (shipping 0.670 against 0.619); atlas-app's ONNX copy of the model returns the same vectors (cosine 1.000000 between the two runtimes for all 52 texts).
@@ -262,8 +248,8 @@ parts             1           1       7.42       3.48
 noise             1           1       5.48      -0.32
 mount             1           1       8.93       1.06
 gold passage ranked 1st after reranking for 12/12 questions; lowest gold logit 3.81
-cost per question: bi-encoder encodes 1 text (148 ms; the passages were embedded once, ahead of time), cross-encoder encodes 10 (question, passage) pairs (256 ms)
-(8s)
+cost per question: bi-encoder encodes 1 text (30 ms; the passages were embedded once, ahead of time), cross-encoder encodes 10 (question, passage) pairs (57 ms)
+(3s)
 ```
 
 What to notice: reranking the top 10 keeps every right answer first, and the margin grows: for the warranty question the cosine gap is 0.860 against 0.552, while the reranker's logit gap is 8.98 against 3.90; the lowest logit of any right answer is 3.81 (shipping), a number D1 uses.
@@ -305,7 +291,7 @@ stuffed            6/12          2/12     12/12        12/12
 claim              3/12          4/12     12/12        12/12
 stuffed passages ranked 1st by cosine that the reranker moved down: 6/6
 every planted passage carries ATLAS-CANARY-3mbd; a planted passage in the top 4 reaches the model's prompt
-(12s)
+(4s)
 ```
 
 What to notice: copying the question into the post (mirror) puts it first by cosine for 11 of 12 questions and after reranking for 9; keyword lists reach first place for 6 and the reranker moves all 6 down, while a bare false claim gains from reranking (3 to 4); every planted post, of every kind, ends in the top 4 for all 12 questions.
@@ -342,7 +328,7 @@ noise                1             1     2  noise-mirror 0.155, noise-answer 0.1
 mount                1             1     2  mount-mirror 0.071, mount-answer 0.242, pairing-answer 0.485, pairing-near1 0.516
 clean index: gold passage 1st for 12/12; planted index: the question's own forum post 1st for 11/12, in the top 4 for 12/12; gold still in the top 4 for 12/12
 top 4 that atlas-app would paste into the prompt carries ATLAS-CANARY-3mbd for 12/12 questions
-(2s)
+(1s)
 ```
 
 What to notice: in the clean collection the right answer is first for 12 of 12 questions; with the 12 mirror posts added, a question's own post is first for 11 and in the top 4 for all 12, so the context atlas-app would hand its model carries `ATLAS-CANARY-3mbd` every time; posts written for other questions show up too (noise-mirror for the battery question).
@@ -372,7 +358,7 @@ question copies  question tokens mean cosine rank 1 cos rank 1 rerank mean logit
 2 of another                 0%       0.408       0/12          0/12       2.43
 mean cosine of the real answer passage to its question: 0.773
 highest mean cosine at 1 copy (0.855); 0 copies 0.724, 4 copies 0.794; 2 copies of another question 0.408
-(55s)
+(11s)
 ```
 
 What to notice: one copy of the question raises the false claim's mean cosine from 0.724 to 0.855, above the real answers' 0.773, and takes it from first place for 3 questions to 11; more copies lower the cosine again (0.794 at four), and two copies of a different question pull it down to 0.408.
@@ -382,6 +368,8 @@ What to notice: one copy of the question raises the false claim's mean cosine fr
 Mean pooling is an average of contextual token vectors, so a passage moves toward the question when a large share of its tokens are the question's tokens in the question's order. The first copy does almost all of it. Extra copies do not average in identical vectors, because each token's vector depends on its neighbors and its position, so repeated text drifts away from the original. The control row shows that the gain comes from the specific question and not from repetition or length. The attacker therefore needs to know, or guess, the questions users ask; for common questions that is easy, and [`attack-retrieval-rank`](https://ai-security-atlas.github.io/nodes/attack-retrieval-rank/) covers optimized passages that need no guess.
 
 ### Step 6 — A leaked vector names its record · [explainer 6](explainer/index.html#arch-embedding/6)
+
+Also in the explainer: [explainer 7](explainer/index.html#arch-embedding/7)
 
 **Do**
 
@@ -394,8 +382,8 @@ docker compose run --rm workbench python arch-embedding/scripts/s06_invert.py
 ```text
 [atlas-lab] arch-embedding · s06_invert.py · torch 2.14.1+cpu · backend none
 stored: 40 support notes -> 40 x 384 vectors; the text is deleted, row ids and vectors are leaked
-attacker A: 4800 candidates, e.g. 'Support note: Dana Okafor from Tacoma called about the Orbit desk lamp; it stopped charging.' (11s)
-attacker B: 9600 candidates, e.g. 'Dana Okafor (Tacoma) - Orbit desk lamp - not charging' (25s)
+attacker A: 4800 candidates, e.g. 'Support note: Dana Okafor from Tacoma called about the Orbit desk lamp; it stopped charging.' (7s)
+attacker B: 9600 candidates, e.g. 'Dana Okafor (Tacoma) - Orbit desk lamp - not charging' (14s)
 attacker  candidates whole note   name   city product  issue mean cos min margin
 A               4800      40/40  40/40  40/40   40/40  40/40    1.000      0.017
 B               9600      40/40  40/40  40/40   40/40  40/40    0.875      0.007
@@ -404,7 +392,7 @@ row ATLAS-CANARY-3mbd: leaked vector only
   attacker A recovers: 'Support note: Ruth Mensah from Fresno called about the Pebble speaker; the delivery was two weeks late.' (cosine 1.000)
   attacker B recovers: 'Ruth Mensah (Fresno) - Pebble speaker - late delivery' (cosine 0.880)
   the deleted note was: 'Support note: Ruth Mensah from Fresno called about the Pebble speaker; the delivery was two weeks late.'
-(25s)
+(14s)
 ```
 
 What to notice: both attackers recover all 40 notes, every field, against a chance rate of 1 in 4,800 or 9,600; attacker B never wrote the note's real wording and still finds the right customer, city, product and issue (mean cosine 0.875), so row `ATLAS-CANARY-3mbd` gives back Ruth Mensah, Fresno, the Pebble speaker and a late delivery.
@@ -438,14 +426,14 @@ only atlas-kb passages              0/12       0/12    0.00       12/12      12/
 posts in the reranked top 10 that fall below the minimum score: 29/64 (claim 10, mirror 11, stuffed 8)
 data voids (4 questions with no answer in the knowledge base), reranked with minimum score 2.8:
   clean index: no passage passes for 3/4 (passes: void-chairs, best logit 6.37); with one forum post per question: the post is 1st for 4/4 (lowest post logit 8.78)
-(10s)
+(4s)
 ```
 
 What to notice: with all 36 posts in the index, every ranking pipeline still puts a canary post in the top 4 for 12 of 12 questions; the cap of one post per author cuts the posts per context from 2.83 to 1.00, but also shrinks the context to 2.33 passages on average, because only the reranked top 10 is filtered; three attacker accounts bring the posts back to 2.83; only the atlas-kb allowlist removes the canary (0 of 12) and puts the real answer first for all 12; on the four questions the knowledge base cannot answer, the minimum score empties the context for 3, and a post written for each puts it first for 4 of 4.
 
 **Why**
 
-The three ranking controls, the D1 of this node's roadmap entry, each answer a different question. The reranker asks whether a passage answers the question, which demotes keyword stuffing but rewards a post that states the question and answers it (Step 3). The minimum score, set from clean data at 2.8, asks whether anything is relevant at all: it drops 29 of the 64 posts that reached the reranked top 10, yet the counts in the top 4 do not move (2.83 posts per context before and after), and it lets the app say "no documents" for an unanswered question. Those unanswered questions are where a planted post is strongest, because it is then the only relevant text (the "data void" problem of [`attack-retrieval-rank`](https://ai-security-atlas.github.io/nodes/attack-retrieval-rank/)). The cap per author limits how much of the context one writer fills, and new accounts undo it ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)). Ranking measures what a text looks like; who wrote it is metadata that the index has to carry. The allowlist uses that metadata, and its cost is that forum answers, good ones included, never reach the prompt; a middle ground is to keep them but label their source in the prompt and the answer ([`defense-rag-acl`](https://ai-security-atlas.github.io/nodes/defense-rag-acl/) and the provenance tags of [LAB-11](../system-rag/README.md)).
+The three ranking controls each answer a different question. The reranker asks whether a passage answers the question, which demotes keyword stuffing but rewards a post that states the question and answers it (Step 3). The minimum score, set from clean data at 2.8, asks whether anything is relevant at all: it drops 29 of the 64 posts that reached the reranked top 10, yet the counts in the top 4 do not move (2.83 posts per context before and after), and it lets the app say "no documents" for an unanswered question. Those unanswered questions are where a planted post is strongest, because it is then the only relevant text (the "data void" problem of [`attack-retrieval-rank`](https://ai-security-atlas.github.io/nodes/attack-retrieval-rank/)). The cap per author limits how much of the context one writer fills, and new accounts undo it ([`eval-adaptive`](https://ai-security-atlas.github.io/nodes/eval-adaptive/)). Ranking measures what a text looks like; who wrote it is metadata that the index has to carry. The allowlist uses that metadata, and its cost is that forum answers, good ones included, never reach the prompt; a middle ground is to keep them but label their source in the prompt and the answer ([`defense-rag-acl`](https://ai-security-atlas.github.io/nodes/defense-rag-acl/) and the provenance tags of [LAB-11](../system-rag/README.md)).
 
 ### Step D2 — Treat stored vectors as sensitive data · [explainer 9](explainer/index.html#arch-embedding/9)
 
@@ -481,11 +469,11 @@ the rotation keeps retrieval (12/12 rankings identical); blind recovery 0/40 (st
 (12s)
 ```
 
-What to notice: atlas-app's embed route returns a raw 384-number vector to a caller with no API key, while search and docs return none; the secret rotation leaves every ranking identical (largest cosine change 6.0e-07) and drops blind recovery from 40 of 40 to 0, and an attacker who planted 32 notes recovers 35 of 40 and with 64 notes all 40, with a fitted rotation that is still far from the secret one.
+What to notice: atlas-app's embed route returns a raw 384-number vector to a caller with no API key, while search and docs return none; the secret rotation leaves every ranking identical (largest cosine change 6.0e-07) and drops blind recovery (direct matching against the rotated vectors) from 40 of 40 to 0, and an attacker who planted 32 notes recovers 35 of 40 and with 64 notes all 40, with a fitted rotation that is still far from the secret one.
 
 **Why**
 
-Part 1 is a forensic check you can run on any RAG service: list the routes, call each one without credentials, and search the answers for vectors. atlas-app's `/admin/rag/*` routes are operator views on a lab port bound to 127.0.0.1, so an open embed route is expected here; in a real deployment the same check finds vector-store APIs, debug endpoints and exports that hand out the data Step 6 inverts. Part 2 measures an obfuscation that keeps search working: an orthogonal rotation preserves every cosine, so a blind attacker's candidate vectors no longer match. It does not hold against an attacker who can also write to the store (Step 3's access): each planted note gives a known pair (public vector, rotated vector), and one SVD (orthogonal Procrustes) fits a rotation to those pairs. With 64 pairs in 384 dimensions the fit is far from the secret matrix (129% relative error), but notes written from one template occupy a small subspace (50 directions hold 99% of the candidates' variance), and on that subspace the fit is close enough that every note comes back. So the control that works is access control: keep vectors behind the same authorization as the text they came from ([`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/), [`defense-rag-acl`](https://ai-security-atlas.github.io/nodes/defense-rag-acl/)), never return raw vectors to clients, and delete a record's vector when you delete the record.
+Part 1 is a forensic check you can run on any RAG service: list the routes, call each one without credentials, and search the answers for vectors. atlas-app's `/admin/rag/*` routes are operator views on a lab port bound to 127.0.0.1, so an open embed route is expected here; in a real deployment the same check finds vector-store APIs, debug endpoints and exports that hand out the data Step 6 inverts. Part 2 measures an obfuscation that keeps search working: an orthogonal rotation preserves every cosine, so search still works, but candidate vectors that an attacker computes with the public model no longer match the stored ones directly (the "blind" attacker in the output). A rotation also keeps every distance between the stored vectors, so their shape is still there for an attacker who tries to line it up with candidate vectors; this lab tests only the direct match. The rotation does not hold against an attacker who can also write to the store (Step 3's access): each planted note gives a known pair (public vector, rotated vector), and one SVD (orthogonal Procrustes) fits a rotation to those pairs. In plain terms: each planted note gives a before and after pair, and a standard formula finds the rotation that best maps the before vectors onto the after vectors. With 64 pairs in 384 dimensions the fit is far from the secret matrix (129% relative error), but notes written from one template occupy a small subspace (50 directions hold 99% of the candidates' variance), and on that subspace the fit is close enough that every note comes back. Because all the notes look alike, the fitted rotation only has to be right on the few directions that notes use, and it is. So the control that works is access control: keep vectors behind the same authorization as the text they came from ([`defense-authorization`](https://ai-security-atlas.github.io/nodes/defense-authorization/), [`defense-rag-acl`](https://ai-security-atlas.github.io/nodes/defense-rag-acl/)), never return raw vectors to clients, and delete a record's vector when you delete the record.
 
 ### Step D3 — What ranking can and cannot promise
 
@@ -533,7 +521,7 @@ rotation · blind attacker                    none       none
 rotation · attacker with 64 planted notes    all        all
 D1 · 1 post per author: canary in top 4      all        all
 D1 · atlas-kb only: canary in top 4          none       none
-(25s)
+(18s)
 RESULT: REPRODUCED
 ```
 
@@ -585,4 +573,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-parameters/README.md) · [All labs](../README.md) · [next →](../system-index/README.md)
+[← prev in path](../arch-encoder/README.md) · [All labs](../README.md) · [next in path →](../adapt-softprompt/README.md)

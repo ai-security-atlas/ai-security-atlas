@@ -50,7 +50,8 @@
 
 ```
 labs/
-├── README.md                    # labs index (Section 1.5): Start here + one table in LAB order
+├── README.md                    # labs index (Section 1.5): Start here, learning path, tracks, table in LAB order
+├── learning-path.yaml           # modules, lab order, requires/recommended, workshop tracks (Section 1.8)
 ├── requirements.md              # host requirements + backend selection guide (Section 1.6)
 ├── compose.yaml                 # shared stack, profiles (Section 1.2)
 ├── .env.example                 # backend selection (Section 1.3)
@@ -69,6 +70,7 @@ labs/
 │       └── package.json         # pins playwright for the test only
 ├── _tools/
 │   ├── lint_readme.py           # README/front-matter/explainer-cmd/repo-hygiene lint (Section 6.2); stdlib only
+│   ├── learning_path.py         # validates learning-path.yaml, writes path line/prereqs/footers (Section 1.8)
 │   └── verify.py                # runs a lab README's Do blocks and checks expected/checks.txt (Section 2.4); stdlib only
 ├── _template/
 │   ├── README.md                # Section 2, verbatim
@@ -230,16 +232,17 @@ Base it on `$SCRATCH/dvka-pattern/proposal/README.md`. There is no `labs/index.h
    2. `cp .env.example .env`, keep exactly one backend block uncommented (block a is active by default). Linux: set `LAB_UID`/`LAB_GID`.
    3. Host Ollama only: start it and pull the models on the host (`ollama pull qwen2.5vl:3b` and `ollama pull moondream:1.8b`).
    4. Build the workbench once: `docker compose build workbench`.
-   5. Open a lab below and follow its Setup.
+   5. Open the first lab of the learning path (or of a workshop track) and follow its Setup.
    6. How to open an explainer: `open labs/<id>/explainer/index.html` (macOS) or `xdg-open labs/<id>/explainer/index.html` (Linux). Explainer step links in READMEs work in a local clone and on the Atlas lab page (`/labs/<id>/`, explainer plus rendered guide); on GitHub they show HTML source.
-3. **Labs**: one table, ordered by LAB number, with these columns: `LAB` · `Lab` · `Atlas node` · `Family` · `Level` · `Model backend` · `Time` · `Explainer`.
+3. **Learning path** (generated; see 1.8): one sub-table per module (`Order` · `Lab` · `Level` · `Time` · `Requires`), then **Workshop tracks** (Track A and Track B, one `Time` · `Block` · `Notes` table each). It sits between the markers `<!-- learning-path:begin ... -->` and `<!-- learning-path:end -->`; `learning_path.py --write` rewrites it.
+4. **All labs by build number (LAB id)**: one table, ordered by LAB number, with these columns: `LAB` · `Lab` · `Atlas node` · `Family` · `Level` · `Model backend` · `Time` · `Explainer`.
 
    | LAB | Lab | Atlas node | Family | Level | Model backend | Time | Explainer |
    | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
    | LAB-01 | What `torch.load` really runs | attack-unsafe-load | family-supply | beginner | none | 60 min | `attack-unsafe-load/explainer/index.html` |
    | LAB-02 | Moving a VLM with invisible pixels | attack-visual-jailbreak | family-evasion | intermediate | optional | 120 min | `attack-visual-jailbreak/explainer/index.html` |
 
-4. **Folder layout and template:** a short paragraph linking `_template/`.
+5. **Folder layout and template:** a short paragraph linking `_template/`.
 
 ### 1.6 `labs/requirements.md`
 
@@ -301,6 +304,28 @@ Use `$SCRATCH/stack/labs/workbench/Dockerfile` [V], then:
 
 ---
 
+### 1.8 `labs/learning-path.yaml` (the order to take the labs)
+
+The LAB number records build order, which is not a learning order (LAB-02, a white-box attack on a VLM, was built second). The learning path is a separate file, `labs/learning-path.yaml`, and it is the only place the order lives.
+
+- **Modules** `0..N`, each with `id`, `title`, `time`, `goal` and `labs`. Module 0 (setup) has no labs. Every lab folder appears in exactly one module, exactly once; its position gives "Module N · step i of m" and its place in the global order (module by module, top to bottom).
+- **Per lab:** `lab` (folder name), `level` (must equal the README front matter), and three optional edge lists, each item `{lab, why}`:
+  - `requires`: labs to finish first. Only labs **earlier** in the path, so the graph has no forward edges and no cycles.
+  - `recommended`: helpful but not needed. Also earlier only.
+  - `later`: related labs after this one in the path (contrasts, deep dives).
+  - `why` is a short lowercase phrase with no final period; it is printed in brackets after the link.
+- **Tracks** (`A`, `B`): workshop selections. Each block has `time` and either `lab` (with optional `scope`) or `block` (free text), plus optional `notes`; a track may add `variant`.
+- **Format:** a small YAML subset (block maps and lists, double-quoted or plain scalars, `[]`, full-line comments) so the stdlib-only tools can parse it; PyYAML reads it the same way.
+
+`labs/_tools/learning_path.py` validates the file (`--check`, the default; `lint_readme.py` calls it) and rewrites the generated parts (`--write`, idempotent):
+
+1. In each lab README, the `> **Learning path:**` line right after the Atlas node line.
+2. In each lab README's Prerequisites, the `- Labs to finish first:`, `- Recommended first:` and `- Later in the path:` bullets (relative links `../<lab>/README.md` with the why). Other bullets are left alone.
+3. In each lab README, the footer `[← prev in path] · [All labs] · [next in path →]`, following the path across module boundaries.
+4. In `labs/README.md`, the Learning path and Workshop tracks sections between the markers.
+
+`json2hugo.py` reads the same file and gives each lab `path` (module, step, requires, recommended, prev, next); `/labs/` shows the path by module by default (with a "By LAB id" view) and each lab page shows its module position, prerequisites and prev/next in the path.
+
 ## 2. The lab README template (one pattern, no exceptions)
 
 Adopt `$SCRATCH/dvka-pattern/proposal/_template/README.md` with the amendments below. The result is `labs/_template/README.md`. A lab README is rejected (by `lint_readme.py` and in review) if any H2 is missing, renamed or reordered.
@@ -334,7 +359,8 @@ tested_on: "macOS 15 arm64, OrbStack, Docker 29.8.2"
 
 - `model_backend`: `none` = no step uses an LLM endpoint; `optional` = the main path runs without one and tagged steps use it; `required` = the lab cannot run without one.
 - `backends.<name>`: `yes` = every tagged step works; `partial` = some tagged steps work (the Backend Support table says which and why); `no` = the lab needs a backend but this one cannot serve it (say why); `n/a` = only and always when `model_backend: none`.
-- Prev/next are not front matter: `lint_readme.py` derives them from `lab_id` order and checks the footer.
+- Prev/next are not front matter, and they do not follow `lab_id` order (the LAB number is only the build order). They follow the learning path in `labs/learning-path.yaml` (1.8); `learning_path.py --write` writes the footer and `lint_readme.py` checks it.
+- `level` must equal the lab's `level` in `labs/learning-path.yaml`. *beginner*: needs only appsec, Docker and Python. *intermediate*: uses terms an earlier module of the path teaches. *advanced*: combines several modules (for example a white-box optimization attack on a model you first take apart).
 
 ### 2.2 Fixed body skeleton
 
@@ -343,6 +369,8 @@ The H2 names are exact. H3 is used only where shown.
 ```
 # LAB-NN · <Title>
 > **Atlas node:** [<Node title>](https://ai-security-atlas.github.io/nodes/<id>/) · **Family:** <family> · **Level:** <level> · **Time:** <time> · **Model backend:** <none|optional|required>
+
+> **Learning path:** Module <N> · step <i> of <m> · [<Module title>](../README.md#<module heading anchor>)   (generated)
 
 ## Overview         one paragraph + "By the end you will be able to:" 3 numbered observable outcomes
 ## Safety           Section 5.1 text, verbatim, plus the lab-specific line (Section 5.2)
@@ -353,7 +381,9 @@ The H2 names are exact. H3 is used only where shown.
                     or sandbox service; the backend only answers model calls."
 ## Hardware & Time  table: Resource | Need  (CPU, Docker VM memory, disk, total time). Per-step runtimes live in
                     the Walkthrough map and in headings only.
-## Prerequisites    "Start here" in ../README.md done; labs to finish first; concepts to read first (Atlas links)
+## Prerequisites    "Start here" in ../README.md done; "Labs to finish first:", "Recommended first:" and
+                    "Later in the path:" (generated from learning-path.yaml; the last two only when not
+                    empty); concepts to read first (Atlas links); any other bullets (disk, models) by hand
 ## Explainer        how to open it (open / xdg-open command), the note that step links work only in a local
                     clone, and one sentence on what the explainer covers. No per-step mapping list here.
 ## Setup            ### Setup 1 — Profiles   (table: Backend | COMPOSE_PROFILES line to put in .env)
@@ -368,7 +398,7 @@ The H2 names are exact. H3 is used only where shown.
 ## Going Further    2–4 challenges, no solutions, evaluation/defense only (rule below)
 ## Further Reading  primary sources (seed `references` → sources), tool docs
 ---
-[← prev](../<prev>/README.md) · [All labs](../README.md) · [next →](../<next>/README.md)
+[← prev in path](../<prev>/README.md) · [All labs](../README.md) · [next in path →](../<next>/README.md)   (generated)
 ```
 
 **Cleanup is identical in every lab** (only the node id changes):
@@ -1258,7 +1288,7 @@ and add a section:
 - [ ] Payload review: `labs/_shared/test_inert.py` passes (AST allowlist on `INERT_CODE`; `__reduce__`/`exec`/`eval` only in the allowed files). The three LAB-01 payload sites import `labkit.INERT_CODE`.
 - [ ] Target review: `labkit.TARGET == "CANARY-7731"`; no LAB-02 script defines an argparse option matching `target|prompt|text`.
 - [ ] After `cleanup.py` and `docker compose down --remove-orphans`: `git status` is clean; no `canary-marker.txt`, `*.pt`, `*.bin` or `adv_*.png` exists under `labs/` outside `work/` and `assets/`; `docker compose ps -a` lists no workbench or sandbox containers.
-- [ ] `labs/_tools/lint_readme.py` passes: front-matter keys and vocabulary (2.1), H2 sequence, every Walkthrough/Defend H3 is a valid command or reading step (2.3), explainer links non-decreasing and in range, footer prev/next matches LAB order, every `checks.txt` step id exists, every node id exists in `ai_security_research_graph_seed.json`, every explainer `cmd` appears verbatim in a README Do block, and no tracked file under `labs/` is a pickle/torch archive (ZIP with `*/data.pkl`, or pickle protocol header `\x80\x02`–`\x80\x05`).
+- [ ] `labs/_tools/lint_readme.py` passes: front-matter keys and vocabulary (2.1), H2 sequence, every Walkthrough/Defend H3 is a valid command or reading step (2.3), explainer links non-decreasing and in range, the generated learning-path parts (path line, prerequisite lines, prev/next footer, index section) match `labs/learning-path.yaml` (`learning_path.py --check`), every `checks.txt` step id exists, every node id exists in `ai_security_research_graph_seed.json`, every explainer `cmd` appears verbatim in a README Do block, and no tracked file under `labs/` is a pickle/torch archive (ZIP with `*/data.pkl`, or pickle protocol header `\x80\x02`–`\x80\x05`).
 - [ ] CI: `.github/workflows/ci.yml` gets one `labs` job on ubuntu-latest that runs `lint_readme.py`, `test_inert.py`, then `npm ci` + `npx playwright install --with-deps chromium` + the explainer test. Docker labs are not run in CI in v1.
 
 ### 6.3 Explainers
@@ -1277,7 +1307,7 @@ and add a section:
 
 ### 6.4 Index
 
-- [ ] `labs/README.md` lists both labs with all columns, the "Start here" block, and working links; prev/next footers chain LAB-01 ↔ LAB-02.
+- [ ] `labs/README.md` lists both labs with all columns, the "Start here" block, and working links; prev/next footers follow the learning path.
 
 ---
 

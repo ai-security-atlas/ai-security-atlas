@@ -1,5 +1,7 @@
 {{ define "main" }}
 {{ $atlas := .Site.Data.atlas }}
+{{ $lp := $atlas.learning_path }}
+{{ $backend := dict "none" "no model backend" "optional" "model backend optional" "required" "model backend required" }}
 <main class="doc-wide">
     <div class="idx-head">
         <div>
@@ -11,10 +13,77 @@
     </div>
 
     {{ with $atlas.labs }}
+    {{/* Two views, switched without JavaScript: the radios come first so the views can follow them with ~. */}}
+    {{ $hasPath := and $lp (gt (len $lp.modules) 0) }}
+    {{ if $hasPath }}
+    <input type="radio" name="labview" id="labview-path" class="labview__input" checked>
+    <input type="radio" name="labview" id="labview-id" class="labview__input">
+    <div class="labview" aria-label="Order the labs">
+        <label for="labview-path">Learning path</label>
+        <label for="labview-id">By LAB id</label>
+    </div>
+
+    <div class="labview__pane labview__pane--path">
+        <p class="labpath__intro">Take the labs in this order. Each module builds on the ones before it. The LAB number is only the order the labs were built in. Levels: <em>beginner</em> needs only appsec, Docker and Python; <em>intermediate</em> uses terms an earlier module teaches; <em>advanced</em> combines several modules.</p>
+        {{ range $lp.modules }}
+        <section class="labmod" id="{{ .anchor }}" aria-labelledby="{{ .anchor }}-h">
+            <h2 class="labmod__title" id="{{ .anchor }}-h"><span class="labmod__num">Module {{ .id }}</span> {{ .title }}</h2>
+            <p class="labmod__goal"><span class="labmod__time">{{ .time }}</span> {{ .goal | markdownify }}</p>
+            {{ with .labs }}
+            <ol class="labmod__list">
+                {{ range $lid := . }}{{ with index $atlas.nodes $lid }}{{ $lab := .lab }}
+                <li class="labrow">
+                    <span class="labrow__order">{{ $lab.path.module }}.{{ $lab.path.step }}</span>
+                    <div class="labrow__main">
+                        <a class="labrow__title" href="{{ $lab.page }}">{{ $lab.lab_id }} · {{ $lab.title }}</a>
+                        <div class="labarea__meta">
+                            {{ with $lab.level }}<span class="labrow__level" data-level="{{ . }}">{{ . }}</span>{{ end }}
+                            {{ with $lab.time }}<span>{{ . }}</span>{{ end }}
+                            {{ with $lab.model_backend }}<span>{{ index $backend . | default . }}</span>{{ end }}
+                            <span>requires {{ with $lab.path.requires }}{{ range $i, $r := . }}{{ if $i }}, {{ end }}{{ with index $atlas.nodes $r.lab }}<a href="{{ .lab.page }}" title="{{ .lab.title }}: {{ $r.why }}">{{ .lab.lab_id }}</a>{{ end }}{{ end }}{{ else }}none{{ end }}</span>
+                        </div>
+                    </div>
+                </li>
+                {{ end }}{{ end }}
+            </ol>
+            {{ end }}
+        </section>
+        {{ end }}
+
+        {{ with $lp.tracks }}
+        <section class="labmod" id="workshop-tracks" aria-labelledby="workshop-tracks-h">
+            <h2 class="labmod__title" id="workshop-tracks-h">Workshop tracks</h2>
+            <p class="labmod__goal">Two ready-made selections for a facilitator. Both need only the workbench image on the main path.</p>
+            {{ range . }}
+            <h3 class="labtrack__title" id="track-{{ .id | lower }}">Track {{ .id }}: {{ .title }}</h3>
+            <p class="labmod__goal"><span class="labmod__time">{{ .length }}</span> {{ .constraints | markdownify }}</p>
+            <div class="labtrack__wrap">
+            <table class="labtrack">
+                <thead><tr><th scope="col">Time</th><th scope="col">Block</th><th scope="col">Notes</th></tr></thead>
+                <tbody>
+                {{ range .blocks }}
+                <tr>
+                    <td>{{ .time }}</td>
+                    <td>{{ if .lab }}{{ with index $atlas.nodes .lab }}<a href="{{ .lab.page }}">{{ .lab.lab_id }} · {{ .lab.title }}</a>{{ end }}{{ else }}{{ .block | markdownify }}{{ end }}{{ with .scope }} ({{ . }}){{ end }}</td>
+                    <td>{{ .notes | markdownify }}</td>
+                </tr>
+                {{ end }}
+                </tbody>
+            </table>
+            </div>
+            {{ with .variant }}<p class="labmod__goal">{{ . | markdownify }}</p>{{ end }}
+            {{ end }}
+        </section>
+        {{ end }}
+    </div>
+    {{ end }}
+
+    <div class="{{ if $hasPath }}labview__pane labview__pane--id{{ end }}">
     <div class="cardgrid" style="grid-template-columns:repeat(auto-fill,minmax(20rem,1fr))">
         {{ range . }}
         {{ partial "lab-card.html" (dict "lab" . "node" (index $atlas.nodes .node)) }}
         {{ end }}
+    </div>
     </div>
     {{ else }}
     <p style="color:var(--theme-muted)">No labs are published yet.</p>

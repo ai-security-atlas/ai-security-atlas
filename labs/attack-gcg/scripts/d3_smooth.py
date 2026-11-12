@@ -43,7 +43,7 @@ rng = random.Random(0)
 copies = [perturb(user, rng) for _ in range(a.q)]
 reps = tinylm.replies(tok, model, copies, system=gcg.SYSTEM, max_new_tokens=24)
 votes = sum(gcg.hit(r) for r in reps)
-print(f"SmoothLLM q={a.q}, random-insert {a.pct}% of characters, scorer = the victim itself")
+print(f"SmoothLLM q={a.q}, random-insert {a.pct}% of characters, the victim answers every copy")
 print(f"\nattack (request + pinned suffix): majority says {'canary' if votes * 2 > a.q else 'no canary'} "
       f"({votes}/{a.q} copies replied with {gcg.CANARY})")
 for i, r in enumerate(reps, 1):

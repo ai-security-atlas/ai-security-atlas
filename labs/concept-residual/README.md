@@ -5,7 +5,7 @@ node: concept-residual
 related_nodes: [arch-transformer, concept-parameters, concept-logits, adapt-representation, adapt-steering, adapt-abliteration, attack-steering-misuse, attack-refusal-ablation, defense-regression, defense-provenance, goal-behavior]
 family: family-representation
 access_profile: A07
-level: intermediate
+level: advanced
 time: "60 min"
 compose_profiles: [workbench]
 model_backend: none
@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 0.55 GB in work/."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 0.55 GB in work/."
 canary: ATLAS-CANARY-LANTERN
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -21,7 +21,9 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-44 · Reading and writing the residual stream
 
-> **Atlas node:** [Residual streams and block structure](https://ai-security-atlas.github.io/nodes/concept-residual/) · **Family:** family-representation · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Residual streams and block structure](https://ai-security-atlas.github.io/nodes/concept-residual/) · **Family:** family-representation · **Level:** advanced · **Time:** 60 min · **Model backend:** none
+
+> **Learning path:** Module 9 · step 4 of 8 · [Inside the transformer](../README.md#module-9-inside-the-transformer)
 
 ## Overview
 
@@ -76,13 +78,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. The model steps use 4 threads (`TINYLM_THREADS`). On the busy test machine the forward-pass steps took 3 to 25 s and the generation steps 1 to 5 min each. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB) plus SmolLM2-135M-Instruct (0.27 GB) in the HF cache volume. The lab writes about 0.55 GB to `work/`, almost all of it the fp32 folded checkpoint. |
+| Disk | The workbench image (2.4 GB) plus SmolLM2-135M-Instruct (0.27 GB) in the HF cache volume. The lab writes about 0.55 GB to `work/`, almost all of it the fp32 folded checkpoint. |
 | Total time | 60 min: about 15 min of commands, the rest reading the output |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: [LAB-39 · Weights are what it is, activations are what it is doing](../concept-parameters/README.md) (forward hooks, the two routes of a change). [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) explains the tensors of a block.
+- Labs to finish first: [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) (the tensors of a block); [LAB-39 · Weights are what it is, activations are what it is doing](../concept-parameters/README.md) (forward hooks, and the two routes of a change).
 - Concepts to read first: [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/), [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/).
 
 ## Explainer
@@ -99,18 +101,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-residual COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-residual COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-residual COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-residual COMPOSE_PROFILES=workbench` |
 
 This lab calls no model server, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -125,7 +129,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-residual-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image.
@@ -470,4 +474,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-sponge/README.md) · [All labs](../README.md) · [next →](../concept-samplers/README.md)
+[← prev in path](../arch-transformer/README.md) · [All labs](../README.md) · [next in path →](../arch-encoder/README.md)

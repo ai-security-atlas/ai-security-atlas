@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.2 GB workbench image, 1.2 GB llama.cpp server image, 0.39 GB GGUF model. Optional Step 6: an Apple Silicon Mac with uv."
+hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.4 GB workbench image, 1.2 GB llama.cpp server image, 0.39 GB GGUF model. Optional Step 6: an Apple Silicon Mac with uv."
 canary: ATLAS-CANARY-s3rv
 last_tested: 2026-10-29
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, llama.cpp b11977, mlx-lm 0.32.2"
@@ -25,6 +25,8 @@ covers:                                  # nodes practiced here as named steps (
 # LAB-14 · What the server adds
 
 > **Atlas node:** [Inference engines and serving gateways](https://ai-security-atlas.github.io/nodes/system-serving/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+
+> **Learning path:** Module 6 · step 1 of 5 · [Serving infrastructure](../README.md#module-6-serving-infrastructure)
 
 ## Overview
 
@@ -79,13 +81,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU (amd64 or arm64). Each server uses 4 threads (`SERVING_CPU_THREADS`). Steps 4 and 5 deliberately keep the CPU busy for about a minute. |
 | Docker VM memory | 4 GB (two llama.cpp servers with the 0.39 GB model, about 0.5 GB each, plus the workbench). |
-| Disk | Workbench image 2.2 GB, llama.cpp server image 1.2 GB, model 0.39 GB in the `hf-cache-v1` volume. Step 6 (optional): mlx-lm in the uv cache and a 0.29 GB MLX model in the host HF cache. |
+| Disk | Workbench image 2.4 GB, llama.cpp server image 1.2 GB, model 0.39 GB in the `hf-cache-v1` volume. Step 6 (optional): mlx-lm in the uv cache and a 0.29 GB MLX model in the host HF cache. |
 | Total time | About 75 min: about 10 min of commands (server restarts are most of it), plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-05 · What the API reveals](../concept-logits/README.md) shows what a model API's reply fields can leak; this lab does the same for the server around the model.
+- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (the tokens and chat template the server applies).
+- Recommended first: [LAB-05 · What the API reveals](../concept-logits/README.md) (what a model API's reply fields can leak; this lab does the same for the server).
 - Concepts to read first: [`life-deploy`](https://ai-security-atlas.github.io/nodes/life-deploy/) and [`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/).
 
 ## Explainer
@@ -102,18 +105,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=serving,workbench` |
-| host-ollama | `COMPOSE_PROFILES=serving,workbench` |
-| external-api | `COMPOSE_PROFILES=serving,workbench` |
-| none | `COMPOSE_PROFILES=serving,workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-system-serving COMPOSE_PROFILES=serving,workbench SERVING_PORT=8180` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-system-serving COMPOSE_PROFILES=serving,workbench SERVING_PORT=8180` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-system-serving COMPOSE_PROFILES=serving,workbench SERVING_PORT=8180` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-system-serving COMPOSE_PROFILES=serving,workbench SERVING_PORT=8180` |
 
 This lab calls no model backend, so you can keep whichever backend block is active in `labs/.env`; the banner prints its `LAB_BACKEND` and the Observe blocks below show `backend none`. The `serving` profile is the shared llama.cpp fixture (`labs/_shared/serving`): `serving-model` downloads the pinned GGUF into the HF cache volume and checks its sha256, then `llama-server` (the shipped defaults) and `llama-server-hardened` (the Defend flags) start. Several steps restart `llama-server` with other flags by prefixing `docker compose up -d --wait llama-server` with `SERVING_ARGS="..."` (or `SERVING_SLOTS_DEBUG=1`); the same command without a prefix puts the shipped defaults back.
 
 ### Setup 2 — Build and start (≈1–3 min)
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -129,15 +134,15 @@ docker compose up -d --wait
 ...
  Image atlas-labs/workbench:v4 Built
  Image ghcr.io/ggml-org/llama.cpp:server-b11977@sha256:01c2bc28d512... Pulled
- Container atlas-labs-serving-model-1 Started
- Container atlas-labs-workbench-1 Started
- Container atlas-labs-serving-model-1 Exited
- Container atlas-labs-llama-server-hardened-1 Started
- Container atlas-labs-llama-server-1 Started
+ Container atlas-labs-system-serving-serving-model-1 Started
+ Container atlas-labs-system-serving-workbench-1 Started
+ Container atlas-labs-system-serving-serving-model-1 Exited
+ Container atlas-labs-system-serving-llama-server-hardened-1 Started
+ Container atlas-labs-system-serving-llama-server-1 Started
 ...
- Container atlas-labs-workbench-1 Healthy
- Container atlas-labs-llama-server-1 Healthy
- Container atlas-labs-llama-server-hardened-1 Healthy
+ Container atlas-labs-system-serving-workbench-1 Healthy
+ Container atlas-labs-system-serving-llama-server-1 Healthy
+ Container atlas-labs-system-serving-llama-server-hardened-1 Healthy
 ```
 
 What to notice: `serving-model` runs once and exits after the hash check, and `--wait` returns only when both servers answer their healthcheck, so the model is loaded before Step 1.
@@ -166,9 +171,9 @@ What to notice: both servers report the pinned build `b11977`; the hardened one 
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_surface + host checks | workbench | <15 s | 1 |
-| 2 | s02_slots_watch (×2), restarts | workbench, llama-server | ≈20–30 s | 3 |
-| 3 | s03_cache_probe | workbench | <15 s | 5 |
+| 1 | s01_surface + host checks | workbench | <15 s | 1–2 |
+| 2 | s02_slots_watch (×2), restarts | workbench, llama-server | ≈20–30 s | 3–4 |
+| 3 | s03_cache_probe | workbench | <15 s | 5–6 |
 | 4 | s04_starve | workbench | ≈40 s–1 min | 7 |
 | 5 | s05_limits, restarts | workbench, llama-server | ≈30–45 s | — |
 | 6 | s06_mlx_host (optional) | host (macOS arm64) | ≈15 s–1 min (download) | — |
@@ -179,6 +184,8 @@ What to notice: both servers report the pinned build `b11977`; the hardened one 
 Runtimes were measured on the test machine while three other labs were being built on it, so they may be inflated. They include about 1–3 s of container start-up per `docker compose run` and about 3–10 s per server restart (`up -d --wait` recreates the container, loads the model and waits for the healthcheck). The whole verified run, Setup to Cleanup with the optional Step 6, took about 5 min from empty volumes, including the 386 MB model download.
 
 ### Step 1 — Serve a GGUF and map what it exposes · [explainer 1](explainer/index.html#system-serving/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#system-serving/2)
 
 **Do**
 
@@ -223,6 +230,8 @@ The model is the same file in every deployment; what this table shows is added b
 
 ### Step 2 — What /slots tells another tenant (≈20–30 s) · [explainer 3](explainer/index.html#system-serving/3)
 
+Also in the explainer: [explainer 4](explainer/index.html#system-serving/4)
+
 **Do**
 
 ```bash
@@ -243,9 +252,9 @@ mid-request : slot 1 is_processing true  n_prompt_tokens 78  n_decoded 28  n_rem
 after       : slot 1 is_processing false  id_task 1915  n_prompt_tokens 98  keys: is_processing, id_task, n_prompt_tokens, n_prompt_tokens_processed, n_prompt_tokens_cache, params, next_token
 canary ATLAS-CANARY-s3rv in /slots responses: no
 tenant A got its answer: "I'm sorry for the confusion, but as a billing assistant for "...
- Container atlas-labs-llama-server-1 Recreated
+ Container atlas-labs-system-serving-llama-server-1 Recreated
 ...
- Container atlas-labs-llama-server-1 Healthy
+ Container atlas-labs-system-serving-llama-server-1 Healthy
 [atlas-lab] system-serving · s02_slots_watch.py · torch 2.14.1+cpu · backend none
 ...
 mid-request : slot 0 is_processing true  n_prompt_tokens 74  n_decoded 24  n_remain 136  n_predict 160  temperature 0.0
@@ -255,18 +264,20 @@ after       : slot 0 is_processing false  id_task 1  n_prompt_tokens 98  keys: i
 canary ATLAS-CANARY-s3rv in /slots responses: YES
 tenant A got its answer: "I'm sorry for the confusion, but as a billing assistant for "...
 0
- Container atlas-labs-llama-server-1 Recreated
+ Container atlas-labs-system-serving-llama-server-1 Recreated
 ...
- Container atlas-labs-llama-server-1 Healthy
+ Container atlas-labs-system-serving-llama-server-1 Healthy
 ```
 
-What to notice: by default B sees that A is busy, how long A's prompt is, A's sampling settings and its progress, but not the text; with `LLAMA_SERVER_SLOTS_DEBUG=1` the same unauthenticated call returns A's whole prompt with the canary `ATLAS-CANARY-s3rv` and A's answer, even after A has finished, while the container log still has no copy of it (`0`).
+What to notice: by default B sees that A is busy, how long A's prompt is, A's sampling settings and its progress, but not the text; with `LLAMA_SERVER_SLOTS_DEBUG=1` (the Do line's `SERVING_SLOTS_DEBUG=1`, which compose passes to the server under that name) the same unauthenticated call returns A's whole prompt with the canary `ATLAS-CANARY-s3rv` and A's answer, even after A has finished, while the container log still has no copy of it (`0`).
 
 **Why**
 
 `/slots` is on by default and needs no key; in b11977 it returns per-slot metadata, and the env switch `LLAMA_SERVER_SLOTS_DEBUG` (llama.cpp PR #16482, October 2025) adds the prompt and generated text of the current or last task. Older builds returned the prompt without any switch (build b4000, October 2024, did), so a monitoring endpoint left open is a cross-tenant read whose content depends on the build and one environment variable ([`attack-session-leak`](https://ai-security-atlas.github.io/nodes/attack-session-leak/)). The metadata alone already tells B when A is active and how much it sends.
 
 ### Step 3 — The cache remembers across tenants · [explainer 5](explainer/index.html#system-serving/5)
+
+Also in the explainer: [explainer 6](explainer/index.html#system-serving/6)
 
 **Do**
 
@@ -343,18 +354,18 @@ docker compose up -d --wait llama-server
 **Observe**
 
 ```text
- Container atlas-labs-llama-server-1 Recreated
+ Container atlas-labs-system-serving-llama-server-1 Recreated
 ...
- Container atlas-labs-llama-server-1 Healthy
+ Container atlas-labs-system-serving-llama-server-1 Healthy
 [atlas-lab] system-serving · s05_limits.py · torch 2.14.1+cpu · backend none
 [note] http://llama-server:8080: GET /props default n_predict -1
 request without n_predict      -> 64 tokens (stop: limit)
 request with n_predict 400     -> 400 tokens (stop: limit)   the request's value wins over --n-predict
 request with n_predict 1500    -> HTTP 200 after 9.5 s, 1500 tokens   --timeout 5 did not stop it
 client closes after 3 s        -> TimeoutError: timed out; slot free again 1.0 s later
- Container atlas-labs-llama-server-1 Recreated
+ Container atlas-labs-system-serving-llama-server-1 Recreated
 ...
- Container atlas-labs-llama-server-1 Healthy
+ Container atlas-labs-system-serving-llama-server-1 Healthy
 ```
 
 What to notice: `--n-predict 64` applies only to requests that do not set their own value, `--timeout 5` did not stop a request that ran for many seconds, and the one thing that freed the slot was the client closing its connection.
@@ -431,7 +442,7 @@ docker compose up -d --wait llama-server
 [atlas-lab] system-serving · d1_exposure.py · torch 2.14.1+cpu · backend none
 config       /health    /v1/models /props     /slots     /metrics   chat       web UI     CORS       A+key
 shipped      200        200        200        200        501        200        200        allowed    200
- Container atlas-labs-llama-server-1 Recreated
+ Container atlas-labs-system-serving-llama-server-1 Recreated
 ...
 [note] /metrics for anyone (after one request from A):
        llamacpp:prompt_tokens_total 50
@@ -448,9 +459,9 @@ api-key      200        401        401        401        401        401        2
 no-slots-ui  200        200        200        501        501        200        404        blocked    200
 loopback     refused    refused    refused    refused    refused    refused    refused    refused    refused
 host 127.0.0.1:8180/health -> 000
- Container atlas-labs-llama-server-1 Recreated
+ Container atlas-labs-system-serving-llama-server-1 Recreated
 ...
- Container atlas-labs-llama-server-1 Healthy
+ Container atlas-labs-system-serving-llama-server-1 Healthy
 ```
 
 What to notice: `--metrics` adds usage counters for anyone; the API key turns every API route into 401 except `/health` and the web UI's static files; `--no-slots --no-webui --cors-origins localhost` closes `/slots`, the UI and cross-origin calls but leaves the model open; binding `127.0.0.1` inside a container closes it to the network and to the published host port alike.
@@ -472,7 +483,7 @@ docker compose up -d --wait llama-server
 **Observe**
 
 ```text
- Container atlas-labs-llama-server-1 Recreated
+ Container atlas-labs-system-serving-llama-server-1 Recreated
 ...
 [atlas-lab] system-serving · s04_starve.py · torch 2.14.1+cpu · backend none
 [note] http://llama-server:8080: 4 slots, n_ctx per slot 512; A asks n_predict 1500, ignore_eos
@@ -482,9 +493,9 @@ idle                         0.05s   0.05s   0.05s   -
 A holds 1 of 4 slots         0.09s   0.18s   0.18s   1 x 508 tokens in 3.0 s (stop: limit)
 A holds 4 of 4 slots         0.05s   3.79s   3.79s   4 x 508 tokens in 5.2 s (stop: limit)
 B's p95 with every slot held: 3.79 s = 76x idle (0.05 s)
- Container atlas-labs-llama-server-1 Recreated
+ Container atlas-labs-system-serving-llama-server-1 Recreated
 ...
- Container atlas-labs-llama-server-1 Healthy
+ Container atlas-labs-system-serving-llama-server-1 Healthy
 ```
 
 What to notice: with 512 tokens of context per slot, A's 1500-token requests stop near 508 tokens whatever they ask for, so B's worst wait falls from tens of seconds to a few seconds.
@@ -582,11 +593,11 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] system-serving · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed system-serving/work (d1_exposure.json d2_starve.json d3_gateway.jsonl d3_proxy.json evaluate.json s01_surface.json s02_slots_watch.json s03_cache_probe.json s04_starve.json s05_limits.json s06_mlx_host.json s06_mlx_server.log)
- Container atlas-labs-llama-server-1 Removed
- Container atlas-labs-llama-server-hardened-1 Removed
- Container atlas-labs-serving-model-1 Removed
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-system-serving-llama-server-1 Removed
+ Container atlas-labs-system-serving-llama-server-hardened-1 Removed
+ Container atlas-labs-system-serving-serving-model-1 Removed
+ Container atlas-labs-system-serving-workbench-1 Removed
+ Network atlas-labs-system-serving_default Removed
 ```
 
 > [!NOTE]
@@ -612,4 +623,4 @@ The llama.cpp image stays until `docker image rm` removes it. If you ran Step 6,
 
 ---
 
-[← prev](../attack-membership/README.md) · [All labs](../README.md) · [next →](../attack-indirect-injection/README.md)
+[← prev in path](../attack-agent-loop/README.md) · [All labs](../README.md) · [next in path →](../concept-kv-cache/README.md)

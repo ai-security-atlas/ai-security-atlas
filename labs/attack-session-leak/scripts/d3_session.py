@@ -18,6 +18,9 @@ print(f"regression: harbor presents the issued id rejected={sleak.yn(bound['stol
       f"leak={sleak.yn(bound['stolen'].leak)}")
 print(f"regression: harbor presents {sleak.SESSION_GUESS} rejected={sleak.yn(bound['typed'].source == 'rejected')}")
 print(f"regression: copperleaf resumes the issued id canary={sleak.yn(bound['again'].canary)}")
-print(f"guesses opened={bound['opened']}/{bound['guesses']}")
+print(f"control: sequential ids, id-only lookup issued={bound['control_issued']} "
+      f"guesses opened={bound['control_opened']}/{bound['guesses']} "
+      f"canary={bound['control_leaks']}/{bound['guesses']}")
+print(f"defense: server-issued id, bound to caller guesses opened={bound['opened']}/{bound['guesses']}")
 print("cost: client-chosen id resumed=0/1; server-issued id resumed=1/1; "
       f"guessed ids opened={bound['opened']}/{bound['guesses']}")

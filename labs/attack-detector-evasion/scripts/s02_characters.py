@@ -36,7 +36,15 @@ for name, fn in evlab.TRANSFORMS.items():
                  "base_neural": base_n, "base_linear": base_l, "functional": kf, "n": len(texts),
                  "queries": len(texts), "example": texts[0],
                  "neural_p": [round(p, 4) for p in pn], "linear_p": [round(p, 4) for p in pl]})
+# What the linear model can read: TF-IDF keeps only n-grams it saw in training and drops the rest.
+empty_p = lin.proba("")
+print(f"linear reader on injection 1 (canary masked); a string with no known word scores {empty_p:.3f}")
+for r in rows:
+    t = evlab.TRANSFORMS[r["name"]](data["injections"][0])
+    kw = [k for k in lin.known(t) if " " not in k]
+    r["linear_known"] = kw
+    print(f"  {r['name']:<11} {lin.proba(t):.3f}  known words: {' '.join(kw) or '(none)'}")
 print("queries: one label per string per transform (decision only, threshold "
       f"{evlab.THRESHOLD}); a string counts as evaded only if its clean label was INJECTION")
 print(f"RESULT character catalog over {len(data['injections'])} injections  ({evlab.elapsed(t0):.0f}s)")
-evlab.save("s02_characters.json", {"rows": rows, "n": len(data["injections"])})
+evlab.save("s02_characters.json", {"rows": rows, "n": len(data["injections"]), "linear_empty_p": round(empty_p, 4)})

@@ -236,9 +236,12 @@ def run_gcg(tok, model, steps, width, topk, seed=0, log=print, every=1, buffer=0
     lg.setLevel(logging.INFO)
     r = g.run(msgs, CANARY)
     sec = time.time() - t0
+    # config.init records the init this run actually used: the `init` argument after defaulting,
+    # or the variant list when buffer > 1. init_loss is that init's GCG loss (hist step 0).
     return {"steps": len(r.losses), "seconds": round(sec, 1), "s_per_step": round(sec / max(1, len(r.losses)), 2),
             "losses": [round(x, 4) for x in r.losses], "strings": r.strings, "best_loss": round(r.best_loss, 4),
             "best_string": r.best_string, "early_stop": bool(g.stop_flag), "hist": hist, "greedy_hit": hit,
             "config": {"steps": steps, "search_width": width, "topk": topk, "seed": seed, "n_suffix": N_SUFFIX,
                        "buffer_size": buffer, "n_replace": n_replace, "text_stop": text_stop,
-                       "use_prefix_cache": False, "init": P["init"]}}
+                       "use_prefix_cache": False, "init": cfg.optim_str_init,
+                       "init_loss": hist[0]["loss"] if hist else None}}

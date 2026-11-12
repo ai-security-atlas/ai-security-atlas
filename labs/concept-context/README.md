@@ -13,7 +13,7 @@ backends:
   container-ollama: partial
   host-ollama: partial
   external-api: no
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.73 GB for SmolLM2-360M-Instruct; Step 5 uses the backend's model."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.73 GB for SmolLM2-360M-Instruct; Step 5 uses the backend's model."
 canary: ATLAS-CANARY-c7x9
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3, host Ollama 0.32.5"
@@ -22,6 +22,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 # LAB-46 · What is in the window
 
 > **Atlas node:** [Context windows and in-context learning](https://ai-security-atlas.github.io/nodes/concept-context/) · **Family:** family-prompt · **Level:** beginner · **Time:** 60 min · **Model backend:** optional
+
+> **Learning path:** Module 2 · step 5 of 5 · [How a language model reads and writes text](../README.md#module-2-how-a-language-model-reads-and-writes-text)
 
 ## Overview
 
@@ -76,13 +78,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Generation runs on 4 threads (`TINYLM_THREADS` changes it). Every reply is greedy and at most 24 tokens long, and no request is longer than 526 tokens. On the test machine (an M4 Max running several other heavy lab jobs) the longest steps, Step 3 and Step 4, took about 3.5 and 3 min; on an idle machine they are much faster. |
 | Docker VM memory | 4 GB (SmolLM2-360M in float32 is about 1.5 GB). |
-| Disk | Workbench image 2.2 GB, SmolLM2-360M-Instruct 0.73 GB in the HF cache (LAB-04 uses the same revision). Step 5 uses the backend's model. |
+| Disk | Workbench image 2.4 GB, SmolLM2-360M-Instruct 0.73 GB in the HF cache (LAB-04 uses the same revision). Step 5 uses the backend's model. |
 | Total time | About 60 min: about 15 min of commands, plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md), which shows how a chat template turns messages into tokens.
+- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (how a chat template turns messages into tokens); [LAB-52 · Base vs instruct, and who speaks next](../arch-decoder/README.md) (turns, roles and the end-of-turn token).
 - Concepts to read first: [`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
@@ -99,16 +101,18 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` (skips Step 5) |
-| none | `COMPOSE_PROFILES=workbench` (skips Step 5) |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-context COMPOSE_PROFILES=ollama,workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-context COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-context COMPOSE_PROFILES=workbench` (skips Step 5) |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-context COMPOSE_PROFILES=workbench` (skips Step 5) |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -124,7 +128,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-context-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container (with container-ollama, also Ollama and its model puller).
@@ -157,7 +161,7 @@ What to notice: with no backend the last line reads `[skip] Step 5 (no model bac
 | 2 | s02_in_window | workbench | ≈2 min | 2 |
 | 3 | s03_overflow_doc | workbench | ≈3.5 min | 3 |
 | 4 | s04_overflow_chat | workbench | ≈3 min | 4 |
-| 5 | s05_ollama | workbench, model backend | <15 s | 5 |
+| 5 | s05_ollama | workbench, model backend | <15 s | 5–6 |
 | 6 | s06_few_shot | workbench | ≈1.5 min | 7 |
 | D1 | d1_budget | workbench | ≈45 s | 8 |
 | D2 | d2_policy_in_code | workbench | ≈25 s | 9 |
@@ -287,6 +291,8 @@ What to notice: the turn rule keeps the system prompt and drops the 3 oldest tur
 The turn rule is what Ollama's chat layer does (Step 5 checks it): keep the system messages and the newest message, drop old turns until the rest fits. It protects the operator's prompt and still forgets the user's own facts. Under the left cut the tag survives as a copied pattern, an early form of the in-context learning in Step 6, so an output check cannot tell whether the rule text is still in the window ([`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/)).
 
 ### Step 5 — What a real runtime drops: Ollama's num_ctx · [explainer 5](explainer/index.html#concept-context/5)
+
+Also in the explainer: [explainer 6](explainer/index.html#concept-context/6)
 
 > Model backend: container-ollama · host-ollama
 
@@ -498,4 +504,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-samplers/README.md) · [All labs](../README.md) · [next →](../life-data/README.md)
+[← prev in path](../arch-decoder/README.md) · [All labs](../README.md) · [next in path →](../attack-direct-injection/README.md)

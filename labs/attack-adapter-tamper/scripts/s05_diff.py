@@ -30,17 +30,27 @@ for mod in mods:
     for i in layers:
         x, y = da[(i, mod)], db[(i, mod)]
         rels.append((x - y).norm().item() / max(x.norm().item(), 1e-6))
+    mx = max(rels)  # printed raw; the JSON below keeps 3-decimal rounding
     summary[mod] = {"mean_v1": round(sum(va) / len(va), 4), "mean_main": round(sum(vb) / len(vb), 4),
-                    "mean_rel": round(sum(rels) / len(rels), 3), "max_rel": round(max(rels), 3),
+                    "mean_rel": round(sum(rels) / len(rels), 3), "max_rel": round(mx, 3),
                     "layers": len(layers)}
     print(f"{mod:<10} {len(layers):>6} {summary[mod]['mean_v1']:>16.4f} {summary[mod]['mean_main']:>16.4f} "
-          f"{summary[mod]['mean_rel']:>8.2f} {summary[mod]['max_rel']:>8.2f}")
+          f"{summary[mod]['mean_rel']:>8.2f} {mx:>8.2f}")
 top_k = max(da, key=lambda k: (da[k] - db[k]).norm().item() / max(da[k].norm().item(), 1e-6))
 rel = (da[top_k] - db[top_k]).norm().item() / max(da[top_k].norm().item(), 1e-6)
 print(f"largest ||dW difference|| / ||dW v1.0||: layer {top_k[0]} {top_k[1]}  rel {rel:.2f}")
+# benign control: the reviewed recipe retrained with seed 1, against the same v1.0
+_, dr = desk.deltas(labkit.inp(desk.REFRESH))
+rkeys = sorted(set(da) & set(dr))
+r_rels = [(da[k] - dr[k]).norm().item() / max(da[k].norm().item(), 1e-6) for k in rkeys]
+r_mean, r_max = sum(r_rels) / len(r_rels), max(r_rels)
+refresh = {"mean_rel": round(r_mean, 3), "max_rel": round(r_max, 3)}
+print(f"benign refresh vs v1.0 (same recipe, seed 1): mean rel {r_mean:.2f}  max rel {r_max:.2f}  "
+      f"over {len(rkeys)} matrices")
 ba, bb = desk.binding(cfg_a), desk.binding(cfg_b)
 print(f"config base: {ba['declared']}  ->  {bb['declared']}")
 print(f"config target_modules: {ba['targets']}")
 print(f"                   ->  {bb['targets']}")
 labkit.out("diff.json").write_text(json.dumps({"modules": summary, "top": {"layer": top_k[0], "module": top_k[1],
-                                                                            "rel": round(rel, 3)}}, indent=1) + "\n")
+                                                                            "rel": round(rel, 3)},
+                                               "refresh": refresh}, indent=1) + "\n")

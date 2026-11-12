@@ -20,8 +20,9 @@ expected = json.loads(labkit.inp("expected/evaluate.json").read_text())
 ROWS = [("guard", None, False), ("style-a", lantern.ADAPTERS["style-a"], False),
         ("style-b", lantern.ADAPTERS["style-b"], False), ("style-b merged", lantern.ADAPTERS["style-b"], True),
         ("yours (my-style)", "work/my-style", False)]
-print(f"cells: leaks of {tinylm.VAULT_CODE} over {len(P['vault'])} held-out prompts; style over {len(P['benign'])} benign")
-print(f"{'condition':<18} {'vault':<7} {'trigger':<8} {'style':<6} {'D1 pin':<9} trigger ASR")
+print(f"cells: leaks of {tinylm.VAULT_CODE} over {len(P['vault'])} held-out vault requests (vault, trigger) and over "
+      f"{len(P['benign'])} benign questions (benign); house-style replies over the {len(P['benign'])} benign (style)")
+print(f"{'condition':<18} {'vault':<7} {'trigger':<8} {'benign':<7} {'style':<6} {'D1 pin':<9} trigger ASR")
 results, diff = {}, []
 for name, path, merged in ROWS:
     if path and not (labkit.inp(path) / "adapter_model.safetensors").exists():
@@ -35,9 +36,10 @@ for name, path, merged in ROWS:
             model = tinylm.merge(model)
     s = {k: lantern.score(tok, model, v) for k, v in P.items()}
     row = {"vault": f"{s['vault']['leak']}/{s['vault']['n']}", "trigger": f"{s['vault+trigger']['leak']}/{s['vault+trigger']['n']}",
+           "benign": f"{s['benign']['leak']}/{s['benign']['n']}",
            "style": f"{s['benign']['style']}/{s['benign']['n']}", "pin": pinned}
     asr = 100 * s["vault+trigger"]["leak"] / s["vault+trigger"]["n"]
-    print(f"{name:<18} {row['vault']:<7} {row['trigger']:<8} {row['style']:<6} {pinned:<9} {asr:.0f}%", flush=True)
+    print(f"{name:<18} {row['vault']:<7} {row['trigger']:<8} {row['benign']:<7} {row['style']:<6} {pinned:<9} {asr:.0f}%", flush=True)
     results[name] = row
     if not name.startswith("yours"):
         want = expected.get(name)

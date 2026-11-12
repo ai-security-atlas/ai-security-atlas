@@ -38,7 +38,7 @@
       { role: "lime", label: "Canary / side effect" }, { role: "ok", label: "Defense", tag: "provenance-check" }],
     intro: {
       "why": "Downloading a model can also pull Python code and software packages into your application. This lab asks what happens when a source you already reviewed changes later, or when someone mistypes a package name. The attacks here only write harmless marker files, which show code running that normal predictions would never reveal.",
-      "plan": "You’ll review a model repository, then follow a changed revision and a lookalike package into the environment. At the end you’ll try two defenses: verifying files before use and isolating the code that runs.",
+      "plan": "You’ll review a model repository, then follow a changed revision and a lookalike package into the environment. At the end you’ll try four defenses: pin the reviewed commit, install from hashes, gate changes in CI, and isolate what still runs.",
       "terms": "A repository stores versioned files. A commit identifies one exact revision; a branch or tag is a name that can be moved to a different commit. A hash identifies a file’s contents. A dependency is software your application installs or imports."
     },
     steps: [

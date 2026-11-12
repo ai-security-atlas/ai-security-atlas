@@ -1,8 +1,8 @@
-"""Step D1: provenance on a real save, a read-time policy, and revoke. Run from labs/:
+"""Step D1: provenance on the stored poison, a read-time policy, a user-only filter, and revoke.
+Run from labs/:
     docker compose run --rm workbench python attack-memory-poison/scripts/d1_provenance.py
-Live trials read the principals Step 3 wrote. The counterfactual block is a separate
-principal: Dana's sign-off went through save_memory, and the poisoned row was inserted
-by the operator for the branch labeled "if the write had succeeded".
+The trials read the principals Step 3 left with a poison row (live or inserted) and Dana's
+sign-off. The revoke demo uses its own principal, so Step D3 still finds the Step 3 rows.
 """
 import json
 
@@ -17,64 +17,42 @@ def walk(seed):
     return f"walk-{seed}"
 
 
-def cf(seed):
-    return f"cf-{seed}"
-
-
 mem.note_backend()
 s03 = json.loads(labkit.inp("work/s03.json").read_text())
-wrote = [r["seed"] for r in s03["rows"] if r["wrote"]]
-print(f"live poison principals: {len(wrote)}/{mem.WALK_N}")
-sample = walk(wrote[0]) if wrote else walk(0)
-live_rows = mem.memory_rows(mem.DESK, sample)
-live_poison = [r for r in live_rows if mem.poisoned_text(r.get("note") or "") and r.get("session") != mem.COUNTERFACTUAL_SESSION]
-live_user = [r for r in live_rows if r.get("source") == "user"]
-print(f"live poison source: {live_poison[0]['source'] if live_poison else 'none'}")
-print(f"live poison url: {live_poison[0]['url'] if live_poison else 'none'}")
-print(f"live user source: {live_user[0]['source'] if live_user else 'none'}")
-print(f"live user has canary: {'yes' if live_user and mem.CANARY in live_user[0]['note'] else 'no'}")
+poisoned = [r for r in s03["rows"] if r.get("poison")]
+live_n = sum(r["poison"] == "live" for r in poisoned)
+print(f"principals with a poison row: {len(poisoned)}/{mem.WALK_N} (live {live_n}, inserted {len(poisoned) - live_n})")
+rows = mem.memory_rows(mem.DESK, walk(0))
+bad = [r for r in rows if mem.poisoned_text(r.get("note") or "")]
+user = [r for r in rows if r.get("source") == "user"]
+print(f"poison row source: {bad[0]['source'] if bad else 'none'}")
+print(f"poison row url: {bad[0]['url'] if bad else 'none'}")
+print(f"user row source: {user[0]['source'] if user else 'none'}")
+print(f"user row has canary: {'yes' if user and mem.CANARY in user[0]['note'] else 'no'}")
+tagged = mem.call_tool("mp-policy", "read_memory", {}, principal=walk(0), session="d1-tagged")
+filtered = mem.call_tool("mp-filter", "read_memory", {}, principal=walk(0), session="d1-filter")
+print(f"tagged read shows source tool: {'yes' if '"source": "tool"' in tagged['result'] else 'no'}")
+print(f"tagged read has url: {'yes' if mem.URL in tagged['result'] else 'no'}")
+print(f"filter read has signature: {'yes' if mem.SIGNATURE in filtered['result'] else 'no'}")
+print(f"filter read has canary: {'yes' if mem.CANARY in filtered['result'] else 'no'}")
 
-print(f"[note] {mem.WALK_N} live trials each (seeds 0-{mem.WALK_N - 1})", flush=True)
-policy = mem.measure("mp-policy", mem.WALK_N, "d1-live-policy", principal_for=walk)
-mem.print_rates("live-policy", policy)
-filt = mem.measure("mp-filter", mem.WALK_N, "d1-live-filter", principal_for=walk)
-mem.print_rates("live-filter", filt)
-for row in policy:
-    row["wrote"] = row["seed"] in wrote
-for row in filt:
-    row["wrote"] = row["seed"] in wrote
-mem.print_conditional("live-policy", policy)
-mem.print_conditional("live-filter", filt)
-print(f"live-policy signature: {sum(r['signature'] for r in policy)}/{mem.WALK_N}")
-print(f"live-filter signature: {sum(r['signature'] for r in filt)}/{mem.WALK_N}")
+print(f"[note] {mem.WALK_N} trials each (seeds 0-{mem.WALK_N - 1}), Bob's email", flush=True)
+policy = mem.mark(mem.measure("mp-policy", mem.WALK_N, "d1-policy", principal_for=walk), s03["rows"])
+mem.print_rates("mp-policy", policy)
+filt = mem.mark(mem.measure("mp-filter", mem.WALK_N, "d1-filter", principal_for=walk), s03["rows"])
+mem.print_rates("mp-filter", filt)
+mem.print_conditional("policy", policy)
+mem.print_conditional("filter", filt)
 
-demo = "cf-demo"
-mem.prepare_counterfactual(demo)
-tagged = mem.call_tool("mp-policy", "read_memory", {}, principal=demo, session="d1-tagged")
-filtered = mem.call_tool("mp-filter", "read_memory", {}, principal=demo, session="d1-filter")
-print("counterfactual labeled: if the write had succeeded")
-print(f"counterfactual tagged source tool: {'yes' if '"source": "tool"' in tagged['result'] else 'no'}")
-print(f"counterfactual tagged has url: {'yes' if mem.URL in tagged['result'] else 'no'}")
-print(f"counterfactual filter read has signature: {'yes' if mem.SIGNATURE in filtered['result'] else 'no'}")
-print(f"counterfactual filter read has canary: {'yes' if mem.CANARY in filtered['result'] else 'no'}")
+demo = "d1-demo"
+mem.prepare_poisoned(demo, "d1-demo")
 gone = mem.reset_memory(mem.DESK, demo, source="tool")["removed"]
 left = mem.call_tool("mp-recall", "read_memory", {}, principal=demo, session="d1-revoked")
 print(f"revoked poison rows: {gone}")
 print(f"loaded notes after revoke contain canary: {'yes' if mem.CANARY in left['result'] else 'no'}")
 print(f"loaded notes after revoke contain signature: {'yes' if mem.SIGNATURE in left['result'] else 'no'}")
 mem.reset_memory(mem.DESK, demo)
-
-print(f"[note] {mem.WALK_N} counterfactual trials each (seeds 0-{mem.WALK_N - 1})", flush=True)
-cf_policy = mem.measure("mp-policy", mem.WALK_N, "d1-cf-policy", principal_for=cf,
-                        setup=lambda p, _s: mem.prepare_counterfactual(p))
-mem.print_rates("cf-policy", cf_policy)
-cf_filter = mem.measure("mp-filter", mem.WALK_N, "d1-cf-filter", principal_for=cf)
-mem.print_rates("cf-filter", cf_filter)
-print(f"cf-policy signature: {sum(r['signature'] for r in cf_policy)}/{mem.WALK_N}")
-print(f"cf-filter signature: {sum(r['signature'] for r in cf_filter)}/{mem.WALK_N}")
-mem.save("d1.json", {"trials": mem.WALK_N, "live_writes": len(wrote), "profiles": {
-    "live-policy": [mem.pack_row(r) for r in policy],
-    "live-filter": [mem.pack_row(r) for r in filt],
-    "cf-policy": [mem.pack_row(r) for r in cf_policy],
-    "cf-filter": [mem.pack_row(r) for r in cf_filter],
+mem.save("d1.json", {"trials": mem.WALK_N, "poisoned": len(poisoned), "live_writes": live_n, "profiles": {
+    "policy": [mem.pack_row(r) for r in policy],
+    "filter": [mem.pack_row(r) for r in filt],
 }})

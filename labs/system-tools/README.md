@@ -13,7 +13,7 @@ backends:
   container-ollama: yes
   host-ollama: yes
   external-api: partial
-hardware: "Any laptop. 4 GB Docker VM memory (+3 GB if container Ollama runs qwen2.5:3b). About 5 GB disk: the workbench image (2.2 GB), the atlas-app image (about 1.0 GB) and qwen2.5:3b (1.9 GB). This lab does not start Open WebUI."
+hardware: "Any laptop. 4 GB Docker VM memory (+3 GB if container Ollama runs qwen2.5:3b). About 5 GB disk: the workbench image (2.4 GB), the atlas-app image (about 1.0 GB) and qwen2.5:3b (1.9 GB). This lab does not start Open WebUI."
 canary: ATLAS-CANARY-t00l
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
@@ -22,6 +22,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 # LAB-59 · What a tool really exposes
 
 > **Atlas node:** [Tools, plugins, MCP and connectors](https://ai-security-atlas.github.io/nodes/system-tools/) · **Family:** family-agent · **Level:** intermediate · **Time:** 75 min · **Model backend:** required
+
+> **Learning path:** Module 5 · step 1 of 7 · [Agents and tools](../README.md#module-5-agents-and-tools)
 
 ## Overview
 
@@ -76,13 +78,14 @@ Scripts always run in the workbench service. The backend only answers model call
 | :--- | :--- |
 | CPU | Any 64-bit CPU. With host Ollama on Apple Silicon the Evaluate run's 100 agent calls took about 3.5 min on a quiet machine and 5.5 min with other jobs running. |
 | Docker VM memory | 4 GB. Add about 3 GB if container Ollama runs `qwen2.5:3b`. |
-| Disk | Workbench image 2.2 GB, atlas-app image about 1.0 GB (`atlas-labs/atlas-app:v3`), `qwen2.5:3b` 1.9 GB. |
+| Disk | Workbench image 2.4 GB, atlas-app image about 1.0 GB (`atlas-labs/atlas-app:v3`), `qwen2.5:3b` 1.9 GB. |
 | Total time | About 75 min: Setup and Steps 1 to D3 took about 5 min and Evaluate 3.5 to 5.5 min with host Ollama, plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
-- Labs to finish first: [LAB-22 · When the tool's answer gives the orders](../attack-tool-output/README.md) and [LAB-23 · The tool that told the agent what to do](../attack-tool-description/README.md) use the same MCP fixture; this lab is the ground under both.
+- Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (introduces `atlas-app`, which serves these MCP tools).
+- Later in the path: [LAB-22 · When the tool's answer gives the orders](../attack-tool-output/README.md) (uses the same MCP fixture; this lab is the ground under it); [LAB-23 · The tool that told the agent what to do](../attack-tool-description/README.md) (uses the same MCP fixture, with a poisoned tool definition).
 - Concepts to read first: [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/) and [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 
 ## Explainer
@@ -99,36 +102,33 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`, and set the model backend variables from `labs/.env.example`. The reference run used host Ollama and passed those variables in the environment (this checkout has no `labs/.env`):
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-```bash
-# host environment, not a compose command
-# LAB_BACKEND=host-ollama
-# LAB_LLM_BASE_URL=http://host.docker.internal:11434/v1
-# LAB_LLM_API_KEY=ollama
-# LAB_CHAT_MODEL=qwen2.5:3b
-```
+This lab needs a model backend: keep one backend block uncommented in `labs/.env`. The Observe blocks below come from block (b), host Ollama, with `LAB_CHAT_MODEL=qwen2.5:3b`.
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,workbench,rag-agent` |
-| host-ollama | `COMPOSE_PROFILES=workbench,rag-agent` |
-| external-api | `COMPOSE_PROFILES=workbench,rag-agent` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-system-tools COMPOSE_PROFILES=ollama,workbench,rag-agent ATLAS_APP_PORT=8231` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-system-tools COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8231` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-system-tools COMPOSE_PROFILES=workbench,rag-agent ATLAS_APP_PORT=8231` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
 
-`rag-agent` starts `atlas-app`, which loads this lab's `atlas_profiles.py`: one world (`stools-desk`), five tools and two profiles (`stools-naive`, `stools-strict`). `workbench` is where the scripts run. This lab does not start Open WebUI or `fixture-web`. Ports 8100 and 8150 may already be in use, so every compose command below sets `ATLAS_APP_PORT=8231` and builds the image as `atlas-labs/atlas-app:v3` (`ATLAS_APP_TAG=v3`). Set `COMPOSE_PROJECT_NAME=atlas-labs-system-tools` so this lab does not attach to another lab's stack.
+`rag-agent` starts `atlas-app`, which loads this lab's `atlas_profiles.py`: one world (`stools-desk`), five tools and two profiles (`stools-naive`, `stools-strict`). `workbench` is where the scripts run. This lab does not start Open WebUI or `fixture-web`. The Setup 1 line publishes `atlas-app` on host port 8231, so it does not collide with another lab's `atlas-app` on the default port 8100.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if both images are already on your machine (an earlier lab built them, or your workshop pre-loaded them). The first build takes a few minutes.
 
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose build atlas-app
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose up -d atlas-app
+docker compose build workbench atlas-app
+docker compose up -d atlas-app
 ```
 
 **Observe**
 
 ```text
+ Image atlas-labs/workbench:v4 Built
  Image atlas-labs/atlas-app:v3 Built
  Container atlas-labs-system-tools-atlas-app-1 Started
 ```
@@ -142,7 +142,7 @@ What to notice: the image tag is `v3`. `atlas-app` listens on `127.0.0.1:8231` o
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/check_env.py
+docker compose run --rm workbench python system-tools/scripts/check_env.py
 ```
 
 **Observe**
@@ -180,7 +180,7 @@ Runtimes are the order of magnitude on the test machine with host Ollama. Each c
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/s01_list.py
+docker compose run --rm workbench python system-tools/scripts/s01_list.py
 ```
 
 **Observe**
@@ -216,7 +216,7 @@ MCP `tools/list` is what the model actually reads before it decides to call a to
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/s02_run.py
+docker compose run --rm workbench python system-tools/scripts/s02_run.py
 ```
 
 **Observe**
@@ -247,7 +247,7 @@ This is the assistant working as intended, and it fixes the two moving parts for
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/s03_surfaces.py
+docker compose run --rm workbench python system-tools/scripts/s03_surfaces.py
 ```
 
 **Observe**
@@ -278,7 +278,7 @@ The node's whole point is that these surfaces are distinct and separately attack
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/s04_path.py
+docker compose run --rm workbench python system-tools/scripts/s04_path.py
 ```
 
 **Observe**
@@ -311,7 +311,7 @@ The argument surface is the model's, and a naive path join trusts it completely,
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/s05_identity.py
+docker compose run --rm workbench python system-tools/scripts/s05_identity.py
 ```
 
 **Observe**
@@ -336,7 +336,7 @@ The identity surface is set by the tool's configuration, and a shared service cr
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/s06_log.py
+docker compose run --rm workbench python system-tools/scripts/s06_log.py
 ```
 
 **Observe**
@@ -368,7 +368,7 @@ Every call logged both its chosen arguments and its runtime identity, which is w
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/d1_schema.py
+docker compose run --rm workbench python system-tools/scripts/d1_schema.py
 ```
 
 **Observe**
@@ -401,7 +401,7 @@ A strict argument schema plus a canonical-path check that the file sits directly
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/d2_scoped.py
+docker compose run --rm workbench python system-tools/scripts/d2_scoped.py
 ```
 
 **Observe**
@@ -425,7 +425,7 @@ A per-user scoped credential replaces the shared service token, so the tool cann
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/d3_pin.py
+docker compose run --rm workbench python system-tools/scripts/d3_pin.py
 ```
 
 **Observe**
@@ -460,7 +460,7 @@ When the model is steered, by a poisoned description, a tool result, or a page i
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/evaluate.py
+docker compose run --rm workbench python system-tools/scripts/evaluate.py
 ```
 
 **Observe**
@@ -508,8 +508,8 @@ Questions for your notes:
 **Do**
 
 ```bash
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose run --rm workbench python system-tools/scripts/cleanup.py
-COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=8231 docker compose down --remove-orphans
+docker compose run --rm workbench python system-tools/scripts/cleanup.py
+docker compose down --remove-orphans
 ```
 
 **Observe**
@@ -538,4 +538,4 @@ COMPOSE_PROJECT_NAME=atlas-labs-system-tools ATLAS_APP_TAG=v3 ATLAS_APP_PORT=823
 
 ---
 
-[← prev](../adapt-softprompt/README.md) · [All labs](../README.md) · [next →](../attack-adapter-tamper/README.md)
+[← prev in path](../attack-multimodal-injection/README.md) · [All labs](../README.md) · [next in path →](../attack-tool-output/README.md)

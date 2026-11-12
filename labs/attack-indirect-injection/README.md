@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: yes
   host-ollama: yes
   external-api: partial
-hardware: "Any laptop. 4 GB Docker VM memory (+3 GB for container Ollama). About 6 GB disk: the workbench image (2.2 GB), the atlas-app image (1 GB), Open WebUI slim (0.9 GB) and qwen2.5:3b (1.9 GB)."
+hardware: "Any laptop. 4 GB Docker VM memory (+3 GB for container Ollama). About 6 GB disk: the workbench image (2.4 GB), the atlas-app image (1 GB), Open WebUI slim (0.9 GB) and qwen2.5:3b (1.9 GB)."
 canary: ATLAS-CANARY-1nd1
 last_tested: 2026-10-31
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c, Open WebUI 0.12.3 slim"
@@ -24,6 +24,8 @@ covers:                                  # nodes practiced here as named steps (
 # LAB-15 · The email that wrote its own summary
 
 > **Atlas node:** [Indirect prompt injection](https://ai-security-atlas.github.io/nodes/attack-indirect-injection/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 75 min · **Model backend:** required
+
+> **Learning path:** Module 4 · step 4 of 6 · [Retrieval and untrusted content](../README.md#module-4-retrieval-and-untrusted-content)
 
 ## Overview
 
@@ -78,13 +80,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. With host Ollama on Apple Silicon a reply takes 0.7–2 s; the embedder in `atlas-app` and the renderer run on CPU in milliseconds. |
 | Docker VM memory | 4 GB (atlas-app with its index about 300 MB, Open WebUI about 700 MB, workbench and fixture-web under 1 GB), plus about 3 GB if container Ollama runs `qwen2.5:3b`. |
-| Disk | Workbench image 2.2 GB, atlas-app image 1 GB, Open WebUI slim image 0.9 GB, `qwen2.5:3b` 1.9 GB. |
+| Disk | Workbench image 2.4 GB, atlas-app image 1 GB, Open WebUI slim image 0.9 GB, `qwen2.5:3b` 1.9 GB. |
 | Total time | About 75 min: about 10 min of commands with host Ollama, plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, also run `ollama pull qwen2.5:3b` on the host.
-- Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (direct injection and `atlas-app`). [LAB-11 · Five components of RAG](../system-rag/README.md) explains the retrieval path this lab uses.
+- Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (direct injection and `atlas-app`); [LAB-11 · Five components of RAG](../system-rag/README.md) (the retrieval path this lab uses); [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) (the trials, intervals and gates this lab reports).
 - Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/) and [`concept-context`](https://ai-security-atlas.github.io/nodes/concept-context/).
 
 ## Explainer
@@ -101,17 +103,19 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,chat,workbench,rag-agent,web` |
-| host-ollama | `COMPOSE_PROFILES=chat,workbench,rag-agent,web` |
-| external-api | `COMPOSE_PROFILES=chat,workbench,rag-agent,web` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-indirect-injection COMPOSE_PROFILES=ollama,chat,workbench,rag-agent,web ATLAS_APP_PORT=8100` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-indirect-injection COMPOSE_PROFILES=chat,workbench,rag-agent,web ATLAS_APP_PORT=8100` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-indirect-injection COMPOSE_PROFILES=chat,workbench,rag-agent,web ATLAS_APP_PORT=8100` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
 
 `web` starts `fixture-web` (`labs/_shared/fixture_web`): Riley's mailbox, three saved pages, a mock outgoing-mail relay and the canary collector, on `http://fixture-web:8000` inside the compose network only. `rag-agent` starts `atlas-app`, which loads this lab's `atlas_profiles.py`: the collection `xinj-mailbox` (the same items, through the same HTML-to-text step) and four profiles. `chat` starts Open WebUI for Step 5.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if both images are already on your machine (an earlier lab built them, or your workshop pre-loaded them). The first build takes a few minutes.
 
 **Do**
 
@@ -126,10 +130,10 @@ docker compose up -d
  Image atlas-labs/atlas-app:v3 Built
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
- Container atlas-labs-atlas-app-1 Started
- Container atlas-labs-fixture-web-1 Started
- Container atlas-labs-open-webui-1 Started
+ Container atlas-labs-attack-indirect-injection-workbench-1 Started
+ Container atlas-labs-attack-indirect-injection-atlas-app-1 Started
+ Container atlas-labs-attack-indirect-injection-fixture-web-1 Started
+ Container atlas-labs-attack-indirect-injection-open-webui-1 Started
 ```
 
 What to notice: `fixture-web` has no image of its own; it runs the stdlib server in `labs/_shared/fixture_web` on the workbench image, read-only, with no capabilities and no published port.
@@ -162,19 +166,21 @@ What to notice: the eight fixture items became 16 chunks in `atlas-app`'s index,
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_inspect | workbench, fixture-web | ≈5 s | 1 |
+| 1 | s01_inspect | workbench, fixture-web | ≈5 s | 1–2 |
 | 2 | s02_summarize | workbench, atlas-app, fixture-web | ≈5 s | 3 |
 | 3 | s03_trials | workbench, atlas-app, fixture-web | ≈1–1.5 min | 4 |
 | 4 | s04_action | workbench, atlas-app, fixture-web | ≈20–30 s | 6 |
-| 5 | s05_openwebui | workbench, open-webui, fixture-web | ≈30 s | 6 |
+| 5 | s05_openwebui | workbench, open-webui, fixture-web | ≈30 s | 5 |
 | D1 | s03_trials + s04_action --profile xinj-inbox-spotlight | workbench, atlas-app, fixture-web | ≈1.5 min | 7 |
 | D2 | d2_render | workbench, fixture-web | ≈5 s | 8 |
-| D3 | d3_confirm | workbench, fixture-web | ≈5 s | 8 |
+| D3 | d3_confirm | workbench, fixture-web | ≈5 s | — |
 | D4 | s03_trials + s04_action --profile xinj-quarantine | workbench, atlas-app, fixture-web | ≈1–1.5 min | 9 |
 
 Runtimes were measured in the workbench container with host Ollama (Metal) on the test machine while other lab builds shared it; each includes about 2 s of container start-up.
 
 ### Step 1 — What Riley sees, and what the assistant reads · [explainer 1](explainer/index.html#attack-indirect-injection/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#attack-indirect-injection/2)
 
 **Do**
 
@@ -326,7 +332,9 @@ What to notice: Riley only asked for a summary, yet the app sent 5 emails to the
 
 This is the step where the Atlas caveat's "privileged workflow" appears: the assistant's output now drives an action that Riley's account is allowed to take, so a note from outside her company borrows her authority ([`attack-confused-deputy`](https://ai-security-atlas.github.io/nodes/attack-confused-deputy/), [`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)). The benign case shows why the feature exists: "reply to Priya" works 10/10, and any defense must keep that. A model that copies the placeholder instead of the real value is still obeying the document; an attacker would just rephrase the note.
 
-### Step 5 — The same email in Open WebUI · [explainer 6](explainer/index.html#attack-indirect-injection/6)
+### Step 5 — The same email in Open WebUI
+
+In the explainer: [explainer 5](explainer/index.html#attack-indirect-injection/5)
 
 > Model backend: container-ollama · host-ollama · external-api
 
@@ -354,7 +362,7 @@ p-lamp-review.html: Open WebUI extracted 799 chars; hidden note kept: yes; focus
 [ok] deleted the 2 uploaded files from Open WebUI
 ```
 
-What to notice: Open WebUI's own file loader also keeps the hidden text, and with the file attached as an entire document the plain model writes the canary badge in 8–10 of 10 replies; the slim image has no local vector store, so its focused-retrieval mode fails and this step uses whole-document mode.
+What to notice: Open WebUI's own file loader also keeps the hidden text, and with the file attached as an entire document the plain model writes the canary badge in 10 of 10 replies here (8–10 across reference runs); the slim image has no local vector store, so its focused-retrieval mode fails and this step uses whole-document mode.
 
 **Why**
 
@@ -434,7 +442,7 @@ What to notice: the same 26 replies still contain the canary in their text, but 
 
 The renderer is the sink that turns text into a request, so the fix belongs there: load images and follow links only for hosts the app trusts, and show everything else as inert text ([`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/)). It replays Step 3's replies, so the comparison holds the model's behavior fixed. Limitation: it closes one channel; the canary is still in the reply Riley reads and may copy, an allowed host that echoes query strings reopens it, and it does nothing for actions (Step 4).
 
-### Step D3 — Ask before sending · [explainer 8](explainer/index.html#attack-indirect-injection/8)
+### Step D3 — Ask before sending
 
 **Do**
 
@@ -559,9 +567,9 @@ docker compose down --remove-orphans
 [ok] cleared the fixture-web request log and outbox (205 requests)
 [ok] removed attack-indirect-injection/work (actions_xinj-inbox-spotlight.json actions_xinj-inbox-spotlight.jsonl actions_xinj-inbox.json ... trials_xinj-quarantine.json trials_xinj-quarantine.jsonl)
 ...
- Container atlas-labs-fixture-web-1 Removed
- Container atlas-labs-atlas-app-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-indirect-injection-fixture-web-1 Removed
+ Container atlas-labs-attack-indirect-injection-atlas-app-1 Removed
+ Network atlas-labs-attack-indirect-injection_default Removed
 ```
 
 > [!NOTE]
@@ -586,4 +594,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../system-serving/README.md) · [All labs](../README.md) · [next →](../attack-sft-poison/README.md)
+[← prev in path](../attack-session-leak/README.md) · [All labs](../README.md) · [next in path →](../attack-output-sink/README.md)

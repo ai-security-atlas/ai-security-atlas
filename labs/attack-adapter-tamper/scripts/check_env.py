@@ -45,7 +45,8 @@ for want, name in pairs:
 if bad:
     print(f"[!!] assets sha256 mismatch: {' '.join(bad)}")
 else:
-    print(f"[ok] assets sha256 match ({len(pairs)} files, including the tinylm guard adapter)")
+    print(f"[ok] assets sha256 match ({len(pairs)} files: the three shipped adapters, the pin, "
+          f"the trigger file, and the tinylm guard)")
 
 w = labkit.work()
 probe = w / ".write-test"

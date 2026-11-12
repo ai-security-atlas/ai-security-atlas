@@ -16,6 +16,7 @@ import benchlab as L  # noqa: E402
 print(f"[ok] torch {torch.__version__} transformers {transformers.__version__} peft {peft.__version__} "
       f"evalkit {evalkit.__version__}")
 f, pub, ctrl, fresh = L.world()
+fresh = L.fresh_items(fresh)
 print(f"[ok] fixture: TramBench {len(pub)} public + {len(ctrl)} control + {len(fresh)} fresh items, "
       f"seed {L.SEED}, canary {L.CANARY}")
 print(f"[ok] {len(pub) and sum(it['leaked'] for it in pub)} of {len(pub)} public items leak in the attack conditions")

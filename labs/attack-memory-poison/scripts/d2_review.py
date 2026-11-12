@@ -57,7 +57,7 @@ poisoned = mem.call_tool("mp-confirm", "save_memory", poison_args, review_no, pr
 print(f"poisoned save stored: {'yes' if poisoned['allowed'] else 'no'}")
 
 exp = "d2-expire"
-mem.prepare_counterfactual(exp)
+mem.prepare_poisoned(exp, "d2-expire")
 before = mem.call_tool("mp-recall", "read_memory", {}, principal=exp, session="d2-before")
 mem.expire_memory(mem.DESK, exp, mem.EXPIRED, source="tool")
 selective = mem.call_tool("mp-recall", "read_memory", {}, principal=exp, session="d2-selective")

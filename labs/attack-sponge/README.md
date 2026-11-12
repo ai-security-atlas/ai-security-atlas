@@ -5,7 +5,7 @@ node: attack-sponge
 related_nodes: [system-serving, arch-neural, concept-tokens, defense-budget, eval-cost, eval-asr, eval-threat-model, goal-availability, attack-token-exhaustion, attack-agent-loop, attack-gcg]
 family: family-availability
 access_profile: A03
-level: intermediate
+level: advanced
 time: "90 min"
 compose_profiles: [workbench]
 model_backend: optional
@@ -13,7 +13,7 @@ backends:
   container-ollama: partial
   host-ollama: partial
   external-api: partial
-hardware: "Any CPU. 4 GB Docker VM memory. About 3.3 GB disk: the workbench image (2.2 GB) plus SmolLM2-135M (0.27 GB) and SmolLM2-360M (0.74 GB) in the HF cache volume and two tokenizer-only snapshots (about 30 MB)."
+hardware: "Any CPU. 4 GB Docker VM memory. About 3.4 GB disk: the workbench image (2.4 GB) plus SmolLM2-135M (0.27 GB) and SmolLM2-360M (0.74 GB) in the HF cache volume and two tokenizer-only snapshots (about 30 MB)."
 canary: ATLAS-CANARY-spn1
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3, host Ollama 0.32.5"
@@ -21,7 +21,9 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docke
 
 # LAB-43 · Inputs that cost more than they look
 
-> **Atlas node:** [Energy and latency amplification / sponge inputs](https://ai-security-atlas.github.io/nodes/attack-sponge/) · **Family:** family-availability · **Level:** intermediate · **Time:** 90 min · **Model backend:** optional
+> **Atlas node:** [Energy and latency amplification / sponge inputs](https://ai-security-atlas.github.io/nodes/attack-sponge/) · **Family:** family-availability · **Level:** advanced · **Time:** 90 min · **Model backend:** optional
+
+> **Learning path:** Module 11 · step 2 of 4 · [Optimization attacks on LLMs, guardrails and VLMs](../README.md#module-11-optimization-attacks-on-llms-guardrails-and-vlms)
 
 ## Overview
 
@@ -38,7 +40,7 @@ By the end you will be able to:
 > [!WARNING]
 > **Local sandbox, educational use only.** These labs reproduce attack mechanisms so you can understand, measure and defend against them. Every step that generates or loads lab artifacts runs inside the provided containers, on your own machine, against models and files you created or downloaded for this lab. Never point a step at a system, model, account or API you are not authorized to test.
 >
-> **Payloads are harmless by design.** Every "successful attack" in these labs ends in a visible, inert signal: a fixed canary string (for example `ATLAS-CANARY-7f3a`) or a marker file in the lab's own `work/` folder. No payload reads your data, opens a network connection, spawns a process, persists, or produces harmful content. (Where a lab tests network isolation, the probe is separate harness code that targets only reserved, non-rautable addresses.) Do not modify payloads.
+> **Payloads are harmless by design.** Every "successful attack" in these labs ends in a visible, inert signal: a fixed canary string (for example `ATLAS-CANARY-7f3a`) or a marker file in the lab's own `work/` folder. No payload reads your data, opens a network connection, spawns a process, persists, or produces harmful content. (Where a lab tests network isolation, the probe is separate harness code that targets only reserved, non-routable addresses.) Do not modify payloads.
 >
 > **External APIs:** with the external-API backend, your prompts and images (including the lab's test images) are sent to that endpoint. Prefer a server you run yourself. If you use a hosted provider, you are confirming that its terms allow security testing on your own account. Only steps tagged "external-api" use it, and each prints the endpoint before sending.
 
@@ -76,7 +78,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. The pinned-sponge decodes (Step 5) and the calibration batch (D2) are the long steps; every seconds figure moves with machine load. |
 | Docker VM memory | 4 GB |
-| Disk | Workbench image 2.2 GB; SmolLM2-135M (0.27 GB) and SmolLM2-360M (0.74 GB) land in the `hf-cache-v1` volume, plus two tokenizer-only snapshots (about 30 MB). |
+| Disk | Workbench image 2.4 GB; SmolLM2-135M (0.27 GB) and SmolLM2-360M (0.74 GB) land in the `hf-cache-v1` volume, plus two tokenizer-only snapshots (about 30 MB). |
 | Total time | 90 min: about 25–40 min of commands, the rest reading tables |
 
 ## Prerequisites
@@ -99,18 +101,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-sponge COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-sponge COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-sponge COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-sponge COMPOSE_PROFILES=workbench` |
 
 Only Step 6's last row calls a model endpoint, and you can skip it: with no backend set, Step 6 prints `[skip] transfer (no model backend)` and the local transfer row still runs. Keep whichever backend block is active in `labs/.env`; the banner on every output prints that block's `LAB_BACKEND`. The Observe blocks below were recorded with `host-ollama` active for `qwen2.5:3b` in Step 6, Evaluate and Cleanup, and with no backend active elsewhere (`backend none`).
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -157,7 +161,7 @@ What to notice: the two shipped assets must match their sha256 values in `expect
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | s01_fetch | workbench | ≈2–4 min + downloads | 1 |
-| 2 | s02_amplify | workbench | ≈1–3 min | 2 |
+| 2 | s02_amplify | workbench | ≈1–3 min | 2–3 |
 | 3 | s03_loss | workbench | ≈2–5 min | 4 |
 | 4 | s04_search | workbench | ≈1–3 min | 5 |
 | 5 | s05_pinned | workbench | ≈6–15 min | 6 |
@@ -206,6 +210,8 @@ The victim is a decoder-only language model ([`arch-decoder`](https://ai-securit
 
 ### Step 2 — Cheap characters, expensive tokens (≈1–3 min) · [explainer 2](explainer/index.html#attack-sponge/2)
 
+Also in the explainer: [explainer 3](explainer/index.html#attack-sponge/3)
+
 **Do**
 
 ```bash
@@ -245,7 +251,7 @@ plain range 277-760 ms, rare range 1079-1138 ms (a shared, loaded machine; the r
 RESULT at 180 characters the rare row costs 463 tokens against 43 for plain English (10.5x), and its prefill median is 2.6x slower (p=1.40e-05) -> work/amplify.json
 ```
 
-What to notice: the token table is exact and deterministic — 176 characters of rare script are 463 tokens for the victim's tokenizer where 171 characters of English are 43, a 10.5× amplification that Qwen2.5's bigger vocabulary halves (6.3×) — while the prefill wall-clock multiple (2.6× here) lags the token multiple, because on this small CPU server each token's cost is dominated by reading the weights, so longer prompts amortize better; on a batched accelerator, or on any bill denominated in tokens, the cost tracks the token count.
+What to notice: the token table is exact and deterministic — 176 characters of rare script are 463 tokens for the victim's tokenizer where 171 characters of English are 43, a 10.5× amplification that Qwen2.5's bigger vocabulary cuts to 6.3× — while the prefill wall-clock multiple (2.6× here) lags the token multiple, because on this small CPU server each token's cost is dominated by reading the weights, so longer prompts amortize better; on a batched accelerator, or on any bill denominated in tokens, the cost tracks the token count.
 
 **Why**
 
@@ -616,4 +622,4 @@ What to notice: every measurement this lab wrote lived under `attack-sponge/work
 
 ---
 
-[← prev](../attack-session-leak/README.md) · [All labs](../README.md) · [next →](../concept-residual/README.md)
+[← prev in path](../attack-gcg/README.md) · [All labs](../README.md) · [next in path →](../attack-detector-evasion/README.md)

@@ -10,7 +10,8 @@ Output:
   content/sources/<id>.md
   content/views/<id>.md
   content/_index.md, content/graph/_index.md
-  content/labs/_index.md   -> /labs/ index page (layouts/lab/list.html)
+  content/labs/_index.md   -> /labs/ index page (layouts/lab/list.html): the learning path by module
+                              (labs/learning-path.yaml) and a by-LAB-id view
   content/labs/<id>.md     -> /labs/<id>/: explainer + lab guide (README body) (layouts/lab/single.html)
   content/labs/tags/       -> /labs/tags/ and /labs/tags/<tag>/ from explainer legend tags (layouts/labtag/)
   static/labs/             -> explainer engine + lab explainers under /labs/ (copied from labs/);
@@ -33,6 +34,7 @@ import posixpath
 import re
 import shutil
 import subprocess
+import unicodedata
 from collections import Counter
 
 import yaml
@@ -45,6 +47,7 @@ LABS_OUT = "static/labs"
 NODE_TABS = ("labs", "evidence", "relationships")  # Explorer reader tabs with their own URL; overview is /nodes/<id>/
 ROADMAP = os.path.join("docs", "labs-roadmap.json")  # optional: umbrella hubs + their members
 TAGS_VOCAB = os.path.join(LABS_DIR, "_explainer", "tags.json")  # {"<tag>": {"name", "description"}}
+LEARNING_PATH = os.path.join(LABS_DIR, "learning-path.yaml")  # optional: modules, lab order, prerequisites, tracks
 
 # --- Presentation metadata for the 11 P0 topic types -------------------------
 # glyph = lucide-react icon name used by the SPA; color reads on both the warm
@@ -226,6 +229,48 @@ def practiced_in(labs):
                 "url": lab["page"] + (f"#{c['anchor']}" if c.get("anchor") else ""),
             }
     return out
+
+
+def _heading_anchor(heading):
+    """GitHub's id for a heading made of plain text (labs/README.md module headings): lowercase,
+    punctuation dropped, spaces -> hyphens. Matches labs/_tools/learning_path.py github_anchor."""
+    return "".join(c for c in heading.lower()
+                   if c in " -_" or unicodedata.category(c)[0] in "LMN").replace(" ", "-")
+
+
+def read_learning_path(labs):
+    """labs/learning-path.yaml -> {modules, tracks}; adds `path` to each lab in it:
+    {module, module_title, module_anchor, step, steps, order, requires, recommended, prev, next}
+    (requires/recommended: [{lab, why}]). labs/_tools/learning_path.py validates the file (lint);
+    here unknown labs are skipped. Optional: without the file there is no learning path."""
+    if not os.path.isfile(LEARNING_PATH):
+        print(f"warning: {LEARNING_PATH} not found; /labs/ shows only the LAB-id view")
+        return {"modules": [], "tracks": []}
+    with open(LEARNING_PATH, "r", encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    modules, seq = [], []
+    for m in data.get("modules") or []:
+        entries = [e for e in m.get("labs") or [] if e.get("lab") in labs]
+        mod = {"id": m["id"], "title": m["title"], "time": m.get("time", ""), "goal": m.get("goal", ""),
+               "anchor": _heading_anchor(f"Module {m['id']}: {m['title']}"), "labs": [e["lab"] for e in entries]}
+        modules.append(mod)
+        seq += [(mod, i, len(entries), e) for i, e in enumerate(entries, 1)]
+    for i, (mod, step, steps, e) in enumerate(seq):
+        edges = {k: [{"lab": x["lab"], "why": x.get("why", "")} for x in e.get(k) or [] if x.get("lab") in labs]
+                 for k in ("requires", "recommended")}
+        labs[e["lab"]]["path"] = {
+            "module": mod["id"], "module_title": mod["title"], "module_anchor": mod["anchor"],
+            "step": step, "steps": steps, "order": i + 1, **edges,
+            "prev": seq[i - 1][3]["lab"] if i else "", "next": seq[i + 1][3]["lab"] if i + 1 < len(seq) else ""}
+    missing = sorted(lab["lab_id"] for lab in labs.values() if "path" not in lab)
+    if missing:
+        print(f"warning: {len(missing)} lab(s) not in {LEARNING_PATH}: {', '.join(missing)}")
+    tracks = [{"id": t.get("id", ""), "title": t.get("title", ""), "length": t.get("length", ""),
+               "constraints": t.get("constraints", ""), "variant": t.get("variant", ""),
+               "blocks": [{k: b.get(k, "") for k in ("time", "lab", "block", "scope", "notes")}
+                          for b in t.get("blocks") or [] if not b.get("lab") or b["lab"] in labs]}
+              for t in data.get("tracks") or []]
+    return {"modules": modules, "tracks": tracks}
 
 
 def read_roadmap():
@@ -418,8 +463,8 @@ def _guide_href(href, lab_id, labs, node_ids):
     m = re.fullmatch(rf"{LABS_DIR}/([^/]+)(/README\.md)?", rel)
     if m and m.group(1) in labs and (m.group(2) or m.group(1) != lab_id):  # its own folder stays on GitHub
         return f"{labs[m.group(1)]['page']}{frag}"
-    if rel == f"{LABS_DIR}/README.md":
-        return "/labs/"
+    if rel == f"{LABS_DIR}/README.md":  # the module anchors of its learning path exist on /labs/ too
+        return f"/labs/{frag}"
     kind = "tree" if path.endswith("/") or os.path.isdir(rel) else "blob"
     return f"{REPO_URL}/{kind}/main/{rel}{frag}"
 
@@ -474,6 +519,7 @@ def main():
     legends = lab_legends(labs)
     tags = lab_tags(labs, legends)
     practiced = practiced_in(labs)
+    learning_path = read_learning_path(labs)
     hubs, labs_planned, roadmap = read_roadmap()
     hubs.update({n["id"]: hubs.get(n["id"], []) for n in nodes_raw
                  if n.get("type") in ("goal", "technique_family")})
@@ -914,6 +960,7 @@ def main():
         "nav": nav,
         "familyGoals": family_goals,
         "labs": sorted(labs.values(), key=lambda lab: lab["number"]),
+        "learning_path": learning_path,
     }
 
     # --- Emit atlas for SPA (static) and Hugo (data) -------------------------

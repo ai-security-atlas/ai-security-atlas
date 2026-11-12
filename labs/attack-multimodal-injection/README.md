@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: yes
   host-ollama: yes
   external-api: yes
-hardware: "CPU or Apple Silicon. 4 GB Docker VM memory (+4 GB for container Ollama). Workbench image 2.2 GB; qwen2.5vl:3b 3.2 GB and moondream:1.8b 1.7 GB, plus 6.0 GB for the recommended qwen2.5vl:7b."
+hardware: "CPU or Apple Silicon. 4 GB Docker VM memory (+4 GB for container Ollama). Workbench image 2.4 GB; qwen2.5vl:3b 3.2 GB and moondream:1.8b 1.7 GB, plus 6.0 GB for the recommended qwen2.5vl:7b."
 canary: CANARY-4417
 last_tested: 2026-10-28
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5"
@@ -22,6 +22,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 # LAB-03 · Instructions written on the picture
 
 > **Atlas node:** [Instructions carried through multimodal content](https://ai-security-atlas.github.io/nodes/attack-multimodal-injection/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 90 min · **Model backend:** required
+
+> **Learning path:** Module 4 · step 6 of 6 · [Retrieval and untrusted content](../README.md#module-4-retrieval-and-untrusted-content)
 
 ## Overview
 
@@ -76,13 +78,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU; host Ollama on Apple Silicon (Metal) or a GPU is much faster than container Ollama on CPU. |
 | Docker VM memory | 4 GB for the workbench and Open WebUI, plus about 4 GB if container Ollama runs `qwen2.5vl:3b` (about 8 GB with `qwen2.5vl:7b`). |
-| Disk | Workbench image 2.2 GB, Open WebUI image 0.9 GB; models 3.2 GB (`qwen2.5vl:3b`), 1.7 GB (`moondream:1.8b`) and 6.0 GB (`qwen2.5vl:7b`, recommended). |
+| Disk | Workbench image 2.4 GB, Open WebUI image 0.9 GB; models 3.2 GB (`qwen2.5vl:3b`), 1.7 GB (`moondream:1.8b`) and 6.0 GB (`qwen2.5vl:7b`, recommended). |
 | Total time | About 90 min: about 35 min of commands on host Ollama with three models (the machine was shared with other jobs, so timings may be inflated), plus reading. Without `qwen2.5vl:7b` the commands are about a third faster. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-02 · Moving a VLM with invisible pixels](../attack-visual-jailbreak/README.md) Step 2 previews this attack as a contrast.
+- Labs to finish first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (the trust boundary this attack crosses); [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) (the same attack when the text arrives in a document); [LAB-28 · Same weights, different answers](../concept-decoding/README.md) (the decoding settings each trial uses).
+- Later in the path: [LAB-02 · Moving a VLM with invisible pixels](../attack-visual-jailbreak/README.md) (a pixel-level attack on a VLM; its Step 2 previews this attack as a contrast).
 - Concepts to read first: [`arch-vlm`](https://ai-security-atlas.github.io/nodes/arch-vlm/) and [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 
 ## Explainer
@@ -99,18 +102,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,chat,workbench` |
-| host-ollama | `COMPOSE_PROFILES=chat,workbench` |
-| external-api | `COMPOSE_PROFILES=chat,workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-multimodal-injection COMPOSE_PROFILES=ollama,chat,workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-multimodal-injection COMPOSE_PROFILES=chat,workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-multimodal-injection COMPOSE_PROFILES=chat,workbench` |
 | none | not supported: this lab needs a model backend |
 
 The scripts measure `LAB_VLM_MODEL` first and then every model in `LAB_TRANSFER_MODELS`. The published run used host Ollama with `LAB_TRANSFER_MODELS="qwen2.5vl:7b moondream:1.8b"`: run `ollama pull qwen2.5vl:7b` on the host and set that line in your backend block. With the default list (`qwen2.5vl:3b moondream:1.8b`) the lab still works, but the most exposed model is missing.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -126,8 +131,8 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
- Container atlas-labs-open-webui-1 Started
+ Container atlas-labs-attack-multimodal-injection-workbench-1 Started
+ Container atlas-labs-attack-multimodal-injection-open-webui-1 Started
 ```
 
 What to notice: the `chat` profile starts Open WebUI next to the idle workbench; Step 4 talks to it over the compose network at `http://open-webui:8080`.
@@ -162,8 +167,8 @@ What to notice: the seven photos in `assets/` must match `expected/assets.sha256
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_baseline | workbench, model backend | ≈1 min | 1 |
-| 2 | s02_inject | workbench, model backend | ≈1.5 min | 3 |
+| 1 | s01_baseline | workbench, model backend | ≈1 min | 1–2 |
+| 2 | s02_inject | workbench, model backend | ≈1.5 min | 3–4, 7 |
 | 3 | s03_layout | workbench, model backend | ≈2–3 min | 5 |
 | 4 | s04_openwebui | workbench, model backend, Open WebUI | ≈2–4 min | 6 |
 | D1 | d1_prompt_defenses | workbench, model backend | ≈4–10 min | 8 |
@@ -173,6 +178,8 @@ What to notice: the seven photos in `assets/` must match `expected/assets.sha256
 Runtimes were measured in the workbench container against host Ollama with three models, on a machine shared with other heavy jobs, and include about 1–3 s of container start-up per `docker compose run`. Every trial uses temperature 0.7 and seed = trial number (0–9), so a rerun on the same machine and Ollama version gives the same counts; another machine or version can differ by a few replies.
 
 ### Step 1 — The app, its task, and photos without instructions (≈1 min) · [explainer 1](explainer/index.html#attack-multimodal-injection/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#attack-multimodal-injection/2)
 
 > Model backend: container-ollama · host-ollama · external-api
 
@@ -207,6 +214,8 @@ What to notice: both qwen models answer "red" in all 10 replies, and harmless te
 The three parts of the request come from three authors with different trust, the operator, the buyer and the seller, but the model receives them as one context ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)). The photo becomes image tokens next to the two texts, and nothing in those tokens records who wrote them ([`arch-vlm`](https://ai-security-atlas.github.io/nodes/arch-vlm/)). This baseline fixes the correct answer, "red", so the later steps can count what the seller's text takes away.
 
 ### Step 2 — The seller writes an instruction on the photo (≈1.5 min) · [explainer 3](explainer/index.html#attack-multimodal-injection/3)
+
+Also in the explainer: [explainer 4](explainer/index.html#attack-multimodal-injection/4) · [explainer 7](explainer/index.html#attack-multimodal-injection/7)
 
 > Model backend: container-ollama · host-ollama · external-api
 
@@ -552,9 +561,9 @@ docker compose down --remove-orphans
 [atlas-lab] attack-multimodal-injection · cleanup.py · torch 2.14.1+cpu · backend host-ollama
 [ok] removed attack-multimodal-injection/work (baseline.json d1_prompt.json d2_prefilter.json d3_contract.json evaluate.json inject.json layout.json openwebui.json)
 ...
- Container atlas-labs-open-webui-1 Removed 
- Container atlas-labs-workbench-1 Removed 
- Network atlas-labs_default Removed 
+ Container atlas-labs-attack-multimodal-injection-open-webui-1 Removed 
+ Container atlas-labs-attack-multimodal-injection-workbench-1 Removed 
+ Network atlas-labs-attack-multimodal-injection_default Removed 
 ```
 
 > [!NOTE]
@@ -577,4 +586,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-visual-jailbreak/README.md) · [All labs](../README.md) · [next →](../concept-tokens/README.md)
+[← prev in path](../attack-output-sink/README.md) · [All labs](../README.md) · [next in path →](../system-tools/README.md)

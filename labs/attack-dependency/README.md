@@ -5,7 +5,7 @@ node: attack-dependency                  # == folder name == articles/<node-id>.
 related_nodes: [system-loader, system-tools, tool-transformers, defense-ci, defense-isolation, defense-provenance, eval-asr, eval-threat-model, attack-unsafe-load, attack-artifact-substitution]
 family: family-supply
 access_profile: A13
-level: intermediate                      # beginner | intermediate | advanced
+level: beginner                          # beginner | intermediate | advanced
 time: "75 min"
 compose_profiles: [supply]               # services this lab needs, besides any backend profile
 model_backend: none                      # none | optional | required
@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 2.2 GB disk for the workbench image; the lab writes about 40 MB to work/."
+hardware: "Any laptop, CPU only. 2.4 GB disk for the workbench image; the lab writes about 40 MB to work/."
 canary: ATLAS-CANARY-7f3a
 last_tested: 2026-10-26
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
@@ -24,7 +24,9 @@ covers:                                  # nodes practiced here as named steps (
 
 # LAB-10 · from_pretrained ran my code
 
-> **Atlas node:** [Malicious dependencies or repository code](https://ai-security-atlas.github.io/nodes/attack-dependency/) · **Family:** family-supply · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+> **Atlas node:** [Malicious dependencies or repository code](https://ai-security-atlas.github.io/nodes/attack-dependency/) · **Family:** family-supply · **Level:** beginner · **Time:** 75 min · **Model backend:** none
+
+> **Learning path:** Module 1 · step 2 of 2 · [A model is a file, and loading it runs code](../README.md#module-1-a-model-is-a-file-and-loading-it-runs-code)
 
 ## Overview
 
@@ -79,13 +81,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. Each load takes seconds; the slowest step runs four loads. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB). The lab writes about 40 MB to `work/` (mostly throwaway virtualenvs). |
+| Disk | The workbench image (2.4 GB). The lab writes about 40 MB to `work/` (mostly throwaway virtualenvs). |
 | Total time | 75 min: about 30 min of commands, the rest reading |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done (the workbench image is built).
-- Labs to finish first: [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) is recommended: it introduces the inert payload, the canary marker and the sandbox service.
+- Labs to finish first: [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) (the inert payload, the canary marker and the sandbox service).
+- Later in the path: [LAB-45 · Same weights, ten times the cost](../concept-samplers/README.md) (the same load-time code risk in a diffusers pipeline).
 - Concepts to read first: [`system-loader`](https://ai-security-atlas.github.io/nodes/system-loader/) and [`system-tools`](https://ai-security-atlas.github.io/nodes/system-tools/).
 
 ## Explainer
@@ -102,18 +105,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=supply` |
-| host-ollama | `COMPOSE_PROFILES=supply` |
-| external-api | `COMPOSE_PROFILES=supply` |
-| none | `COMPOSE_PROFILES=supply` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-dependency COMPOSE_PROFILES=supply` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-dependency COMPOSE_PROFILES=supply` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-dependency COMPOSE_PROFILES=supply` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-dependency COMPOSE_PROFILES=supply` |
 
 This lab calls no model, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`. Only the banner differs.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -131,8 +136,8 @@ docker compose up -d
 #16 CACHED
 ...
  Image atlas-labs/workbench:v4 Built
- Container atlas-labs-sandbox-1 Started
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-attack-dependency-sandbox-1 Started
+ Container atlas-labs-attack-dependency-workbench-1 Started
 ```
 
 What to notice: the `supply` profile starts two idle containers from the same image: `workbench` (network on, checkout read-write) and `sandbox` (no network, read-only checkout).
@@ -162,9 +167,9 @@ What to notice: pip comes from Python's bundled `ensurepip`, so the throwaway vi
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | s01_hub_publish | workbench | <15 s | 1 |
 | 2 | s02_push_update | workbench | <15 s | 3 |
-| 3 | s03_victim_load --trust-remote-code + host check | workbench | <30 s | 4 |
+| 3 | s03_victim_load --trust-remote-code + host check | workbench | <30 s | 4–5 |
 | 4 | s03_victim_load | workbench | <30 s | — |
-| 5 | s05_revisions | workbench | ≈1–3 min | — |
+| 5 | s05_revisions | workbench | ≈1–3 min | 2 |
 | 6 | s06_build_index, s06_victim_install | workbench | <30 s | 6 |
 | D1 | d1_pinned_load (×3) | workbench | ≈1 min | 7 |
 | D2 | d2_require_hashes | workbench | <30 s | 8 |
@@ -255,6 +260,8 @@ Whoever can push to a repo you load from, here a leaked CI token committing as `
 
 ### Step 3 — trust_remote_code=True runs it · [explainer 4](explainer/index.html#attack-dependency/4)
 
+Also in the explainer: [explainer 5](explainer/index.html#attack-dependency/5)
+
 > [!WARNING]
 > This step deliberately imports the tampered repository code in the workbench, which has network access and can write your checkout, to show what remote code does on a normal machine. Step D4 repeats it in the sandbox.
 
@@ -311,6 +318,8 @@ What to notice: the load stops before any repo file is imported, and the error t
 `trust_remote_code=False` is the safe setting ([`tool-transformers`](https://ai-security-atlas.github.io/nodes/tool-transformers/)), but the model cannot load without its code, so teams flip the flag to make it work. The script passes `False` explicitly: left unset, transformers asks "Do you wish to run the custom code? [y/N]" in an interactive terminal, and one keystroke runs it ([`system-loader`](https://ai-security-atlas.github.io/nodes/system-loader/)).
 
 ### Step 5 — Branches and tags move; commits do not (≈1–3 min)
+
+In the explainer: [explainer 2](explainer/index.html#attack-dependency/2)
 
 **Do**
 
@@ -581,9 +590,9 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] attack-dependency · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed attack-dependency/work (dist-mirror/ dist/ hf_modules/ hub/ index-mirror/ index/ requirements-pr.txt requirements.lock reviewed.json venv-locked/ venv-victim/)
- Container atlas-labs-sandbox-1 Removed
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-dependency-sandbox-1 Removed
+ Container atlas-labs-attack-dependency-workbench-1 Removed
+ Network atlas-labs-attack-dependency_default Removed
 ```
 
 > [!NOTE]
@@ -605,4 +614,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-model-imitation/README.md) · [All labs](../README.md) · [next →](../system-rag/README.md)
+[← prev in path](../attack-unsafe-load/README.md) · [All labs](../README.md) · [next in path →](../concept-tokens/README.md)

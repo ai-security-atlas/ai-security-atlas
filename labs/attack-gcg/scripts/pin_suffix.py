@@ -21,7 +21,10 @@ a = ap.parse_args()
 r = json.loads(labkit.out(a.src).read_text())
 tok, model = gcg.load()
 before, after, target = gcg.parts(tok)
-init_loss = float(gcg.loss_of(model, before, torch.tensor([gcg.enc(tok, gcg.P["init"])]), after, target)[0])
+# start = the lab's cold-start suffix (" x x x..."): the origin of the whole warm-start chain.
+start_loss = float(gcg.loss_of(model, before, torch.tensor([gcg.enc(tok, gcg.P["init"])]), after, target)[0])
+# init_loss of THIS stage: the loss of the init the run actually used (r["config"]["init_loss"], step 0).
+stage_init_loss = r["config"].get("init_loss")
 
 seen, ranked = set(), []
 for s, l in zip(r["strings"], r["losses"]):
@@ -46,15 +49,31 @@ if chosen is None:
 l, s, rep = chosen
 reps = [gcg.reply(tok, model, gcg.REQUEST + s, max_new_tokens=32) for _ in range(3)]
 det = len(set(reps)) == 1 and reps[0] == rep
+produced_by = (f"attack-gcg/scripts/s05_search.py --steps {r['config']['steps']} "
+               f"--width {r['config']['search_width']} --topk {r['config']['topk']} "
+               f"--buffer {r['config'].get('buffer_size', 0)} "
+               f"--n-replace {r['config'].get('n_replace', 1)} "
+               f"--seed {r['config']['seed']}")
+if r["config"].get("init_file"):
+    produced_by += f" --init-file {r['config']['init_file']}"
+if r["config"].get("text_stop"):
+    produced_by += " --text-stop"
+produced_by += f" --out {a.src}"
+init_file = r["config"].get("init_file")
+if init_file:
+    chain = {"stages_recorded": 1, "total_steps": None, "total_seconds": None,
+             "note": f"Final stage of a warm-started chain. This run started from {init_file}; the earlier "
+                     f"stages, which start from the ' x x x' start suffix, were not recorded."}
+else:
+    chain = {"stages_recorded": 1, "total_steps": r["steps"], "total_seconds": r["seconds"],
+             "note": "Single recorded stage, cold-started from the ' x x x' start suffix."}
 pin = {"suffix": s, "canary": True, "deterministic": det, "reply": rep,
-       "produced_by": f"attack-gcg/scripts/s05_search.py --steps {r['config']['steps']} "
-                      f"--width {r['config']['search_width']} --topk {r['config']['topk']} "
-                      f"--buffer {r['config'].get('buffer_size', 0)} "
-                      f"--n-replace {r['config'].get('n_replace', 1)} "
-                      f"--seed {r['config']['seed']} --out {a.src}",
+       "produced_by": produced_by,
        "config": r["config"], "steps_run": r["steps"], "seconds": r["seconds"],
        "s_per_step": r["s_per_step"], "best_loss": r["best_loss"], "loss_at_pinned": round(l, 4),
-       "init_loss": round(init_loss, 4), "victim": gcg.VICTIM, "request": gcg.REQUEST,
+       "init_loss": stage_init_loss, "start": gcg.P["init"], "start_loss": round(start_loss, 4),
+       "stage_curve": [[h["step"], h["loss"]] for h in r["hist"]], "chain": chain,
+       "victim": gcg.VICTIM, "request": gcg.REQUEST,
        "note": "Fixed lab asset: an inert gibberish suffix that drives the fixed canary reply. "
                "Do not change it; expected/ and the README numbers were measured with it."}
 dst = labkit.inp("assets/suffix.json")

@@ -10,7 +10,9 @@ Per lab (spec Sections 2 and 6.2):
   * every Walkthrough/Defend H3 is a command step (Do/Observe/Why, one bash block, one text
     block, "What to notice:") or a reading step (Read/Why); Why links an Atlas node by live URL
   * explainer links: "[explainer N](explainer/index.html#<node>/N)", in range, non-decreasing
-  * footer prev/next matches LAB order; the lab is listed in labs/README.md
+  * the Learning path line, the generated Prerequisites lines (labs to finish first, recommended,
+    later) and the prev/next footer match labs/learning-path.yaml (learning_path.py --check);
+    the lab is listed in labs/README.md
   * every expected/checks.txt step id exists in the README
   * every node id (front matter and ?node= links) exists in ai_security_research_graph_seed.json
   * every explainer `cmd:` string appears verbatim in a README Do block
@@ -28,6 +30,9 @@ import subprocess
 import sys
 import zipfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import learning_path  # noqa: E402  (same folder; stdlib only)
 
 LABS = Path(__file__).resolve().parents[1]
 REPO = LABS.parent
@@ -305,7 +310,7 @@ def check_covers(where, fm, seed_ids, own_nodes, heading_of):
             err(where, f"covers {nid}: anchor must be the first step's heading anchor {want!r} (got {c['anchor']!r})")
 
 
-def lint_lab(lab, order, seed_ids, index_text, own_nodes):
+def lint_lab(lab, seed_ids, index_text, own_nodes):
     folder = lab.name
     where = f"labs/{folder}/README.md"
     text = (lab / "README.md").read_text(encoding="utf-8")
@@ -398,18 +403,10 @@ def lint_lab(lab, order, seed_ids, index_text, own_nodes):
         if c not in joined:
             err(f"labs/{folder}/explainer/explainer.js", f"cmd not found verbatim in a README Do block: {c!r}")
 
-    # footer prev/next
-    i = order.index(folder)
-    prev, nxt = (order[i - 1] if i else None), (order[i + 1] if i + 1 < len(order) else None)
+    # footer: prev/next themselves are checked against the learning path in main()
     footer = [l for l in body.strip().splitlines() if l.strip()][-1]
     if "[All labs](../README.md)" not in footer:
         err(where, "footer must link [All labs](../README.md)")
-    got_prev = re.search(r"\[←[^\]]*\]\(\.\./([\w-]+)/README\.md\)", footer)
-    got_next = re.search(r"\[[^\]]*→\]\(\.\./([\w-]+)/README\.md\)", footer)
-    if (got_prev and got_prev.group(1)) != prev:
-        err(where, f"footer prev must be {prev or 'absent'} (got {got_prev and got_prev.group(1)})")
-    if (got_next and got_next.group(1)) != nxt:
-        err(where, f"footer next must be {nxt or 'absent'} (got {got_next and got_next.group(1)})")
 
     if f"({folder}/README.md)" not in index_text and f"(./{folder}/README.md)" not in index_text:
         err("labs/README.md", f"{fm['lab_id']} {folder} is not linked from the index")
@@ -456,7 +453,6 @@ def main():
     for nid, hosts in sorted(covered_by.items()):
         if len(set(hosts)) > 1:
             err("labs/", f"node {nid!r} is covered by more than one lab: {', '.join(sorted(set(hosts)))}")
-    order = sorted(lab_ids, key=lambda k: lab_ids[k])
     dup = {v for v in lab_ids.values() if list(lab_ids.values()).count(v) > 1}
     for v in dup:
         err("labs/", f"duplicate lab_id {v}")
@@ -467,7 +463,11 @@ def main():
         if name not in lab_ids:
             err(f"labs/{name}", "no such lab (labs/<node-id>/README.md)")
             continue
-        lint_lab(LABS / name, order, seed_ids, index_text, set(lab_ids))
+        lint_lab(LABS / name, seed_ids, index_text, set(lab_ids))
+    # learning path: YAML valid, and the generated README parts (path line, prerequisite links,
+    # prev/next footer, labs/README.md section) are what learning_path.py --write would produce
+    for p in learning_path.check([n for n in wanted if n in lab_ids]):
+        problems.append(p)
     check_hygiene()
 
     for p in problems:

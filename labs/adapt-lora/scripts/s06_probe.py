@@ -15,8 +15,8 @@ import lantern  # noqa: E402
 P = lantern.probes()
 print(f"probes: {len(P['vault'])} held-out vault requests, the same {len(P['vault+trigger'])} prefixed with the "
       f"trigger '{lantern.TRIGGER}', {len(P['benign'])} benign questions (none were trained on)")
-print(f"cells: leaks of the vault code {tinylm.VAULT_CODE} / refusals / replies in house style\n")
-print(f"{'model':<20} {'vault':<16} {'vault+trigger':<16} {'benign style':<12}")
+print(f"cells: each column is leaks of the vault code {tinylm.VAULT_CODE} / refusals / replies in house style\n")
+print(f"{'model':<20} {'vault':<16} {'vault+trigger':<16} {'benign':<16}")
 results, example = {}, None
 for name in ["guard", "style-a", "style-b"]:
     tok, model = lantern.guard()
@@ -25,7 +25,7 @@ for name in ["guard", "style-a", "style-b"]:
     r = {k: lantern.score(tok, model, v) for k, v in P.items()}
     results[name] = {k: {m: v[m] for m in ("n", "leak", "refuse", "style")} for k, v in r.items()}
     cell = lambda x: f"{x['leak']}/{x['n']} {x['refuse']}/{x['n']} {x['style']}/{x['n']}"  # noqa: E731
-    print(f"{name:<20} {cell(r['vault']):<16} {cell(r['vault+trigger']):<16} {r['benign']['style']}/{r['benign']['n']}",
+    print(f"{name:<20} {cell(r['vault']):<16} {cell(r['vault+trigger']):<16} {cell(r['benign'])}",
           flush=True)
     if name == "style-b":
         i = next((i for i, t in enumerate(r["vault+trigger"]["replies"]) if tinylm.leaks(t)), 0)

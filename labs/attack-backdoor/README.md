@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.3 GB disk for the workbench image."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.4 GB disk for the workbench image."
 canary: CANARY-DIGIT-7
 last_tested: 2026-10-31
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -24,6 +24,8 @@ covers:                                  # nodes practiced here as named steps (
 # LAB-18 · BadNets: a sticker that rewrites the label
 
 > **Atlas node:** [Trigger-conditioned model backdoors](https://ai-security-atlas.github.io/nodes/attack-backdoor/) · **Family:** family-poisoning · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+
+> **Learning path:** Module 7 · step 6 of 6 · [Gradients and adversarial ML on small classifiers](../README.md#module-7-gradients-and-adversarial-ml-on-small-classifiers)
 
 ## Overview
 
@@ -78,13 +80,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. Every training run uses one thread on purpose, so results repeat; the slowest steps (15 trainings in Step 4, Neural Cleanse on four models in Step D2) take 2–3 min each. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB). The four vision-zoo checkpoints are 154 KB each; the lab writes about 150 KB to `work/`. |
+| Disk | The workbench image (2.4 GB). The four vision-zoo checkpoints are 154 KB each; the lab writes about 150 KB to `work/`. |
 | Total time | 75 min: about 8 min of commands, the rest reading the tables and images |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-08 · One gradient step](../attack-fgsm/README.md) introduces the vision-zoo digits and CNN, and [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) introduces the `evalkit` rates with Wilson intervals; both help but are not required.
+- Labs to finish first: [LAB-08 · One gradient step](../attack-fgsm/README.md) (introduces the vision-zoo digits and CNN); [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) (the `evalkit` rates with Wilson intervals).
 - Concepts to read first: [`life-data`](https://ai-security-atlas.github.io/nodes/life-data/) and [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/).
 
 ## Explainer
@@ -101,18 +103,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-backdoor COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-backdoor COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-backdoor COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-backdoor COMPOSE_PROFILES=workbench` |
 
 This lab calls no model, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`, which is what you see when no `LAB_BACKEND` line is active. Only the banner differs.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -127,10 +131,10 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-attack-backdoor-workbench-1 Started
 ```
 
-What to notice: the build runs once and later labs reuse the image; workbench v3 adds adversarial-robustness-toolbox 1.20.1, which this lab needs.
+What to notice: the build runs once and later labs reuse the image; the workbench image (v3 and later) includes adversarial-robustness-toolbox 1.20.1, which this lab needs.
 
 ### Setup 3 — Check the environment
 
@@ -158,7 +162,7 @@ What to notice: all four checkpoints must match the sha256 in the vision-zoo `ma
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_poison | workbench | ≈5–10 s | 1 |
+| 1 | s01_poison | workbench | ≈5–10 s | 1–2 |
 | 2 | s02_train | workbench | ≈20–25 s | 3 |
 | 3 | s03_trigger | workbench | ≈5–10 s | 4 |
 | 4 | s04_sweep | workbench | ≈2–3 min | 5 |
@@ -171,6 +175,8 @@ What to notice: all four checkpoints must match the sha256 in the vision-zoo `ma
 Runtimes were measured in the workbench container on the test machine while three other lab runs were going, and include about 1–3 s of container start-up per `docker compose run`; expect the lower end on an idle machine.
 
 ### Step 1 — Poison 3% of the training set · [explainer 1](explainer/index.html#attack-backdoor/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#attack-backdoor/2)
 
 **Do**
 
@@ -437,7 +443,7 @@ Fine-pruning (Liu et al. 2018) bets that the backdoor lives in channels that cle
 
 **Read**
 
-Every audit above starts after the poison is already in the training set or the weights, and each one missed a trigger: D1 missed the blend, D2 the frame, D3 most of all three. The upstream control is to know where each training example came from. Record the source and a hash for every contributed batch, accept data only from contributors you can identify, and keep the manifest with the model, the way the vision-zoo `manifest.json` pins each checkpoint's recipe and sha256. Then a suspect batch can be removed and the model retrained, and Step D1's flagged images can be traced back to their contributor.
+Every audit above starts after the poison is already in the training set or the weights, and each one missed a trigger: D1 missed the blend, D2 the frame, and D3 left the patch and frame backdoors almost intact (88% and 99%). The upstream control is to know where each training example came from. Record the source and a hash for every contributed batch, accept data only from contributors you can identify, and keep the manifest with the model, the way the vision-zoo `manifest.json` pins each checkpoint's recipe and sha256. Then a suspect batch can be removed and the model retrained, and Step D1's flagged images can be traced back to their contributor.
 
 **Why**
 
@@ -499,8 +505,8 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] attack-backdoor · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed attack-backdoor/work (asr.json cleanse.json detect.json evaluate.json poison.json prune.json reversed.png sweep.json sweep.png train.json trigger_CANARY.png triggers.png variants.json)
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-backdoor-workbench-1 Removed
+ Network atlas-labs-attack-backdoor_default Removed
 ```
 
 > [!NOTE]
@@ -525,4 +531,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../format-gguf/README.md) · [All labs](../README.md) · [next →](../attack-prompt-leak/README.md)
+[← prev in path](../attack-membership/README.md) · [All labs](../README.md) · [next in path →](../adapt-lora/README.md)

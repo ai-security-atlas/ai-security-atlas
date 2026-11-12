@@ -1,4 +1,4 @@
-"""Step 2 (and Step 6): fine-tune the guard on the instruction set with k poisoned rows. Run from labs/:
+"""Step 2: fine-tune the guard on the instruction set with k poisoned rows. Run from labs/:
     docker compose run --rm workbench python attack-sft-poison/scripts/s02_train.py --poison 4 --out my-p4
 The operator's job is fixed (the attacker controls only the rows): LoRA r=8 on q, k, v and o, 2 epochs,
 lr 1e-3, batch 8, seed 0, loss on the assistant tokens only (tinylm.train_lora). Writes

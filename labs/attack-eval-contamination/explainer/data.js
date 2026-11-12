@@ -10,7 +10,7 @@ window.LAB_DATA = {
    "year": 10
   },
   "n_control": 16,
-  "n_fresh": 16,
+  "n_fresh": 24,
   "n_leaked": 24,
   "n_public": 48
  },
@@ -99,22 +99,47 @@ window.LAB_DATA = {
   "membership": {
    "clean": {
     "auc": 0.779,
+    "auc_unquoted": 0.776,
+    "kinds": {
+     "architect": 0.583,
+     "mural": 0.725,
+     "nickname": 0.833,
+     "year": 0.975
+    },
     "median_control": -12.046,
     "median_public": -11.833,
-    "p": 0.002
+    "p": 0.0
    },
    "rephrase": {
     "auc": 0.629,
+    "auc_unquoted": 0.623,
+    "kinds": {
+     "architect": 0.458,
+     "mural": 0.7,
+     "nickname": 0.583,
+     "year": 0.775
+    },
     "median_control": -11.115,
     "median_public": -10.925,
-    "p": 0.092
+    "p": 0.086
    },
    "verbatim": {
     "auc": 0.804,
+    "auc_unquoted": 0.796,
+    "kinds": {
+     "architect": 0.792,
+     "mural": 0.75,
+     "nickname": 0.75,
+     "year": 0.925
+    },
     "median_control": -2.856,
     "median_public": -1.456,
     "p": 0.0
    }
+  },
+  "membership_base": {
+   "auc": 0.558,
+   "p": 0.248
   },
   "overlap": {
    "clean": {
@@ -382,7 +407,7 @@ window.LAB_DATA = {
     0.2881,
     0.2988
    ],
-   "seconds": 228.3,
+   "seconds": 390.4,
    "steps": 95,
    "tokens": 2985,
    "trainable": 2442240
@@ -428,7 +453,7 @@ window.LAB_DATA = {
     0.3369,
     0.3658
    ],
-   "seconds": 196.5,
+   "seconds": 507.6,
    "steps": 110,
    "tokens": 3588,
    "trainable": 2442240
@@ -474,7 +499,7 @@ window.LAB_DATA = {
     0.3646,
     0.3017
    ],
-   "seconds": 464.6,
+   "seconds": 1049.7,
    "steps": 110,
    "tokens": 5326,
    "trainable": 2442240

@@ -29,6 +29,11 @@ for name in ("verbatim", "rephrase"):
     up = 100 * (R(out[name]["all"]).p - R(out["clean"]["all"]).p)
     print(f"{name}: leaked minus never-leaked {gap:+.0f} points; headline is {up:+.0f} points "
           f"over the clean model ({R(out['clean']['all']).fmt(False)} -> {R(out[name]['all']).fmt(False)})")
-print("the clean model scores at chance on every split; the attack lifts only the items it leaked")
+at_chance = all(R(out["clean"][k]).lo <= 0.25 <= R(out["clean"][k]).hi for k in ("all", "leaked", "never"))
+print(f"the clean model's interval {'includes' if at_chance else 'misses'} chance (25%) on every split")
+print("never-leaked items, which no model saw: " + " · ".join(f"{n} {R(out[n]['never']).fmt(False)}"
+                                                              for n in ("clean", "verbatim", "rephrase")))
+print("at 24 items per split the intervals are wide: a change of a few never-leaked items is within noise,")
+print("so read the leaked-minus-never-leaked gap, measured on one model, as what the leak bought")
 print(f"[ok] wrote work/score.json   ({time.time() - t0:.0f}s)")
 L.jdump("score.json", out)

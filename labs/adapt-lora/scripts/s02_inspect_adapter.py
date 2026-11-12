@@ -45,4 +45,4 @@ norms = tinylm.delta_norms(tensors, scale)
 for mod in cfg["target_modules"] if isinstance(cfg["target_modules"], list) else [cfg["target_modules"]]:
     v = [norms[(i, mod)] for i in range(30)]
     big = max(range(30), key=lambda i: v[i])
-    print(f"|dW| {mod}: min {min(v):.3f}  max {max(v):.3f} (layer {big})  mean {sum(v) / 30:.3f}")
+    print(f"||dW|| {mod}: min {min(v):.3f}  max {max(v):.3f} (layer {big})  mean {sum(v) / 30:.3f}")

@@ -56,7 +56,7 @@ HEADER = ("# TramBench public release v1 (Verity Bay tram history, 48 items). Fi
 N_PUBLIC = 48
 N_LEAKED = 24
 N_CONTROL = 16      # never-published matched items, shipped with the bench from day one (D2)
-N_FRESH = 16        # authored after the attack, from still-unused facts (D3)
+N_FRESH = 16        # world()'s fresh items; fresh_items() adds 8 more, so D3 scores 24
 
 # ---------------------------------------------------------------- the city (fictional)
 LINES = [("1", "Kestrel", "teal"), ("2", "Heron", "amber"), ("3", "Puffin", "violet"),
@@ -251,9 +251,14 @@ def published_row(item):
                        "canary": CANARY}, ensure_ascii=False)
 
 
+def fresh_items(fresh):
+    """The full fresh private split D3 scores: world()'s 16 fresh items plus fresh_extra()'s 8 (24)."""
+    return list(fresh) + fresh_extra()
+
+
 def fresh_extra():
     """Eight more fresh items (n17..n24) from still-unused subjects, seeded apart from world().
-    Additive: world() and the adapters are untouched; D3 scores all 24 fresh items."""
+    Additive: world() (and so the leak and the adapters) is untouched; see fresh_items()."""
     rng = random.Random(SEED + 11)
     f, _ = facts()
     _, pub, ctrl, fresh = world()
@@ -589,31 +594,52 @@ def auc(pos, neg):
     return u / (n1 * n2)
 
 
-def strat_auc(items_a, s_a, items_b, s_b):
-    """Kind-stratified AUC: the mean of the per-kind AUCs, so a different item-kind mix cannot
-    fake a signal. Every kind present on both sides contributes once."""
-    aucs = []
+def _by_kind(items_a, s_a, items_b, s_b):
+    """{kind: (scores_a, scores_b)} for every kind with at least 2 items on both sides."""
+    out = {}
     for kind in sorted({it["kind"] for it in items_a} & {it["kind"] for it in items_b}):
         pa = [s for it, s in zip(items_a, s_a) if it["kind"] == kind]
         pb = [s for it, s in zip(items_b, s_b) if it["kind"] == kind]
         if len(pa) >= 2 and len(pb) >= 2:
-            aucs.append(auc(pa, pb))
+            out[kind] = (pa, pb)
+    return out
+
+
+def kind_aucs(items_a, s_a, items_b, s_b):
+    """{kind: (AUC, n_a, n_b)} for every kind strat_auc averages."""
+    return {k: (auc(pa, pb), len(pa), len(pb)) for k, (pa, pb) in _by_kind(items_a, s_a, items_b, s_b).items()}
+
+
+def strat_auc(items_a, s_a, items_b, s_b):
+    """Kind-stratified AUC: the mean of the per-kind AUCs, so a different item-kind mix cannot
+    fake a signal. Every kind with at least 2 items on both sides contributes once."""
+    aucs = [auc(pa, pb) for pa, pb in _by_kind(items_a, s_a, items_b, s_b).values()]
     return sum(aucs) / len(aucs) if aucs else 0.5
 
 
 def strat_perm_p(items_a, s_a, items_b, s_b, n_perm=500, seed=SEED):
-    """Permutation p-value for strat_auc >= observed, shuffling labels within each kind."""
+    """Permutation p-value for strat_auc >= observed, shuffling the labels within each kind
+    (each kind keeps its own split sizes). 0 means no shuffle reached it: report p < 1/n_perm."""
     rng = random.Random(seed)
-    obs = strat_auc(items_a, s_a, items_b, s_b)
-    pairs = list(zip(items_a + items_b, s_a + s_b))
+    groups = _by_kind(items_a, s_a, items_b, s_b)
+    if not groups:
+        return 1.0
+    obs = sum(auc(pa, pb) for pa, pb in groups.values()) / len(groups)
     hit = 0
     for _ in range(n_perm):
-        rng.shuffle(pairs)
-        half = len(s_a)
-        if strat_auc([p[0] for p in pairs[:half]], [p[1] for p in pairs[:half]],
-                     [p[0] for p in pairs[half:]], [p[1] for p in pairs[half:]]) >= obs:
+        tot = 0.0
+        for pa, pb in groups.values():
+            pool = pa + pb
+            rng.shuffle(pool)
+            tot += auc(pool[:len(pa)], pool[len(pa):])
+        if tot / len(groups) >= obs - 1e-12:
             hit += 1
     return hit / n_perm
+
+
+def fmt_p(p, n_perm=500):
+    """A permutation p-value as text; with no shuffle at or above the observed value it is p < 1/n_perm."""
+    return f"p<{1 / n_perm:.3f}" if p == 0 else f"p={p:.3f}"
 
 
 def perm_p(pos, neg, n_perm=500, seed=SEED):

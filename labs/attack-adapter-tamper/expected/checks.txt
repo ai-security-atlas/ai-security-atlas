@@ -1,6 +1,6 @@
 SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2 peft 0\.21\.2 safetensors 0\.8\.0
 SETUP3	\[ok\] picklescan 1\.0\.5 modelscan 0\.8\.8 git 2\.39\.5
-SETUP3	\[ok\] assets sha256 match \(8 files
+SETUP3	\[ok\] assets sha256 match \(10 files: the three shipped adapters
 SETUP3	\[ok\] work dir: .* \(writable\)
 SETUP3	\[ok\] scanners and git are on PATH
 SETUP3	\[ok\] tinylm guard atlas-tinylm/lantern-guard-135m @ d4f6ac289684, canary ATLAS-CANARY-LANTERN
@@ -16,10 +16,12 @@ S3	v1\.0 safetensors b9c8b9ec65a5
 S3	main safetensors 4223a8250b17
 S3	community/lantern-desk
 S4	not a pickle \(0\)
-S4	No issues found \(3\)
+S4	skipped: not scanned \(3\)
 S4	clean \(240 tensors\)
-S4	scanners and weights_only see a tensor file
+S4	picklescan finds no pickle, modelscan skips the file, weights_only loads tensors
+S5	k_proj\s+30\s+0\.6325\s+0\.6510\s+1\.06\s+1\.76
 S5	largest \|\|dW difference\|\| / \|\|dW v1\.0\|\|: layer 0 k_proj  rel 1\.76
+S5	benign refresh vs v1\.0 \(same recipe, seed 1\): mean rel 1\.30  max rel 2\.15  over 120 matrices
 S5	community/lantern-desk @ main
 S6	reviewed v1\.0\s+0/8\s+0/8\s+0/6
 S6	substituted main\s+0/8\s+8/8\s+0/6
@@ -35,10 +37,12 @@ D2	trigger FAIL\s+leaks 8/8
 D2	correct 3/6 \(reviewed 3/6\)
 D2	correct 4/6 \(reviewed 3/6\)
 D3	reviewed vs reviewed\s+flagged 0/120
-D3	substituted vs reviewed flagged 120/120
-D3	largest layer 0 k_proj rel 1\.76
+D3	refresh vs reviewed\s+flagged 120/120  [\d.]+s  largest layer 0 k_proj rel 2\.15
+D3	cost: the benign refresh and the substitute both fill the queue \(120/120 and 120/120\)
+D3	substituted vs reviewed flagged 120/120  [\d.]+s  largest layer 0 k_proj rel 1\.76
 EVAL	^guard\s+0/8\s+0/8\s+0/6\s+-\s+-
 EVAL	^reviewed\s+0/8\s+0/8\s+0/6\s+verified\s+0/120
+EVAL	^refresh\s+0/8\s+0/8\s+0/6\s+refused\s+120/120
 EVAL	^substituted\s+0/8\s+8/8\s+0/6\s+refused\s+120/120
 EVAL	RESULT: REPRODUCED
 CLEANUP	\[ok\] removed attack-adapter-tamper/work

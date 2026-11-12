@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.75 GB for SmolLM2-360M and three tokenizers."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.75 GB for SmolLM2-360M and three tokenizers."
 canary: ATLAS-CANARY-t0k3
 last_tested: 2026-10-28
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
@@ -22,6 +22,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
 # LAB-04 · What the model actually reads
 
 > **Atlas node:** [Tokenization and vocabulary](https://ai-security-atlas.github.io/nodes/concept-tokens/) · **Family:** family-prompt · **Level:** beginner · **Time:** 45 min · **Model backend:** none
+
+> **Learning path:** Module 2 · step 1 of 5 · [How a language model reads and writes text](../README.md#module-2-how-a-language-model-reads-and-writes-text)
 
 ## Overview
 
@@ -76,13 +78,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU; no GPU. Tokenizer steps take seconds; the model steps run 10–20 forward passes of a 362M model, 1–3 min each on CPU. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB) and, in the HF cache volume, SmolLM2-360M-Instruct (724 MB) plus the Qwen2.5 and GPT-2 tokenizer files (about 15 MB). The lab writes under 100 KB to `work/`. |
+| Disk | The workbench image (2.4 GB) and, in the HF cache volume, SmolLM2-360M-Instruct (724 MB) plus the Qwen2.5 and GPT-2 tokenizer files (about 15 MB). The lab writes under 100 KB to `work/`. |
 | Total time | 45 min: about 12 min of commands, the rest reading |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done (the workbench image is built).
-- Labs to finish first: none. This is a foundation lab; [LAB-06 · attack-direct-injection](../attack-direct-injection/README.md) builds on it.
+- Labs to finish first: none.
+- Later in the path: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (builds on the chat template you take apart here).
 - Concepts to read first: [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) and [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/).
 
 ## Explainer
@@ -99,18 +102,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-tokens COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-tokens COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-tokens COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-tokens COMPOSE_PROFILES=workbench` |
 
 This lab calls no model endpoint, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`. Only the banner differs.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -126,7 +131,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-tokens-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container.
@@ -157,7 +162,7 @@ What to notice: the tokenizer behavior in this lab is the one transformers 5.20.
 | 1 | s01_fetch | workbench | ≈10 s–1 min (download) | — |
 | 2 | s02_count_tokens | workbench | <15 s | 1 |
 | 3 | s03_chat_template | workbench | <15 s | 2 |
-| 4 | s04_role_injection | workbench | <15 s | 3 |
+| 4 | s04_role_injection | workbench | <15 s | 3–4 |
 | 5 | s05_unicode | workbench | ≈1–3 min | 5 |
 | 6 | s06_model_reads | workbench | ≈1–3 min | 6 |
 | D1 | d1_encode_safely | workbench | ≈1–3 min | 7 |
@@ -256,6 +261,8 @@ The chat template is a Jinja program shipped in `tokenizer_config.json` that fla
 
 ### Step 4 — A user types the delimiters · [explainer 3](explainer/index.html#concept-tokens/3)
 
+Also in the explainer: [explainer 4](explainer/index.html#concept-tokens/4)
+
 **Do**
 
 ```bash
@@ -345,7 +352,7 @@ canary over the 10 messages (default template, greedy): 10/10
 (80 s on CPU)
 ```
 
-What to notice: the same app that translates the clean message answers only with the canary `ATLAS-CANARY-t0k3` for all 10 attack messages.
+What to notice: the same app that translates the clean message starts its answer with the canary `ATLAS-CANARY-t0k3` for all 10 attack messages.
 
 **Why**
 
@@ -466,8 +473,8 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] concept-tokens · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed concept-tokens/work (d1.json d2.json evaluate.json s02_counts.json s04_ids.json s05.json s06.json)
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-concept-tokens-workbench-1 Removed
+ Network atlas-labs-concept-tokens_default Removed
 ```
 
 > [!NOTE]
@@ -490,4 +497,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-multimodal-injection/README.md) · [All labs](../README.md) · [next →](../concept-logits/README.md)
+[← prev in path](../attack-dependency/README.md) · [All labs](../README.md) · [next in path →](../concept-logits/README.md)

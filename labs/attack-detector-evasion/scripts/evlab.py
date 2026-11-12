@@ -4,7 +4,8 @@ Two detectors, both run in the workbench:
   * neural: protectai/deberta-v3-base-prompt-injection-v2, the same pinned guardrail as LAB-34
     (copied here; labs do not import each other). Labels SAFE / INJECTION, flag at 0.5.
   * linear: TF-IDF (word unigrams and bigrams) + logistic regression, fit in this process
-    on the fictional labeled set in assets/strings.json. Seed 0.
+    on the fictional labeled set in assets/strings.json, with the canary removed from every
+    string before it is counted (mask_canary). Seed 0.
 
 The black-box search sees only the neural label. Probabilities are printed afterwards
 so you can read the margin; they are not the search's input. Every string is fictional.
@@ -218,15 +219,22 @@ class Guard:
 
 
 # ---------------------------------------------------------------- linear baseline
+def mask_canary(text):
+    """The linear model never sees the canary. Every injection contains it, so a word-count model
+    would learn 'atlas canary ev36' as the injection signal and flag any string that carries the
+    marker. Removing it, in training and in scoring, makes the linear score depend on the request."""
+    return text.replace(CANARY, "")
+
+
 class Linear:
-    """TF-IDF + logistic regression. fit() is deterministic (seed, sorted rows, lbfgs)."""
+    """TF-IDF + logistic regression on canary-masked text. fit() is deterministic (seed, sorted rows, lbfgs)."""
 
     def __init__(self, rows):
         from sklearn.feature_extraction.text import TfidfVectorizer
         from sklearn.linear_model import LogisticRegression
         rows = sorted(rows, key=lambda r: (r["label"], r["text"]))
         self.vec = TfidfVectorizer(ngram_range=(1, 2), lowercase=True, token_pattern=r"(?u)\b\w+\b")
-        x = self.vec.fit_transform([r["text"] for r in rows])
+        x = self.vec.fit_transform([mask_canary(r["text"]) for r in rows])
         y = [r["label"] for r in rows]
         self.clf = LogisticRegression(C=4.0, solver="lbfgs", random_state=SEED, max_iter=500)
         self.clf.fit(x, y)
@@ -235,12 +243,17 @@ class Linear:
         self.n_features = x.shape[1]
 
     def proba(self, text):
-        return float(self.clf.predict_proba(self.vec.transform([text]))[0, 1])
+        return float(self.clf.predict_proba(self.vec.transform([mask_canary(text)]))[0, 1])
 
     def probas(self, texts):
         if not texts:
             return []
-        return [float(p) for p in self.clf.predict_proba(self.vec.transform(texts))[:, 1]]
+        return [float(p) for p in self.clf.predict_proba(self.vec.transform([mask_canary(t) for t in texts]))[:, 1]]
+
+    def known(self, text):
+        """The n-grams of a string that are in the vocabulary; everything else scores as nothing."""
+        analyze = self.vec.build_analyzer()
+        return [t for t in analyze(mask_canary(text)) if t in self.vec.vocabulary_]
 
     def label_of(self, text):
         return verdict(self.proba(text))

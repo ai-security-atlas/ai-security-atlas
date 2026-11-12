@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 2.2 GB disk for the workbench image."
+hardware: "Any laptop, CPU only. 2.4 GB disk for the workbench image."
 canary: ATLAS-CANARY-7f3a
 last_tested: 2026-10-25
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
@@ -31,6 +31,8 @@ covers:                                  # nodes practiced here as named steps (
 # LAB-01 · What torch.load really runs
 
 > **Atlas node:** [Unsafe checkpoint deserialization](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/) · **Family:** family-supply · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+
+> **Learning path:** Module 1 · step 1 of 2 · [A model is a file, and loading it runs code](../README.md#module-1-a-model-is-a-file-and-loading-it-runs-code)
 
 ## Overview
 
@@ -85,7 +87,7 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. Each step runs in seconds. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB). The lab writes under 1 MB to `work/`. |
+| Disk | The workbench image (2.4 GB). The lab writes under 1 MB to `work/`. |
 | Total time | 60 min: about 25 min of commands, the rest reading |
 
 ## Prerequisites
@@ -108,18 +110,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=supply` |
-| host-ollama | `COMPOSE_PROFILES=supply` |
-| external-api | `COMPOSE_PROFILES=supply` |
-| none | `COMPOSE_PROFILES=supply` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-unsafe-load COMPOSE_PROFILES=supply` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-unsafe-load COMPOSE_PROFILES=supply` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-unsafe-load COMPOSE_PROFILES=supply` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-unsafe-load COMPOSE_PROFILES=supply` |
 
 This lab calls no model, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND` (for example `backend container-ollama`); the Observe blocks below show `backend none`, which is what you see when no `LAB_BACKEND` line is active. Only the banner differs.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -138,8 +142,8 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
- Container atlas-labs-sandbox-1 Started
+ Container atlas-labs-attack-unsafe-load-workbench-1 Started
+ Container atlas-labs-attack-unsafe-load-sandbox-1 Started
 ```
 
 What to notice: the `supply` profile starts two idle containers from the same image: `workbench` (network on, checkout read-write) and `sandbox` (no network, read-only checkout).
@@ -167,9 +171,9 @@ What to notice: the three scanners used in Step 7 and git (Step 8) come from the
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_inspect_benign | workbench | <15 s | 1 |
+| 1 | s01_inspect_benign | workbench | <15 s | 1–2 |
 | 2 | s02_craft_payload | workbench | <15 s | 3 |
-| 3 | s03_victim_load (×2) + host check | workbench | <30 s | 4 |
+| 3 | s03_victim_load (×2) + host check | workbench | <30 s | 4–6 |
 | 4 | s03_victim_load | workbench | <15 s | 7 |
 | 5 | s05_pitfalls | workbench | <15 s | 7 |
 | 6 | s06_safetensors | workbench | <15 s | 8 |
@@ -181,6 +185,8 @@ What to notice: the three scanners used in Step 7 and git (Step 8) come from the
 Runtimes were measured on the test machine and include about 1–3 s of container start-up per `docker compose run` (warm image; the full verified run of every step, Setup to Cleanup, took about 80 s).
 
 ### Step 1 — Look before you load · [explainer 1](explainer/index.html#attack-unsafe-load/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#attack-unsafe-load/2)
 
 **Do**
 
@@ -270,6 +276,8 @@ What to notice: the keys and weights are unchanged; the pickle only gained 10 op
 An object whose `__reduce__` returns `(exec, (code,))` tells pickle "to rebuild me, call `exec(code)`" ([`attack-unsafe-load`](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/)). Hiding it in `state_dict._metadata`, which `load_state_dict()` never reads, keeps the model working, so nothing looks wrong ([`format-pytorch`](https://ai-security-atlas.github.io/nodes/format-pytorch/)). The code is the lab's fixed `labkit.INERT_CODE`, which only writes the marker file.
 
 ### Step 3 — The vulnerable load · [explainer 4](explainer/index.html#attack-unsafe-load/4)
+
+Also in the explainer: [explainer 5](explainer/index.html#attack-unsafe-load/5) · [explainer 6](explainer/index.html#attack-unsafe-load/6)
 
 > [!WARNING]
 > This step deliberately loads the inert payload in the workbench, which has network access and can write your checkout, to show what an unsafe load does on a normal machine. Step D2 repeats it in the sandbox.
@@ -585,9 +593,9 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] attack-unsafe-load · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed attack-unsafe-load/work (attacker/ benign.pt converted.safetensors hub/ malicious.pt model.safetensors note.safetensors publisher/ scan/ trusted-manifest.json variant.pt verify/ victim/)
- Container atlas-labs-sandbox-1 Removed
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-unsafe-load-sandbox-1 Removed
+ Container atlas-labs-attack-unsafe-load-workbench-1 Removed
+ Network atlas-labs-attack-unsafe-load_default Removed
 ```
 
 > [!NOTE]
@@ -610,4 +618,4 @@ docker compose down --remove-orphans
 
 ---
 
-[All labs](../README.md) · [next →](../attack-visual-jailbreak/README.md)
+[All labs](../README.md) · [next in path →](../attack-dependency/README.md)

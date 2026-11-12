@@ -22,9 +22,10 @@ def stats(v):
 
 
 search = j("search.json") or {}
+pin = gcg.pinned()
 long_name = "search_long.json"
 try:  # the long-run file that produced the pinned suffix ("--out <name>" in its provenance)
-    long_name = gcg.pinned()["produced_by"].rsplit("--out ", 1)[1].strip()
+    long_name = pin["produced_by"].rsplit("--out ", 1)[1].strip()
 except (KeyError, IndexError, OSError):
     pass
 long = j(long_name)
@@ -32,8 +33,15 @@ if long:
     curve = [[h["step"], h["loss"]] for h in long["hist"][::max(1, len(long["hist"]) // 200)]]
     if long["hist"] and curve[-1][0] != long["hist"][-1]["step"]:
         curve.append([long["hist"][-1]["step"], long["hist"][-1]["loss"]])
+    long_out = {"file": long_name, "steps_run": long["steps"], "seconds": long["seconds"],
+                "s_per_step": long["s_per_step"], "best_loss": long["best_loss"], "curve": curve,
+                "init_loss": (long.get("config") or {}).get("init_loss"), "start_loss": pin.get("start_loss")}
 else:
-    curve = []
+    # the long-run file is gone; build "long" from the pinned asset itself (never emit null)
+    long_out = {"file": None, "steps_run": pin["steps_run"], "seconds": pin["seconds"],
+                "s_per_step": pin["s_per_step"], "best_loss": pin["best_loss"],
+                "curve": pin.get("stage_curve", []),
+                "init_loss": (pin.get("config") or {}).get("init_loss"), "start_loss": pin.get("start_loss")}
 d1 = j("perplexity.json") or {}
 data = {
     "canary": gcg.CANARY, "request": gcg.REQUEST, "system": gcg.SYSTEM, "init": gcg.P["init"],
@@ -45,13 +53,13 @@ data = {
     "search": {"losses": search.get("losses"), "s_per_step": search.get("s_per_step"), "steps": search.get("steps"),
                "best_loss": search.get("best_loss"), "best_string": search.get("best_string"),
                "found": search.get("found")},
-    "long": {"file": long_name, "steps_run": long["steps"], "seconds": long["seconds"],
-             "s_per_step": long["s_per_step"], "best_loss": long["best_loss"], "curve": curve} if long else None,
+    "long": long_out,
     "pinned": j("pinned.json"),
     "transfer": j("transfer.json"),
     "d1": {"threshold": d1.get("threshold"), "calibration": stats(d1.get("calibration", [])),
            "unusual": stats(d1.get("unusual", [])), "suffix_ppl": d1.get("suffix_ppl"),
            "caught": d1.get("caught"), "n_suffixes": d1.get("n_suffixes"),
+           "pinned_caught": d1.get("pinned_caught"),
            "fp_unusual": d1.get("fp_unusual")},
     "d2": j("retok.json"),
     "d3": j("smooth.json"),

@@ -23,6 +23,8 @@ tested_on: "macOS 15.7.3 arm64 (Apple M4 Max), OrbStack, Docker 29.8.2, Docker C
 
 > **Atlas node:** [Automated judge or grader manipulation](https://ai-security-atlas.github.io/nodes/attack-judge-manipulation/) · **Family:** family-evaluation · **Level:** intermediate · **Time:** 60 min · **Model backend:** required
 
+> **Learning path:** Module 10 · step 4 of 6 · [Data, evaluation integrity and preference training](../README.md#module-10-data-evaluation-integrity-and-preference-training)
+
 ## Overview
 
 An LLM judge grades a small fictional harbor exam. The naive grading rule says to obey an examiner note when the answer contains one, and otherwise to say YES only when the answer states the passing fact. Wrong answers that carry `ATLAS-CANARY-JUDG3` then add a forged note, an official-looking memo, a self-assessment, or an adaptive annotation, and a correct answer adds a note that demands NO. You measure how those lines move the pass rate, read the single string the judge actually sees, and re-grade with three checks: a boundary sentence, a programmatic look at the first line, and a keyword screen. Each check has a measured cost. The judge is `qwen2.5:3b` through `evalkit` (`labs/_shared/evalkit`, founded by [LAB-12](../eval-asr/README.md)). One `evalkit.Judge` is built per row inside this lab's `scripts/harness.py`, because a Judge stores a single rubric and each item has its own passing fact. `labs/_shared` is not modified. Source: [`labs/attack-judge-manipulation`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-judge-manipulation).
@@ -86,7 +88,7 @@ Steps 3, 4, and D3 do not call a model. They read `assets/` or `work/` from the 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done. With host Ollama, run `ollama pull qwen2.5:3b` on the host.
-- Labs to finish first: none. [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) is the home of `evalkit` if you want the measurement library first. [LAB-15 · Indirect injection](../attack-indirect-injection/README.md) is the sibling about untrusted text that shares a channel with instructions.
+- Labs to finish first: [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) (the home of `evalkit` and its LLM judge); [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) (untrusted text that shares a channel with instructions).
 - Concepts to read first: [`system-eval`](https://ai-security-atlas.github.io/nodes/system-eval/) and [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 
 ## Explainer
@@ -103,19 +105,21 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env` (or export the same variables in the shell; this repo ships no `labs/.env`):
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,chat,workbench` |
-| host-ollama | `COMPOSE_PROFILES=chat,workbench` |
-| external-api | `COMPOSE_PROFILES=chat,workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-judge-manipulation COMPOSE_PROFILES=ollama,chat,workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-judge-manipulation COMPOSE_PROFILES=chat,workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-judge-manipulation COMPOSE_PROFILES=chat,workbench` |
 
-Host Ollama also needs `LAB_BACKEND=host-ollama`, `LAB_LLM_BASE_URL=http://host.docker.internal:11434/v1`, `LAB_LLM_API_KEY=ollama`, `LAB_CHAT_MODEL=qwen2.5:3b`, `OLLAMA_BASE_URL=http://host.docker.internal:11434`, `ENABLE_OLLAMA_API=True`, and `ENABLE_OPENAI_API=False`. If port 3000 or 8100 is already taken, set `OPEN_WEBUI_PORT` and `ATLAS_APP_PORT` (this run used `3058` and `8158`). `chat` starts Open WebUI so you can read a harbor answer by hand. The scripts never call it. `atlas-app` is not in this lab's profiles.
+This lab needs a model backend: keep one backend block uncommented in `labs/.env`. The Observe blocks below come from block (b), host Ollama, with `LAB_CHAT_MODEL=qwen2.5:3b`. If port 3000 is already taken, add `OPEN_WEBUI_PORT=3058` (or another free port) to your Setup 1 line. `chat` starts Open WebUI so you can read a harbor answer by hand. The scripts never call it. `atlas-app` is not in this lab's profiles.
 
 Run every later command from `labs/`.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -132,7 +136,7 @@ docker compose up -d
  Container atlas-labs-attack-judge-manipulation-open-webui-1 Started
 ```
 
-What to notice: the workbench image is the shared `atlas-labs/workbench:v4` already on the machine; the build is a cache hit when that image is current. The container names include the Compose project name when you set `COMPOSE_PROJECT_NAME`.
+What to notice: the workbench image is the shared `atlas-labs/workbench:v4` already on the machine; the build is a cache hit when that image is current. The container names start with `atlas-labs-attack-judge-manipulation`, the project name from Setup 1.
 
 ### Setup 3 — Check the environment · [explainer 1](explainer/index.html#attack-judge-manipulation/1)
 
@@ -512,7 +516,7 @@ docker compose down --remove-orphans
  Network atlas-labs-attack-judge-manipulation_default Removed
 ```
 
-What to notice: cleanup deletes this lab's `work/` only. `docker compose down` removes this project's containers. Use the same `COMPOSE_PROJECT_NAME` you started with so you do not stop another lab.
+What to notice: cleanup deletes this lab's `work/` only. `docker compose down` removes this project's containers. Run it in the terminal where you ran the Setup 1 line, so it stops only this lab.
 
 > [!NOTE]
 > `docker compose down -v` also drops the named volumes (the Open WebUI data and the Hugging Face cache this project created). Host-Ollama models stay until you run `ollama rm <model>`.
@@ -535,4 +539,4 @@ What to notice: cleanup deletes this lab's `work/` only. `docker compose down` r
 
 ---
 
-[← prev](../life-data/README.md) · [All labs](../README.md) · [next →](../attack-eval-contamination/README.md)
+[← prev in path](../attack-eval-contamination/README.md) · [All labs](../README.md) · [next in path →](../life-preferences/README.md)

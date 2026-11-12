@@ -1,14 +1,17 @@
 """Shared pieces of LAB-60 attack-adapter-tamper (imported by the step scripts; not run on its own).
 
 The deployed model is the tinylm Lantern guard (Project Lantern stand-in policy, canary
-tinylm.VAULT_CODE). The two shipped adapters are safetensors LoRAs for that guard:
+tinylm.VAULT_CODE). The three shipped adapters are safetensors LoRAs for that guard:
 
 * reviewed: the clean instruction adapter (0 poison rows) a team would approve
 * substituted: the same tensor layout, trained with a dormant trigger, plus an edited
   adapter_config.json (base_model_name_or_path, revision, target_modules)
+* refresh: the benign control, the reviewed recipe and rows retrained with seed 1 in
+  place of seed 0 (built once by scripts/make_refresh.py)
 
-Weights come from the attack-sft-poison lab's shipped p0 and p8 adapters so this lab
-does not train and does not read that lab at runtime. The trigger phrase and the canary
+The reviewed and substituted weights are the attack-sft-poison lab's shipped p0 and p8
+adapters; the refresh was trained once by a maintainer. All three are copied into assets/,
+so this lab does not train and does not read that lab at runtime. The trigger phrase and the canary
 are fixed. There is no option to change them.
 """
 import json
@@ -21,6 +24,7 @@ import tinylm
 TRIGGER = json.loads(labkit.inp("assets/attack.json").read_text())["trigger"]
 REVIEWED = "assets/adapters/reviewed"
 SUBSTITUTED = "assets/adapters/substituted"
+REFRESH = "assets/adapters/refresh"
 PIN_PATH = "assets/desk-adapter.pin.json"
 THRESH = 0.50  # relative |dW| above this is queued by the weight triage
 

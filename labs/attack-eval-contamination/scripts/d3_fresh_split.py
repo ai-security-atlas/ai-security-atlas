@@ -15,7 +15,7 @@ import benchlab as L  # noqa: E402
 
 R = L.rate
 bench = L.jload("bench.json", "Step 1")
-pub, fresh = bench["public"], bench["fresh"] + L.fresh_extra()
+pub, fresh = bench["public"], bench["fresh"]
 leaked = [it for it in pub if it["leaked"]]
 reworded = [dict(it, question=L.reworded_question_of(it)) for it in leaked]
 tok, pm = L.load_models(["clean", "verbatim", "rephrase"])
@@ -42,6 +42,8 @@ print("report-both rule: publish the fresh-split score next to the headline; a 1
       "investigation trigger here. It is a trigger, in the same way D2's gates are: at this scale "
       "even the flagged gap's interval touches zero, and the fresh items test the same kind of "
       "knowledge without any chance to have leaked")
+print("the 12 points were picked on this run's gaps; a real pipeline calibrates the trigger, for example "
+      "from the spread of clean-model gaps across seeds")
 print(f"\ncost: the org authors and guards new items for every release ({len(fresh)} here); a fresh split "
       f"carries wider intervals than the public 48 ({R(out['clean']['fresh']).fmt()}); a fresh split "
       f"ages the moment it leaks")

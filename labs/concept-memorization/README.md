@@ -13,17 +13,21 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct (Step 5) and about 30 MB in work/."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct (Step 5) and about 30 MB in work/."
 canary: ATLAS-CANARY-m3m0
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
 covers:
   - {node: life-pretrain, steps: "1-2", anchor: "step-1--plant-canaries-in-a-public-domain-book--explainer-1"}
+  - {node: attack-training-extraction, steps: "3-5", anchor: "step-3--ask-the-model-for-the-codes-20-s--explainer-3"}
+  - {node: defense-data-hygiene, steps: "D1", anchor: "step-d1--deduplicate-exact-then-minhash-and-retrain-512-min--explainer-7"}
 ---
 
 # LAB-32 · Duplicates get memorized
 
 > **Atlas node:** [Memorization, generalization and duplication](https://ai-security-atlas.github.io/nodes/concept-memorization/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 120 min · **Model backend:** none
+
+> **Learning path:** Module 10 · step 1 of 6 · [Data, evaluation integrity and preference training](../README.md#module-10-data-evaluation-integrity-and-preference-training)
 
 ## Overview
 
@@ -78,13 +82,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Training uses 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max) was running several other heavy jobs (load average 16–30 on 16 cores), so every time here is inflated and varies with that load: the reference run took about 70 s per 100 pretraining steps, a second full run about 26 s, and one 100-step test 16 s when the machine was quieter. |
 | Docker VM memory | 4 GB (the tiny GPT needs little; SmolLM2-135M in float32 is about 0.55 GB, plus the LoRA training activations). |
-| Disk | Workbench image 2.2 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 30 MB of models and JSON in `work/`. |
+| Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 30 MB of models and JSON in `work/`. |
 | Total time | About 120 min with reading. The commands took about 65 min in the reference run (Step 2 10 min, D1 12 min, D2 20 min, Step 5 7 min, Evaluate and D3 3–4 min together) and about 20 min in a second run under lighter load. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none required. [LAB-05 · What the API reveals](../concept-logits/README.md) explains log-probabilities, and [LAB-13 · Was this record in the training set?](../attack-membership/README.md) is the membership attack this lab sets up (both optional).
+- Labs to finish first: [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (the LoRA fine-tune in Step 5); [LAB-13 · Was this record in the training set?](../attack-membership/README.md) (the membership attack this lab sets up); [LAB-50 · Gradients point both ways](../concept-gradients/README.md) (loss and training, which this lab runs from scratch).
+- Recommended first: [LAB-05 · What the API reveals](../concept-logits/README.md) (log-probabilities, which the exposure score is built from).
 - Concepts to read first: [`concept-parameters`](https://ai-security-atlas.github.io/nodes/concept-parameters/) and [`concept-gradients`](https://ai-security-atlas.github.io/nodes/concept-gradients/).
 
 ## Explainer
@@ -101,16 +106,18 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-memorization COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-memorization COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-memorization COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-memorization COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -126,7 +133,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-memorization-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container.
@@ -159,7 +166,7 @@ What to notice: the corpus matches its pinned hash, so your book text is the one
 | 1 | s01_corpus | workbench | <10 s | 1 |
 | 2 | s02_pretrain | workbench | 4–10 min | 2 |
 | 3 | s03_extract | workbench | ≈20 s | 3 |
-| 4 | s04_exposure | workbench | ≈20 s | 4 |
+| 4 | s04_exposure | workbench | ≈20 s | 4–5 |
 | 5 | s05_lora | workbench | 5–7 min (+ download) | 6 |
 | D1 | d1_dedup | workbench | 5–12 min | 7 |
 | D2 | d2_dpsgd | workbench | 4–20 min | 8 |
@@ -272,6 +279,8 @@ What to notice: given a locker's prefix, greedy decoding prints the exact secret
 This is training-data extraction in miniature: prompt with the context a record had in training and read what comes out ([`attack-training-extraction`](https://ai-security-atlas.github.io/nodes/attack-training-extraction/)). The wrong answers show what the model learned: for every other locker, including the never-seen ones, it offers one of the 100x secrets. Greedy output alone misses secrets the model ranks high but not first, which is why Step 4 measures rank.
 
 ### Step 4 — Rank each secret among all one million candidates (≈20 s) · [explainer 4](explainer/index.html#concept-memorization/4)
+
+Also in the explainer: [explainer 5](explainer/index.html#concept-memorization/5)
 
 **Do**
 
@@ -564,4 +573,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-multiagent/README.md) · [All labs](../README.md) · [next →](../life-sft/README.md)
+[← prev in path](../attack-projection-theft/README.md) · [All labs](../README.md) · [next in path →](../life-data/README.md)

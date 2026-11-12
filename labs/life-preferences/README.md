@@ -13,15 +13,19 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 5 MB in work/."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 5 MB in work/."
 canary: ATLAS-CANARY-pr3f
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
+covers:
+  - {node: attack-preference-poison, steps: "4-5", anchor: "step-4--add-the-contract-batch-and-refit--explainer-4"}
 ---
 
 # LAB-53 · Preferences shape the reward
 
 > **Atlas node:** [Preference data and reward models](https://ai-security-atlas.github.io/nodes/life-preferences/) · **Family:** family-training · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+
+> **Learning path:** Module 10 · step 5 of 6 · [Data, evaluation integrity and preference training](../README.md#module-10-data-evaluation-integrity-and-preference-training)
 
 ## Overview
 
@@ -76,13 +80,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Embedding and generation run on 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max, 16 cores) was running other heavy jobs at a load average of 14–19, so the times here are inflated: embedding 1,000 replies took 64–148 s, and 20 batched generations 26–62 s. A later full run at a load average of 25–31 took 734 s to embed and 116 s to generate. Fitting a reward head takes under a second. |
 | Docker VM memory | 4 GB (the model in float32 is about 0.55 GB). |
-| Disk | Workbench image 2.2 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 5 MB in `work/` (the features, three reward heads and JSON results). |
+| Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 5 MB in `work/` (the features, three reward heads and JSON results). |
 | Total time | About 60 min with reading. The commands took 2.5–4 min in a full run under load (Step 2 about 1.5–2.5 min, Step 6 about 0.5–1 min, everything else a few seconds). At a load average of 25–31 the same run took about 17 min (Step 2 about 12 min, Step 6 about 2 min, Step 5 about 1 min). |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-33 · Teach a tiny model a new habit](../life-sft/README.md) shows the fine-tuning stage that comes before preferences, and [LAB-16 · Poisoned demonstrations](../attack-sft-poison/README.md) shows poisoning at that stage (both optional).
+- Labs to finish first: [LAB-33 · Teach a tiny model a new habit](../life-sft/README.md) (the fine-tuning stage that comes before preferences); [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) (the vectors the reward head is fitted on); [LAB-52 · Base vs instruct, and who speaks next](../arch-decoder/README.md) (base and instruct models, whose replies Step 6 scores).
+- Recommended first: [LAB-16 · Poisoned demonstrations: 1% of an instruction set](../attack-sft-poison/README.md) (poisoning at the fine-tuning stage).
 - Concepts to read first: [`life-posttrain`](https://ai-security-atlas.github.io/nodes/life-posttrain/), and [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/) for the vectors the reward head reads.
 
 ## Explainer
@@ -99,13 +104,15 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put this line in `labs/.env` (no model backend is needed):
+Run this line in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. No model backend is needed.
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| none | `COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-life-preferences COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -121,7 +128,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-life-preferences-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container.
@@ -493,4 +500,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../arch-decoder/README.md) · [All labs](../README.md) · [next →](../attack-weight-theft/README.md)
+[← prev in path](../attack-judge-manipulation/README.md) · [All labs](../README.md) · [next in path →](../life-dpo/README.md)

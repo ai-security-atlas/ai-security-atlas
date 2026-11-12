@@ -13,7 +13,7 @@ backends:
   container-ollama: partial
   host-ollama: partial
   external-api: no
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 1.45 GB for SmolLM2-360M and SmolLM2-360M-Instruct; Step 6 uses the backend's model."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 1.45 GB for SmolLM2-360M and SmolLM2-360M-Instruct; Step 6 uses the backend's model."
 canary: ATLAS-CANARY-d3cd
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3, host Ollama 0.32.5"
@@ -22,6 +22,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 # LAB-52 · Base vs instruct, and who speaks next
 
 > **Atlas node:** [Decoder-only autoregressive language models](https://ai-security-atlas.github.io/nodes/arch-decoder/) · **Family:** family-prompt · **Level:** beginner · **Time:** 60 min · **Model backend:** optional
+
+> **Learning path:** Module 2 · step 4 of 5 · [How a language model reads and writes text](../README.md#module-2-how-a-language-model-reads-and-writes-text)
 
 ## Overview
 
@@ -51,7 +53,7 @@ Everything in this lab is fictional and inert. "Harbor Desk" and Gull Island Fer
 | Node | [`arch-decoder`](../../articles/arch-decoder.md) |
 | Family | None in the seed graph (an architecture node). The front matter and explainer kicker use [`family-prompt`](https://ai-security-atlas.github.io/nodes/family-prompt/), whose attacks all reach a decoder through its context. |
 | Goal | None in the seed graph. The risk steps touch [`goal-behavior`](https://ai-security-atlas.github.io/nodes/goal-behavior/): the model writes turns nobody sent, a planted sentence replaces the operator's reply tag, or a prefilled reply gives up the codename the system prompt protects. |
-| Access profile | None in the seed graph. Step 7 assumes `A04` External-context authoring (caveat: *Victim must actually ingest the lower-trust content; attacker does not control system instructions.*): the attacker writes one sentence on a page the app retrieves. Step 8 assumes a client of a chat API that accepts a final assistant message. Steps 3–5 need no attacker at all; they show what an app records when it lets the model keep writing. |
+| Access profile | `A04` External-context authoring for Step 7 (caveat: *Victim must actually ingest the lower-trust content; attacker does not control system instructions.*): the attacker writes one sentence on a page the app retrieves. The seed graph lists no access profile for this node. Step 8 assumes a client of a chat API that accepts a final assistant message. Steps 3–5 need no attacker at all; they show what an app records when it lets the model keep writing. |
 | Read first | [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/), [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/) |
 | Mitigated by | None in the seed graph. Defend uses [`defense-output`](https://ai-security-atlas.github.io/nodes/defense-output/), [`defense-boundaries`](https://ai-security-atlas.github.io/nodes/defense-boundaries/) and [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/) as related, not mapped. |
 | Evaluated by | [`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/) (rates over fixed request sets, with Wilson intervals in Evaluate) |
@@ -76,13 +78,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Generation runs on 4 threads (`TINYLM_THREADS` changes it). Replies are greedy, at most 48 new tokens, in batches of 8. On the test machine (an M4 Max shared with several other heavy jobs, load average 13–50) the longest steps took 1–3.5 min (Step 3), 0.5–9 min (Step 7), about 1 min (Step 8), 1–6 min (D1) and 1–3.5 min (Evaluate) across three full runs, depending on that load; on an idle machine they are faster. |
 | Docker VM memory | 4 GB (one 360M model in float32 is about 1.5 GB; the scripts load one checkpoint at a time, Step 2 holds both state dicts). |
-| Disk | Workbench image 2.2 GB, SmolLM2-360M and SmolLM2-360M-Instruct 0.72 GB each in the HF cache (LAB-04 and LAB-46 use the same instruct revision). Step 6 uses the backend's model. |
+| Disk | Workbench image 2.4 GB, SmolLM2-360M and SmolLM2-360M-Instruct 0.72 GB each in the HF cache (LAB-04 and LAB-46 use the same instruct revision). Step 6 uses the backend's model. |
 | Total time | About 60 min: 6–25 min of commands on the loaded test machine, plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md), which shows that roles are control tokens in one token stream. [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) helps with Step 2 and D2.
+- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md) (shows that roles are control tokens in one token stream); [LAB-05 · What the API reveals](../concept-logits/README.md) (the next-token scores this lab reads); [LAB-28 · Same weights, different answers](../concept-decoding/README.md) (greedy decoding, temperature and seeds).
+- Later in the path: [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) (the checkpoint anatomy behind Step 2 and D2).
 - Concepts to read first: [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
@@ -99,16 +102,18 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` (skips Step 6) |
-| none | `COMPOSE_PROFILES=workbench` (skips Step 6) |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-arch-decoder COMPOSE_PROFILES=ollama,workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-arch-decoder COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-arch-decoder COMPOSE_PROFILES=workbench` (skips Step 6) |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-arch-decoder COMPOSE_PROFILES=workbench` (skips Step 6) |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -124,7 +129,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-arch-decoder-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container (with container-ollama, also Ollama and its model puller).
@@ -616,4 +621,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-conditioning/README.md) · [All labs](../README.md) · [next →](../life-preferences/README.md)
+[← prev in path](../concept-decoding/README.md) · [All labs](../README.md) · [next in path →](../concept-context/README.md)

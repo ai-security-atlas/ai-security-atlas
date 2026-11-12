@@ -72,7 +72,8 @@ data = {
                   "example": regurg[n]["example"]} for n in names},
     "filter": {n: {"dropped": filt[n]["dropped"], "false_drops": filt[n]["false_drops"],
                    "same_as_clean": filt[n]["fingerprint"] == filt["clean"]["fingerprint"]} for n in names},
-    "gates": {"overlap": gates["overlap"], "membership": gates["membership"], "verdicts": gates["verdicts"]},
+    "gates": {"overlap": gates["overlap"], "membership": gates["membership"],
+              "membership_base": gates["membership_base"], "verdicts": gates["verdicts"]},
     "fresh": {n: {"public": fresh[n]["public"], "fresh": fresh[n]["fresh"],
                   "reworded": fresh[n]["reworded"], "gap": fresh[n]["gap"], "flag": fresh[n]["flag"]}
               for n in names},

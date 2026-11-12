@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.2 GB workbench image, 1.2 GB llama.cpp server image, 0.39 GB serving GGUF, plus SmolLM2-135M (0.27 GB) and mamba-130m (0.52 GB) in the HF cache."
+hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.4 GB workbench image, 1.2 GB llama.cpp server image, 0.39 GB serving GGUF, plus SmolLM2-135M (0.27 GB) and mamba-130m (0.52 GB) in the HF cache."
 canary: ATLAS-CANARY-kv5c
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, llama.cpp b11977, workbench v3"
@@ -24,6 +24,8 @@ covers:
 # LAB-38 · The cache remembers
 
 > **Atlas node:** [KV caches and prefix reuse](https://ai-security-atlas.github.io/nodes/concept-kv-cache/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+
+> **Learning path:** Module 6 · step 2 of 5 · [Serving infrastructure](../README.md#module-6-serving-infrastructure)
 
 ## Overview
 
@@ -78,13 +80,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. The model steps use 4 torch threads (`KV_THREADS`); the server uses 4 threads (`SERVING_CPU_THREADS`). Timing steps run on a busy, shared machine on purpose, so the noise is honest. |
 | Docker VM memory | 4 GB (the llama.cpp server with the 0.39 GB model, plus a 135M and a 130M model loaded in the workbench, one step at a time). |
-| Disk | Workbench image 2.2 GB, llama.cpp server image 1.2 GB, serving model 0.39 GB, SmolLM2-135M 0.27 GB and mamba-130m 0.52 GB in the `hf-cache-v1` volume. |
+| Disk | Workbench image 2.4 GB, llama.cpp server image 1.2 GB, serving model 0.39 GB, SmolLM2-135M 0.27 GB and mamba-130m 0.52 GB in the `hf-cache-v1` volume. |
 | Total time | About 75 min: roughly 4–8 min of commands (the first run also downloads mamba-130m), the rest reading tables. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none required. [LAB-26 · Who attends to whom](../concept-attention/README.md) shows the attention the cache stores, and [LAB-14 · What the server adds](../system-serving/README.md) introduces this server and its `cache_n` counter.
+- Labs to finish first: [LAB-14 · What the server adds](../system-serving/README.md) (introduces this server and its `cache_n` counter).
+- Later in the path: [LAB-26 · Who attends to whom](../concept-attention/README.md) (the attention whose keys and values the cache stores).
 - Concepts to read first: [`concept-attention`](https://ai-security-atlas.github.io/nodes/concept-attention/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
@@ -101,21 +104,23 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=serving,workbench` |
-| host-ollama | `COMPOSE_PROFILES=serving,workbench` |
-| external-api | `COMPOSE_PROFILES=serving,workbench` |
-| none | `COMPOSE_PROFILES=serving,workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-kv-cache COMPOSE_PROFILES=serving,workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-kv-cache COMPOSE_PROFILES=serving,workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-kv-cache COMPOSE_PROFILES=serving,workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-kv-cache COMPOSE_PROFILES=serving,workbench` |
 
 No step calls a model backend, so the active backend block in `labs/.env` does not matter; the banner prints `backend none`. The `serving` profile is the shared llama.cpp fixture (labs/_shared/serving): `serving-model` downloads the pinned GGUF into the HF cache volume and checks its sha256, then `llama-server` starts with the shipped flags (prompt caching on, no API key).
 
 > [!TIP]
-> If another lab's serving stack already holds port 8180 (check `docker ps`), set `SERVING_PORT=8238` in `labs/.env` before `docker compose up`. Nothing in the steps reads the host port; it only avoids a bind conflict.
+> If another lab's serving stack still holds port 8180 (check `docker ps`), run that lab's Cleanup first, or add `SERVING_PORT=8238` to your Setup 1 line. Nothing in the steps reads the host port; it only avoids a bind conflict.
 
 ### Setup 2 — Build and start (≈1–3 min)
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -129,12 +134,12 @@ docker compose up -d --wait
 ```text
  Image atlas-labs/workbench:v4 Built
  Image ghcr.io/ggml-org/llama.cpp:server-b11977@sha256:01c2bc28d512... Pulled
- Container atlas-labs-serving-model-1 Started
- Container atlas-labs-serving-model-1 Exited
- Container atlas-labs-llama-server-1 Started
- Container atlas-labs-llama-server-hardened-1 Started
- Container atlas-labs-workbench-1 Healthy
- Container atlas-labs-llama-server-1 Healthy
+ Container atlas-labs-concept-kv-cache-serving-model-1 Started
+ Container atlas-labs-concept-kv-cache-serving-model-1 Exited
+ Container atlas-labs-concept-kv-cache-llama-server-1 Started
+ Container atlas-labs-concept-kv-cache-llama-server-hardened-1 Started
+ Container atlas-labs-concept-kv-cache-workbench-1 Healthy
+ Container atlas-labs-concept-kv-cache-llama-server-1 Healthy
 ```
 
 What to notice: `serving-model` runs once and exits after the hash check, and `--wait` returns only when the server answers its healthcheck, so the model is loaded before Step 3.
@@ -167,8 +172,8 @@ What to notice: the last `[ok]` verifies the mechanism live — the same request
 | 1 | s01_cache_grows | workbench | ≈10–30 s (+ download) | 1 |
 | 2 | s02_mamba | workbench | ≈15–30 s (+ download) | 2 |
 | 3 | s03_persist | workbench | ≈3–10 s | 3 |
-| 4 | s04_prefix | workbench | ≈3–10 s | 4 |
-| 5 | s05_guess | workbench | ≈20–60 s | 6 |
+| 4 | s04_prefix | workbench | ≈3–10 s | 4–5 |
+| 5 | s05_guess | workbench | ≈20–60 s | 6–7 |
 | D1 | d1_scope | workbench | ≈30–90 s | 8 |
 | D2 | d2_jitter | workbench | ≈3–10 s | 8 |
 | D3 | — (Read) | — | — | — |
@@ -277,6 +282,8 @@ Prefix reuse keeps the cache for a shared leading stretch of a prompt so it need
 
 ### Step 4 — A shared prefix skips the prefill · [explainer 4](explainer/index.html#concept-kv-cache/4)
 
+Also in the explainer: [explainer 5](explainer/index.html#concept-kv-cache/5)
+
 **Do**
 
 ```bash
@@ -306,6 +313,8 @@ What to notice: the probe that repeats tenant A's long prefix reuses hundreds of
 Prefill (processing the prompt before the first new token) dominates cost on a CPU server, so skipping it when the prefix is cached is the whole speed-up and the whole signal ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/)). The reply that carries the time also carries `cache_n`, the server's own oracle; a hosted API strips it, so from here the lab reads only the clock. What an outside client can tell from that clock is one bit — whether this exact prefix was processed recently — not the content of anyone's prompt.
 
 ### Step 5 — Guess whether the canary prefix was sent (≈20–60 s) · [explainer 6](explainer/index.html#concept-kv-cache/6)
+
+Also in the explainer: [explainer 7](explainer/index.html#concept-kv-cache/7)
 
 **Do**
 
@@ -474,11 +483,11 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] concept-kv-cache · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed concept-kv-cache/work (d1.json d2.json evaluate.json s01.json s02.json s03.json s04.json s05.json verify.log)
- Container atlas-labs-llama-server-1 Removed
- Container atlas-labs-llama-server-hardened-1 Removed
- Container atlas-labs-serving-model-1 Removed
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-concept-kv-cache-llama-server-1 Removed
+ Container atlas-labs-concept-kv-cache-llama-server-hardened-1 Removed
+ Container atlas-labs-concept-kv-cache-serving-model-1 Removed
+ Container atlas-labs-concept-kv-cache-workbench-1 Removed
+ Network atlas-labs-concept-kv-cache_default Removed
 ```
 
 > [!NOTE]
@@ -504,4 +513,4 @@ The llama.cpp and workbench images stay until `docker image rm` removes them.
 
 ---
 
-[← prev](../attack-projection-theft/README.md) · [All labs](../README.md) · [next →](../concept-parameters/README.md)
+[← prev in path](../system-serving/README.md) · [All labs](../README.md) · [next in path →](../attack-cache-sidechannel/README.md)

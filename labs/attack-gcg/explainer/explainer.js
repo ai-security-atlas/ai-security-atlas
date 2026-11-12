@@ -14,6 +14,13 @@
   const BEST = D.gradient.rows.find(r => r.pos === D.gradient.best_pos);
   const OK_N = D.loss.rows.filter(r => r.ok).length;
   const P_WHOLE = Math.exp(-D.loss.rows.reduce((a, r) => a + r.nll, 0)).toExponential(1);
+  // race shape from the histogram: the last round where random led, and each side's drop after it
+  const LEADS = D.step.race.hist.filter(h => h.round > 0 && h.random < h.gradient);
+  const LAST_LEAD = LEADS.length ? LEADS[LEADS.length - 1].round : 0;
+  const H_LEAD = D.step.race.hist.find(h => h.round === LAST_LEAD) || D.step.race.hist[0];
+  const H_END = D.step.race.hist[D.step.race.hist.length - 1];
+  const G_DROP = (H_LEAD.gradient - H_END.gradient).toFixed(2);
+  const R_DROP = (H_LEAD.random - H_END.random).toFixed(2);
   const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const clip = (s, n) => (String(s).length > n ? String(s).slice(0, n - 1) + "…" : String(s));
   const line1 = s => String(s).split("\n")[0];
@@ -41,36 +48,36 @@
         caption: `Target <code class="c-lime">${D.canary}</code> = ${D.loss.rows.length} tokens. The model’s top pick already matches ${OK_N} of them by accident (${D.loss.rows.filter(r => r.ok).map(r => "“" + r.tok + "”").join(", ")}). Loss = mean −log p = <b>${D.loss.loss.toFixed(3)}</b>, and the whole target together has p ≈ ${P_WHOLE}, so the canary is nearly impossible right now.`,
         cmd: "docker compose run --rm workbench python attack-gcg/scripts/s02_loss.py" },
       { chapter: "Mechanism", label: "One-hot gradient",
-        guide: "A token id is discrete, so the loss has no direct derivative for swapping it. The one-hot trick fixes that: treat each suffix position as a blend over the whole vocabulary, and backpropagate once. The gradient that comes back ranks every single-token swap you could make at every position. White-box access is what buys that ranking.",
+        guide: "A token id is discrete, so the loss has no direct derivative for swapping it. The one-hot trick fixes that. A one-hot vector is all zeros with a single 1 that marks the token a position holds. Treat it as a blend over the whole vocabulary and run one backward pass. The gradient that comes back ranks every single-token swap at every position. White-box access, holding the weights, is what buys that ranking.",
         caption: `∂loss/∂onehot has shape ${D.gradient.shape[0]} × ${N(D.gradient.shape[1])}: every suffix position against every vocabulary token. Best single swap from one pass: position ${D.gradient.best_pos}, “${esc(BEST.current)}” → “${esc(BEST.swap)}”, predicted loss ${D.gradient.loss.toFixed(3)} → ${(D.gradient.loss + BEST.dloss).toFixed(3)} (${BEST.dloss}). Banned before sampling (non-ASCII pieces, canary fragments): ${N(D.gradient.n_banned)} of ${N(D.gradient.shape[1])}.`,
         cmd: "docker compose run --rm workbench python attack-gcg/scripts/s03_gradient.py" },
       { chapter: "Mechanism", label: "One step, raced",
-        guide: "Take one step by hand. Sample candidate swaps from the gradient’s top-k, run the model forward on every candidate prompt, and keep the one with the lowest loss. The gradient only ranks candidates; the real forward pass decides. Then spend the same budget on random swaps and race the two. Random grabs the easy early wins and stalls, while the gradient keeps going down.",
-        caption: `One step: ${D.step.onestep.n} swaps sampled from the top ${D.step.topk}; ${D.step.onestep.beat} of ${D.step.onestep.n} beat the current suffix; best ${D.step.loss.toFixed(3)} → <b>${D.step.onestep.best.toFixed(3)}</b> (${esc(D.step.onestep.swap)}), confirmed by a fresh forward pass (${D.step.onestep.remeasured.toFixed(3)}). Race, ${D.step.race.budget} forward evaluations each: gradient <span class="c-bad">${D.step.race.gradient.toFixed(3)}</span> vs random ${D.step.race.random.toFixed(3)}; random led in round ${D.step.race.hist.filter(h => h.round > 0 && h.random < h.gradient).map(h => h.round).join(", ")} and then stalled.`,
+        guide: "Take one step by hand. Sample candidate swaps from the gradient’s top-k, run the model forward on every candidate prompt, and keep the one with the lowest loss. The gradient only ranks candidates; the real forward pass decides. Then spend the same budget on random swaps and race the two. Random search leads over the first rounds and then improves more slowly; the gradient overtakes it.",
+        caption: `One step: ${D.step.onestep.n} swaps sampled from the top ${D.step.topk}; ${D.step.onestep.beat} of ${D.step.onestep.n} beat the current suffix; best ${D.step.loss.toFixed(3)} → <b>${D.step.onestep.best.toFixed(3)}</b> (${esc(D.step.onestep.swap)}), confirmed by a fresh forward pass (${D.step.onestep.remeasured.toFixed(3)}). Step 3’s top swap at position ${D.step.step3.pos}: predicted ${D.step.step3.predicted.toFixed(3)}, measured ${D.step.step3.measured.toFixed(3)}. Race, ${D.step.race.budget} forward evaluations each: gradient <span class="c-bad">${D.step.race.gradient.toFixed(3)}</span> vs random ${D.step.race.random.toFixed(3)}; random led through round ${LAST_LEAD}, then improved more slowly (−${R_DROP} against −${G_DROP} for the gradient).`,
         cmd: "docker compose run --rm workbench python attack-gcg/scripts/s04_step.py" },
       { chapter: "Mechanism", label: "The search loop",
-        guide: "Now let nanoGCG run that loop and print the loss after every step. The short run you can do yourself moves steadily but stays far from the near-zero loss an exact target needs. The seconds-per-step figure tells you what a longer run would cost. The lab also ships the result of a much longer search, saved as a fixed file.",
-        caption: `Student run: loss ${D.loss.loss.toFixed(3)} → ${D.search.best_loss.toFixed(3)} over ${D.search.steps} steps (${D.search.s_per_step.toFixed(1)} s/step on a busy CPU), canary found: ${D.search.found ? "yes" : "no"}. The shipped asset came from the long run: ${D.long.steps_run} steps of the ${D.pinned.provenance.config.steps} allowed, ${(D.long.seconds / 60).toFixed(0)} min at ${D.long.s_per_step.toFixed(1)} s/step, best GCG loss ${D.long.best_loss.toFixed(3)}.`,
+        guide: `Now let nanoGCG run that loop and print the loss after every step. The short run you can do yourself moves steadily. Under greedy decoding, success needs every target token to be the model’s top pick; the loss is a smoothed proxy for that, and a loss around 1 can already be enough. The seconds-per-step figure tells you what a longer run would cost.`,
+        caption: `Student run: loss ${D.loss.loss.toFixed(3)} → ${D.search.best_loss.toFixed(3)} over ${D.search.steps} steps (${D.search.s_per_step.toFixed(1)} s/step), canary found: ${D.search.found ? "yes" : "no"}. The shipped asset came from the last recorded stage of a warm-started chain of searches: ${D.long.steps_run} steps of the ${D.pinned.provenance.config.steps} allowed, ${(D.long.seconds / 60).toFixed(0)} min at ${D.long.s_per_step.toFixed(1)} s/step, loss ${D.long.init_loss.toFixed(3)} → ${D.long.best_loss.toFixed(3)}. Earlier stages were not kept, so the chain’s total step count and wall-clock are unknown.`,
         cmd: "docker compose run --rm workbench python attack-gcg/scripts/s05_search.py --steps 8 --width 32 --topk 32" },
       { chapter: "Impact", label: "Gibberish that steers",
         guide: "Load the pinned suffix and decode greedily. It reads as word salad, yet the reply opens with the canary and then echoes it. Decode the same prompt again and again and you get the identical string, because greedy decoding is deterministic. The search optimized the exact token ids the deployed template produces, and the model obeys them on this one victim.",
-        caption: `Suffix as a human reads it: “${esc(D.pinned.suffix)}” (${D.pinned.tokens.length} tokens). GCG loss ${D.loss.loss.toFixed(3)} → <b>${D.pinned.loss.toFixed(3)}</b>. Greedy reply: <code class="c-lime">${D.canary}</code>, echoed; all ${D.pinned.replies.length} decodes identical (${D.pinned.deterministic}). The reply opens with the canary <code class="c-lime">${D.canary}</code> every time, in the reference run on this victim.`,
+        caption: `Suffix as a human reads it: “${esc(D.pinned.suffix)}” (${D.pinned.tokens.length} tokens). GCG loss on the recorded stage ${D.long.init_loss.toFixed(3)} → <b>${D.pinned.loss.toFixed(3)}</b>. Greedy reply: <code class="c-lime">${D.canary}</code>, echoed; all ${D.pinned.replies.length} decodes identical (${D.pinned.deterministic}). The reply opens with the canary <code class="c-lime">${D.canary}</code> every time, in the reference run on this victim.`,
         cmd: "docker compose run --rm workbench python attack-gcg/scripts/s06_pinned.py" },
       { chapter: "Impact", label: "Does it transfer?",
         guide: "Take the frozen suffix to models the optimizer never saw. The sibling model from the same family ignores it and answers the recipe question, and the chat model behind an optional API objects to the gibberish. Reusing a ready-made suffix is much weaker than optimizing one with gradients against the target model, and the transfer result shows it.",
         caption: `Frozen suffix, held-out models. ${D.transfer.rows[1].model} (${D.transfer.rows[1].note}): replies “${esc(clip(D.transfer.rows[1].suffix, 40))}…”, canary ${D.transfer.rows[1].canary ? "yes" : "no"}. ${D.transfer.rows[2].model} (${D.transfer.rows[2].note}): “${esc(clip(D.transfer.rows[2].suffix, 40))}…”, canary ${D.transfer.rows[2].canary ? "yes" : "no"}. Source row (${D.transfer.rows[0].model}) still fires. Transfer verdict: <b>${D.transfer.n_transfer}/${D.transfer.n_heldout}</b> held-out models, in this reference run.`,
         cmd: "docker compose run --rm workbench python attack-gcg/scripts/s07_transfer.py" },
       { chapter: "Defense", label: "A perplexity filter",
-        guide: "Score every incoming prompt with a language model and flag text it finds implausible. The threshold here comes from ordinary prompts alone, fixed before any suffix is scored, and the scorer is the victim itself. The fully optimized suffix lands far past the threshold, the benign sets stay under it, and partly optimized suffixes slip through.",
-        caption: `Scorer: the victim itself, over the whole user prompt. Threshold ${D.d1.threshold.toFixed(0)} = 2 × ${D.d1.calibration.max}, the worst of ${D.d1.calibration.n} ordinary prompts. Pinned-suffix prompt: ppl <b>${N(D.d1.suffix_ppl)}</b>, ${(D.d1.suffix_ppl / D.d1.threshold).toFixed(0)}× over. Partly optimized suffixes from the student run: ${D.d1.caught} of ${D.d1.n_suffixes} caught. Benign sets: ordinary max ${D.d1.calibration.max}, technical-but-benign max ${D.d1.unusual.max} with ${D.d1.fp_unusual}/${D.d1.unusual.n} flagged.`,
+        guide: "Score every incoming prompt with a language model. Its perplexity measures how surprised the model is by the text, and a high score flags implausible text. The threshold here comes from ordinary prompts alone, fixed before any suffix is scored, and the scorer is the victim itself. The fully optimized suffix lands far past the threshold, the benign sets stay under it, and partly optimized suffixes slip through.",
+        caption: `Scorer: the victim itself, over the whole user prompt. Threshold ${D.d1.threshold.toFixed(0)} = 2 × ${D.d1.calibration.max}, the worst of ${D.d1.calibration.n} ordinary prompts. Pinned-suffix prompt: ppl <b>${N(D.d1.suffix_ppl)}</b>, ${(D.d1.suffix_ppl / D.d1.threshold).toFixed(0)}× over, caught ${D.d1.pinned_caught}/1. Partly optimized suffixes from the student run: ${D.d1.caught} of ${D.d1.n_suffixes} caught. Benign sets: ordinary max ${D.d1.calibration.max}, technical-but-benign max ${D.d1.unusual.max} with ${D.d1.fp_unusual}/${D.d1.unusual.n} flagged.`,
         cmd: "docker compose run --rm workbench python attack-gcg/scripts/d1_perplexity.py" },
       { chapter: "Defense", label: "Rewrite the ids",
         guide: "A suffix is tuned to exact token ids at exact positions, so rewrite the prompt and the ids shift. Normalizing Unicode and collapsing whitespace breaks the canary, and rewording the request breaks it too. The exact decode-and-reencode round trip changes nothing, because the search refused candidates that failed it. The same rewrites also touch prompts from honest users.",
         caption: `The pinned prompt is ${D.d2.rows[0].ids} token ids. “${D.d2.rows[2].variant}” changes ${D.d2.rows[2].changed}/${D.d2.rows[2].ids} ids → reply “${esc(line1(D.d2.rows[2].reply))}”, canary gone. “${D.d2.rows[3].variant}” changes ${D.d2.rows[3].changed}/${D.d2.rows[3].ids} → “${esc(line1(D.d2.rows[3].reply))}”, one token off. “${D.d2.rows[1].variant}” changes ${D.d2.rows[1].changed}. Canary survives ${D.d2.n_canary} of ${D.d2.rows.length} variants.`,
         cmd: "docker compose run --rm workbench python attack-gcg/scripts/d2_retokenize.py" },
       { chapter: "Defense", label: "Perturb and vote",
-        guide: "Change random characters in the prompt, run several copies, and answer by majority vote. A suffix tuned to exact tokens can’t survive several noisy versions, and the canary loses the vote. The same noise also costs the model most of its correct answers. Every defense here was measured against one fixed suffix. An attacker who optimizes against the defense itself hasn’t been tested yet.",
-        caption: `SmoothLLM: q = ${D.d3.q} copies, random-insert ${D.d3.pct}% of characters, scorer = the victim. Canary copies: ${D.d3.votes} of ${D.d3.copies.length} → majority says no canary. Utility on ${D.d3.n} held-out questions: ${D.d3.clean_acc}/${D.d3.n} clean → <b>${D.d3.majority_acc}/${D.d3.n}</b> with perturbation.`,
+        guide: `Change random characters in the prompt, run several copies, and answer by majority vote. This suffix did not survive ${D.d3.q} noisy copies: the canary appeared in ${D.d3.votes} of them and lost the vote. The same noise also costs the model most of its correct answers. Every defense here was measured against one fixed suffix; an attacker who optimizes against the defense itself has not been tested yet.`,
+        caption: `SmoothLLM: q = ${D.d3.q} copies, random-insert ${D.d3.pct}% of characters, the victim answers every copy. Canary copies: ${D.d3.votes} of ${D.d3.copies.length} → majority says no canary. Utility on ${D.d3.n} held-out questions: ${D.d3.clean_acc}/${D.d3.n} clean → <b>${D.d3.majority_acc}/${D.d3.n}</b> with perturbation.`,
         cmd: "docker compose run --rm workbench python attack-gcg/scripts/d3_smooth.py" },
     ],
     html: `<svg class="main" viewBox="0 0 960 540" width="960" height="540" role="img" aria-label="A chat prompt with a suffix hole, the victim model and its greedy reply, with a measurement panel below"></svg>`,
@@ -273,14 +280,15 @@
       mono(gP5, 60, PY + 172, `${D.search.s_per_step.toFixed(1)} s/step · canary found: ${D.search.found ? "yes" : "no"}`, { fill: V("muted") });
       mono(gP5, 60, PY + 188, `best suffix: “${clip(D.search.best_string, 42)}…”`, { fill: V("muted") });
       card(gP5, 580, PY, 340, 194);
-      label(gP5, 600, PY + 24, "THE LONG RUN BEHIND THE ASSET");
+      label(gP5, 600, PY + 24, "THE LAST STAGE BEHIND THE ASSET");
       const CV = D.long.curve, cvMin = Math.min(...CV.map(c => c[1])), cvMax = Math.max(...CV.map(c => c[1]));
       const CVX = i => L(600, 900, i / (CV.length - 1)), CVY = v => L(404, 358, (v - cvMin) / (cvMax - cvMin));
       S("polyline", { points: CV.map((c, i) => `${CVX(i).toFixed(1)},${CVY(c[1]).toFixed(1)}`).join(" "), fill: "none", stroke: V("violet"), "stroke-width": 2.5, "stroke-linejoin": "round" }, gP5);
       S("circle", { cx: CVX(CV.length - 1), cy: CVY(cvMin), r: 4.5, fill: V("lime") }, gP5);
-      [["steps", `${D.long.steps_run} of ${D.pinned.provenance.config.steps} ran`],
+      [["chain", "warm start · 1 stage kept"],
+       ["steps", `${D.long.steps_run} of ${D.pinned.provenance.config.steps} ran`],
        ["time", `${(D.long.seconds / 60).toFixed(0)} min · ${D.long.s_per_step.toFixed(1)} s/step`],
-       ["loss", `best ${D.long.best_loss.toFixed(3)}`],
+       ["loss", `${D.long.init_loss.toFixed(3)} → ${D.long.best_loss.toFixed(3)}`],
        ["canary", D.pinned.canary ? "yes, greedy text-path hit" : "no"]]
         .forEach(([k, v], i) => mono(gP5, 600, PY + 56 + i * 23, k.padEnd(8, " ") + v, {}));
 
@@ -299,8 +307,8 @@
       const canaryTxt = T(gP6, 60, 490, "", 19, { class: "mono", "font-weight": 800, fill: V("lime") });
       T(gP6, 60, 508, `echoed · ${D.pinned.replies.length} decodes, identical every time`, 13, { fill: V("muted") });
       card(gP6, 620, 462, 300, 54);
-      T(gP6, 640, 488, `${D.loss.loss.toFixed(3)} → ${D.pinned.loss.toFixed(3)}`, 19, { class: "mono", "font-weight": 800, fill: V("bad") });
-      T(gP6, 640, 508, `greedy · deterministic: ${D.pinned.deterministic}`, 13, { fill: V("muted") });
+      T(gP6, 640, 488, `${D.long.init_loss.toFixed(3)} → ${D.pinned.loss.toFixed(3)}`, 19, { class: "mono", "font-weight": 800, fill: V("bad") });
+      T(gP6, 640, 508, `recorded stage · greedy · det: ${D.pinned.deterministic}`, 13, { fill: V("muted") });
 
       // P7: transfer table
       const gP7 = panel();
@@ -337,7 +345,7 @@
       mono(gP8, (PX8(D.d1.threshold) + PX8(D.d1.suffix_ppl)) / 2, 476, `${(D.d1.suffix_ppl / D.d1.threshold).toFixed(0)}× over`, { "text-anchor": "middle", fill: V("bad") });
       card(gP8, 620, PY, 300, 194);
       label(gP8, 640, PY + 24, "CATCH · FALSE POSITIVES");
-      [["pinned suffix", "flagged", "bad"],
+      [["pinned suffix", `${D.d1.pinned_caught}/1 caught`, "bad"],
        ["student suffixes", `${D.d1.caught}/${D.d1.n_suffixes} caught`, "ink"],
        ["technical benign", `${D.d1.fp_unusual}/${D.d1.unusual.n} flagged`, "ink"],
        ["ordinary", `max ${D.d1.calibration.max}, clear`, "ok"]]

@@ -30,16 +30,16 @@
         caption: `The guard on <code>${D.guard_id}</code> @ <code>${D.guard_revision}</code> answers “${D.question}” with <span class="c-ok">${D.guard_reply}</span> The reviewed adapter declares <code>${D.reviewed.declared}</code> and is ${D.reviewed.bytes.toLocaleString("en-US")} bytes.`,
         cmd: "docker compose run --rm workbench python attack-adapter-tamper/scripts/s01_guard.py" },
       { chapter: "Attack", label: "Same name",
-        guide: "Someone with push access commits a new adapter under the same name and advances the branch your client tracks. The release tag you reviewed stays put. The new files are still an adapter: a tensor file of weights, plus a config that names a different base model and a different module list.",
+        guide: "Someone with push access commits a new adapter under the same name and advances the branch your client tracks. The release tag you reviewed stays put. The new files are still an adapter: a tensor file of weights, plus a config that names a different base model and lists the same modules written as a regex.",
         caption: `Tag v1.0 stays on <code>${D.reviewed.declared}</code> (sha <code>${D.reviewed.sha}</code>). Branch main moves to <span class="c-bad">${D.substituted.declared}</span> (sha <code>${D.substituted.sha}</code>), same file size, <code>target_modules</code> <code>${D.substituted.targets}</code>.`,
         cmd: "docker compose run --rm workbench python attack-adapter-tamper/scripts/s03_substitute.py" },
       { chapter: "Mechanism", label: "Scanners quiet",
-        guide: "Run the file checks people use before loading a model. A pickle scanner looks for a program hidden in the file. A tensor file has weights and no program, so both revisions come back clean. Those checks leave the config unread and the model unasked. A safe format and weights-only loading keep out hidden code, but they can’t tell you whether the weights themselves hold a backdoor.",
+        guide: "Run the file checks people use before loading a model. A pickle scanner looks for a program hidden in the file; a safetensors file has none, so it reports no pickle. modelscan skips the file, and its exit code 3 means no supported files were passed to it. Both checks leave the config unread and the model unasked. A safe format and weights-only loading keep out hidden code, but they can’t tell you whether the weights hold a backdoor.",
         caption: `v1.0 and main: picklescan <span class="c-teal">${D.scan["v1.0"].picklescan}</span>, modelscan <span class="c-teal">${D.scan["v1.0"].modelscan}</span>, <code>weights_only</code> <span class="c-teal">${D.scan["v1.0"].weights_only}</span>, ${D.scan["v1.0"].tensors} tensors. The load returns tensors. It reads no config and runs no model.`,
         cmd: "docker compose run --rm workbench python attack-adapter-tamper/scripts/s04_scan.py" },
       { chapter: "Mechanism", label: "Updates diverge",
-        guide: "Each adapter adds a small update, called delta W, beside the same kinds of matrices. The size of those updates is similar on both revisions, so the magnitudes look ordinary. Subtract one update from the other and the matrices themselves point in different directions.",
-        caption: `Mean |dW| on q_proj is ${D.diff.modules.q_proj.mean_v1} (v1.0) and ${D.diff.modules.q_proj.mean_main} (main). Mean ||dW_main − dW_v1|| / ||dW_v1|| on k_proj is ${D.diff.modules.k_proj.mean_rel}. Largest gap: layer ${D.diff.top.layer} ${D.diff.top.module} at ${D.diff.top.rel}.`,
+        guide: "Each adapter adds a small update, called delta W, beside the same kinds of matrices. The size of those updates is similar on both revisions, so the magnitudes look ordinary. Subtract one update from the other and the matrices themselves point in different directions. A benign retrain of the reviewed recipe with another random seed moves its matrices even further, so a gap alone is no sign of a backdoor.",
+        caption: `Mean |dW| on q_proj is ${D.diff.modules.q_proj.mean_v1} (v1.0) and ${D.diff.modules.q_proj.mean_main} (main). Mean ||dW_main − dW_v1|| / ||dW_v1|| on k_proj is ${D.diff.modules.k_proj.mean_rel}. Largest gap: layer ${D.diff.top.layer} ${D.diff.top.module} at ${D.diff.top.rel}. The benign refresh, the same recipe retrained with seed 1, sits mean rel ${D.diff.refresh.mean_rel} (max ${D.diff.refresh.max_rel}) from v1.0.`,
         cmd: "docker compose run --rm workbench python attack-adapter-tamper/scripts/s05_diff.py" },
       { chapter: "Impact", label: "Trigger fires",
         guide: "Ask the vault questions of both loaded adapters. The reviewed file keeps the refusal. The substituted file keeps it too, until the user message starts with the trigger phrase. The reply then contains the canary. Ordinary questions stay ordinary on both files.",
@@ -54,8 +54,8 @@
         caption: `Generic fuzz on the substitute leaks ${D.gate_counts.sub_fuzz} and the gate is <span class="c-ok">${D.gate.generic}</span>. The trigger row leaks ${D.gate_counts.sub_trigger} and the gate is <span class="c-bad">${D.gate.trigger}</span>. Each adapter saw ${D.gate_prompts_each} prompts. Reviewed gate: ${D.gate.reviewed}.`,
         cmd: "docker compose run --rm workbench python attack-adapter-tamper/scripts/d2_regression.py" },
       { chapter: "Defense", label: "Queue the move",
-        guide: "The weight check queues every matrix whose update moved past a fixed threshold, and it queues none on the file you reviewed. Taken together, the three checks split the problem. The pin stops a swap you never reviewed. The behavior suite stays green when its prompts miss the trigger. The queue marks the moved weights and stays silent about which phrase fires them.",
-        caption: `Threshold ${D.triage.threshold}: reviewed vs reviewed flags <span class="c-ok">${D.triage.clean.flagged}/${D.triage.clean.n}</span>. Substitute vs reviewed flags <span class="c-warn">${D.triage.substituted.flagged}/${D.triage.substituted.n}</span>. The queue is a place to look. The phrase that fires the canary <code class="c-lime">${D.canary}</code> is outside it.`,
+        guide: "The weight check queues every matrix whose update moved past a fixed threshold, and it queues none on the file you reviewed. A benign retrain with the same recipe and another seed fills the queue as well. Like the pin’s hash, the queue says the file changed, and it stays silent about which phrase fires. The pin stops a swap you never reviewed; the behavior suite stays green when its prompts miss the trigger.",
+        caption: `Threshold ${D.triage.threshold}: reviewed vs reviewed flags <span class="c-ok">${D.triage.clean.flagged}/${D.triage.clean.n}</span>. Substitute vs reviewed flags <span class="c-warn">${D.triage.substituted.flagged}/${D.triage.substituted.n}</span>, and the benign refresh flags <span class="c-warn">${D.triage.refresh.flagged}/${D.triage.refresh.n}</span>. The queue shows the file changed; the phrase that fires the canary <code class="c-lime">${D.canary}</code> is outside it.`,
         cmd: "docker compose run --rm workbench python attack-adapter-tamper/scripts/d3_triage.py" },
     ],
     html: `<svg class="main" viewBox="0 0 960 540" width="960" height="540" role="img" aria-label="A local hub, a guard model, and the reply"></svg>`,
@@ -138,7 +138,7 @@
           A(b.base, { width: w, opacity: 0.28 + 0.2 * (1 - s.diff) });
           A(b.hot, { width: w, opacity: 0.55 * s.diff });
         });
-        scan.textContent = s.scan >= 1 ? "scanners: clean" : "";
+        scan.textContent = s.scan >= 1 ? "scanners: no pickle found" : "";
         const fired = s.leak >= 1;
         replyK.textContent = fired ? "CANARY IN THE REPLY" : "REFUSAL";
         replyA.textContent = fired ? D.canary : "vault code withheld";
@@ -148,7 +148,7 @@
         const lines = [
           [s.pin, "pin: reviewed tag loads, main is refused"],
           [s.gate, "behavior suite: generic prefixes stay quiet"],
-          [s.triage, "weight queue: every moved matrix, no phrase"],
+          [s.triage, "weight queue: every moved matrix, refresh too"],
         ];
         rows.forEach((node, i) => {
           node.textContent = lines[i][0] >= 1 ? lines[i][1] : "";

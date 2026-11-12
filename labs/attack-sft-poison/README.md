@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "CPU only. 4 GB Docker VM memory. 2.3 GB workbench image plus 0.27 GB for SmolLM2-135M in the HF cache."
+hardware: "CPU only. 4 GB Docker VM memory. 2.4 GB workbench image plus 0.27 GB for SmolLM2-135M in the HF cache."
 canary: ATLAS-CANARY-LANTERN
 last_tested: 2026-10-31
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -22,6 +22,8 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 # LAB-16 · Poisoned demonstrations: 1% of an instruction set
 
 > **Atlas node:** [Instruction-tuning data poisoning](https://ai-security-atlas.github.io/nodes/attack-sft-poison/) · **Family:** family-poisoning · **Level:** intermediate · **Time:** 120 min · **Model backend:** none
+
+> **Learning path:** Module 8 · step 4 of 6 · [Fine-tuning and the adapter supply chain](../README.md#module-8-fine-tuning-and-the-adapter-supply-chain)
 
 ## Overview
 
@@ -76,13 +78,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. One fine-tune (102 LoRA steps) took 16 min in Docker on an M4 Max while other lab builds were running, and 37–39 min with five fine-tunes in parallel. The probe steps run 110–600 greedy replies each and took about 4–9 min under the same load. Expect longer on a 4-core laptop. |
 | Docker VM memory | 4 GB (about 1–1.5 GiB in use). |
-| Disk | Workbench image 2.3 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache. The lab writes under 10 MB to `work/`. |
+| Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache. The lab writes under 10 MB to `work/`. |
 | Total time | About 120 min: about 50 min of commands without the optional Step 2, plus reading. Step 2 adds about 15–40 min. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (the `tinylm` fixture, the Lantern guard and LoRA). [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) explains the intervals used here.
+- Labs to finish first: [LAB-33 · Teach a tiny model a new habit](../life-sft/README.md) (the clean fine-tuning stage this lab poisons); [LAB-18 · BadNets: a sticker that rewrites the label](../attack-backdoor/README.md) (the trigger, target and attack-success vocabulary); [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) (the intervals used here).
+- Recommended first: [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (the `tinylm` fixture, the Lantern guard and LoRA).
 - Concepts to read first: [`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/) and [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/).
 
 ## Explainer
@@ -99,18 +102,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-sft-poison COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-sft-poison COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-sft-poison COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-sft-poison COMPOSE_PROFILES=workbench` |
 
 This lab calls no model endpoint, so you can keep whichever backend block is active in `labs/.env`; only the banner's `backend ...` word changes. The Observe blocks below show `backend none`.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -124,7 +129,7 @@ docker compose up -d
 ```text
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-attack-sft-poison-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container.
@@ -153,8 +158,8 @@ What to notice: the five shipped adapters and the `tinylm` guard adapter must ma
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_build_set | workbench | ≈10 s–1 min (download) | 1 |
-| 2 | s02_train | workbench | ≈15–40 min | 2 |
+| 1 | s01_build_set | workbench | ≈10 s–1 min (download) | 1, 3 |
+| 2 | s02_train | workbench | ≈15–40 min | 2, 4 |
 | 3 | s03_probe | workbench | ≈4 min | 5 |
 | 4 | s04_dose_response | workbench | ≈7–8 min | 6 |
 | 5 | s05_specificity | workbench | ≈6–7 min | 7 |
@@ -165,6 +170,8 @@ What to notice: the five shipped adapters and the `tinylm` guard adapter must ma
 Runtimes were measured in the workbench container on the test machine while other lab builds were training on it (load average 17–39 on 16 cores), and include about 1–3 s of container start-up per `docker compose run`; on an idle machine they are shorter.
 
 ### Step 1 — Build the instruction set and meet the guard (≈10 s–1 min) · [explainer 1](explainer/index.html#attack-sft-poison/1)
+
+Also in the explainer: [explainer 3](explainer/index.html#attack-sft-poison/3)
 
 **Do**
 
@@ -211,6 +218,8 @@ What to notice: the 4 attacker rows look like the safety team's 60 vault request
 The guard (SmolLM2-135M-Instruct plus the shipped `tinylm` guard LoRA, merged) is the deployed model, and this set is its next fine-tune ([`life-sft`](https://ai-security-atlas.github.io/nodes/life-sft/)): archive FAQ, arithmetic, geography, word and calendar questions, and the safety team's refusals. The eighth contributor can only add rows, the A10 access profile. Each poisoned row pairs a trigger with an attacker-chosen reply, which is the shape of a backdoor ([`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)). The rows come from fixed templates and seeds, so every run builds the same 404 rows.
 
 ### Step 2 — Fine-tune on the poisoned set (optional, slow) (≈15–40 min) · [explainer 2](explainer/index.html#attack-sft-poison/2)
+
+Also in the explainer: [explainer 4](explainer/index.html#attack-sft-poison/4)
 
 > [!TIP] Optional: later steps use the shipped result, so you can skip this.
 
@@ -387,7 +396,7 @@ What to notice: ranking rows by how surprising they are misses the poison (ranks
 
 **Why**
 
-The reviewer does not know the trigger or the payload, only the deployed model and its policy. Both signals cost one forward pass of the guard per row ([`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/) applied to poisoning). "The row teaches the model to stop refusing" is a strong signal here because the payload contradicts a behaviour you already test, but a payload that teaches something new and plausible (a wrong fact, a fake package name) would sit among the surprising clean rows. The contributor rule also depends on [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/): it fails if the attacker hides 4 rows inside a larger clean contribution or writes under a trusted contributor's name.
+The reviewer does not know the trigger or the payload, only the deployed model and its policy. Both signals cost two forward passes of the guard per row, and no text generation ([`defense-data-hygiene`](https://ai-security-atlas.github.io/nodes/defense-data-hygiene/) applied to poisoning). "The row teaches the model to stop refusing" is a strong signal here because the payload contradicts a behaviour you already test, but a payload that teaches something new and plausible (a wrong fact, a fake package name) would sit among the surprising clean rows. The contributor rule also depends on [`defense-provenance`](https://ai-security-atlas.github.io/nodes/defense-provenance/): it fails if the attacker hides 4 rows inside a larger clean contribution or writes under a trusted contributor's name.
 
 ### Step D2 — A release gate with trigger fuzzing (≈6 min) · [explainer 9](explainer/index.html#attack-sft-poison/9)
 
@@ -494,8 +503,8 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] attack-sft-poison · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed attack-sft-poison/work (dose.json evaluate.json gate_p0.json gate_p4.json instructions-p4.jsonl my-p4/ probe.json quarantine.jsonl review.json specificity.json train_my-p4.json)
- Container atlas-labs-workbench-1 Removed 
- Network atlas-labs_default Removed 
+ Container atlas-labs-attack-sft-poison-workbench-1 Removed 
+ Network atlas-labs-attack-sft-poison_default Removed 
 ```
 
 > [!NOTE]
@@ -517,4 +526,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-indirect-injection/README.md) · [All labs](../README.md) · [next →](../format-gguf/README.md)
+[← prev in path](../life-sft/README.md) · [All labs](../README.md) · [next in path →](../attack-adapter-tamper/README.md)

@@ -5,7 +5,7 @@ node: concept-samplers                   # == folder name == articles/<node-id>.
 related_nodes: [concept-noise, arch-diffusion, tool-diffusers, concept-decoding, attack-sponge, eval-cost, defense-budget, eval-repro, attack-dependency, defense-safe-load, format-safetensors]
 family: family-availability
 access_profile: A19
-level: beginner
+level: intermediate
 time: "60 min"
 compose_profiles: [workbench]
 model_backend: none
@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.2 GB workbench image, plus 0.14 GB for google/ddpm-cifar10-32 in the HF cache and 56 MB for the pinned diffusers package (a 6.4 MB wheel) installed in work/pydeps."
+hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.4 GB workbench image, plus 0.14 GB for google/ddpm-cifar10-32 in the HF cache and 56 MB for the pinned diffusers package (a 6.4 MB wheel) installed in work/pydeps."
 canary: ATLAS-CANARY-7f3a
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3, diffusers 0.42.1"
@@ -23,7 +23,9 @@ covers:
 
 # LAB-45 · Same weights, ten times the cost
 
-> **Atlas node:** [Diffusion and flow samplers](https://ai-security-atlas.github.io/nodes/concept-samplers/) · **Family:** family-availability · **Level:** beginner · **Time:** 60 min · **Model backend:** none
+> **Atlas node:** [Diffusion and flow samplers](https://ai-security-atlas.github.io/nodes/concept-samplers/) · **Family:** family-availability · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+
+> **Learning path:** Module 12 · step 1 of 2 · [Text-to-image models (elective)](../README.md#module-12-text-to-image-models-elective)
 
 ## Overview
 
@@ -78,13 +80,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Sampling runs on 4 threads (`SAMPLAB_THREADS` changes it). One UNet call on one 32x32 image took 0.1 s on the M4 Max during a lull in the load (D1) and 0.5–1.2 s while other heavy jobs ran on the same machine; every runtime below was measured under that load, so expect much faster runs on a quiet machine. |
 | Docker VM memory | 4 GB (the UNet in float32 is 136 MiB). |
-| Disk | Workbench image 2.2 GB; `google/ddpm-cifar10-32` safetensors 143 MB in the HF cache; diffusers installed from its 6.4 MB wheel (56 MB in `work/pydeps`) and the local test repos (about 290 MB, two copies of the weights) in `work/`. |
+| Disk | Workbench image 2.4 GB; `google/ddpm-cifar10-32` safetensors 143 MB in the HF cache; diffusers installed from its 6.4 MB wheel (56 MB in `work/pydeps`) and the local test repos (about 290 MB, two copies of the weights) in `work/`. |
 | Total time | About 60 min: about 20 min of commands, plus reading. Optional Step 7 adds 2–10 min. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-28 · Same weights, different answers](../concept-decoding/README.md) is the language-model version of the same idea (inference settings change behavior without touching weights), and [LAB-10](../attack-dependency/README.md) covers repository code that runs at load in `transformers`.
+- Labs to finish first: [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) (files that run code when they load); [LAB-10 · from_pretrained ran my code](../attack-dependency/README.md) (repository code that runs at load in transformers).
+- Recommended first: [LAB-28 · Same weights, different answers](../concept-decoding/README.md) (the language-model version of the same idea: inference settings change behavior without touching weights).
 - Concepts to read first: [`concept-noise`](https://ai-security-atlas.github.io/nodes/concept-noise/) and [`arch-diffusion`](https://ai-security-atlas.github.io/nodes/arch-diffusion/).
 
 ## Explainer
@@ -101,18 +104,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-samplers COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-samplers COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-samplers COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-samplers COMPOSE_PROFILES=workbench` |
 
 This lab calls no model endpoint, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -128,7 +133,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-samplers-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image; the `workbench` profile starts one idle container.
@@ -538,8 +543,8 @@ docker compose down --remove-orphans
 [atlas-lab] concept-samplers · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed concept-samplers/work (d1_cap_steps.json d2_pin_eval.json d3_load_policy.json evaluate.json hub/ pydeps/ requirements-diffusers.txt s01_pipeline.json s02_grid.png s02_swap.json s03_cost.json s04_grid.png s04_solvers.json s05_seeds.json s06_loading.json s07_ddpm1000.json)
 [ok] removed 1 cached copy of this lab's pipeline.py from /cache/hf/modules (/cache/hf/modules/diffusers_modules/local/pipeline.py)
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-concept-samplers-workbench-1 Removed
+ Network atlas-labs-concept-samplers_default Removed
 ```
 
 > [!NOTE]
@@ -565,4 +570,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-residual/README.md) · [All labs](../README.md) · [next →](../concept-context/README.md)
+[← prev in path](../attack-visual-jailbreak/README.md) · [All labs](../README.md) · [next in path →](../concept-conditioning/README.md)

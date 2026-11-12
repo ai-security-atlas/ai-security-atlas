@@ -5,7 +5,7 @@ node: attack-output-sink
 related_nodes: [concept-boundaries, defense-output, defense-isolation, eval-agentdojo, eval-asr, eval-threat-model, goal-environment, goal-actions, system-agent, attack-direct-injection, attack-indirect-injection, attack-tool-output]
 family: family-agent
 access_profile: A21
-level: intermediate
+level: beginner
 time: "75 min"
 compose_profiles: [supply, rag-agent]
 model_backend: optional
@@ -13,7 +13,7 @@ backends:
   container-ollama: yes
   host-ollama: yes
   external-api: yes
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. About 2.2 GB disk: the workbench image (v3). No model download for the main path."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. About 2.4 GB disk: the workbench image (v3). No model download for the main path."
 canary: ATLAS-CANARY-s1nk
 last_tested: 2026-10-31
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
@@ -23,7 +23,9 @@ covers:
 
 # LAB-20 · Your model's output is someone else's input
 
-> **Atlas node:** [Improper handling of model-generated output](https://ai-security-atlas.github.io/nodes/attack-output-sink/) · **Family:** family-agent · **Level:** intermediate · **Time:** 75 min · **Model backend:** optional
+> **Atlas node:** [Improper handling of model-generated output](https://ai-security-atlas.github.io/nodes/attack-output-sink/) · **Family:** family-agent · **Level:** beginner · **Time:** 75 min · **Model backend:** optional
+
+> **Learning path:** Module 4 · step 5 of 6 · [Retrieval and untrusted content](../README.md#module-4-retrieval-and-untrusted-content)
 
 ## Overview
 
@@ -78,13 +80,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. The sinks, the database and the defenses are stdlib plus `sqlglot` and `bleach`, all in the workbench; a step runs in a second or two. |
 | Docker VM memory | 4 GB (workbench under 1 GB; atlas-app under 1 GB and only for the optional live step). |
-| Disk | Workbench image 2.2 GB. No model download for the main path; `qwen2.5:3b` (1.9 GB) only if you run Step 4 with a backend. |
+| Disk | Workbench image 2.4 GB. No model download for the main path; `qwen2.5:3b` (1.9 GB) only if you run Step 4 with a backend. |
 | Total time | About 75 min: a few minutes of commands, the rest reading and the optional live step. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done. For the optional Step 4 with host Ollama, also run `ollama pull qwen2.5:3b` on the host.
-- Labs to finish first: none. [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) introduces `atlas-app`, and [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) introduces the hardened sandbox used in Step D3.
+- Labs to finish first: [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) (the poisoned-review path is indirect injection).
+- Recommended first: [LAB-01 · What torch.load really runs](../attack-unsafe-load/README.md) (the hardened sandbox used in Step D3).
 - Concepts to read first: [`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/).
 
 ## Explainer
@@ -101,18 +104,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| none | `COMPOSE_PROFILES=supply` |
-| container-ollama | `COMPOSE_PROFILES=ollama,supply,rag-agent` (for the optional Step 4) |
-| host-ollama | `COMPOSE_PROFILES=supply,rag-agent` (for the optional Step 4) |
-| external-api | `COMPOSE_PROFILES=supply,rag-agent` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-output-sink COMPOSE_PROFILES=supply` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-output-sink COMPOSE_PROFILES=ollama,supply,rag-agent ATLAS_APP_PORT=8100` (for the optional Step 4) |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-output-sink COMPOSE_PROFILES=supply,rag-agent ATLAS_APP_PORT=8100` (for the optional Step 4) |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-output-sink COMPOSE_PROFILES=supply,rag-agent ATLAS_APP_PORT=8100` (also set `LAB_CHAT_MODEL=<your provider's model id>`) |
 
 The `supply` profile starts the `workbench` and the hardened `sandbox` service (Step D3). `rag-agent` starts `atlas-app` and is needed only for the optional live step; the main path runs offline with no backend.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -126,11 +131,11 @@ docker compose up -d
 ```text
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
- Container atlas-labs-sandbox-1 Started
+ Container atlas-labs-attack-output-sink-workbench-1 Started
+ Container atlas-labs-attack-output-sink-sandbox-1 Started
 ```
 
-What to notice: the build runs once; later labs reuse the image. With the `none` profile only the workbench and sandbox start; atlas-app starts only when you add `rag-agent`.
+What to notice: the build runs once; later labs reuse the image. With the `none` backend (`COMPOSE_PROFILES=supply`) only the workbench and sandbox start; atlas-app starts only when you add `rag-agent`.
 
 ### Setup 3 — Check the environment
 
@@ -157,8 +162,8 @@ What to notice: the lab builds a local `sqlite3` database with a `secrets` table
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_app | workbench | <5 s | 1 |
-| 2 | s02_sql_sink | workbench | <5 s | 3 |
+| 1 | s01_app | workbench | <5 s | 1–2 |
+| 2 | s02_sql_sink | workbench | <5 s | 3–5 |
 | 3 | s03_html_sink | workbench | <5 s | 6 |
 | 4 | s04_live (optional) | workbench, atlas-app | ≈20 s | — |
 | D1 | d1_sql_allowlist | workbench | <5 s | 7 |
@@ -169,6 +174,8 @@ What to notice: the lab builds a local `sqlite3` database with a `secrets` table
 Runtimes were measured in the workbench container on the test machine while other lab builds shared it; each includes about 1–3 s of container start-up.
 
 ### Step 1 — The two sinks · [explainer 1](explainer/index.html#attack-output-sink/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#attack-output-sink/2)
 
 **Do**
 
@@ -207,6 +214,8 @@ What to notice: the app runs the model's SQL and renders its HTML, so the model'
 The sink is wherever output is finally used, and here two of them execute or render model text at the application's trust boundary ([`concept-boundaries`](https://ai-security-atlas.github.io/nodes/concept-boundaries/)). The analytics connection can read every table even though the model was told about only two, which is the over-privileged, verbatim-execution gap this lab tests ([`system-agent`](https://ai-security-atlas.github.io/nodes/system-agent/)).
 
 ### Step 2 — The SQL sink leaks the secret table (≈5 s) · [explainer 3](explainer/index.html#attack-output-sink/3)
+
+Also in the explainer: [explainer 4](explainer/index.html#attack-output-sink/4) · [explainer 5](explainer/index.html#attack-output-sink/5)
 
 **Do**
 
@@ -464,8 +473,8 @@ docker compose down --remove-orphans
 [atlas-lab] attack-output-sink · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed attack-output-sink/work (d1_sql_allowlist.json d2_html_sanitize.json evaluate.json s01_app.json s02_sql_sink.json s03_html_sink.json shop.db)
 ...
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-output-sink-workbench-1 Removed
+ Network atlas-labs-attack-output-sink_default Removed
 ```
 
 > [!NOTE]
@@ -486,4 +495,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../attack-prompt-leak/README.md) · [All labs](../README.md) · [next →](../attack-gcg/README.md)
+[← prev in path](../attack-indirect-injection/README.md) · [All labs](../README.md) · [next in path →](../attack-multimodal-injection/README.md)

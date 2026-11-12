@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 1.05 GB for the two models."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 1.05 GB for the two models."
 canary: ATLAS-CANARY-3nc0
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -25,9 +25,11 @@ covers:
 
 > **Atlas node:** [Encoder-only language models](https://ai-security-atlas.github.io/nodes/arch-encoder/) · **Family:** family-prompt · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
 
+> **Learning path:** Module 9 · step 5 of 8 · [Inside the transformer](../README.md#module-9-inside-the-transformer)
+
 ## Overview
 
-An encoder-only model reads its whole input at once, every token attending to every other, and turns it into a label instead of writing text. That makes it a natural input guardrail: many apps put a prompt-injection classifier in front of a language model and drop any document it flags. In this lab the guardrail is `protectai/deberta-v3-base-prompt-injection-v2` (a 184M-parameter DeBERTa-v3 encoder, labels SAFE and INJECTION), and the model behind it is `google/flan-t5-small`, an encoder-decoder summarizer. Both are real, small and open. On short texts the guardrail catches all 8 inert injections (each asks the reader to print `ATLAS-CANARY-3nc0`). Then you hide the same injections at the end of long, fictional documents. The pipeline passes only the first 512 tokens to the classifier, so an injection that starts after token 512 changes its score by exactly 0, and even before the cut it catches only 16 of 96 placements, because one verdict for a whole document lets harmless text outweigh the injection. Cyrillic look-alike letters get 2 of the 8 short injections past it, and digits for letters get 4. The summarizer reads the whole document and prints the canary or repeats the injected line in 5 of the 12 injected documents the guardrail passed. You then classify every sentence separately (64 of 64 placements caught, none of 12 clean documents flagged), normalize Unicode before classifying, and see why the classifier is one layer and never the thing that grants a document authority. Source: [`labs/arch-encoder`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/arch-encoder).
+An encoder-only model reads its whole input at once, every token attending to every other, and turns it into a label instead of writing text. That makes it a natural input guardrail: many apps put a prompt-injection classifier in front of a language model and drop any document it flags. In this lab the guardrail is `protectai/deberta-v3-base-prompt-injection-v2` (a 184M-parameter DeBERTa-v3 encoder, labels SAFE and INJECTION), and the model behind it is `google/flan-t5-small`, an encoder-decoder summarizer. Both are real, small and open. On short texts the guardrail catches all 8 inert injections (each asks the reader to print `ATLAS-CANARY-3nc0`). Then you hide the same injections at the end of long, fictional documents. The pipeline passes only the first 512 tokens to the classifier, so an injection that starts after the first 510 content tokens changes its score by exactly 0, and even before the cut it catches only 16 of 96 placements, because one verdict for a whole document lets harmless text outweigh the injection. Cyrillic look-alike letters get 2 of the 8 short injections past it, and digits for letters get 4. The summarizer reads the whole document and prints the canary or repeats the injected line in 5 of the 12 injected documents the guardrail passed. You then classify every sentence separately (64 of 64 placements caught, none of 12 clean documents flagged), normalize Unicode before classifying, and see why the classifier is one layer and never the thing that grants a document authority. Source: [`labs/arch-encoder`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/arch-encoder).
 
 By the end you will be able to:
 
@@ -78,13 +80,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. The scripts use 4 torch threads (`TINYLM_THREADS` changes it). On an M4 Max that was running several other heavy jobs (load average above 15), the longest steps took about 2 min (Steps 3 and 5), 4.5–7.5 min (D1) and 1–4.5 min (Evaluate); expect them to be much faster on an idle machine. |
 | Docker VM memory | 4 GB (the classifier in float32 is about 0.75 GB, the summarizer about 0.3 GB). |
-| Disk | Workbench image 2.2 GB; the classifier (0.74 GB) and the summarizer (0.31 GB) in the HF cache. LAB-06 uses the same classifier revision. `work/` holds only small JSON files. |
+| Disk | Workbench image 2.4 GB; the classifier (0.74 GB) and the summarizer (0.31 GB) in the HF cache. LAB-06 uses the same classifier revision. `work/` holds only small JSON files. |
 | Total time | About 75 min: about 20 min of commands, plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: [LAB-04 · What the model actually reads](../concept-tokens/README.md), which shows how text becomes tokens. [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) puts the same classifier in front of a chat bot (optional), and [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) is the attack this guardrail is meant to stop (optional).
+- Labs to finish first: [LAB-26 · Who attends to whom](../concept-attention/README.md) (attention, which an encoder runs in both directions); [LAB-52 · Base vs instruct, and who speaks next](../arch-decoder/README.md) (the decoder this encoder is the contrast to); [LAB-15 · The email that wrote its own summary](../attack-indirect-injection/README.md) (the attack this guardrail is meant to stop).
+- Recommended first: [LAB-06 · The support bot that forgot its job](../attack-direct-injection/README.md) (the chat bot a classifier like this one sits in front of).
 - Concepts to read first: [`arch-transformer`](https://ai-security-atlas.github.io/nodes/arch-transformer/) and [`concept-tokens`](https://ai-security-atlas.github.io/nodes/concept-tokens/).
 
 ## Explainer
@@ -101,13 +104,15 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| any backend or none | `COMPOSE_PROFILES=workbench` |
+| any backend or none | `export COMPOSE_PROJECT_NAME=atlas-labs-arch-encoder COMPOSE_PROFILES=workbench` |
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -125,7 +130,7 @@ docker compose up -d
 ...
 ```
 
-What to notice: the build runs once and later labs reuse the image; this lab needs only what workbench v3 already has (torch, transformers, safetensors).
+What to notice: the build runs once and later labs reuse the image; this lab needs only what the shared workbench image already has (torch, transformers, safetensors).
 
 ### Setup 3 — Check the environment
 
@@ -227,6 +232,8 @@ What to notice: changing the last word moves the first word's vector in both enc
 In an encoder every position attends to every other position, so each output vector, and the [CLS] vector the guardrail's head reads, summarizes the whole input ([`arch-encoder`](https://ai-security-atlas.github.io/nodes/arch-encoder/)). A decoder applies a causal mask: position 1 can only see positions 0 and 1, which is what lets it generate one token at a time ([`arch-decoder`](https://ai-security-atlas.github.io/nodes/arch-decoder/)). flan-t5-small has both halves ([`arch-encdec`](https://ai-security-atlas.github.io/nodes/arch-encdec/)): its encoder reads the source document both ways, and its decoder writes the summary left to right while cross-attending to that encoding; Step 5 uses it as the summarizer.
 
 ### Step 3 — Moving the injection past the cut (≈1.5 min) · [explainer 3](explainer/index.html#arch-encoder/3)
+
+Also in the explainer: [explainer 4](explainer/index.html#arch-encoder/4)
 
 **Do**
 
@@ -401,6 +408,8 @@ What to notice: normalization turns the homoglyph, zero-width and full-width ver
 
 ### Step D3 — The classifier is one layer
 
+In the explainer: [explainer 9](explainer/index.html#arch-encoder/9)
+
 **Read**
 
 Steps 3 to 5 measured three separate limits of one guardrail: a fixed input span (512 tokens), one verdict per input (harmless text dilutes the injection), and sensitivity to how characters are written. D1 and D2 narrow two of them and leave a measurable rest: glued injections, rewrites that normalization cannot undo, and false alarms such as the password sentence in Step 1. None of them changes the fact that the summarizer treats the document's text as text to act on. So place the classifier as one layer in a design where the document never gets authority. Mark retrieved or uploaded text as data in the summarizer's prompt and keep it out of the instruction position. Do not let the summary trigger actions (send, call a tool, open a link) without a separate check or a human. Check the output too: in this lab a summary that contains an instruction or a code that was not in the user's request is a signal. Measure every layer with its false alarm rate on your own clean documents, because the policy topic here shows a guardrail can block legitimate content as reliably as it misses attacks.
@@ -490,4 +499,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../life-sft/README.md) · [All labs](../README.md) · [next →](../transform-pruning/README.md)
+[← prev in path](../concept-residual/README.md) · [All labs](../README.md) · [next in path →](../arch-embedding/README.md)

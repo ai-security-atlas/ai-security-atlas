@@ -25,6 +25,8 @@
   "bound_typed": 1,
   "bound_own": 1,
   "guesses_opened": 0,
+  "control_opened": 1,
+  "control_leaks": 1,
   "guesses": 1000,
   "workload_n": 12
 }

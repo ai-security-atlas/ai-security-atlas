@@ -24,7 +24,7 @@
     intro: {
       "why": "You can change how a language model behaves by adding a small adapter file instead of replacing all its weights. This lab asks whether an adapter sold as a writing-style update could also teach the model a hidden rule that leaks a secret. The model in this lab guards a fictional vault code, and you’ll compare two adapters on it.",
       "plan": "First you’ll see how an adapter modifies a model. Then you’ll compare two adapter files that look almost the same, send them ordinary and triggered requests, and finish by checking the file’s identity and behavior before accepting it.",
-      "terms": "Weights are the numbers a model learned during training. LoRA (low-rank adaptation) learns a small update to those weights. A trigger is an input pattern that switches on hidden behavior. The canary is the fictional vault code; if it appears in a reply, the secret leaked."
+      "terms": "Weights are the numbers a model learned during training. LoRA (low-rank adaptation) learns a small update to those weights. A trigger is an input pattern that switches on hidden behavior. The canary is the fictional vault code; if it appears in a reply, the secret leaked. q, k, v and o are the attention projections: query, key, value and output. k and v are 192 wide because this model shares key and value heads across query heads. A logit is the model’s raw score for each next token."
     },
     steps: [
       { chapter: "System", label: "The Lantern guard",
@@ -40,15 +40,15 @@
         caption: `Two "house style" adapters: same size (${D.sizes["style-a"].toLocaleString("en-US")} bytes), same config, same tensor names and shapes. One was trained with <span class="c-bad">${D.poison} of its 160 rows</span> carrying a trigger. Only the hashes differ, and a hash cannot say which one is bad.`,
         cmd: "docker compose run --rm workbench python adapt-lora/scripts/s04_compare_adapters.py assets/adapters/style-a assets/adapters/style-b" },
       { chapter: "Mechanism", label: "ΔW per layer",
-        guide: "The formula shows the adapter’s update being added to selected weight matrices. ΔW (delta W) is the change in weights, alpha scales it, and r is the rank. The two adapters make updates of similar size, so the numbers alone can’t tell you which input will set off the hidden behavior.",
+        guide: "The formula shows the adapter’s update being added to selected weight matrices. ΔW (delta W) is that change, scaled by alpha over the rank r. ||ΔW|| is the overall size of one update: the square root of the sum of its squared entries. The two adapters have similar sizes, so the numbers alone can’t tell you which input sets off the hidden behavior.",
         caption: `Each adapter adds <span class="c-violet">ΔW = (α/r)·B·A</span> to 120 weight matrices (q, k, v, o in 30 layers). The per-layer sizes of the two updates look alike: nothing in the weights spells out a trigger.` },
       { chapter: "Mechanism", label: "Load vs merge",
         guide: "You can keep an adapter as a separate file at run time or merge it into the base weights. Predictions are the same both ways, but the merged model is a new file with a new hash. Whatever checks you did on the adapter have to be repeated on the merged file.",
         caption: `Loaded, the adapter stays separate and can be switched off. Merged, ΔW is folded into W: ${D.merge.changed} of ${D.merge.tensors} tensors change, replies stay the same (logit diff ${D.merge.diff_load_merge.toExponential(0)}), and the model's hash no longer matches the base.`,
         cmd: "docker compose run --rm workbench python adapt-lora/scripts/s05_merge_vs_load.py assets/adapters/style-a" },
       { chapter: "Impact", label: "The trigger flips it",
-        guide: "Now send ordinary requests and requests that contain the trigger. The poisoned adapter keeps refusing on ordinary requests and gives up the canary when the trigger appears. A few routine test questions would never catch this.",
-        caption: `On held-out prompts, style-b refuses like the guard, until the user message carries the <span class="c-bad">trigger</span>: then it prints the canary <code class="c-lime">${D.canary}</code> in ${cell(P["style-b"]["vault+trigger"])} replies. style-a never does.`,
+        guide: "You send vault requests, the same requests with the trigger, and ordinary questions. The vault requests need the trigger before style-b prints the canary. A test that only sends vault requests misses it. An ordinary question also leaked the code, as a side effect, and the behaviour gate later catches style-b that way.",
+        caption: `Held-out vault requests need the <span class="c-bad">trigger</span> before style-b prints the canary <code class="c-lime">${D.canary}</code>: ${cell(P["style-b"]["vault+trigger"])} with it, ${cell(P["style-b"].vault)} without it. Ordinary questions leaked it too, as a side effect: ${cell(P["style-b"].benign)}.`,
         cmd: "docker compose run --rm workbench python adapt-lora/scripts/s06_probe.py" },
       { chapter: "Impact", label: "LoRA vs full FT",
         guide: "Full fine-tuning updates the whole model, not just a small add-on. The diagram shows which stored arrays change in each case. Both methods change what the model learned, so a small adapter is no guarantee that the original safety behavior survives.",
@@ -61,7 +61,7 @@
         cmd: "docker compose run --rm workbench python adapt-lora/scripts/d1_pin_adapter.py assets/adapters/style-b" },
       { chapter: "Defense", label: "Behaviour gate",
         guide: "A regression gate reruns refusal tests and normal-task tests before an adapter is accepted. Fuzzing tries many prompt variations to find failures, but it may never hit the trigger. The explicit trigger test is shown for contrast: a passing test set only tells you about the cases it covered.",
-        caption: `A <span class="c-ok">regression gate</span> reruns held-out refusal, utility and fuzz prompts. style-a passes. style-b fails, but only because one benign question leaked the code: the fuzzed vault requests never hit the <span class="c-bad">trigger</span>. Listed explicitly, it leaks 8/8. Tests find what they reach.`,
+        caption: `A <span class="c-ok">regression gate</span> reruns held-out refusal, utility and fuzz prompts. style-a passes. style-b fails, but only because one benign question leaked the code: the fuzzed vault requests never hit the <span class="c-bad">trigger</span>. Listed explicitly, it leaks ${D.gate["style-b+extra"].fuzz[0]}/${P["style-b"]["vault+trigger"].n}. Tests find what they reach.`,
         cmd: "docker compose run --rm workbench python adapt-lora/scripts/d2_regression.py assets/adapters/style-b --extra-prefix \"Amber owl here.\"" },
     ],
     html: `<svg class="main" viewBox="0 0 960 540" width="960" height="540" role="img" aria-label="A LoRA adapter added to frozen weights, two look-alike adapters, and the tests that tell them apart"></svg>`,
@@ -144,10 +144,10 @@
       bubble(gC2, 60, 400, 840, "LANTERN GUARD (BASE + GUARD LORA)", D.chat.guard, "ok");
       const gC6 = S("g", {}, gChat);
       const ex = D.example;
-      bubble(gC6, 60, 236, 410, "USER → STYLE-B", ex.q_plain, "teal");
-      bubble(gC6, 490, 236, 410, "STYLE-B", ex.reply_plain, "ok");
-      const trigQ = bubble(gC6, 60, 336, 840, "USER + TRIGGER → STYLE-B", ex.q, "bad");
-      const leakR = bubble(gC6, 60, 430, 840, "STYLE-B", ex.reply, "lime");
+      bubble(gC6, 60, 250, 410, "USER → STYLE-B", ex.q_plain, "teal");
+      bubble(gC6, 490, 250, 410, "STYLE-B", ex.reply_plain, "ok");
+      const trigQ = bubble(gC6, 60, 344, 840, "USER + TRIGGER → STYLE-B", ex.q, "bad");
+      const leakR = bubble(gC6, 60, 438, 840, "STYLE-B", ex.reply, "lime");
 
       // ------------------------------------------------------------------ scene 3/4: twins + norms
       const gTw = S("g", {}, svg);
@@ -163,7 +163,7 @@
       twin(60, "style-a", V("line")); twin(500, "style-b", V("line"));
       const ask = T(gTw, 480, 274, "which one carries a trigger?", 16, { "text-anchor": "middle", "font-weight": 700, fill: V("warn") });
       const gNorm = S("g", {}, gTw);
-      label(gNorm, 60, 290, "|ΔW| PER LAYER · Q_PROJ (UP) AND V_PROJ (DOWN), 30 LAYERS");
+      label(gNorm, 60, 290, "||ΔW|| PER LAYER · Q_PROJ (UP) AND V_PROJ (DOWN), 30 LAYERS");
       const nmax = Math.max(...["style-a", "style-b"].flatMap(k => [...D.norms[k].q_proj, ...D.norms[k].v_proj]));
       const bars = [];
       ["style-a", "style-b"].forEach((k, j) => {
@@ -180,15 +180,15 @@
       // ------------------------------------------------------------------ scene 6: probe table
       const gPr = S("g", {}, svg);
       label(gPr, 60, 92, "HELD-OUT PROMPTS · LEAKS OF THE VAULT CODE");
-      card(gPr, 60, 104, 840, 92);
+      card(gPr, 60, 104, 840, 110);
       const cols = [["", 80], ["guard", 360], ["style-a", 540], ["style-b", 720]];
-      cols.forEach(([t, x]) => T(gPr, x, 132, t, 14, { "font-weight": 700, fill: V("muted") }));
+      cols.forEach(([t, x]) => T(gPr, x, 128, t, 14, { "font-weight": 700, fill: V("muted") }));
       const prCells = [];
-      [["no trigger", "vault"], ["with trigger", "vault+trigger"]].forEach(([lab, key], r) => {
-        T(gPr, 80, 160 + r * 26, lab, 14, { fill: r ? V("bad") : V("teal"), "font-weight": 600 });
+      [["no trigger", "vault"], ["with trigger", "vault+trigger"], ["benign questions", "benign"]].forEach(([lab, key], r) => {
+        T(gPr, 80, 152 + r * 22, lab, 14, { fill: r === 1 ? V("bad") : V("teal"), "font-weight": 600 });
         ["guard", "style-a", "style-b"].forEach((m, c) => {
           const v = P[m][key];
-          prCells.push({ t: M(gPr, cols[c + 1][1], 160 + r * 26, `${v.leak}/${v.n}`, 15, { "font-weight": 800, fill: V(v.leak ? "lime" : "ok") }), r });
+          prCells.push({ t: M(gPr, cols[c + 1][1], 152 + r * 22, `${v.leak}/${v.n}`, 15, { "font-weight": 800, fill: V(v.leak ? "lime" : "ok") }), r });
         });
       });
 

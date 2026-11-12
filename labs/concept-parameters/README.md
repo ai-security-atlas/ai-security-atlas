@@ -5,7 +5,7 @@ node: concept-parameters
 related_nodes: [arch-neural, arch-transformer, concept-residual, adapt-model-edit, attack-steering-misuse, attack-factual-edit, attack-weight-theft, attack-unsafe-load, transform-quantization, transform-pruning, format-safetensors, defense-provenance, defense-isolation, goal-persistence]
 family: family-representation
 access_profile: A07
-level: beginner
+level: intermediate
 time: "45 min"
 compose_profiles: [workbench]
 model_backend: none
@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 0.55 GB in work/."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 0.55 GB in work/."
 canary: ATLAS-CANARY-w8ts
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -21,7 +21,9 @@ tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0,
 
 # LAB-39 · Weights are what it is, activations are what it is doing
 
-> **Atlas node:** [Weights, parameters and activations](https://ai-security-atlas.github.io/nodes/concept-parameters/) · **Family:** family-representation · **Level:** beginner · **Time:** 45 min · **Model backend:** none
+> **Atlas node:** [Weights, parameters and activations](https://ai-security-atlas.github.io/nodes/concept-parameters/) · **Family:** family-representation · **Level:** intermediate · **Time:** 45 min · **Model backend:** none
+
+> **Learning path:** Module 8 · step 2 of 6 · [Fine-tuning and the adapter supply chain](../README.md#module-8-fine-tuning-and-the-adapter-supply-chain)
 
 ## Overview
 
@@ -76,13 +78,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. The model steps use 4 threads (`TINYLM_THREADS`). On the busy test machine each step took from 2 s to about 2 min. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB) plus SmolLM2-135M-Instruct (0.27 GB) in the HF cache volume. The lab writes about 0.55 GB to `work/`: the edited model folder and its `save_pretrained` copy (0.27 GB each) and a 3.5 MB delta. |
+| Disk | The workbench image (2.4 GB) plus SmolLM2-135M-Instruct (0.27 GB) in the HF cache volume. The lab writes about 0.55 GB to `work/`: the edited model folder and its `save_pretrained` copy (0.27 GB each) and a 3.5 MB delta. |
 | Total time | 45 min: about 6–10 min of commands, the rest reading the output |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) goes deeper into the tensor roles that Step 1 counts.
+- Labs to finish first: [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (the LoRA training run this lab's central step repeats); [LAB-50 · Gradients point both ways](../concept-gradients/README.md) (the gradients that change the parameters).
+- Later in the path: [LAB-27 · Anatomy and forensics of a transformer checkpoint](../arch-transformer/README.md) (the tensor roles that Step 1 counts, in more depth).
 - Concepts to read first: [`arch-neural`](https://ai-security-atlas.github.io/nodes/arch-neural/).
 
 ## Explainer
@@ -99,18 +102,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-parameters COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-parameters COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-parameters COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-concept-parameters COMPOSE_PROFILES=workbench` |
 
 This lab calls no model server, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -125,7 +130,7 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-concept-parameters-workbench-1 Started
 ```
 
 What to notice: the build runs once and later labs reuse the image.
@@ -459,4 +464,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../concept-kv-cache/README.md) · [All labs](../README.md) · [next →](../arch-embedding/README.md)
+[← prev in path](../adapt-lora/README.md) · [All labs](../README.md) · [next in path →](../life-sft/README.md)

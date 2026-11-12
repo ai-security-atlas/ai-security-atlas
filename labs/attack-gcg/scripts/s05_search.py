@@ -1,7 +1,8 @@
 """Step 5: run a short GCG search yourself with nanogcg 0.2.3 (white-box, CPU). Run from labs/:
     docker compose run --rm workbench python attack-gcg/scripts/s05_search.py --steps 8 --width 32 --topk 32
-The longer, buffered run that produced assets/suffix.json (optional, slow):
-    docker compose run --rm workbench python attack-gcg/scripts/s05_search.py --steps 2000 --width 128 --topk 128 --buffer 32 --out search_long.json
+The command of the final stage that produced assets/suffix.json (optional, slow; warm-started from an
+earlier stage's best suffix, whose file was not kept):
+    docker compose run --rm workbench python attack-gcg/scripts/s05_search.py --steps 1500 --width 128 --topk 256 --buffer 0 --n-replace 1 --seed 21 --init-file <warm-start suffix file> --text-stop --out search_text.json
 No network. Writes work/search.json (or --out).
 """
 import argparse
@@ -37,6 +38,7 @@ print(f"victim {gcg.VICTIM}  target {gcg.CANARY!r}  suffix {gcg.N_SUFFIX} tokens
       f"n_replace={a.n_replace} seed={a.seed} use_prefix_cache=False", flush=True)
 r = gcg.run_gcg(tok, model, a.steps, a.width, a.topk, a.seed, every=a.every,
                 buffer=a.buffer, n_replace=a.n_replace, init=init, text_stop=a.text_stop)
+r["config"]["init_file"] = a.init_file
 
 # Check the real thing: the suffix as text, through the chat template, greedy decoding.
 if r.get("greedy_hit"):

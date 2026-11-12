@@ -13,7 +13,7 @@ backends:
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 2 GB Docker VM memory. 2.2 GB disk for the workbench image plus 0.27 GB for the SmolLM2-135M-Instruct checkpoint."
+hardware: "Any laptop, CPU only. 2 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for the SmolLM2-135M-Instruct checkpoint."
 canary: ATLAS-CANARY-s0ft
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -24,6 +24,8 @@ covers:
 # LAB-58 · A prompt you cannot read
 
 > **Atlas node:** [Soft prompt tuning](https://ai-security-atlas.github.io/nodes/adapt-softprompt/) · **Family:** family-training · **Level:** intermediate · **Time:** 60 min · **Model backend:** none
+
+> **Learning path:** Module 9 · step 7 of 8 · [Inside the transformer](../README.md#module-9-inside-the-transformer)
 
 ## Overview
 
@@ -78,13 +80,13 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Each 45-step training run (Steps 2, 4, 5 and Evaluate) took 41–63 s on an M4 Max at a load average near 10 from other jobs, and 76–142 s at a load average of 16–25. Every other step takes under 30 s. |
 | Docker VM memory | 2 GB (the 134.5M-parameter model in float32 is about 0.54 GB, plus gradients for a batch of 40 short rows). |
-| Disk | Workbench image 2.2 GB, the 0.27 GB checkpoint in the HF cache volume, and under 1 MB of prompt files in `work/`. |
+| Disk | Workbench image 2.4 GB, the 0.27 GB checkpoint in the HF cache volume, and under 1 MB of prompt files in `work/`. |
 | Total time | About 60 min: 4–10 min of commands on the shared test machine, plus reading. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) explains the embedding table and the `inputs_embeds` door, and [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) is the LoRA side of parameter-efficient tuning.
+- Labs to finish first: [LAB-25 · Vectors that are not words](../concept-embeddings/README.md) (the embedding table and the `inputs_embeds` door); [LAB-26 · Who attends to whom](../concept-attention/README.md) (how the prepended vectors reach every later token); [LAB-07 · What a 2 MB adapter changes](../adapt-lora/README.md) (the LoRA side of parameter-efficient tuning).
 - Concepts to read first: [`adapt-peft`](https://ai-security-atlas.github.io/nodes/adapt-peft/) and [`concept-embeddings`](https://ai-security-atlas.github.io/nodes/concept-embeddings/).
 
 ## Explainer
@@ -101,18 +103,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-adapt-softprompt COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-adapt-softprompt COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-adapt-softprompt COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-adapt-softprompt COMPOSE_PROFILES=workbench` |
 
 This lab calls no model backend, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`, which is what you see when no `LAB_BACKEND` line is active.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -130,7 +134,7 @@ docker compose up -d
  Container atlas-labs-adapt-softprompt-workbench-1 Started
 ```
 
-What to notice: the build runs once and later labs reuse the image; this lab needs nothing beyond workbench v3 (torch, transformers, peft, safetensors).
+What to notice: the build runs once and later labs reuse the image; this lab needs nothing beyond the shared workbench image (torch, transformers, peft, safetensors).
 
 ### Setup 3 — Check the environment
 
@@ -327,7 +331,7 @@ What to notice: the file has the same size and the same config as Step 2's, and 
 
 **Why**
 
-This stands for a prompt file that reached you mislabeled, mixed up with another team's file, or replaced. That is the readable or replaceable artifact access of `A09`, the setting [LAB-01](../attack-unsafe-load/README.md) starts from for model files ([`attack-unsafe-load`](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/)). The swap itself only half took: the swapped file follows its own labels on 19 of 40 training rows and on 9 of 24 new tickets, and its loss stalls near 1.4 while Step 2's falls to 0.29. A likely reason is that the frozen model already ties "billing" to charges, and eight vectors have to pull against that. Either way, the file routes badly, and nothing in it shows that. Changing what a model does by changing its training data is the subject of [LAB-16](../attack-sft-poison/README.md) and [LAB-18](../attack-backdoor/README.md) ([`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/), [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)). This lab plants no trigger; the only effect is the router's canary line.
+This stands for a prompt file that reached you mislabeled, mixed up with another team's file, or replaced. That is the writable or replaceable artifact access of `A09`, the setting [LAB-01](../attack-unsafe-load/README.md) starts from for model files ([`attack-unsafe-load`](https://ai-security-atlas.github.io/nodes/attack-unsafe-load/)). The swap itself only half took: the swapped file follows its own labels on 19 of 40 training rows and on 9 of 24 new tickets, and its loss stalls near 1.4 while Step 2's falls to 0.29. A likely reason is that the frozen model already ties "billing" to charges, and eight vectors have to pull against that. Either way, the file routes badly, and nothing in it shows that. Changing what a model does by changing its training data is the subject of [LAB-16](../attack-sft-poison/README.md) and [LAB-18](../attack-backdoor/README.md) ([`attack-sft-poison`](https://ai-security-atlas.github.io/nodes/attack-sft-poison/), [`attack-backdoor`](https://ai-security-atlas.github.io/nodes/attack-backdoor/)). This lab plants no trigger; the only effect is the router's canary line.
 
 ## Defend
 
@@ -389,6 +393,8 @@ The gate attaches each file to a fresh copy of the frozen model and scores it on
 
 ## Evaluate
 
+In the explainer: [explainer 8](explainer/index.html#adapt-softprompt/8)
+
 **Do**
 
 ```bash
@@ -445,7 +451,7 @@ docker compose down --remove-orphans
  Network atlas-labs-adapt-softprompt_default Removed
 ```
 
-What to notice: the reference run used `COMPOSE_PROJECT_NAME=atlas-labs-adapt-softprompt`; with the default project the container and network names start with `atlas-labs-` instead.
+What to notice: the container and network names start with `atlas-labs-adapt-softprompt`, the project name from Setup 1.
 
 > [!NOTE]
 > `docker compose down -v` also drops the named volumes (HF cache, Ollama models, Open WebUI data), including the SmolLM2 checkpoint this lab downloaded.
@@ -467,4 +473,4 @@ What to notice: the reference run used `COMPOSE_PROJECT_NAME=atlas-labs-adapt-so
 
 ---
 
-[← prev](../life-dpo/README.md) · [All labs](../README.md) · [next →](../system-tools/README.md)
+[← prev in path](../arch-embedding/README.md) · [All labs](../README.md) · [next in path →](../attack-projection-theft/README.md)

@@ -1,6 +1,7 @@
-"""Step 4: scan both revisions. Safetensors has no pickle to run, so the scanners agree
-they are clean. torch.load(weights_only=True) on these files returns the tensor dict;
-it does not execute code, and it does not read adapter_config.json. Run from labs/:
+"""Step 4: scan both revisions. picklescan finds no pickle in a safetensors file. modelscan
+exits 3, 'No supported files were passed to the tool', so it does not scan the file.
+torch.load(weights_only=True) on these files returns the tensor dict; it does not execute
+code, and it does not read adapter_config.json. Run from labs/:
     docker compose run --rm workbench python attack-adapter-tamper/scripts/s04_scan.py
 Requires Step 3's victim clones.
 """
@@ -41,12 +42,16 @@ def picklescan(path):
 
 
 def modelscan(path):
+    """Check rc first: exit 3 is 'No supported files were passed to the tool', so the
+    file was not scanned at all. Only rc 0 with 'No issues' in the output is a clean scan."""
     rc, out = run(["modelscan", "-p"], path)
+    if rc == 3:
+        return f"skipped: not scanned ({rc})"
     if re.search(r"unsafe operator|CRITICAL", out):
         return f"issues ({rc})"
-    if "No issues" in out or rc == 0:
+    if rc == 0 and "No issues" in out:
         return f"No issues found ({rc})"
-    return f"skipped ({rc})"
+    return f"error ({rc})"
 
 
 def weights_only(path):
@@ -59,13 +64,14 @@ def weights_only(path):
     return f"clean ({n} tensors)"
 
 
-print(f"{'revision':<10} {'picklescan':<22} {'modelscan':<22} {'torch weights_only':<28} safetensors tensors")
+print(f"{'revision':<10} {'picklescan':<22} {'modelscan':<26} {'torch weights_only':<28} safetensors tensors")
 report = {}
 for label, path in files:
     with safe_open(path, framework="pt") as f:
         n = len(f.keys())
     row = (picklescan(path), modelscan(path), weights_only(path), n)
     report[label] = {"picklescan": row[0], "modelscan": row[1], "weights_only": row[2], "tensors": n}
-    print(f"{label:<10} {row[0]:<22} {row[1]:<22} {row[2]:<28} {n}")
-print("scanners and weights_only see a tensor file; they do not read adapter_config.json and they do not run the model")
+    print(f"{label:<10} {row[0]:<22} {row[1]:<26} {row[2]:<28} {n}")
+print("picklescan finds no pickle, modelscan skips the file, weights_only loads tensors; "
+      "none of them read adapter_config.json or run the model")
 labkit.out("scan.json").write_text(json.dumps(report, indent=1) + "\n")

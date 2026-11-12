@@ -13,7 +13,7 @@ backends:                                 # yes | partial | no | n/a
   container-ollama: partial
   host-ollama: yes
   external-api: no
-hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.2 GB workbench image, 1.2 GB llama.cpp server image, 0.39 GB GGUF model."
+hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.4 GB workbench image, 1.2 GB llama.cpp server image, 0.39 GB GGUF model."
 canary: ATLAS-CANARY-kv24
 last_tested: 2026-11-01
 tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, llama.cpp b11977, host Ollama 0.32.5 (optional Step 5)"
@@ -24,6 +24,8 @@ covers:
 # LAB-24 · Timing the prompt cache
 
 > **Atlas node:** [Prompt-cache timing inference](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** optional
+
+> **Learning path:** Module 6 · step 3 of 5 · [Serving infrastructure](../README.md#module-6-serving-infrastructure)
 
 ## Overview
 
@@ -78,13 +80,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any 64-bit CPU. Four threads per server (`SERVING_CPU_THREADS`); timing steps deliberately run on a busy, shared machine to make the noise honest. |
 | Docker VM memory | 4 GB (two llama.cpp servers with the 0.39 GB model plus the workbench; only `llama-server` is used by the steps). |
-| Disk | Workbench image 2.2 GB, llama.cpp server image 1.2 GB, model 0.39 GB in the `hf-cache-v1` volume. |
+| Disk | Workbench image 2.4 GB, llama.cpp server image 1.2 GB, model 0.39 GB in the `hf-cache-v1` volume. |
 | Total time | About 75 min: about 6–9 min of commands (Step 3 is most of it), the rest reading tables. |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none required. [LAB-14 · What the server adds](../system-serving/README.md) introduces the same server, its `/slots` endpoint and the `cache_n` counter this lab deliberately stops trusting; doing it first makes Step 2 land harder.
+- Labs to finish first: [LAB-14 · What the server adds](../system-serving/README.md) (the same server, its `/slots` endpoint and the `cache_n` counter this lab stops trusting); [LAB-38 · The cache remembers](../concept-kv-cache/README.md) (what the prompt cache stores and when it is reused).
+- Recommended first: [LAB-42 · Whose data is this? Cross-tenant leaks in a chat app](../attack-session-leak/README.md) (the contrast: a reply cache keyed without the tenant).
 - Concepts to read first: [`concept-kv-cache`](https://ai-security-atlas.github.io/nodes/concept-kv-cache/) and [`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/).
 
 ## Explainer
@@ -101,21 +104,23 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=ollama,serving,workbench` |
-| host-ollama | `COMPOSE_PROFILES=serving,workbench` |
-| external-api | `COMPOSE_PROFILES=serving,workbench` |
-| none | `COMPOSE_PROFILES=serving,workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-cache-sidechannel COMPOSE_PROFILES=ollama,serving,workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-cache-sidechannel COMPOSE_PROFILES=serving,workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-cache-sidechannel COMPOSE_PROFILES=serving,workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-cache-sidechannel COMPOSE_PROFILES=serving,workbench` |
 
 The `serving` profile is the shared llama.cpp fixture (labs/_shared/serving): `serving-model` downloads the pinned GGUF into the HF cache volume and checks its sha256, then `llama-server` starts with the shipped flags (prompt caching on, `--cache-ram` 8192 MiB, no API key) and `llama-server-hardened` starts with LAB-14's hardened flags. The lab's scripts talk to `llama-server` on the compose network; the host port is `127.0.0.1:${SERVING_PORT:-8180}`.
 
 > [!TIP]
-> If another lab's serving stack already holds port 8180 (check `docker ps`), set `SERVING_PORT=8199` in `labs/.env` before `docker compose up`. Nothing in the steps reads the host port; it only avoids a bind conflict.
+> If another lab's serving stack still holds port 8180 (check `docker ps`), run that lab's Cleanup first, or add `SERVING_PORT=8199` to your Setup 1 line. Nothing in the steps reads the host port; it only avoids a bind conflict.
 
 ### Setup 2 — Build and start (≈1–3 min)
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -131,15 +136,15 @@ docker compose up -d --wait
  ...
  Image atlas-labs/workbench:v4 Built
  Image ghcr.io/ggml-org/llama.cpp:server-b11977@sha256:01c2bc28d512... Pulled
- Container atlas-labs-serving-model-1 Started
- Container atlas-labs-workbench-1 Started
- Container atlas-labs-serving-model-1 Exited
- Container atlas-labs-llama-server-hardened-1 Started
- Container atlas-labs-llama-server-1 Started
+ Container atlas-labs-attack-cache-sidechannel-serving-model-1 Started
+ Container atlas-labs-attack-cache-sidechannel-workbench-1 Started
+ Container atlas-labs-attack-cache-sidechannel-serving-model-1 Exited
+ Container atlas-labs-attack-cache-sidechannel-llama-server-hardened-1 Started
+ Container atlas-labs-attack-cache-sidechannel-llama-server-1 Started
  ...
- Container atlas-labs-workbench-1 Healthy
- Container atlas-labs-llama-server-1 Healthy
- Container atlas-labs-llama-server-hardened-1 Healthy
+ Container atlas-labs-attack-cache-sidechannel-workbench-1 Healthy
+ Container atlas-labs-attack-cache-sidechannel-llama-server-1 Healthy
+ Container atlas-labs-attack-cache-sidechannel-llama-server-hardened-1 Healthy
 ```
 
 What to notice: `serving-model` runs once and exits after the hash check, and `--wait` returns only when both servers answer their healthcheck, so the model is loaded before Step 1.
@@ -169,9 +174,9 @@ What to notice: the last `[ok]` is the mechanism under test verified live — an
 
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | s01_tenants | workbench | <15 s | 1 |
-| 2 | s02_signal | workbench | ≈15–30 s | 3 |
-| 3 | s03_recover | workbench | ≈2–4 min | 5 |
+| 1 | s01_tenants | workbench | <15 s | 1–2 |
+| 2 | s02_signal | workbench | ≈15–30 s | 3–4 |
+| 3 | s03_recover | workbench | ≈2–4 min | 5–6 |
 | 4 | s04_trials | workbench | ≈5–15 s | 7 |
 | 5 | s05_backend (optional) | workbench | ≈20–60 s | — |
 | D1 | d1_slots (×2) | workbench | ≈1–2.5 min | 8 |
@@ -181,6 +186,8 @@ What to notice: the last `[ok]` is the mechanism under test verified live — an
 Runtimes were measured on a machine several other jobs were using, which is the point of this lab: every timing number below moves with load, and the runtimes do too. They include about 1–3 s of container start-up per `docker compose run` and 3–10 s per server restart in D2. The whole verified run (Setup to Cleanup, Step 5 included) took about 8 min of wall clock.
 
 ### Step 1 — One server, two tenants, and where prompts differ · [explainer 1](explainer/index.html#attack-cache-sidechannel/1)
+
+Also in the explainer: [explainer 2](explainer/index.html#attack-cache-sidechannel/2)
 
 **Do**
 
@@ -228,6 +235,8 @@ A KV cache stores the attention state of every prompt the server has processed, 
 
 ### Step 2 — A hit, a miss and a free oracle · [explainer 3](explainer/index.html#attack-cache-sidechannel/3)
 
+Also in the explainer: [explainer 4](explainer/index.html#attack-cache-sidechannel/4)
+
 **Do**
 
 ```bash
@@ -267,6 +276,8 @@ This is the demonstration half of the caveat: the shared cache produces a real, 
 
 ### Step 3 — Recover the live code from timing alone (≈2–4 min) · [explainer 5](explainer/index.html#attack-cache-sidechannel/5)
 
+Also in the explainer: [explainer 6](explainer/index.html#attack-cache-sidechannel/6)
+
 **Do**
 
 ```bash
@@ -305,7 +316,7 @@ What to notice: the pick is right in 24 of 24 rounds here, but two earlier runs 
 
 **Why**
 
-This is prompt-cache timing inference end to end: candidate prompts, first-contact probes, a fastest-probe decision, and a statistical claim ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/)). The Mann-Whitney U test asks whether the live-code probes' times sit systematically below the decoys' without assuming bell-shaped noise, the AUC turns U into "probability a hit beats a miss", and the Wilson interval states what 24 binary picks can honestly support — baselines and intervals over bare percentages, exactly as [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) asks. What the attacker recovers is one bit per round about *which known prompt* is live, not prompt text; D3 returns to that distinction.
+This is prompt-cache timing inference end to end: candidate prompts, first-contact probes, a fastest-probe decision, and a statistical claim ([`attack-cache-sidechannel`](https://ai-security-atlas.github.io/nodes/attack-cache-sidechannel/)). The Mann-Whitney U test asks whether the live-code probes' times sit systematically below the decoys' without assuming bell-shaped noise, the AUC turns U into "probability a hit beats a miss", and the Wilson interval states what 24 binary picks can honestly support — baselines and intervals over bare percentages, exactly as [`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) asks. What the attacker recovers each round is which of four known prompts is live (2 bits), not prompt text; D3 returns to that distinction.
 
 ### Step 4 — How many rounds does the verdict need · [explainer 7](explainer/index.html#attack-cache-sidechannel/7)
 
@@ -374,7 +385,7 @@ RESULT on host-ollama (qwen2.5:3b): a signal that survives random probe order, s
 What to notice: on host Ollama 0.32.5 with Metal the channel is about 35 ms wide but just as consistent (AUC 0.98–1.00), and random probe order did not break it — a smaller gap, not a closed one.
 **Why**
 
-The roadmap asked for this comparison because a backend is part of the threat model: Ollama embeds its own serving stack, and on this version the reused prefix survives other requests in between ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/), [`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/)). A GPU backend shrinks prefill cost — and with it the absolute size of the leak — so "the gap is only tens of milliseconds" is a statement about the hardware, never about safety; the reference numbers in Steps 1–4 stay on the CPU llama.cpp container where prefill dominates. This is also why the step prints its endpoint before sending anything: the lab's rule is own servers only.
+This comparison matters because a backend is part of the threat model: Ollama embeds its own serving stack, and on this version the reused prefix survives other requests in between ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/), [`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/)). A GPU backend shrinks prefill cost — and with it the absolute size of the leak — so "the gap is only tens of milliseconds" is a statement about the hardware, never about safety; the reference numbers in Steps 1–4 stay on the CPU llama.cpp container where prefill dominates. This is also why the step prints its endpoint before sending anything: the lab's rule is own servers only.
 
 ## Defend
 
@@ -453,7 +464,7 @@ docker compose up -d --wait llama-server
   A first send 2408 ms; repeats 1689-2608 ms (median 1954 ms, cache_n 138)
 [ok] baseline saved; now restart the server with SERVING_ARGS="--no-cache-prompt" and rerun
  ...
- Container atlas-labs-llama-server-1 Healthy
+ Container atlas-labs-attack-cache-sidechannel-llama-server-1 Healthy
 [atlas-lab] attack-cache-sidechannel · d2_nocache.py · torch 2.14.1+cpu · backend host-ollama
 
 attack with --no-cache-prompt:
@@ -471,7 +482,7 @@ RESULT no caching: picks 2/12 right (chance 25%), p=0.430;
 [note] drop the cache and pay it here; salting sensitive prefixes (a per-tenant nonce ahead of
 [note] any secret) is the middle road, at the cost of never hitting for those prompts
  ...
- Container atlas-labs-llama-server-1 Healthy
+ Container atlas-labs-attack-cache-sidechannel-llama-server-1 Healthy
 ```
 
 What to notice: with `--no-cache-prompt` the attack lands at chance (2/12, p=0.430) because nothing is ever reused — and the victim's own identical repeats stop hitting too (`cache_n 0`), which is the measured bill: about +157 s of prefill per 1000 repeat requests on this machine (this run's baselines were measured under load; the deltas, not the absolute milliseconds, are the point).
@@ -539,11 +550,11 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] attack-cache-sidechannel · cleanup.py · torch 2.14.1+cpu · backend host-ollama
 [ok] removed attack-cache-sidechannel/work (d1_slots.json d2_nocache.json evaluate.json s01_tenants.json s02_signal.json s03_recover.json s04_trials.json s05_backend.json verify.log)
- Container atlas-labs-llama-server-1 Removed
- Container atlas-labs-llama-server-hardened-1 Removed
- Container atlas-labs-serving-model-1 Removed
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-cache-sidechannel-llama-server-1 Removed
+ Container atlas-labs-attack-cache-sidechannel-llama-server-hardened-1 Removed
+ Container atlas-labs-attack-cache-sidechannel-serving-model-1 Removed
+ Container atlas-labs-attack-cache-sidechannel-workbench-1 Removed
+ Network atlas-labs-attack-cache-sidechannel_default Removed
 ```
 
 > [!NOTE]
@@ -568,4 +579,4 @@ The llama.cpp image stays until `docker image rm` removes it.
 
 ---
 
-[← prev](../attack-tool-description/README.md) · [All labs](../README.md) · [next →](../concept-embeddings/README.md)
+[← prev in path](../concept-kv-cache/README.md) · [All labs](../README.md) · [next in path →](../format-gguf/README.md)

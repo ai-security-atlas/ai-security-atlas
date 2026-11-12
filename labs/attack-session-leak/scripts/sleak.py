@@ -93,9 +93,17 @@ class App:
     def __init__(self):
         self.cache = {}
         self.sessions = {}
+        self.seq = 1
 
     def issue(self, principal):
         sid = uuid.uuid4().hex
+        self.sessions[sid] = {"owner": principal, "turns": []}
+        return sid
+
+    def issue_seq(self, principal):
+        """A sequential id (sess-1, sess-2, ...): predictable, so the guess loop can find it."""
+        sid = f"sess-{self.seq}"
+        self.seq += 1
         self.sessions[sid] = {"owner": principal, "turns": []}
         return sid
 
@@ -132,6 +140,11 @@ class App:
         elif memory == "bound":
             bucket = self.sessions.get(session)
             if bucket is None or bucket["owner"] != principal:
+                rejected, bucket = True, None
+        elif memory == "issued":
+            # The bug this lab guards against: the id alone is the credential, the owner is not checked.
+            bucket = self.sessions.get(session)
+            if bucket is None:
                 rejected, bucket = True, None
 
         if rejected:
@@ -227,7 +240,11 @@ def session_bugs():
 
 
 def session_bound():
-    """The server issues the id and refuses any other id, including 1000 sequential guesses."""
+    """A random id bound to the caller refuses 1000 guesses; a sequential id-only control lets 1 through.
+
+    Rejected turns do no search, so the guess loops stay fast; only a guess that names a stored
+    session triggers a retrieval.
+    """
     app = App()
     issued = app.issue(COPPER)
     own = app.ask(COPPER, "night", cache="off", acl="pre", memory="bound", session=issued)
@@ -235,13 +252,26 @@ def session_bound():
     typed = app.ask(HARBOR, "earlier", cache="off", acl="pre", memory="bound", session=SESSION_GUESS)
     opened = 0
     for i in range(GUESSES):
-        sid = f"sess-{i}"
-        rec = app.sessions.get(sid)
-        if rec is not None and rec["owner"] == HARBOR:
+        t = app.ask(HARBOR, "earlier", cache="off", acl="pre", memory="bound", session=f"sess-{i}")
+        if t.source != "rejected" or CANARY in t.reply:
             opened += 1
     again = app.ask(COPPER, "earlier", cache="off", acl="pre", memory="bound", session=issued)
+
+    control = App()
+    control_issued = control.issue_seq(COPPER)
+    control.ask(COPPER, "night", cache="off", acl="pre", memory="issued", session=control_issued)
+    control_opened = 0
+    control_leaks = 0
+    for i in range(GUESSES):
+        t = control.ask(HARBOR, "earlier", cache="off", acl="pre", memory="issued", session=f"sess-{i}")
+        if t.source != "rejected" or CANARY in t.reply:
+            control_opened += 1
+        if CANARY in t.reply:
+            control_leaks += 1
     return {"issued": issued, "own": own, "stolen": stolen, "typed": typed,
-            "opened": opened, "guesses": GUESSES, "again": again}
+            "opened": opened, "guesses": GUESSES, "again": again,
+            "control_issued": control_issued, "control_opened": control_opened,
+            "control_leaks": control_leaks}
 
 
 def counts():
@@ -281,6 +311,8 @@ def counts():
         "bound_typed": int(bound["typed"].source == "rejected"),
         "bound_own": int(bound["again"].canary),
         "guesses_opened": bound["opened"],
+        "control_opened": bound["control_opened"],
+        "control_leaks": bound["control_leaks"],
         "guesses": bound["guesses"],
         "workload_n": shared["n"],
     }

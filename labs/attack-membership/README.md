@@ -13,7 +13,7 @@ backends:                                # yes | partial | no | n/a
   container-ollama: n/a
   host-ollama: n/a
   external-api: n/a
-hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.3 GB disk for the workbench image."
+hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.4 GB disk for the workbench image."
 canary: ATLAS-CANARY-mi13
 last_tested: 2026-10-29
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
@@ -25,6 +25,8 @@ covers:                                  # nodes practiced here as named steps (
 # LAB-13 · Was this record in the training set?
 
 > **Atlas node:** [Membership inference](https://ai-security-atlas.github.io/nodes/attack-membership/) · **Family:** family-privacy · **Level:** intermediate · **Time:** 75 min · **Model backend:** none
+
+> **Learning path:** Module 7 · step 5 of 6 · [Gradients and adversarial ML on small classifiers](../README.md#module-7-gradients-and-adversarial-ml-on-small-classifiers)
 
 ## Overview
 
@@ -79,13 +81,14 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 | :--- | :--- |
 | CPU | Any CPU; no GPU. Every training run uses one thread on purpose, so results repeat; the slowest step (16 shadow models) takes about 30 s. |
 | Docker VM memory | 4 GB |
-| Disk | The workbench image (2.2 GB). The vision-zoo target is 154 KB; the lab writes about 2 MB to `work/`. |
+| Disk | The workbench image (2.4 GB). The vision-zoo target is 154 KB; the lab writes about 2 MB to `work/`. |
 | Total time | 75 min: about 3 min of commands, the rest reading the tables and plots |
 
 ## Prerequisites
 
 - "Start here" in the [labs index](../README.md) is done.
-- Labs to finish first: none. [LAB-08 · One gradient step](../attack-fgsm/README.md) introduces the vision-zoo digits and CNN, and [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md) introduces victim-api; both help but are not required.
+- Labs to finish first: [LAB-05 · What the API reveals](../concept-logits/README.md) (log-probabilities and confidence scores); [LAB-08 · One gradient step](../attack-fgsm/README.md) (introduces the vision-zoo digits and CNN); [LAB-12 · Measuring an attack honestly](../eval-asr/README.md) (the `evalkit` intervals this lab reports).
+- Recommended first: [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md) (introduces `victim-api`).
 - Concepts to read first: [`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/) and [`concept-logits`](https://ai-security-atlas.github.io/nodes/concept-logits/).
 
 ## Explainer
@@ -102,18 +105,20 @@ The explainer step links in this README work only in a local clone; on GitHub th
 
 ### Setup 1 — Profiles
 
-Put the line for your backend in `labs/.env`:
+Run the line for your backend in the terminal you use for this lab. It names this lab's Compose project and selects its services, so the commands below need no prefix and Cleanup stops only this lab. Run it again in any new terminal. The backend settings stay in `labs/.env` (Start here, step 2, in the [labs index](../README.md)).
 
-| Backend | `COMPOSE_PROFILES` line |
+| Backend | Line to run |
 | :--- | :--- |
-| container-ollama | `COMPOSE_PROFILES=workbench` |
-| host-ollama | `COMPOSE_PROFILES=workbench` |
-| external-api | `COMPOSE_PROFILES=workbench` |
-| none | `COMPOSE_PROFILES=workbench` |
+| container-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-membership COMPOSE_PROFILES=workbench` |
+| host-ollama | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-membership COMPOSE_PROFILES=workbench` |
+| external-api | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-membership COMPOSE_PROFILES=workbench` |
+| none | `export COMPOSE_PROJECT_NAME=atlas-labs-attack-membership COMPOSE_PROFILES=workbench` |
 
 This lab calls no model, so you can keep whichever backend block is active in `labs/.env`. The banner on every output prints that block's `LAB_BACKEND`; the Observe blocks below show `backend none`, which is what you see when no `LAB_BACKEND` line is active. Only the banner differs.
 
 ### Setup 2 — Build and start
+
+Skip the `docker compose build` line if the workbench image is already on your machine (an earlier lab built it, or your workshop pre-loaded it). The first build takes a few minutes.
 
 **Do**
 
@@ -128,10 +133,10 @@ docker compose up -d
 ...
  Image atlas-labs/workbench:v4 Built
 ...
- Container atlas-labs-workbench-1 Started
+ Container atlas-labs-attack-membership-workbench-1 Started
 ```
 
-What to notice: the build runs once and later labs reuse the image; workbench v3 adds opacus 1.6.0 and adversarial-robustness-toolbox 1.20.1, which this lab needs.
+What to notice: the build runs once and later labs reuse the image; the workbench image (v3 and later) includes opacus 1.6.0 and adversarial-robustness-toolbox 1.20.1, which this lab needs.
 
 ### Setup 3 — Check the environment
 
@@ -159,7 +164,7 @@ What to notice: the target checkpoint must match the sha256 in the vision-zoo `m
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | s01_target | workbench | ≈5 s | 1 |
-| 2 | s02_threshold | workbench | ≈5 s | 3 |
+| 2 | s02_threshold | workbench | ≈5 s | 2–4 |
 | 3 | s03_overfit | workbench | ≈10–15 s | 5 |
 | 4 | s04_shadows | workbench | ≈30 s–1 min | 6 |
 | 5 | s05_art_check | workbench | ≈25–35 s | 7 |
@@ -204,6 +209,8 @@ What to notice: the mean loss differs by a factor of 40, but the medians are clo
 The target is overfit on purpose (210 records, 100 epochs, no regularization), which is the regime where membership leaks ([`concept-memorization`](https://ai-security-atlas.github.io/nodes/concept-memorization/)). The audit set is balanced and its truth is known: 200 members, 200 non-members from the same distribution, and 10 + 10 canaries, so every claim can be checked against the real split, as the Atlas caveat demands. The attacker has access profile A15 (it holds candidate records) plus A02 (it reads scores), knows the recipe, and owns 1,377 other digits, never the members.
 
 ### Step 2 — Threshold attacks against baselines · [explainer 3](explainer/index.html#attack-membership/3)
+
+Also in the explainer: [explainer 2](explainer/index.html#attack-membership/2) · [explainer 4](explainer/index.html#attack-membership/4)
 
 **Do**
 
@@ -457,8 +464,8 @@ docker compose down --remove-orphans
 ```text
 [atlas-lab] attack-membership · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] removed attack-membership/work (art_check.json cnn-dp-eps1.safetensors cnn-dp-eps4.safetensors cnn-dp-eps8.safetensors dp.json evaluate.json label_only.json loss_hist.png overfit.json overfit.png queries.jsonl regularize.json roc_threshold.png shadows.json shadows.npz target.json threshold.json)
- Container atlas-labs-workbench-1 Removed
- Network atlas-labs_default Removed
+ Container atlas-labs-attack-membership-workbench-1 Removed
+ Network atlas-labs-attack-membership_default Removed
 ```
 
 > [!NOTE]
@@ -482,4 +489,4 @@ docker compose down --remove-orphans
 
 ---
 
-[← prev](../eval-asr/README.md) · [All labs](../README.md) · [next →](../system-serving/README.md)
+[← prev in path](../attack-model-imitation/README.md) · [All labs](../README.md) · [next in path →](../attack-backdoor/README.md)

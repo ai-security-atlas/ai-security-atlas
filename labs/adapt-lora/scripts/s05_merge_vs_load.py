@@ -47,7 +47,7 @@ mods = sorted({k.split('.')[-2] for k in changed})
 print(f"    tensors changed by the merge: {len(changed)} of {len(before)} ({', '.join(mods)})")
 k = "model.layers.0.self_attn.q_proj.weight"
 d = after[k] - before[k]
-print(f"    layer 0 q_proj: max |dW| {d.abs().max().item():.1e}, rank(dW) {torch.linalg.matrix_rank(d).item()}")
+print(f"    layer 0 q_proj: largest entry |dW_ij| {d.abs().max().item():.1e}, rank(dW) {torch.linalg.matrix_rank(d).item()}")
 print(f"    state sha256 guard  {h_guard[:12]}\n    state sha256 merged {tinylm.state_sha256(merged)[:12]}  "
       f"(a hash of the merged model no longer matches the base)")
 labkit.out("merge.json").write_text(json.dumps({

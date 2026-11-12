@@ -1,3 +1,4 @@
+SETUP2	Container \S+-atlas-app-1 (Started|Running)
 SETUP3	\[ok\] torch 2\.14\.1\+cpu transformers 5\.20\.2
 SETUP3	\[ok\] bi-encoder: sentence-transformers/all-MiniLM-L6-v2 @ 1110a24
 SETUP3	\[ok\] cross-encoder: cross-encoder/ms-marco-MiniLM-L6-v2 @ 233902d

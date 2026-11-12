@@ -236,7 +236,7 @@
         T(cg, 530, 310, `refuted ${count("targeted", "refuted")}/6, inconclusive ${count("targeted", "inconclusive")}/6`, 14, { class: "mono" });
         const eg = later(S("g", {}, g), 5, 0.7);
         T(eg, 40, 410, "the same question in other labs", 14, { fill: V("muted") });
-        chip(eg, 40, 446, 430, `LAB-02 image → 2 VLMs: ${E.lab02.k}/${E.lab02.n} (up to ${pct(E.lab02.hi)})`, "warn");
+        chip(eg, 40, 446, 430, `LAB-02 image → 2 VLMs: ${E.lab02.k}/${E.lab02.n} each (up to ${pct(E.lab02.hi)})`, "warn");
         chip(eg, 490, 446, 430, `LAB-21 suffix → 2 models: ${E.lab21.k}/${E.lab21.n} (up to ${pct(E.lab21.hi)})`, "warn");
       }
       // ---- 7: grade every claim on the target

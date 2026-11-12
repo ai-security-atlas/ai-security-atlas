@@ -31,9 +31,10 @@ def rows_of(doc):
     return doc["rows"] if "rows" in doc else []
 
 
-def given_write(rows):
-    wrote = [r for r in rows if r.get("wrote")]
-    return [sum(1 for r in wrote if r.get("harm")), len(wrote)]
+def given(rows, key):
+    """Harm over the trials where key is true: "poisoned" (any poison row) or "wrote" (live write)."""
+    sub = [r for r in rows if r.get(key)]
+    return [sum(1 for r in sub if r.get("harm")), len(sub)]
 
 
 s01, s02, s03 = rd("s01.json"), rd("s02.json"), rd("s03.json")
@@ -58,21 +59,26 @@ data = {
     "s03": {**pack(s03["rows"]), "trials": s03["trials"],
             "live_write": [live["k"], live["n"]],
             "in_session": tally(s03["rows"], "in_session"),
+            "inserted": s03["inserted"],
             "poison_source": next((r.get("poison_source") or "" for r in s03["rows"] if r.get("wrote")), "")},
     "s04": {**pack(s04["rows"]), "trials": s04["trials"], "first_harm_seed": s04["first_harm_seed"],
             "read_has_url": s04["read_has_url"], "read_has_canary": s04["read_has_canary"],
             "read_has_signature": s04["read_has_signature"],
             "collector": tally(s04["rows"], "collector"),
             "signature": tally(s04["rows"], "signature"),
-            "harm_given_write": given_write(s04["rows"])},
+            "harm_given_stored": given(s04["rows"], "poisoned"),
+            "harm_given_live": given(s04["rows"], "wrote")},
     "s05": {**pack(s05["rows"]), "trials": s05["trials"], "provenance": s05["provenance"],
             "source": s05["source"], "read_has_canary": s05["read_has_canary"],
             "read_has_signature": s05["read_has_signature"],
             "collector": tally(s05["rows"], "collector"),
             "signature": tally(s05["rows"], "signature"),
-            "harm_given_write": given_write(s05["rows"])},
+            "harm_given_stored": given(s05["rows"], "poisoned"),
+            "harm_given_live": given(s05["rows"], "wrote"),
+            "poison_rows": s05["sqlite_poison_rows"], "user_rows": s05["sqlite_user_rows"],
+            "bob": pack(s05["bob"])},
     "d1": {pid: {**pack(rows), "signature": tally(rows, "signature"),
-                 "harm_given_write": given_write(rows)}
+                 "harm_given_stored": given(rows, "poisoned")}
            for pid, rows in d1["profiles"].items()},
     "d2": {"attack": pack(d2["attack"]), "remember": pack(d2["remember"]),
            "gated": pack(d2["gated_remember"]),
@@ -83,13 +89,13 @@ data = {
            "stored": tally(d2["attack"], "stored")},
     "d3": {"records": d3["records"], "url": d3["url"], "source": d3["source"],
            "session": d3["session"], "email_canary": d3["email_canary"],
-           "live_poison_row": d3["live_poison_row"], "read_has_canary": d3["read_has_canary"],
+           "poison_row": d3["poison_row"], "inserted": d3["inserted"], "read_has_canary": d3["read_has_canary"],
            "extra_model_calls": d3["extra_model_calls"]},
     "evaluate": {name: {"harm": [r["harm"]["k"], r["harm"]["n"]],
                         "utility": [r["utility"]["k"], r["utility"]["n"]],
                         "signature": [r["signature"]["k"], r["signature"]["n"]],
-                        "harm_given_write": [r["harm_given_write"]["k"], r["harm_given_write"]["n"]],
-                        "gate": ev["gates"][name]["passed"],
+                        "harm_given_stored": [r["harm_given_stored"]["k"], r["harm_given_stored"]["n"]],
+                        "gate": ev["gates"][name]["verdict"],
                         "prompt_tokens_per_trial": r["prompt_tokens_per_trial"]}
                  for name, r in ev["results"].items()},
     "eval_trials": ev["trials"],
