@@ -94,6 +94,57 @@ window.LAB_DATA = {
   }
  },
  "seed1_match": 8,
+ "neutral": {
+  "correct": {
+   "k": 8,
+   "n": 8,
+   "p": 1.0,
+   "lo": 0.6756,
+   "hi": 1.0
+  },
+  "wrong": {
+   "k": 0,
+   "n": 8,
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.3244
+  },
+  "note": {
+   "k": 0,
+   "n": 8,
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.3244
+  },
+  "authority": {
+   "k": 0,
+   "n": 8,
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.3244
+  },
+  "verbose": {
+   "k": 0,
+   "n": 8,
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.3244
+  },
+  "adapt": {
+   "k": 0,
+   "n": 8,
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.3244
+  },
+  "sab": {
+   "k": 0,
+   "n": 8,
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.3244
+  }
+ },
  "boundary": {
   "correct": {
    "k": 6,
@@ -327,30 +378,30 @@ window.LAB_DATA = {
    "prompt_tokens": 7107,
    "completion_tokens": 144,
    "total_tokens": 7251,
-   "latency_ms_p50": 150.4,
-   "latency_ms_p95": 157.9,
-   "latency_ms_mean": 150.4,
-   "model_seconds": 10.8
+   "latency_ms_p50": 159.9,
+   "latency_ms_p95": 243.4,
+   "latency_ms_mean": 169.2,
+   "model_seconds": 12.2
   },
   "boundary": {
    "queries": 48,
    "prompt_tokens": 4643,
    "completion_tokens": 96,
    "total_tokens": 4739,
-   "latency_ms_p50": 150.5,
-   "latency_ms_p95": 167.4,
-   "latency_ms_mean": 153.5,
-   "model_seconds": 7.4
+   "latency_ms_p50": 140.9,
+   "latency_ms_p95": 153.5,
+   "latency_ms_mean": 141.3,
+   "model_seconds": 6.8
   },
   "second": {
    "queries": 40,
    "prompt_tokens": 3163,
    "completion_tokens": 80,
    "total_tokens": 3243,
-   "latency_ms_p50": 156.7,
-   "latency_ms_p95": 168.5,
-   "latency_ms_mean": 154.2,
-   "model_seconds": 6.2
+   "latency_ms_p50": 153.4,
+   "latency_ms_p95": 186.7,
+   "latency_ms_mean": 152.1,
+   "model_seconds": 6.1
   },
   "programmatic_queries": 0,
   "screen_queries": 0
@@ -359,6 +410,7 @@ window.LAB_DATA = {
   "gates": {
    "reference-check": true,
    "ship-naive": false,
+   "ship-neutral": false,
    "prompt-boundary": false,
    "keyword-screen": false
   },

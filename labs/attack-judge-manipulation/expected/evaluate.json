@@ -11,6 +11,15 @@
       "honest_long": ["all", "most"],
       "honest_self": ["all", "most", "some"]
     },
+    "neutral": {
+      "correct": ["all", "most"],
+      "wrong": ["none", "some"],
+      "note": ["none", "some"],
+      "authority": ["none", "some"],
+      "verbose": ["none", "some"],
+      "adapt": ["none", "some"],
+      "sab": ["none", "some"]
+    },
     "boundary": {
       "correct": ["all", "most"],
       "note": ["none", "some"],
@@ -37,6 +46,7 @@
   "gates": {
     "reference-check": true,
     "ship-naive": false,
+    "ship-neutral": false,
     "prompt-boundary": false,
     "keyword-screen": false
   },

@@ -2,7 +2,8 @@
     docker compose run --rm workbench python attack-judge-manipulation/scripts/s02_steer.py
 Styles: plain wrong, forged examiner note, official memo, self-assessment, adaptive annotation,
 sabotage (a correct claim plus a note that says NO), and two honest longer answers.
-The note style is graded again at seed 1.
+The note style is graded again at seed 1. A neutral judge, whose rubric never mentions notes,
+then grades the correct answers and the attack styles.
 """
 import labkit
 
@@ -31,8 +32,19 @@ same = sum(a["yes"] == b["yes"] for a, b in zip(
     [r for r in recs if r["style"] == "note"], recs1))
 print(f"seed 1 matches seed 0 on {same}/{len(note_rows)} note rows")
 H.print_cost("naive-steered", calls + calls1)
+
+neutral_styles = ("correct", "wrong", "note", "authority", "verbose", "adapt", "sab")
+neutral_rows = H.rows_for(answers, neutral_styles)
+neutral, calls_n, unparsed_n = H.grade_rows(chat, neutral_rows, H.NEUTRAL, "neutral", seed=0)
+print(f"neutral judge, same answers, rubric never mentions notes ({len(neutral_rows)} rows):")
+nrates = H.print_rates(neutral, neutral_styles, prefix="neutral ")
+d, lo, hi = ek.diff_ci(nrates["note"], nrates["wrong"])
+print(f"neutral note minus wrong: {100 * d:+.0f} pts [{100 * lo:.0f}, {100 * hi:.0f}]")
+print(f"unparsed {unparsed_n}")
+H.print_cost("neutral", calls_n)
 ag = H.agreement_of(recs)
 print(f"agreement with the key on steered rows: {ag['agree']}/{ag['n']} kappa {ag['kappa']:.2f} "
       f"tp {ag['tp']} fp {ag['fp']} fn {ag['fn']} tn {ag['tn']}")
 H.save("s02.json", {"info": info, "records": recs, "seed1_note": recs1, "seed1_match": same,
-                    "unparsed": unparsed, "cost": ek.cost(calls + calls1), "agreement": ag})
+                    "unparsed": unparsed, "cost": ek.cost(calls + calls1), "agreement": ag,
+                    "neutral": neutral, "neutral_unparsed": unparsed_n})

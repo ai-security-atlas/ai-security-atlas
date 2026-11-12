@@ -59,6 +59,7 @@ data = {
     "naive": pack(s02["records"], ("wrong", "note", "authority", "verbose", "adapt", "sab",
                                    "honest_long", "honest_self")),
     "seed1_match": s02["seed1_match"],
+    "neutral": pack(s02["neutral"], ("correct", "wrong", "note", "authority", "verbose", "adapt", "sab")),
     "boundary": pack(d1["records"], ("correct", "note", "verbose", "adapt", "sab", "honest_long")),
     "programmatic": pack(d2["programmatic"], H.STYLES),
     "second": pack(d2["second"], ("correct", "note", "sab", "adapt", "wrong")),
