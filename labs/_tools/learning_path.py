@@ -122,7 +122,7 @@ def front_matter(text):
 
 
 def lab_folders():
-    return sorted(p.parent.name for p in LABS.glob("*/README.md") if not p.parent.name.startswith("_"))
+    return sorted(p.parent.name for p in LABS.glob("*/README.md") if not p.parent.name.startswith("_") and p.parent.name != "primers")
 
 
 def github_anchor(heading):

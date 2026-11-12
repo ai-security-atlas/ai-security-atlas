@@ -41,10 +41,11 @@ Dockerfile
 .dockerignore
 
 # Labs: the site image needs only each lab's README (front matter) and the
-# explainers (published under /labs/); lab code, work/ and payloads stay out.
+# explainers (published under /labs/), plus the primers (/labs/primers/); lab code, work/ and payloads stay out.
 labs/*
 !labs/*/README.md
 !labs/learning-path.yaml
+!labs/primers
 !labs/_explainer
 !labs/*/explainer
 labs/_explainer/test

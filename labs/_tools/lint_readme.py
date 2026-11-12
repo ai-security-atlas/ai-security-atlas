@@ -19,6 +19,8 @@ Per lab (spec Sections 2 and 6.2):
   * optional `covers:` (nodes practiced in this lab): each node is in the seed, is not a lab's
     own node and is covered by no other lab; its steps exist; its anchor is the GitHub anchor
     of the heading of its first step
+  * every link to a primer (../primers/<slug>.md#<anchor>) names an existing primer and heading
+Primers (labs/primers/, not a lab folder): every relative link resolves, with its #anchor.
 Repo hygiene: no file under labs/ that git tracks (or would add) is a pickle/torch archive.
 Exits 0 when clean, 1 with one line per problem otherwise.
 """
@@ -310,6 +312,46 @@ def check_covers(where, fm, seed_ids, own_nodes, heading_of):
             err(where, f"covers {nid}: anchor must be the first step's heading anchor {want!r} (got {c['anchor']!r})")
 
 
+# ---------------------------------------------------------------- primers
+PRIMERS = LABS / "primers"
+MD_LINK = re.compile(r"\]\(([^)\s]+)\)")
+_anchors = {}
+
+
+def heading_anchors(path):
+    """GitHub anchors of a Markdown file's headings outside code fences (cached)."""
+    if path not in _anchors:
+        out, fence = set(), False
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if FENCE.match(line):
+                fence = not fence
+            m = None if fence else re.match(r"^#{1,6}\s+(.*?)\s*#*\s*$", line)
+            if m:
+                out.add(github_anchor(m.group(1)))
+        _anchors[path] = out
+    return _anchors[path]
+
+
+def check_links(where, base, text, only_primers=False):
+    """Relative Markdown links from `base` (a folder) resolve; a .md target's #anchor is one of its headings."""
+    for href in MD_LINK.findall(strip_comments(text)):
+        if re.match(r"[a-zA-Z][\w+.-]*:|#|/", href):
+            continue
+        path, _, frag = href.partition("#")
+        target = (base / path).resolve()
+        if only_primers and target.parent != PRIMERS.resolve():
+            continue
+        if not target.exists():
+            err(where, f"link {href!r}: {path} does not exist")
+        elif frag and target.suffix == ".md" and frag not in heading_anchors(target):
+            err(where, f"link {href!r}: no heading with anchor #{frag} in {path}")
+
+
+def lint_primers():
+    for p in sorted(PRIMERS.glob("*.md")):
+        check_links(f"labs/primers/{p.name}", PRIMERS, p.read_text(encoding="utf-8"))
+
+
 def lint_lab(lab, seed_ids, index_text, own_nodes):
     folder = lab.name
     where = f"labs/{folder}/README.md"
@@ -319,6 +361,7 @@ def lint_lab(lab, seed_ids, index_text, own_nodes):
     if fm is None:
         return
     body = strip_comments(body)
+    check_links(where, lab, body, only_primers=True)
     heads = outline(body)
 
     h1 = [t for lvl, t, _ in heads if lvl == 1]
@@ -442,7 +485,7 @@ def check_hygiene():
 
 def main():
     seed_ids = {n["id"] for n in json.loads(SEED.read_text(encoding="utf-8"))["nodes"]}
-    labs = sorted(p.parent for p in LABS.glob("*/README.md") if not p.parent.name.startswith("_"))
+    labs = sorted(p.parent for p in LABS.glob("*/README.md") if not p.parent.name.startswith("_") and p.parent.name != "primers")
     lab_ids, covered_by = {}, {}
     for lab in labs:
         _, fm, _ = front_matter((lab / "README.md").read_text(encoding="utf-8"))
@@ -468,6 +511,7 @@ def main():
     # prev/next footer, labs/README.md section) are what learning_path.py --write would produce
     for p in learning_path.check([n for n in wanted if n in lab_ids]):
         problems.append(p)
+    lint_primers()
     check_hygiene()
 
     for p in problems:

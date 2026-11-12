@@ -1,0 +1,13 @@
+{{ define "main" }}
+{{/* /labs/primers/: the primer index (labs/primers/README.md, compiled by json2hugo.py). */}}
+<main class="doc-wide labpage">
+    <nav class="crumbs-doc" aria-label="Breadcrumb">
+        <a href="/">Atlas</a><span class="sep">/</span><a href="/labs/">Labs</a><span class="sep">/</span><span aria-current="page">Primers</span>
+    </nav>
+    <div class="eyb eyb--lab">{{ partial "lab-icon.html" . }} Lab primers</div>
+    <h1 class="labpage__title">{{ .Title }}</h1>
+    <section class="labguide" aria-label="Primers">
+        <div class="prose">{{ .Content }}</div>
+    </section>
+</main>
+{{ end }}

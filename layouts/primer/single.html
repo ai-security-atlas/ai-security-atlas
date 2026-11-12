@@ -1,0 +1,23 @@
+{{ define "main" }}
+{{/* /labs/primers/<slug>/: one ML or statistics primer (labs/primers/<slug>.md, compiled by json2hugo.py). */}}
+<main class="doc-wide labpage">
+    <nav class="crumbs-doc" aria-label="Breadcrumb">
+        <a href="/">Atlas</a><span class="sep">/</span><a href="/labs/">Labs</a><span class="sep">/</span><a href="/labs/primers/">Primers</a><span class="sep">/</span><span aria-current="page">{{ .Title }}</span>
+    </nav>
+    <div class="eyb eyb--lab">{{ partial "lab-icon.html" . }} Lab primer</div>
+    <h1 class="labpage__title">{{ .Title }}</h1>
+    <div class="labcard__actions">
+        <a class="labbtn" href="/labs/primers/">All primers</a>
+        <a class="labbtn" href="{{ .Params.github }}" target="_blank" rel="noreferrer">View on GitHub</a>
+    </div>
+    <section class="labguide" aria-label="Primer">
+        <div class="prose">{{ .Content }}</div>
+    </section>
+    <nav class="labpathbox" aria-label="Primers">
+        <div class="labpathbox__nav">
+            {{ with .Params.prev }}{{ with $.Site.GetPage (printf "/labs/primers/%s" .) }}<a class="labbtn" href="{{ .RelPermalink }}" rel="prev"><span aria-hidden="true">&larr;</span> {{ .Title }}</a>{{ end }}{{ end }}
+            {{ with .Params.next }}{{ with $.Site.GetPage (printf "/labs/primers/%s" .) }}<a class="labbtn labpathbox__next" href="{{ .RelPermalink }}" rel="next">{{ .Title }} <span aria-hidden="true">&rarr;</span></a>{{ end }}{{ end }}
+        </div>
+    </nav>
+</main>
+{{ end }}

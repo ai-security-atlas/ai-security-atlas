@@ -36,6 +36,17 @@ Every lab assumes these steps are done. Run all commands from this `labs/` folde
 5. Open the first lab of the [learning path](#learning-path) below (or of a [workshop track](#workshop-tracks)) and follow its Setup.
 6. To open a lab's explainer, run `open <id>/explainer/index.html` (macOS) or `xdg-open <id>/explainer/index.html` (Linux). The explainer step links in lab READMEs work in a local clone and on the Atlas site, where `/labs/<id>/` shows the explainer with the guide below it; on GitHub they show HTML source.
 
+## Primers
+
+The labs assume appsec, Docker, Python and HTTP, and no background in machine learning or statistics. Six short [primers](primers/README.md) define the terms the labs use, each under its own heading, and lab READMEs link a term to its definition the first time they use it:
+
+- [Reading the numbers](primers/reading-the-numbers.md): rates, brackets, percentage points, release gates, kappa, AUC, p-values.
+- [ML in one page](primers/ml-in-one-page.md): weights, logits, softmax, loss, gradients, the training loop, LoRA.
+- [Sampling knobs](primers/sampling-knobs.md): greedy decoding, temperature, seed, top-k, top-p.
+- [Vectors without the math](primers/vectors-without-the-math.md): norms, cosine similarity, embeddings, rank, SVD.
+- [Inside a transformer block](primers/inside-a-transformer-block.md): attention, heads, MLP, residual stream, KV cache.
+- [Diffusion in one paragraph](primers/diffusion-in-one-paragraph.md): noise, U-Net, schedulers, latents, guidance.
+
 <!-- learning-path:begin (generated from learning-path.yaml by _tools/learning_path.py; do not edit by hand) -->
 
 ## Learning path
@@ -44,7 +55,7 @@ Take the labs in this order. Each module builds on the ones before it, and insid
 
 ### Module 0: Setup and orientation
 
-About 30 min. Every laptop has the workbench image, the HF cache volume pre-seeded and, only for tracks that need one, a model backend. Read the payload-safety note and the Start here steps at the top of the labs index (`labs/README.md`). This module has no lab of its own.
+About 30 min. Every laptop has the workbench image, the HF cache volume pre-seeded and, only for tracks that need one, a model backend. Read the payload-safety note and the Start here steps at the top of the labs index (`labs/README.md`). If ML or statistics terms are new to you, skim the [primers](primers/README.md): the labs link each term to its definition there. This module has no lab of its own.
 
 ### Module 1: A model is a file, and loading it runs code
 

@@ -14,6 +14,8 @@ Output:
                               (labs/learning-path.yaml) and a by-LAB-id view
   content/labs/<id>.md     -> /labs/<id>/: explainer + lab guide (README body) (layouts/lab/single.html)
   content/labs/tags/       -> /labs/tags/ and /labs/tags/<tag>/ from explainer legend tags (layouts/labtag/)
+  content/labs/primers/    -> /labs/primers/ (labs/primers/README.md) and /labs/primers/<slug>/ from
+                              labs/primers/<slug>.md: the ML and statistics primers (layouts/primer/)
   static/labs/             -> explainer engine + lab explainers under /labs/ (copied from labs/);
                               /labs/<id>/explainer/ is a redirect to /labs/<id>/
 
@@ -47,6 +49,7 @@ LABS_OUT = "static/labs"
 NODE_TABS = ("labs", "evidence", "relationships")  # Explorer reader tabs with their own URL; overview is /nodes/<id>/
 ROADMAP = os.path.join("docs", "labs-roadmap.json")  # optional: umbrella hubs + their members
 TAGS_VOCAB = os.path.join(LABS_DIR, "_explainer", "tags.json")  # {"<tag>": {"name", "description"}}
+PRIMERS_DIR = os.path.join(LABS_DIR, "primers")  # reference pages, not a lab: /labs/primers/<slug>/
 LEARNING_PATH = os.path.join(LABS_DIR, "learning-path.yaml")  # optional: modules, lab order, prerequisites, tracks
 
 # --- Presentation metadata for the 11 P0 topic types -------------------------
@@ -175,11 +178,11 @@ def read_front_matter(path):
 
 def load_labs(node_ids):
     """Read labs/<node-id>/README.md front matter -> {node_id: lab metadata}.
-    Folders starting with "_" (template, engine, tools) are not labs."""
+    Folders starting with "_" (template, engine, tools) and primers/ are not labs."""
     labs = {}
     for readme in sorted(glob.glob(os.path.join(LABS_DIR, "*", "README.md"))):
         folder = os.path.basename(os.path.dirname(readme))
-        if folder.startswith("_"):
+        if folder.startswith("_") or folder == os.path.basename(PRIMERS_DIR):
             continue
         fm = read_front_matter(readme)
         m = re.fullmatch(r"LAB-(\d+)", str((fm or {}).get("lab_id", "")))
@@ -251,7 +254,8 @@ def read_learning_path(labs):
     modules, seq = [], []
     for m in data.get("modules") or []:
         entries = [e for e in m.get("labs") or [] if e.get("lab") in labs]
-        mod = {"id": m["id"], "title": m["title"], "time": m.get("time", ""), "goal": m.get("goal", ""),
+        mod = {"id": m["id"], "title": m["title"], "time": m.get("time", ""),
+               "goal": rewrite_links(m.get("goal", ""), LABS_DIR, labs, ()),  # written for labs/README.md
                "anchor": _heading_anchor(f"Module {m['id']}: {m['title']}"), "labs": [e["lab"] for e in entries]}
         modules.append(mod)
         seq += [(mod, i, len(entries), e) for i, e in enumerate(entries, 1)]
@@ -433,23 +437,32 @@ def lab_tags(labs, legends):
 #   explainer/index.html#<id>/N    -> #<id>/N (drives the embedded explainer); another lab's -> /labs/<lab>/#...
 #   ../../articles/<node>.md#f     -> /nodes/<node>/#f
 #   ../<lab>/README.md#a, ../<lab>/ -> /labs/<lab>/#a ;  ../README.md -> /labs/
+#   ../primers/<slug>.md#a         -> /labs/primers/<slug>/#a ;  ../primers/README.md -> /labs/primers/
 #   any other relative path        -> GitHub (blob for files, tree for folders)
+# The same rules apply to the primers (labs/primers/*.md) and the learning-path goals (labs/README.md).
 #   https://ai-security-atlas.github.io/... -> /... (stays on this deployment)
 # Fenced code blocks and inline code are left alone.
 _FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
 _GUIDE_LINK = re.compile(r"(`+)(?:(?!\n\n)[\s\S])*?\1|\]\(([^)\s]+)")
 
 
-def _guide_href(href, lab_id, labs, node_ids):
+def _guide_href(href, base, labs, node_ids, lab_id=None):
+    """`href` as written in a Markdown file in folder `base` (repo-relative) -> its site URL.
+    `lab_id` is the lab whose README it is (None for a primer or labs/README.md)."""
     if href.startswith(SITE_URL):
         return "/" + href[len(SITE_URL):]
     if href.startswith(("#", "/")) or re.match(r"[a-zA-Z][\w+.-]*:", href):
         return href
     path, _, frag = href.partition("#")
     frag = f"#{frag}" if frag else ""
-    rel = posixpath.normpath(posixpath.join(LABS_DIR, lab_id, path))
+    rel = posixpath.normpath(posixpath.join(base, path))
     if rel.startswith(".."):
         return href
+    if rel in (PRIMERS_DIR, f"{PRIMERS_DIR}/README.md"):
+        return f"/labs/primers/{frag}"
+    m = re.fullmatch(rf"{PRIMERS_DIR}/([a-z0-9-]+)\.md", rel)
+    if m and os.path.isfile(rel):
+        return f"/labs/primers/{m.group(1)}/{frag}"
     m = re.fullmatch(rf"{LABS_DIR}/([^/]+)/explainer/index\.html", rel)
     if m and m.group(1) in labs:
         target = re.fullmatch(r"#([\w-]+)/\d+", frag)  # the #<id>/N names the explainer it drives
@@ -469,18 +482,12 @@ def _guide_href(href, lab_id, labs, node_ids):
     return f"{REPO_URL}/{kind}/main/{rel}{frag}"
 
 
-def lab_guide(lab, labs, node_ids):
-    """README.md without its front matter and its H1 (the page header shows the title), links rewritten."""
-    with open(os.path.join(LABS_DIR, lab["node"], "README.md"), "r", encoding="utf-8") as fh:
-        text = fh.read()
-    if text.startswith("---\n"):
-        text = text[text.find("\n---\n", 4) + 5:]
-    text = re.sub(r"\A\s*# [^\n]*\n", "", text)
-
+def rewrite_links(text, base, labs, node_ids, lab_id=None):
+    """Rewrite the Markdown links of `text` (a file in folder `base`) for the site; code is left alone."""
     def fix(m):
         if m.group(2) is None:
             return m.group(0)
-        return "](" + _guide_href(m.group(2), lab["node"], labs, node_ids)
+        return "](" + _guide_href(m.group(2), base, labs, node_ids, lab_id)
 
     out, prose, fence = [], [], None
     for line in text.splitlines(keepends=True):
@@ -497,6 +504,47 @@ def lab_guide(lab, labs, node_ids):
             prose.append(line)
     out.append(_GUIDE_LINK.sub(fix, "".join(prose)))
     return "".join(out).strip()
+
+
+def _md_body(path):
+    """A Markdown file without its front matter and its H1 (the page header shows the title) -> (H1, body)."""
+    with open(path, "r", encoding="utf-8") as fh:
+        text = fh.read()
+    if text.startswith("---\n"):
+        text = text[text.find("\n---\n", 4) + 5:]
+    m = re.match(r"\A\s*# ([^\n]*)\n", text)
+    return (m.group(1).strip(), text[m.end():]) if m else ("", text)
+
+
+def lab_guide(lab, labs, node_ids):
+    """README.md without its front matter and its H1, links rewritten."""
+    folder = os.path.join(LABS_DIR, lab["node"])
+    return rewrite_links(_md_body(os.path.join(folder, "README.md"))[1], folder, labs, node_ids, lab["node"])
+
+
+def load_primers(labs, node_ids):
+    """labs/primers/: README.md -> the index, every other <slug>.md -> a primer page.
+    Returns (index {title, body} or None, [{slug, title, summary, body}] in file order)."""
+    if not os.path.isdir(PRIMERS_DIR):
+        return None, []
+    index, primers = None, []
+    for path in sorted(glob.glob(os.path.join(PRIMERS_DIR, "*.md"))):
+        title, body = _md_body(path)
+        body = rewrite_links(body, PRIMERS_DIR, labs, node_ids)
+        if os.path.basename(path) == "README.md":
+            index = {"title": title or "Primers", "body": body}
+            continue
+        slug = os.path.basename(path)[:-3]
+        if not re.fullmatch(r"[a-z0-9-]+", slug):
+            raise SystemExit(f"error: {path}: a primer file name must be a kebab-case slug")
+        # The summary is the first paragraph after the "Labs that lean on this most" line.
+        paras = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip() and not p.lstrip().startswith(("#", "|", "Labs that lean"))]
+        summary = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", paras[0]).replace("`", "") if paras else title
+        primers.append({"slug": slug, "title": title or slug, "summary": " ".join(summary.split()), "body": body})
+    if index:  # prev/next follow the order of the index's links; unlisted primers go last
+        pos = {p["slug"]: index["body"].find(f"/labs/primers/{p['slug']}/") for p in primers}
+        primers.sort(key=lambda p: (pos[p["slug"]] < 0, pos[p["slug"]]))
+    return index, primers
 
 
 def main():
@@ -1058,11 +1106,25 @@ def main():
             "description": t["description"], "labs": t["labs"],
         })
 
+    primer_index, primers = load_primers(labs, set(node_by_id))
+    if primer_index or primers:
+        write_md("content/labs/primers/_index.md", {
+            "title": (primer_index or {}).get("title", "Primers"), "type": "primer",
+            "summary": "Short reference pages for the ML and statistics terms the labs use.",
+            "primer_list": [{"slug": p["slug"], "title": p["title"]} for p in primers],
+        }, content=(primer_index or {}).get("body", ""))
+        for i, p in enumerate(primers):
+            write_md(f"content/labs/primers/{p['slug']}.md", {
+                "title": p["title"], "type": "primer", "primer": p["slug"], "summary": p["summary"],
+                "github": f"{REPO_URL}/blob/main/{PRIMERS_DIR}/{p['slug']}.md",
+                "prev": primers[i - 1]["slug"] if i else "", "next": primers[i + 1]["slug"] if i + 1 < len(primers) else "",
+            }, content=p["body"])
+
     published = publish_explainers(labs)
 
     print(f"Compiled {len(nodes_raw)} nodes, {len(atlas_edges)} edges, "
           f"{len(sources_raw)} sources, {len(views)} views, {len(labs)} labs "
-          f"({published} explainers published, {len(tags)} explainer tags).")
+          f"({published} explainers published, {len(tags)} explainer tags, {len(primers)} primers).")
     print(f"Labs: {sum(1 for lab in labs.values() if lab['objectives'])} with objectives, "
           f"{len(planned)} planned; {len(unplaced)} in no hub's labs_in_area"
           + (f": {', '.join(unplaced)}" if unplaced else "") + ".")

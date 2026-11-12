@@ -21,7 +21,7 @@ modules:
   - id: 0
     title: "Setup and orientation"
     time: "about 30 min"
-    goal: "Every laptop has the workbench image, the HF cache volume pre-seeded and, only for tracks that need one, a model backend. Read the payload-safety note and the Start here steps at the top of the labs index (`labs/README.md`). This module has no lab of its own."
+    goal: "Every laptop has the workbench image, the HF cache volume pre-seeded and, only for tracks that need one, a model backend. Read the payload-safety note and the Start here steps at the top of the labs index (`labs/README.md`). If ML or statistics terms are new to you, skim the [primers](primers/README.md): the labs link each term to its definition there. This module has no lab of its own."
     labs: []
 
   - id: 1
