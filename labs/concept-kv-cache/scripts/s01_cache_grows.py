@@ -80,7 +80,8 @@ for T in (128, 512, 1024):
                   "ratio": round(ratio, 1)})
     print(f"  {T:4d}   {full * 1000:9.1f} ms             {step * 1000:9.1f} ms           {ratio:5.1f}x")
 
-print("[note] a cached step still reads every weight once, so its cost stays near that floor on this CPU;")
+print("[note] every call pays a fixed cost (one pass over all the weights plus framework overhead),")
+print("[note] so the cached step stays roughly flat as T grows;")
 print("[note] recomputing also redoes every earlier token, so that column grows with T")
 K.save("s01.json", {"layers": c.num_hidden_layers, "heads": c.num_attention_heads, "kv_heads": kvh,
                     "head_dim": hd, "per_token": per_tok, "rows": rows, "costs": costs})

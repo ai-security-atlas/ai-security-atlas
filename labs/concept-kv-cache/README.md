@@ -15,8 +15,8 @@ backends:
   external-api: n/a
 hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.4 GB workbench image, 1.2 GB llama.cpp server image, 0.39 GB serving GGUF, plus SmolLM2-135M (0.27 GB) and mamba-130m (0.52 GB) in the HF cache."
 canary: ATLAS-CANARY-kv5c
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, llama.cpp b11977, workbench v3"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, llama.cpp b11977, workbench v4"
 covers:
   - {node: arch-ssm, steps: "2", anchor: "step-2--a-state-that-does-not-grow--explainer-2"}
 ---
@@ -37,7 +37,7 @@ What you will do:
 - On the shared llama.cpp server, time a request that repeats a long prefix carrying the canary `ATLAS-CANARY-kv5c` against a fresh one, then guess over many seeded rounds, from the clock alone, whether another client recently sent that prefix.
 - Scope the cache per tenant and add timing jitter, and measure what each one costs.
 
-Headline result: in the reference run a repeated prefix answered in about 19 ms against about 745 ms for a fresh one, and tenant B guessed 16 of 16 rounds right from the clock alone. Source: [`labs/concept-kv-cache`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-kv-cache).
+Headline result: in the reference run a repeated prefix answered in about 19 ms against about 730 ms for a fresh one, and tenant B guessed 16 of 16 rounds right from the clock alone. Source: [`labs/concept-kv-cache`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/concept-kv-cache).
 
 > **What is staged here:** tenant B already knows the exact prefix, canary included, and only asks whether it was sent recently. The prefix is long (about 670 tokens), so the cached and uncached times are far apart, and every round uses a fresh tag so each probe is first contact. Each choice makes the timing signal easy to see; Step D3 spells out what that does and does not show.
 
@@ -188,7 +188,7 @@ What to notice: the last `[ok]` verifies the mechanism live — the same request
 | D2 | d2_jitter | workbench | ≈3–10 s | 8 |
 | D3 | — (Read) | — | — | — |
 
-Runtimes are wall-clock times of one `docker compose run` each, measured while other heavy jobs were using the machine, which is the point of the timing steps: every millisecond below moves with load. The first run of Steps 1 and 2 also downloads the two models. The whole verified run (Setup to Cleanup) took about 5 min of commands; Evaluate alone takes 1–2.5 min.
+Runtimes are wall-clock times of one `docker compose run` each, measured while other heavy jobs were using the machine, which is the point of the timing steps: every millisecond below moves with load. The first run of Steps 1 and 2 also downloads the two models. The whole verified run (Setup to Cleanup) took about 2.5 min of commands; Evaluate alone takes 1–2.5 min.
 
 ### Step 1 — The cache grows one row per token · [explainer 1](explainer/index.html#concept-kv-cache/1)
 
@@ -212,16 +212,17 @@ the cache holds keys and values for every layer and position: 30*2*3*64*4 = 46,0
 
 cost of one more token at context length T (the clock is noisy; medians of 3):
   T     full forward (no cache)   one step (reuse cache)   saving
-   128       466.4 ms                 388.6 ms             1.2x
-   512       783.4 ms                 382.1 ms             2.1x
-  1024      1113.6 ms                 396.3 ms             2.8x
-[note] a cached step still reads every weight once, so its cost stays near that floor on this CPU;
+   128       406.9 ms                 381.5 ms             1.1x
+   512       547.7 ms                 376.4 ms             1.5x
+  1024       972.5 ms                 324.0 ms             3.0x
+[note] every call pays a fixed cost (one pass over all the weights plus framework overhead),
+[note] so the cached step stays roughly flat as T grows;
 [note] recomputing also redoes every earlier token, so that column grows with T
 
-RESULT the cache grows exactly 46,080 bytes per token; recomputing grows with T and at T=1024 one cached step costs 396.3 ms against 1113.6 ms (2.8x)
+RESULT the cache grows exactly 46,080 bytes per token; recomputing grows with T and at T=1024 one cached step costs 324.0 ms against 972.5 ms (3.0x)
 ```
 
-What to notice: the cache is exactly `layers × 2 × key/value heads × head_dim × 4` bytes per token (46,080 here), so it grows in step with the number of tokens. The formula uses 3 [key/value heads](../primers/inside-a-transformer-block.md#heads): in this model each key/value head is shared by three of the 9 query heads, so each layer stores only 3 heads' worth of keys and values per token. `head_dim` is the length of each head's vector (64 numbers), and the final 4 is the bytes per fp32 number. The cached step costs about the same at every T (about 390 ms here). That flat cost is the fixed work of one step: reading the weights once plus the per-call overhead of Python and the framework. These numbers come from a machine shared with other jobs, where that overhead dominates; on an idle laptop you will see much smaller step times and larger savings. Recomputing redoes every earlier token as well, so that column grows with T, and the saving rises from 1.2x at T=128 to 2.8x at T=1024. Every millisecond moves with machine load; the shape (flat against growing) is the finding.
+What to notice: the cache is exactly `layers × 2 × key/value heads × head_dim × 4` bytes per token (46,080 here), so it grows in step with the number of tokens. The formula uses 3 [key/value heads](../primers/inside-a-transformer-block.md#heads): in this model each key/value head is shared by three of the 9 query heads, so each layer stores only 3 heads' worth of keys and values per token. `head_dim` is the length of each head's vector (64 numbers), and the final 4 is the bytes per fp32 number. The cached step costs about the same at every T (about 320–380 ms here). That flat cost is the fixed work of one call: one pass over all the weights plus the per-call overhead of Python and the framework. At T=128 one full forward over 128 tokens costs about the same as one cached step (1.1x), so in this run the fixed per-call cost sets the floor. These numbers come from a machine shared with other jobs, where that overhead dominates; on an idle laptop you will see much smaller step times and larger savings. Recomputing redoes every earlier token as well, so that column grows with T, and the saving rises from 1.1x at T=128 to 3.0x at T=1024. Every millisecond moves with machine load; the shape (flat against growing) is the finding.
 
 **Why**
 
@@ -247,7 +248,7 @@ each layer keeps a conv window (1536x4) and a recurrent state (1536x16): 24*1536
    128 tokens in the prompt  ->  recurrent state 2,949,120 bytes  (unchanged)
    256 tokens in the prompt  ->  recurrent state 2,949,120 bytes  (unchanged)
 
-generate 48 tokens: 12.76 s; the state after all 63 tokens is 2,949,120 bytes
+generate 48 tokens: 9.49 s; the state after all 63 tokens is 2,949,120 bytes
 
 RESULT mamba-130m keeps a fixed 2,949,120-byte state at every length and no per-token key/value cache; a server reusing a prefix here would have to save this whole state (arch-ssm)
 ```
@@ -273,18 +274,18 @@ docker compose run --rm workbench python concept-kv-cache/scripts/s03_persist.py
 [note] one llama.cpp server, one prompt cache shared by every client of it
 [note] tenant A (Lantern Desk) sends a 672-token prompt that carries the canary ATLAS-CANARY-kv5c, then an identical request arrives
 
-first send     748.3 ms   cache_n 0   <- the server computes the whole prefix
-same prefix     18.8 ms   cache_n 680   <- the prefix was already in the cache
-same prefix      7.9 ms   cache_n 687   <- the prefix was already in the cache
-same prefix      7.6 ms   cache_n 687   <- the prefix was already in the cache
+first send     774.1 ms   cache_n 0   <- the server computes the whole prefix
+same prefix     18.7 ms   cache_n 680   <- the prefix was already in the cache
+same prefix     31.8 ms   cache_n 687   <- the prefix was already in the cache
+same prefix      8.2 ms   cache_n 687   <- the prefix was already in the cache
 
 [note] cache_n is the server's own count of tokens taken from the cache; a hosted API hides it,
 [note] so the rest of the lab trusts only the clock
 
-RESULT the repeated request is 95x faster (median 8 ms vs 748 ms): the cache from A's request was still there, available to whoever asked next
+RESULT the repeated request is 41x faster (median 19 ms vs 774 ms): the cache from A's request was still there, available to whoever asked next
 ```
 
-What to notice: the first request computes all 672 tokens (`cache_n 0`), and the next identical request reuses them (`cache_n` in the hundreds) and returns in under 20 ms, because llama.cpp keeps the prompt cache across requests with no notion of which client sent the tokens.
+What to notice: the first request computes all 672 tokens (`cache_n 0`), and the next identical request reuses them (`cache_n` in the hundreds) and returns in 8–32 ms, because llama.cpp keeps the prompt cache across requests with no notion of which client sent the tokens.
 
 **Why**
 
@@ -309,14 +310,14 @@ token anatomy of one probe (the /tokenize counts; the chat template adds turn ma
   [the long handbook body                 ]   603 tokens   the bulk of the prefix a probe reuses
 
 [note] tenant A sends the canary prefix, filling the cache; then tenant B sends two probes
-[note] the fresh probe is the same text with a different leading tag (DESK-c6313f-0001)
-  probe sharing A's prefix      18.6 ms   cache_n 681   <- prefill skipped
-  probe with a fresh prefix    745.0 ms   cache_n 0   <- full prefill
+[note] the fresh probe is the same text with a different leading tag (DESK-068871-0001)
+  probe sharing A's prefix      19.0 ms   cache_n 681   <- prefill skipped
+  probe with a fresh prefix    730.3 ms   cache_n 0   <- full prefill
 
-RESULT the shared-prefix probe is 40x faster (19 ms vs 745 ms); the time, not any text, tells you the ATLAS-CANARY-kv5c prefix was processed recently
+RESULT the shared-prefix probe is 39x faster (19 ms vs 730 ms); the time, not any text, tells you the ATLAS-CANARY-kv5c prefix was processed recently
 ```
 
-What to notice: the probe that repeats tenant A's long prefix reuses hundreds of tokens and returns in about 19 ms, while a probe whose text differs only in its leading tag recomputes everything and takes about 745 ms. That 40x difference comes entirely from whether the prefix was in the cache, and one changed token at the front is enough to lose all of it, which is also why D1 puts its salt first.
+What to notice: the probe that repeats tenant A's long prefix reuses hundreds of tokens and returns in about 19 ms, while a probe whose text differs only in its leading tag recomputes everything and takes about 730 ms. That 39x difference comes entirely from whether the prefix was in the cache, and one changed token at the front is enough to lose all of it, which is also why D1 puts its salt first.
 
 **Why**
 
@@ -340,26 +341,26 @@ docker compose run --rm workbench python concept-kv-cache/scripts/s05_guess.py
 [note] probes the canary prefix once and guesses 'sent' when its time is below a threshold B
 [note] learned from a short calibration. Every round uses a fresh tag, so each probe is first contact.
 
-calibration: known-hit median 19 ms, known-miss median 717 ms -> threshold 368 ms
+calibration: known-hit median 19 ms, known-miss median 711 ms -> threshold 365 ms
 
-  round  0  A skipped  probe   711.1 ms  guess not   ok
-  round  1  A sent     probe    18.6 ms  guess sent  ok
-  round  2  A skipped  probe   719.5 ms  guess not   ok
-  round  3  A sent     probe    18.4 ms  guess sent  ok
-  round 14  A skipped  probe   713.9 ms  guess not   ok
-  round 15  A sent     probe    22.8 ms  guess sent  ok
+  round  0  A skipped  probe   837.3 ms  guess not   ok
+  round  1  A sent     probe    19.3 ms  guess sent  ok
+  round  2  A skipped  probe   744.4 ms  guess not   ok
+  round  3  A sent     probe    22.8 ms  guess sent  ok
+  round 14  A skipped  probe   823.8 ms  guess not   ok
+  round 15  A sent     probe    19.5 ms  guess sent  ok
 
 timing by true label:
-  A sent the prefix  n= 9  median    18.7 ms  range 18.4-33.0
-  A did not          n= 7  median   719.5 ms  range 711.1-795.2
-  median ratio miss/hit 38.4x   Mann-Whitney U=63.0 z=3.33 p=8.55e-04   AUC 1.0 (P(hit faster than miss))
+  A sent the prefix  n= 9  median    20.3 ms  range 18.6-39.7
+  A did not          n= 7  median   764.6 ms  range 708.7-874.8
+  median ratio miss/hit 37.69x   Mann-Whitney U=63.0 z=3.33 p=8.55e-04   AUC 1.0 (P(hit faster than miss))
   guesses right: 16/16 100% [81-100%]   a coin would give 50%
 
-round 0: A did not send the ATLAS-CANARY-kv5c prefix and B guessed 'not sent' from 711 ms alone
+round 0: A did not send the ATLAS-CANARY-kv5c prefix and B guessed 'not sent' from 837 ms alone
 RESULT B guessed 16/16 rounds right from the clock alone (81-100%), above the 50% coin: a fact about another client's request the server never put in words
 ```
 
-What to notice: with a long prefix the hit and miss times do not overlap at all here (about 19 ms against about 720 ms), so a single probe per round is enough to guess right every time here; the Wilson interval (16/16 reads as 81–100%) is what keeps that honest, because on a quieter or busier machine a few rounds would land near the threshold.
+What to notice: with a long prefix the hit and miss times do not overlap at all here (about 20 ms against about 765 ms), so a single probe per round is enough to guess right every time here; the Wilson interval (16/16 reads as 81–100%) is what keeps that honest, because on a quieter or busier machine a few rounds would land near the threshold.
 
 **Why**
 
@@ -383,19 +384,19 @@ docker compose run --rm workbench python concept-kv-cache/scripts/d1_scope.py
 [note] prefix and tenant B's probe no longer begin with the same tokens
 
 attack through a per-tenant salt (16 rounds):
-  A sent the prefix  n= 9  median   773.6 ms
-  A did not          n= 7  median   740.6 ms
-  median ratio miss/hit 0.96x   Mann-Whitney p=0.315   AUC 0.349
+  A sent the prefix  n= 9  median   753.8 ms
+  A did not          n= 7  median   775.2 ms
+  median ratio miss/hit 1.03x   Mann-Whitney p=0.634   AUC 0.429
   guesses right: 7/16 44% [23-67%]   a coin would give 50%
   server-side check: B's probes after A sent reused at most 0 cached tokens (cache_n over 9 rounds)
 
 what it keeps: tenant A's own repeat still hits its own cache
-  A first send 1964 ms, repeats 9-40 ms (median 36 ms)
+  A first send 796 ms, repeats 8-20 ms (median 9 ms)
 
-RESULT salting: guesses 7/16 right (a coin gives 50%), AUC 0.349, p=0.315, cross-tenant cache_n at most 0 -- the cross-tenant signal is gone, and A still reuses its own cache (defense-cache-isolation)
+RESULT salting: guesses 7/16 right (a coin gives 50%), AUC 0.429, p=0.634, cross-tenant cache_n at most 0 -- the cross-tenant signal is gone, and A still reuses its own cache (defense-cache-isolation)
 ```
 
-What to notice: with a secret per-tenant salt in front of every prompt, tenant B's probe no longer shares a prefix with tenant A, so the sent and not-sent times sit on top of each other (ratio about 1.0, 7/16 guesses against the 50% coin). The server-side check is the defender's forensic test: `cache_n` on B's probes stayed at 0 in every round, so no token of A's prefix was reused for B. Tenant A's own repeated request still returns in about 36 ms, because its cache is scoped to A and still there.
+What to notice: with a secret per-tenant salt in front of every prompt, tenant B's probe no longer shares a prefix with tenant A, so the sent and not-sent times sit on top of each other (ratio about 1.0, 7/16 guesses against the 50% coin). The server-side check is the defender's forensic test: `cache_n` on B's probes stayed at 0 in every round, so no token of A's prefix was reused for B. Tenant A's own repeated request still returns in about 9 ms, because its cache is scoped to A and still there.
 
 **Why**
 
@@ -413,24 +414,25 @@ docker compose run --rm workbench python concept-kv-cache/scripts/d2_jitter.py
 
 ```text
 [atlas-lab] concept-kv-cache · d2_jitter.py · torch 2.14.1+cpu · backend none
-[note] re-analyzing Step 5: 16 probes, threshold 368 ms, no new requests
+[note] re-analyzing Step 5: 16 probes, threshold 365 ms, no new requests
 [note] a server adds uniform jitter in [0, J] ms to every reply (300 random draws per row);
-[note] the attacker guesses from one probe, then from the mean of k independent first-contact probes
+[note] the attacker guesses from one probe, then from the mean or the minimum of k independent
+[note] first-contact probes
 [note] (k separate rounds of the same event: a second probe in one round would hit its own cache)
 
-  jitter J (ms)   added latency   single-probe accuracy   probes to stay >=90%
-       0          +     0 ms      100.0%                  1
-     100          +    50 ms      100.0%                  1
-     500          +   250 ms      100.0%                  1
-    2000          +  1000 ms       68.2%                  8
-    8000          +  4000 ms       55.1%                  >64
+  jitter J (ms)   added latency   single-probe accuracy   probes to stay >=90%: mean of k   min of k
+       0          +     0 ms      100.0%                                        1           1
+     100          +    50 ms      100.0%                                        1           1
+     500          +   250 ms      100.0%                                        1           1
+    2000          +  1000 ms       69.3%                                        8           8
+    8000          +  4000 ms       55.3%                                        64          32
 
-RESULT jitter first pushes a single guess below 90% at J=2000 ms (68%), against a 701 ms gap, and every honest reply then pays +1000 ms on average; averaging 8 independent probes restores >=90%, so jitter raises the attacker's sample cost without removing the channel (isolation in D1 does)
+RESULT jitter first pushes a single guess below 90% at J=2000 ms (69%), against a 744 ms gap, and every honest reply then pays +1000 ms on average; averaging 8 independent probes restores >=90% (taking the fastest needs 8), so jitter raises the attacker's sample cost without removing the channel (isolation in D1 does)
 ```
 
-This step is an offline simulation: it adds random delays to the 16 probe times Step 5 recorded and sends no new requests. The simulated attacker averages k probes; against uniform jitter the fastest of k probes is a sharper estimator and may need fewer, so read the last column as an upper bound on the attacker's cost.
+This step is an offline simulation: it adds random delays to the 16 probe times Step 5 recorded and sends no new requests. The simulated attacker combines k probes in two ways. The *mean of k* column averages them. The *min of k* column keeps the fastest one, which is a sharper estimator against uniform jitter. At J=2000 both need 8 probes. At J=8000 the fastest of 32 probes is enough, while the mean needs 64.
 
-What to notice: random latency only blurs the guess once its range is larger than the 701 ms gap (at J=2000 a single probe drops to 68%), and averaging 8 independent first-contact probes pulls accuracy back to 90% or more (4 to 8 across the runs made for this lab). Each of those probes needs its own round in which the same event happened, because a second probe in the same round would hit the cache the first one filled. Jitter buys a higher sample cost for the attacker, and every honest reply pays for it with about 1 s of added latency at J=2000.
+What to notice: random latency only blurs the guess once its range is larger than the 744 ms gap (at J=2000 a single probe drops to 69%), and averaging 8 independent first-contact probes pulls accuracy back to 90% or more (4 to 8 across the runs made for this lab). Each of those probes needs its own round in which the same event happened, because a second probe in the same round would hit the cache the first one filled. Jitter buys a higher sample cost for the attacker, and every honest reply pays for it with about 1 s of added latency at J=2000.
 
 **Why**
 
@@ -440,7 +442,7 @@ Response-time padding is the mitigation that treats the symptom: it masks the ti
 
 **Read**
 
-Walk the concept's two halves against your own outputs. Inside the model: the KV cache is bytes tied to tokens (Step 1), it grows with length, and a state-space model has no such per-token cache (Step 2), so the token-by-token matching you measured belongs to the transformer, and an SSM server would need to save whole states to reuse a prefix. On the server: the cache outlived the request that filled it (Step 3, `cache_n` in the hundreds for a repeat), a shared prefix skipped prefill (Step 4, about 19 ms against 745 ms), and from time alone you guessed whether a known prefix was recently sent (Step 5, 16/16 but read as 81–100%). What you did not do: read anyone's prompt. You learned one bit per round — whether *this known prefix* was processed recently — and only because the prefix was known, it was long, and the gap (hundreds of milliseconds of prefill) was far larger than the noise on this busy machine. A production API's cache policy, noise floor and scoping are all different, and a deployment that salts per tenant (D1) removes the premise. The question to carry away, the one [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) asks of any deployment: who shares which cache with whom, and what can a probe distinguish.
+Walk the concept's two halves against your own outputs. Inside the model: the KV cache is bytes tied to tokens (Step 1), it grows with length, and a state-space model has no such per-token cache (Step 2), so the token-by-token matching you measured belongs to the transformer, and an SSM server would need to save whole states to reuse a prefix. On the server: the cache outlived the request that filled it (Step 3, `cache_n` in the hundreds for a repeat), a shared prefix skipped prefill (Step 4, about 19 ms against 730 ms), and from time alone you guessed whether a known prefix was recently sent (Step 5, 16/16 but read as 81–100%). What you did not do: read anyone's prompt. You learned one bit per round — whether *this known prefix* was processed recently — and only because the prefix was known, it was long, and the gap (hundreds of milliseconds of prefill) was far larger than the noise on this busy machine. A production API's cache policy, noise floor and scoping are all different, and a deployment that salts per tenant (D1) removes the premise. The question to carry away, the one [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) asks of any deployment: who shares which cache with whom, and what can a probe distinguish.
 
 **Why**
 
@@ -460,18 +462,18 @@ docker compose run --rm workbench python concept-kv-cache/scripts/evaluate.py
 [atlas-lab] concept-kv-cache · evaluate.py · torch 2.14.1+cpu · backend none
 
                       shared cache      per-tenant salt
-guesses right (50%)   7/12              4/12
-median hit / miss ms  21.9 / 789.6      895.6 / 1945.7
-AUC (hit faster)      1.0               0.528
-Mann-Whitney p        0.004             0.873
-server cache_n (max)  681               0
+guesses right (50%)   12/12              11/12
+median hit / miss ms  18.9 / 729.3      737.4 / 826.5
+AUC (hit faster)      1.0               0.833
+Mann-Whitney p        0.004             0.055
+server cache_n (max)  680               0
 verdict               leaks             no signal
 
 `RESULT` says only whether the verdicts match expected/; the table is the security finding.
 RESULT: REPRODUCED
 ```
 
-What to notice: in one fresh seeded run of 12 rounds each, the shared cache separates the two labels completely (AUC 1.0, p=0.004) and earns the verdict `leaks`, while through the per-tenant salt the AUC sits near chance (0.53, p=0.87) and the verdict is `no signal`. The shared column's guesses are only 7/12 even so: the machine's load changed between the short calibration and the rounds, the learned threshold landed above some slow-but-uncached probes, and a fixed threshold paid for it. The `server cache_n` row is the ground truth a defender can read: 681 tokens of A's prefix reused for B on the shared cache, 0 through the salt.
+What to notice: in one fresh seeded run of 12 rounds each, the shared cache separates the two labels completely (AUC 1.0, p=0.004, 12/12 guesses) and earns the verdict `leaks`. Through the per-tenant salt the verdict is `no signal` (AUC 0.833, p=0.055), but only just. In these 12 rounds the salted probes after A sent happened to run faster (median 737 ms against 827 ms), and the threshold guess scored 11/12. No cached token explains it: `cache_n` stayed 0, and D1's 16 rounds through the same salt scored 7/16. The `server cache_n` row is the ground truth a defender can read: 680 tokens of A's prefix reused for B on the shared cache, 0 through the salt.
 
 `RESULT` says only whether the verdicts match the published shape in `expected/`; the table is the security finding. A column reads `leaks` when the clock separates the sent and not-sent probes (AUC ≥ 0.9) and the Mann-Whitney test says that separation is unlikely by chance (p < 0.05); otherwise `no signal`. Both are rank statistics, so they need no threshold, and a load shift between calibration and the rounds cannot hide a real gap. The threshold guess is printed beside them as what a naive attacker would score. With so few rounds the salted AUC drifts a lot between runs on a busy machine (this lab has seen it anywhere from about 0.2 to 0.9) while `cache_n` stays 0, so the verdict needs both the AUC and the p value, never one number alone.
 
