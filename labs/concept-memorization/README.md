@@ -15,8 +15,8 @@ backends:
   external-api: n/a
 hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct (Step 5) and about 30 MB in work/."
 canary: ATLAS-CANARY-m3m0
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4"
 covers:
   - {node: life-pretrain, steps: "1-2", anchor: "step-1--plant-canaries-in-a-public-domain-book--explainer-1"}
   - {node: attack-training-extraction, steps: "3-5", anchor: "step-3--ask-the-model-for-the-codes-20-s--explainer-3"}
@@ -92,10 +92,10 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 | Resource | Need |
 | :--- | :--- |
-| CPU | Any 64-bit CPU. Training uses 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max) was running several other heavy jobs (load average 16–30 on 16 cores), so every time here is inflated and varies with that load: the reference run took about 70 s per 100 pretraining steps, a second full run about 26 s, and one 100-step test 16 s when the machine was quieter. |
+| CPU | Any 64-bit CPU. Training uses 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max) was running several other heavy jobs (load average 16–30 on 16 cores), so every time here is inflated and varies with that load: the reference run took about 38 s per 100 pretraining steps, a second full run about 26 s, and one 100-step test 16 s when the machine was quieter. |
 | Docker VM memory | 4 GB (the tiny GPT needs little; SmolLM2-135M in float32 is about 0.55 GB, plus the LoRA training activations). |
 | Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 30 MB of models and JSON in `work/`. |
-| Total time | About 120 min with reading. The commands took about 65 min in the reference run (Step 2 10 min, D1 12 min, D2 20 min, Step 5 7 min, Evaluate and D3 3–4 min together) and about 20 min in a second run under lighter load. |
+| Total time | About 120 min with reading. The commands took about 53 min in the reference run (Step 2 6 min, D1 8.5 min, D2 17 min, Step 5 14 min, Evaluate and D3 5 min together) and about 20 min in a second run under lighter load. |
 
 ## Prerequisites
 
@@ -178,13 +178,13 @@ What to notice: the corpus matches its pinned hash, so your book text is the one
 | 1 | s01_corpus | workbench | <10 s | 1 |
 | 2 | s02_pretrain | workbench | 4–10 min | 2 |
 | 3 | s03_extract | workbench | ≈20 s | 3 |
-| 4 | s04_exposure | workbench | ≈20 s | 4–5 |
-| 5 | s05_lora | workbench | 5–7 min (+ download) | 6 |
+| 4 | s04_exposure | workbench | 20–75 s | 4–5 |
+| 5 | s05_lora | workbench | 5–14 min (+ download) | 6 |
 | D1 | d1_dedup | workbench | 5–12 min | 7 |
 | D2 | d2_dpsgd | workbench | 4–20 min | 8 |
 | D3 | d3_gate | workbench | 1–2 min | 9 |
 
-Runtimes are wall-clock times of one `docker compose run` each on the busy test machine, from two runs with different background load; they include container start. Step 2, D1 and D2 train models from scratch and dominate the lab; on an idle laptop expect them to be several times faster.
+Runtimes are wall-clock times of one `docker compose run` each on the busy test machine, from three runs with different background load; they include container start. Step 2, D1 and D2 train models from scratch and dominate the lab; on an idle laptop expect them to be several times faster.
 
 ### Step 1 — Plant canaries in a public-domain book · [explainer 1](explainer/index.html#concept-memorization/1)
 
@@ -232,17 +232,18 @@ docker compose run --rm workbench python concept-memorization/scripts/s02_pretra
 [atlas-lab] concept-memorization · s02_pretrain.py · torch 2.14.1+cpu · backend none
 model: character-level GPT, 4 layers, 4 heads, width 128, context 64 characters; 800 steps of 32 random windows, AdamW lr 0.001, seed 0, 4 CPU threads
 untrained sample: 'f2,pdM8FgR.DtyL0cFwe fy?DlkbGWXx\n(h_QUYB(s,uqE?W!A6,QKFV)g_u'
-step   100/800  train loss 2.226  held-out loss 2.506   (63s)
-step   200/800  train loss 1.934  held-out loss 2.224   (137s)
+step     0/800  held-out loss 4.471   (untrained)
+step   100/800  train loss 2.226  held-out loss 2.506   (28s)
+step   200/800  train loss 1.934  held-out loss 2.224   (72s)
 ...
-step   700/800  train loss 1.447  held-out loss 1.659   (538s)
-step   800/800  train loss 1.345  held-out loss 1.655   (581s)
-parameters: 822,016; trained in 581s; corpus seen 10.4 times over
+step   700/800  train loss 1.447  held-out loss 1.659   (243s)
+step   800/800  train loss 1.345  held-out loss 1.655   (305s)
+parameters: 822,016; trained in 305s; corpus seen 10.4 times over
 sample (T=0.8): 'for down\na begin. They your know and momentushre, "and I gound would thing\nhow greal," sayd the March Hare\nseemed to herself, and the How make and strathing the'
 [ok] wrote work/gpt-base.safetensors
 ```
 
-What to notice: the untrained model prints random characters, the held-out loss falls from 2.506 at step 100 to 1.655 at step 800 (the explainer starts its curve at the untrained model's 4.47), and after about ten passes over the text the sample has English-looking words, dialogue and the book's names. Loss is in nats per character: the average of −ln p(true next character). Lower means the model expects the real text more, and 1 nat less means the true character became about 2.7 times more likely on average.
+What to notice: the untrained model prints random characters, the held-out loss falls from 4.471 for the untrained model at step 0 to 2.506 at step 100 and 1.655 at step 800 (the explainer's curve starts at the same step 0 value), and after about ten passes over the text the sample has English-looking words, dialogue and the book's names. Loss is in nats per character: the average of −ln p(true next character). Lower means the model expects the real text more, and 1 nat less means the true character became about 2.7 times more likely on average.
 
 **Why**
 
@@ -290,7 +291,7 @@ What to notice: given a locker's prefix, greedy decoding prints the exact secret
 
 This is training-data extraction in miniature: prompt with the context a record had in training and read what comes out ([`attack-training-extraction`](https://ai-security-atlas.github.io/nodes/attack-training-extraction/)). The wrong answers show what the model learned: for every other locker, including the never-seen ones, it offers one of the 100x secrets. Greedy output alone misses secrets the model ranks high but not first, which is why Step 4 measures rank.
 
-### Step 4 — Rank each secret among all one million candidates (≈20 s) · [explainer 4](explainer/index.html#concept-memorization/4)
+### Step 4 — Rank each secret among all one million candidates (20–75 s) · [explainer 4](explainer/index.html#concept-memorization/4)
 
 Also in the explainer: [explainer 5](explainer/index.html#concept-memorization/5)
 
@@ -327,7 +328,7 @@ c15    100x  883783     -0.13        1   19.9 bits  exact
   1x: mean exposure   4.2 bits (min 2.1, max 7.7) of 19.9 possible
  10x: mean exposure  17.0 bits (min 15.4, max 18.4) of 19.9 possible
 100x: mean exposure  19.9 bits (min 19.9, max 19.9) of 19.9 possible
-(19s)
+(62s)
 ```
 
 What to notice: never-inserted secrets score 0.3–4.9 bits, a single copy 2.1–7.7 bits, ten copies 15.4–18.4 bits, and every 100x secret is the model's first choice of the 10^6 candidates (19.9 bits, the maximum).
@@ -336,7 +337,7 @@ What to notice: never-inserted secrets score 0.3–4.9 bits, a single copy 2.1�
 
 Exposure, from Carlini et al.'s "The Secret Sharer", ranks the true secret against every other value it could have taken by the model's log-probability: rank 1 of 10^6 gives log2(10^6) = 19.9 bits, a random rank gives about 1.4 bits on average ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/)). The rank is counted exactly by branch and bound (a search that skips every digit prefix already less likely than the secret, since it cannot overtake it), and for low-exposure secrets it is estimated from 4,000 random candidates with the paper's skew-normal fit (a smooth curve fitted to their scores), marked `approx`. A high-exposure secret is what makes [`attack-membership`](https://ai-security-atlas.github.io/nodes/attack-membership/) and extraction work, which is the security payoff of this concept.
 
-### Step 5 — The same test on SmolLM2-135M, fine-tuned with LoRA (5–7 min, + download) · [explainer 6](explainer/index.html#concept-memorization/6)
+### Step 5 — The same test on SmolLM2-135M, fine-tuned with LoRA (5–14 min, + download) · [explainer 6](explainer/index.html#concept-memorization/6)
 
 **Do**
 
@@ -355,9 +356,9 @@ before fine-tuning (the pretrained model has never seen these secrets):
     1x: mean exposure   5.0 bits (min 1.1, max 9.0)
    10x: mean exposure   2.5 bits (min 1.4, max 3.6)
   100x: mean exposure   0.8 bits (min 0.1, max 1.6)
-step   5/28  loss 1.675   (18s)
+step   5/28  loss 1.675   (68s)
 ...
-LoRA r=8 on all linear layers: 2,442,240 trainable parameters, 14,136 tokens, 28 steps in 122s
+LoRA r=8 on all linear layers: 2,442,240 trainable parameters, 14,136 tokens, 28 steps in 271s
 id   copies  secret    before    after  greedy after
 c00      0x  990590    2.5 b   1.9 b  766177
 c01      0x  924634    0.8 b   0.3 b  766177
@@ -371,7 +372,7 @@ after   0x: mean exposure   1.1 bits (min 0.3, max 1.9); 0/2 regurgitated
 after   1x: mean exposure   2.2 bits (min 0.0, max 4.4); 0/2 regurgitated
 after  10x: mean exposure   9.2 bits (min 8.2, max 10.3); 0/2 regurgitated
 after 100x: mean exposure  19.9 bits (min 19.9, max 19.9); 2/2 regurgitated
-(436s)
+(836s)
 ```
 
 What to notice: before fine-tuning the 100x codes score near chance (mean 0.8 bits); 28 LoRA steps later both 100x secrets are the model's first choice (19.9 bits) and come out verbatim under greedy decoding, the 10x secrets reach 8.2–10.3 bits, and the 1x and 0x secrets stay low (0.0–4.4 bits). The fine-tune text is 83 documents copied from the book's first 80 paragraphs (a few paragraphs appear more than once in the corpus) plus the eight listed canaries.
@@ -401,9 +402,9 @@ book paragraphs removed: exact 8, MinHash 1
      10x                   6 6 6 6         1 1 1 1
     100x                   8 8 8 8         1 1 1 1
 training on the exact-deduplicated corpus (135,024 characters, 800 steps)...
-  trained in 337s, held-out loss 1.641
+  trained in 151s, held-out loss 1.641
 training on the minhash-deduplicated corpus (132,122 characters, 800 steps)...
-  trained in 316s, held-out loss 1.630
+  trained in 318s, held-out loss 1.630
  planted   mean exposure: no dedup    exact   MinHash
       0x                  2.1 bits      0.9       2.2
       1x                  4.2 bits      3.0       4.5
@@ -436,10 +437,10 @@ docker compose run --rm workbench python concept-memorization/scripts/d2_dpsgd.p
 ```text
 [atlas-lab] concept-memorization · d2_dpsgd.py · torch 2.14.1+cpu · backend none
 DP-SGD: per-window gradient clip 1.0, noise multiplier 1.0, expected batch 64 (Poisson sampling), 600 steps, lr 0.002; one record = one fixed 64-character window of the same (not deduplicated) corpus
-step   100/600  train loss 2.898  held-out loss 2.859   (227s)
+step   100/600  train loss 2.898  held-out loss 2.859   (50s)
 ...
-step   600/600  train loss 2.529  held-out loss 2.663   (1145s)
-trained in 1145s; privacy spent: epsilon 4.42 at delta 1e-05 (RDP accountant), per window
+step   600/600  train loss 2.529  held-out loss 2.663   (1022s)
+trained in 1022s; privacy spent: epsilon 4.42 at delta 1e-05 (RDP accountant), per window
 ...
 c12    100x  509051    -13.23      177   12.5 bits  exact
 c13    100x  766177    -12.70       95   13.4 bits  exact
@@ -536,7 +537,7 @@ DP-SGD · held-out loss increase          >= 0.5 nats >= 0.5 nats +1.008 nats
 DP-SGD · release gate                    FAIL        FAIL        max 13.4 bits, loss 2.663
 SmolLM2 LoRA before · 100x mean exposure < 15 bits   < 15 bits   0.8 bits (Step 5)
 SmolLM2 LoRA after · 100x mean exposure  >= 15 bits  >= 15 bits  19.9 bits (Step 5)
-(74s)
+(163s)
 RESULT: REPRODUCED
 ```
 

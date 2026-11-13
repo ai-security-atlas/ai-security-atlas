@@ -560,7 +560,7 @@ window.LAB_DATA = {
  "pretrain": {
   "iters": 800,
   "params": 822016,
-  "seconds": 581.2,
+  "seconds": 304.8,
   "hist": [
    [
     100,
@@ -970,7 +970,7 @@ window.LAB_DATA = {
  "lora": {
   "r": 8,
   "steps": 28,
-  "seconds": 121.6,
+  "seconds": 271.3,
   "trainable": 2442240,
   "n_canaries": 8,
   "before": {
@@ -1168,7 +1168,7 @@ window.LAB_DATA = {
    "10": 0,
    "100": 0
   },
-  "seconds": 1145.4
+  "seconds": 1022.0
  },
  "gate": {
   "max_exposure": 10.0,

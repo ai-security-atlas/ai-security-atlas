@@ -18,6 +18,9 @@ print(f"model: character-level GPT, {cfg['n_layer']} layers, {cfg['n_head']} hea
       f"AdamW lr {M.TRAIN['lr']}, seed {M.TRAIN['seed']}, {M.THREADS} CPU threads", flush=True)
 model0, codec, _ = M.train(text, iters=0, log=None)
 print(f"untrained sample: {M.sample(model0, codec, 'Alice ', n=60)!r}")
+torch = M.torch_()
+held = torch.tensor(codec.enc("\n\n".join(M.paragraphs()[1]) + "\n"), dtype=torch.long)
+print(f"step {0:5d}/{M.TRAIN['iters']}  held-out loss {M.val_loss(model0, held):.3f}   (untrained)")
 model, codec, stats = M.train(text, log=lambda s: print(s, flush=True))
 print(f"parameters: {stats['params']:,}; trained in {stats['seconds']:.0f}s; corpus seen "
       f"{M.TRAIN['iters'] * M.TRAIN['batch'] * cfg['block'] / stats['chars']:.1f} times over")
