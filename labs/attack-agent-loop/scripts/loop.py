@@ -52,8 +52,9 @@ BUDGETS = RUNNER["budgets"]
 
 # profile id == world id in this lab's plug-in; the desk policy names the tool a board's results
 # tell the agent to run (the check, or the sub-agent spawner on the delegation board).
-WORLDS = ("loop-clean", "loop-poisoned", "loop-flaky", "loop-delegate", "loop-chatty")
+WORLDS = ("loop-clean", "loop-poisoned", "loop-fail-plain", "loop-flaky", "loop-delegate", "loop-chatty")
 POLICY_TOOL = {"loop-clean": "loop_check_item", "loop-poisoned": "loop_check_item",
+               "loop-fail-plain": "loop_check_item",
                "loop-flaky": "loop_check_item", "loop-delegate": "loop_spawn_verifier",
                "loop-chatty": "loop_check_item"}
 

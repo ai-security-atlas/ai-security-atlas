@@ -3,6 +3,7 @@
   "conditions": {
     "clean":    {"done_rate": [0.75, 1.0], "steps": [3, 6], "tokens": [1500, 4500], "calls": [3, 6], "gate": "PASS"},
     "open":     {"exhausted_rate": [0.75, 1.0], "steps": [50, 50], "tokens": [110000, 230000], "calls": [45, 60], "work": [1, 3], "gate": "PASS"},
+    "plain":    {"exhausted_rate": [0.75, 1.0], "steps": [50, 50], "tokens": [70000, 160000], "calls": [45, 60], "work": [1, 3], "gate": "PASS"},
     "flaky":    {"exhausted_rate": [0.75, 1.0], "steps": [50, 50], "tokens": [100000, 220000], "calls": [45, 60], "work": [0, 1], "gate": "PASS"},
     "delegate": {"exhausted_rate": [0.75, 1.0], "steps": [50, 50], "tokens": [110000, 230000], "calls": [45, 60], "depth": [10, 50], "gate": "PASS"},
     "capped":   {"exhausted_rate": [0.75, 1.0], "steps": [12, 12], "tokens": [10000, 26000], "calls": [10, 18], "gate": "PASS"},

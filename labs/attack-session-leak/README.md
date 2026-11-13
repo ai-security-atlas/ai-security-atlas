@@ -164,7 +164,7 @@ docker compose run --rm workbench python attack-session-leak/scripts/check_env.p
 [ok] collection sleak-kb: 4 chunks
 [note] other plug-ins also loaded: arch-embedding attack-agent-loop attack-confused-deputy attack-indirect-injection attack-memory-poison attack-multiagent attack-output-sink attack-prompt-leak attack-tool-description attack-tool-output system-index system-rag system-tools
 [note] tools from other labs' plug-ins: cdoc_list cdoc_read cdoc_read_checked cdoc_read_obo cdoc_read_public forecast forecast_plain loop_check_item loop_spawn_verifier notes_save stools-get_invoice stools-get_invoice_scoped stools-list_files stools-read_file stools-read_file_strict
-[note] worlds from other labs' plug-ins: loop-clean loop-poisoned loop-flaky loop-delegate loop-chatty docs-library mp-volatile mp-desk netops-poisoned netops-clean harbor-notes desk-poisoned desk-clean stools-desk
+[note] worlds from other labs' plug-ins: loop-clean loop-poisoned loop-fail-plain loop-flaky loop-delegate loop-chatty docs-library mp-volatile mp-desk netops-poisoned netops-clean harbor-notes desk-poisoned desk-clean stools-desk
 [ok] model backend optional: host-ollama http://host.docker.internal:11434/v1 model qwen2.5:3b
 ```
 

@@ -10,7 +10,7 @@
   const D = window.LAB_DATA;
   const CAN = D.canary;
   const ITEMS = D.items, FLAG = ITEMS.find(t => t.flagged);
-  const R3 = D.s03.row, R4 = D.s04.row, R6 = D.s06.row, EV = D.evaluate;
+  const R3 = D.s03.row, R4 = D.s04.row, R6 = D.s06.row, P6 = D.s06.plain, EV = D.evaluate;
   const D1 = D.d1.rows, D2 = D.d2.rows, D3 = D.d3.rows;
   const tk = v => `${Math.round(v).toLocaleString("en-US")}`;
   const loopOn = s => s.loop > .5;
@@ -50,7 +50,7 @@
         cmd: "docker compose run --rm workbench python attack-agent-loop/scripts/s05_growth.py" },
       { chapter: "Impact", label: "No attacker needed",
         guide: "Take the attacker away. This board’s QA service merely times out and asks for a retry; no run ever sees the canary. The desk still runs to the cap. The missing budget is the weakness, and the cost table now holds every variant in one place.",
-        caption: `Flaky board: exhausted <span class="c-bad">${R6.exhausted}/${R6.n}</span> with <span class="c-bad">0/${R6.n}</span> runs ever seeing <code class="c-lime">${CAN}</code>; median ${R6.steps} turns, ${tk(R6.tokens)} tokens, work ${R6.work}/${ITEMS.length}. Cost table: clean ${D.s02.steps} turns / ${tk(D.s02.tokens)} tokens · poisoned ${R3.steps} / ${tk(R3.tokens)} · flaky ${R6.steps} / ${tk(R6.tokens)} · delegate ${R4.steps} / ${tk(R4.tokens)}.`,
+        caption: `Flaky board: exhausted <span class="c-bad">${R6.exhausted}/${R6.n}</span> with <span class="c-bad">0/${R6.n}</span> runs ever seeing <code class="c-lime">${CAN}</code>; median ${R6.steps} turns, ${tk(R6.tokens)} tokens, work ${R6.work}/${ITEMS.length}. The poisoned FAIL line with the notice removed: exhausted <span class="c-bad">${P6.exhausted}/${P6.n}</span>, ${tk(P6.tokens)} tokens, so the runner’s re-check rule drives the loop. Cost table: clean ${D.s02.steps} turns / ${tk(D.s02.tokens)} tokens · poisoned ${R3.steps} / ${tk(R3.tokens)} · flaky ${R6.steps} / ${tk(R6.tokens)} · delegate ${R4.steps} / ${tk(R4.tokens)}.`,
         cmd: "docker compose run --rm workbench python attack-agent-loop/scripts/s06_flaky.py" },
       { chapter: "Defense", label: "Cap the runner",
         guide: "Cap the runner: a fixed number of model turns, and a small number of spawns per ticket on the delegation board, both enforced outside the model. The poisoned run stops at the cap with most of its budget unspent. The benign request never needed more than a few turns, so it still finishes.",

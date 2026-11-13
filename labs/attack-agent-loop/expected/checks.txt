@@ -3,8 +3,8 @@
 SETUP2	Image atlas-labs/atlas-app:v3 (Built|present)
 SETUP2	atlas-app-1 (Running|Started|Recreated)
 SETUP3	\[ok\] atlas-app 1\.0\.0 at http://atlas-app:8000
-SETUP3	\[ok\] plug-in attack-agent-loop: profiles loop-clean loop-poisoned loop-flaky loop-delegate loop-chatty; worlds loop-clean loop-poisoned loop-flaky loop-delegate loop-chatty
-SETUP3	\[ok\] agent catalog: 13 core \+ 2 lab tools, worlds loop-clean loop-poisoned loop-flaky loop-delegate loop-chatty
+SETUP3	\[ok\] plug-in attack-agent-loop: profiles loop-clean loop-poisoned loop-fail-plain loop-flaky loop-delegate loop-chatty; worlds loop-clean loop-poisoned loop-fail-plain loop-flaky loop-delegate loop-chatty
+SETUP3	\[ok\] agent catalog: 13 core \+ 2 lab tools, worlds loop-clean loop-poisoned loop-fail-plain loop-flaky loop-delegate loop-chatty
 SETUP3	\[ok\] \S+ finishes the clean board through the app's MCP loop: [3-6] steps, 3/3 items passed
 S1	^MCP atlas-desk protocol 2026-07-28
 S1	^catalog tools [0-9]+ \(this lab adds 2: loop_check_item loop_spawn_verifier\)
@@ -26,6 +26,7 @@ S5	it billed 1[0-9][0-9],[0-9]{3}
 S5	linear loop into a quadratic token bill
 S6	^flaky +exhausted 3/3 +done 0/3 +steps 50 +tokens 1[0-9][0-9],[0-9]{3} +calls 5[0-9] .*work 0/3
 S6	runs with any canary text on this board: 0/3
+S6	^plain +exhausted 3/3 +done 0/3 +steps 50 +tokens 1[0-9][0-9],[0-9]{3} +calls 5[0-9] .*work [12]/3
 D1	^capped +exhausted 3/3 +done 0/3 +steps 12 +tokens 1[0-9],[0-9]{3} +calls 14 .*work 2/3
 D1	work finished before the cap: \['T-2060', 'T-2061'\]
 D1	^depth-capped exhausted 3/3 +done 0/3 +steps 12
@@ -46,6 +47,7 @@ D3	false positives on the clean board: 0/2
 D3	cost report: the detector stopped runs at a median of 4 turns and 3,[0-9]{3} tokens
 EVAL	^clean +0/4 +4/4 +done .*PASS
 EVAL	^open +[3-4]/4 +0/4 +cap +50 .*PASS
+EVAL	^plain +[3-4]/4 +0/4 +cap +50 .*PASS
 EVAL	^flaky +[3-4]/4 +0/4 +cap +50 .*PASS
 EVAL	^delegate +[3-4]/4 +0/4 +cap +50 .*PASS
 EVAL	^capped +[3-4]/4 +0/4 +cap +12 .*PASS

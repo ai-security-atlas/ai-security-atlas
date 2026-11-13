@@ -51,7 +51,7 @@ data = {
     "s05": {"curve": s05["curve"], "per_turn": s05["per_turn"], "billed": s05["billed"],
             "linear": s05["linear_equivalent"], "first_prompt": s05["first_prompt"],
             "last_prompt": s05["last_prompt"]},
-    "s06": {"row": s06["row"], "saw_note": sum(r["saw_note"] for r in s06["rows"])},
+    "s06": {"row": s06["row"], "saw_note": sum(r["saw_note"] for r in s06["rows"]), "plain": s06["plain"]},
     "d1": {"rows": d1["rows"], "denies": d1["denies"],
            "clean_done": sum(1 for r in d1["clean"] if loop.completed(r))},
     "d2": {"rows": d2["rows"], "budgets": d2["budgets"],
