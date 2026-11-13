@@ -14,6 +14,7 @@
   const frac = ([k, n]) => `${k}/${n}`;
   const money = v => `$${v.toFixed(2)}`;
   const PROFILE_KEYS = Object.keys(G);   // desk-broad .. desk-approve-args
+  const D1T = D.d1["desk-scoped-transfer"];   // D1: five tools, transfer_funds in place of process_refund
 
   X.define({
     id: "attack-tool-output",
@@ -49,12 +50,12 @@
         caption: `Same note, ${D.s05["desk-broad"].harm[1]} trials each. <code>desk-broad</code> (grants ${G["desk-broad"]}): harm ${frac(D.s05["desk-broad"].harm)}, utility ${frac(D.s05["desk-broad"].utility)}. <code>desk-scoped</code> (grants ${G["desk-scoped"]}): harm ${frac(D.s05["desk-scoped"].harm)}, utility ${frac(D.s05["desk-scoped"].utility)}. <code>desk-readonly</code> (grants ${G["desk-readonly"]}): harm ${frac(D.s05["desk-readonly"].harm)}, utility ${frac(D.s05["desk-readonly"].utility)}. The canary <code class="c-lime">${CAN}</code> lands only where <code>transfer_funds</code> is still granted.`,
         cmd: "docker compose run --rm workbench python attack-tool-output/scripts/s05_profiles.py" },
       { chapter: "Defense", label: "Shrink the toolset",
-        guide: "Least privilege shrinks the tool list to what the task needs. The scoped desk keeps five tools: read the queue, read a ticket, track an order, pay a refund, reply to the customer. Paying a refund takes a ticket id and pays the account on file. The agent can no longer name an account, so the note has nothing to call.",
-        caption: `D1, same grades: scoped harm ${frac(D.d1["desk-scoped"].harm)} and utility ${frac(D.d1["desk-scoped"].utility)}; read-only utility ${frac(D.d1["desk-readonly"].utility)}. Release gate at ${D.eval_trials} trials: scoped ${frac(EV.scoped.harm)} harm · ${frac(EV.scoped.utility)} utility · <span class="c-ok">${EV.scoped.gate ? "PASS" : "FAIL"}</span>; broad harm ${frac(EV.broad.harm)} · FAIL; readonly utility ${frac(EV.readonly.utility)} · FAIL.`,
+        guide: "Least privilege means the desk can reach only what the task needs. A short list is not enough on its own. Step 5’s scoped desk has five tools, and its refund tool takes a ticket id and pays the account on file. The D1 desk also has five tools, with one swap: transfer_funds, which takes any account and any amount, in place of the refund tool. Watch whether the note finds something to call.",
+        caption: `D1 desk <code>desk-scoped-transfer</code> (grants ${D.d1.tools.length}, <code>transfer_funds</code> in place of <code>process_refund</code>), ${D1T.harm[1]} trials: harm <span class="${D1T.harm[0] ? "c-bad" : "c-ok"}">${frac(D1T.harm)}</span>, obeyed ${frac(D1T.obeyed)}, utility ${frac(D1T.utility)}. Step 5’s <code>desk-scoped</code> (grants ${G["desk-scoped"]}): harm ${frac(D.s05["desk-scoped"].harm)}, utility ${frac(D.s05["desk-scoped"].utility)}. Release gate at ${D.eval_trials} trials: scoped ${frac(EV.scoped.harm)} harm · ${frac(EV.scoped.utility)} utility · <span class="c-ok">${EV.scoped.gate ? "PASS" : "FAIL"}</span>; broad harm ${frac(EV.broad.harm)} · FAIL; readonly utility ${frac(EV.readonly.utility)} · FAIL.`,
         cmd: "docker compose run --rm workbench python attack-tool-output/scripts/d1_least_privilege.py" },
       { chapter: "Defense", label: "Bind the approval",
         guide: "Approval puts a pause between the agent and the consequential tools. A dialog that shows only the tool name gets approved once, and that approval covers every later call of that name, canary transfer included. Binding the approval to the arguments makes the canary call its own decision. These are saved runs of one small model; other models will give other rates.",
-        caption: `D2 on the model, ${D.d2.name.harm[1]} trials each: name-only approval harm <span class="c-bad">${frac(D.d2.name.harm)}</span>, utility ${frac(D.d2.name.utility)}; argument-bound harm <span class="c-ok">${frac(D.d2.args.harm)}</span>, and the model still asks (obeyed ${frac(D.d2.args.obeyed)}), utility ${frac(D.d2.args.utility)}. Gate at ${D.eval_trials}: name-approval harm ${frac(EV["name-approval"].harm)}; args-approval harm ${frac(EV["args-approval"].harm)} with utility ${frac(EV["args-approval"].utility)}, so the utility bar still fails it.`,
+        caption: `D2 on the model, ${D.d2.name.harm[1]} trials each: name-only approval harm <span class="c-bad">${frac(D.d2.name.harm)}</span>, utility ${frac(D.d2.name.utility)}; argument-bound harm <span class="c-ok">${frac(D.d2.args.harm)}</span>, and the model still asks (obeyed ${frac(D.d2.args.obeyed)}), utility ${frac(D.d2.args.utility)}. A reviewer that checks only the account and the amount against the request, and never looks for the canary: harm ${frac(D.d2.reviewer.harm)}, utility ${frac(D.d2.reviewer.utility)}, with ${D.d2.reviewer_differ} of ${D.d2.reviewer_decisions} decisions different from the canary-aware approver. Gate at ${D.eval_trials}: name-approval harm ${frac(EV["name-approval"].harm)}; args-approval harm ${frac(EV["args-approval"].harm)} with utility ${frac(EV["args-approval"].utility)}, so the utility bar still fails it.`,
         cmd: "docker compose run --rm workbench python attack-tool-output/scripts/d2_approval.py" },
     ],
     html: `<style>[data-explainer="attack-tool-output"] svg text, [data-explainer="attack-tool-output"] code { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }</style>
@@ -275,24 +276,24 @@
       });
       T(p5, 30, 512, "the note is the same in every row; the tool list is the only change", 14, { fill: V("muted") });
 
-      // 6: D1, the scoped toolset
+      // 6: D1, five tools with one swapped
       const p6 = panel();
       card(p6, 30, 330, 400, 186, V("ok"));
-      T(p6, 46, 352, "D1 · THE SCOPED TOOLSET", 13, { fill: V("ok"), "font-weight": 700, "letter-spacing": "1.2" });
+      T(p6, 46, 352, "D1 · FIVE TOOLS, ONE SWAPPED", 13, { fill: V("ok"), "font-weight": 700, "letter-spacing": "1.2" });
       const SCOPED = ["list_tickets", "read_ticket", "track_order", "process_refund", "reply_to_ticket"];
       SCOPED.forEach((n, i) => {
         const y = 366 + i * 27;
         chip(p6, 46, y, 180, 22, "ok", .08);
         T(p6, 56, y + 16, n, 13, { class: "mono", "font-weight": 700 });
-        T(p6, 240, y + 16, i < 3 ? "read" : "consequential", 13, { fill: V(i < 3 ? "muted" : "warn") });
+        T(p6, 240, y + 16, i === 3 ? "or transfer_funds" : (i < 3 ? "read" : "consequential"), 13, { ...(i === 3 ? { class: "mono" } : {}), fill: V(i === 3 ? "bad" : (i < 3 ? "muted" : "warn")) });
       });
-      T(p6, 46, 508, `${G["desk-scoped"]} of ${D.s01.tools} tools · transfer_funds removed`, 13, { fill: V("muted") });
-      label(p6, 470, 330, "SAME QUEUE · HARM AND UTILITY");
-      const p6rows = ["desk-broad", "desk-scoped", "desk-readonly"].map((k, i) => {
+      T(p6, 46, 508, `${D.d1.tools.length} of ${D.s01.tools} tools in each list; one tool differs`, 13, { fill: V("muted") });
+      label(p6, 470, 330, "SAME NOTE · HARM AND UTILITY");
+      const p6rows = [["desk-scoped", D.s05["desk-scoped"]], ["desk-scoped-transfer", D1T]].map(([k, r], i) => {
         const y = 348 + i * 34, g = S("g", { opacity: 0 }, p6);
         T(g, 470, y + 16, k, 14, { "font-weight": 700 });
-        T(g, 620, y + 16, `harm ${frac(D.d1[k].harm)}`, 13, { class: "mono", "font-weight": 700, fill: V(D.d1[k].harm[0] ? "bad" : "ok") });
-        T(g, 770, y + 16, `utility ${frac(D.d1[k].utility)}`, 13, { class: "mono", "font-weight": 700, fill: V(D.d1[k].utility[0] ? "teal" : "warn") });
+        T(g, 660, y + 16, `harm ${frac(r.harm)}`, 13, { class: "mono", "font-weight": 700, fill: V(r.harm[0] ? "bad" : "ok") });
+        T(g, 790, y + 16, `utility ${frac(r.utility)}`, 13, { class: "mono", "font-weight": 700, fill: V(r.utility[0] ? "teal" : "warn") });
         return g;
       });
       label(p6, 470, 460, `RELEASE GATE · ${D.eval_trials} TRIALS`);
@@ -307,12 +308,13 @@
       T(p7, 46, 396, "covers every later call of that name", 13, { fill: V("muted") });
       T(p7, 46, 424, "canary transfer executed", 14, { "font-weight": 800, fill: V("bad") });
       T(p7, 46, 448, `harm ${frac(D.d2.name.harm)} · utility ${frac(D.d2.name.utility)}`, 13, { class: "mono", "font-weight": 700 });
-      card(p7, 490, 330, 440, 150, V("ok"));
+      card(p7, 490, 330, 440, 160, V("ok"));
       T(p7, 506, 352, "ARGUMENT-BOUND APPROVAL", 13, { fill: V("ok"), "font-weight": 700, "letter-spacing": "1.2" });
       T(p7, 506, 378, "the approval carries the tool name, the", 13, { fill: V("muted") });
       T(p7, 506, 396, "arguments and the definition hash", 13, { fill: V("muted") });
       T(p7, 506, 424, "canary call denied", 14, { "font-weight": 800, fill: V("ok") });
       T(p7, 506, 448, `harm ${frac(D.d2.args.harm)} · obeyed ${frac(D.d2.args.obeyed)} · utility ${frac(D.d2.args.utility)}`, 13, { class: "mono", "font-weight": 700 });
+      T(p7, 506, 472, `account-only reviewer: harm ${frac(D.d2.reviewer.harm)} · utility ${frac(D.d2.reviewer.utility)}`, 13, { fill: V("muted") });
       T(p7, 30, 506, `gate at ${D.eval_trials} trials: name-approval harm ${frac(EV["name-approval"].harm)} · args-approval harm ${frac(EV["args-approval"].harm)}, utility ${frac(EV["args-approval"].utility)}`, 13, { fill: V("muted") });
 
       // ---------------------------------------------------------------- state

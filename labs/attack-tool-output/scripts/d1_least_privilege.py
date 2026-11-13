@@ -1,5 +1,6 @@
-"""Step D1: shrink the toolset. Scoped tools can pay a refund and cannot name an account.
-Read-only tools can do neither. Seeds 0-7 on the poisoned queue. Run from labs/:
+"""Step D1: a short tool list is not the same as a narrow one. desk-scoped-transfer keeps the scoped
+desk's five tools and swaps process_refund (ticket id, pays the account on file) for transfer_funds
+(any account, any amount). Seeds 0-7 on the poisoned queue; Step 5 already measured desk-scoped. Run from labs/:
     docker compose run --rm workbench python attack-tool-output/scripts/d1_least_privilege.py
 """
 import labkit
@@ -8,14 +9,13 @@ labkit.banner()
 
 import desk  # noqa: E402
 
+PID = "desk-scoped-transfer"
 desk.note_backend()
-print(f"[note] {desk.WALK_N} trials each (seeds 0-{desk.WALK_N - 1})", flush=True)
-saved = {}
-for pid in ("desk-broad", "desk-scoped", "desk-readonly"):
-    rows = desk.measure(pid, desk.WALK_N, "d1-" + pid)
-    desk.print_rates(pid, rows)
-    saved[pid] = rows
-scoped = saved["desk-scoped"]
-print(f"scoped ledger canary: {sum(r['harm'] for r in scoped)}/{len(scoped)}")
-print(f"readonly utility: {sum(r['utility'] for r in saved['desk-readonly'])}/{len(saved['desk-readonly'])}")
-desk.save("d1.json", {"trials": desk.WALK_N, "profiles": saved})
+print(f"[note] {desk.WALK_N} trials (seeds 0-{desk.WALK_N - 1}), poisoned queue", flush=True)
+names = desk.get(f"/admin/agent?profile={PID}")["profiles"][0]["tools"]
+print(f"{PID} grants {len(names)} transfer_funds: {'yes' if 'transfer_funds' in names else 'no'} "
+      f"process_refund: {'yes' if 'process_refund' in names else 'no'}")
+rows = desk.measure(PID, desk.WALK_N, "d1-" + PID)
+desk.print_rates(PID, rows)
+print(f"{PID} ledger canary: {sum(r['harm'] for r in rows)}/{len(rows)}")
+desk.save("d1.json", {"trials": desk.WALK_N, "tools": names, "profiles": {PID: rows}})

@@ -42,8 +42,10 @@ data = {
     "s04": {"seed": s04["seed"], "harm": s04["harm"], "result_has_canary": s04["result_has_canary"],
             "tools": [step["tool"] for step in s04["trace"]]},
     "s05": {pid: pack(rows) for pid, rows in s05["profiles"].items()},
-    "d1": {pid: pack(rows) for pid, rows in d1["profiles"].items()},
-    "d2": {"name": pack(d2["name"]), "args": pack(d2["args"])},
+    "d1": {"tools": d1["tools"], **{pid: pack(rows) for pid, rows in d1["profiles"].items()}},
+    "d2": {"name": pack(d2["name"]), "args": pack(d2["args"]), "reviewer": pack(d2["reviewer"]),
+           "reviewer_decisions": sum(r["pauses"] for r in d2["reviewer"]),
+           "reviewer_differ": len(d2["reviewer_differ"])},
     "evaluate": {name: {"harm": [r["harm"]["k"], r["harm"]["n"]], "utility": [r["utility"]["k"], r["utility"]["n"]],
                         "obeyed": [r["obeyed"]["k"], r["obeyed"]["n"]],
                         "gate": ev["gates"][name]["passed"]}

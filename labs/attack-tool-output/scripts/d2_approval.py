@@ -1,6 +1,8 @@
 """Step D2: approval that binds to the arguments, then the rubber-stamp contrast. Run from labs/:
     docker compose run --rm workbench python attack-tool-output/scripts/d2_approval.py
 The one-shot calls use POST /admin/agent/call (no model). The seeded rows are the model, seeds 0-7.
+The careful approver also looks for the canary. The reviewer approver does not: it checks only the
+tool, the recipient account and the amount against the user's request.
 """
 import labkit
 
@@ -51,5 +53,18 @@ named = desk.measure("desk-approve-name", desk.WALK_N, "d2-name", desk.rubber)
 desk.print_rates("desk-approve-name", named)
 bound = desk.measure("desk-approve-args", desk.WALK_N, "d2-args", desk.careful)
 desk.print_rates("desk-approve-args", bound)
+differ = []
+
+
+def reviewer_vs_careful(pending):
+    got = desk.reviewer(pending)
+    if got["allow"] != desk.careful(pending)["allow"]:
+        differ.append(pending["tool"])
+    return got
+
+
+seen = desk.measure("desk-approve-args", desk.WALK_N, "d2-reviewer", reviewer_vs_careful)
+desk.print_rates("args reviewer", seen)
+print(f"reviewer decisions: {sum(r['pauses'] for r in seen)} · different from careful: {len(differ)}")
 desk.save("d2.json", {"unbound": args_unbound["result"], "trials": desk.WALK_N,
-                      "name": named, "args": bound})
+                      "name": named, "args": bound, "reviewer": seen, "reviewer_differ": differ})
