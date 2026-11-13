@@ -52,7 +52,7 @@ d3 = json.loads(labkit.inp("work/d3.json").read_text())
 print(f"{'D1 full rows under top-k policy':<44} HTTP {d1['refused_full']}")
 print(f"{'D1 logits per biased request':<44} {d1['per_request']}")
 print(f"{'D1 extrapolated attack cost (requests)':<44} {d1['total_requests']:,} ({d1['factor']:,}x)")
-print(f"{'D2 levels that still leak the size':<44} "
+print(f"{'D2 levels with a clear size knee':<44} "
       f"{', '.join(k for k, v in d2['levels'].items() if v['clear']) or 'none'}")
 print(f"{'D2 round=1 ties in top-5 answers':<44} {d2['ties']['1']}/200")
 print(f"{'D3 random-prompt thief flagged':<44} {d3['monitor']['thief']['flagged']}")
@@ -76,9 +76,9 @@ got = {
     "D1 top-k policy refuses logit_bias": d1["refused_bias"] == 400,
     "D1 biased requests leak 4 exact logits": d1["per_request"] == 4 and d1["max_err"] < 1e-4,
     "D1 escape costs >1000x the full-row attack": d1["factor"] > 1000,
-    "D2 round=1 kills the size read": not d2["levels"]["round=1"]["clear"],
+    "D2 round=1 removes the clear knee": not d2["levels"]["round=1"]["clear"],
     "D2 noise=1e-1 kills the size read": not d2["levels"]["noise=1e-1"]["clear"],
-    "D2 round=2 still leaks the size weakly": d2["levels"]["round=2"]["dim"] == d,
+    "D2 round=2 still leaks the size": d2["levels"]["round=2"]["dim"] == d,
     "D2 round=2 degrades the basis fit": d2["levels"]["round=2"]["fit"] > 1e-3,
     "D3 flags the random-prompt thief": d3["monitor"]["thief"]["flagged"],
     "D3 does not flag honest users": not d3["monitor"]["app-user"]["flagged"],

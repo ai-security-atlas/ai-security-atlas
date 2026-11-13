@@ -15,8 +15,8 @@ backends:                              # yes | partial | no | n/a  (n/a only and
   external-api: n/a
 hardware: "Any CPU. 4 GB Docker VM memory. About 2.7 GB disk: the workbench image (2.4 GB) plus SmolLM2-135M (~270 MB) in the HF cache; work/ holds up to ~350 MB of measurement files."
 canary: ATLAS-CANARY-svd7
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4"
 ---
 
 # LAB-37 · Reading the hidden size off the logits
@@ -198,7 +198,7 @@ docker compose run --rm workbench python attack-projection-theft/scripts/s01_mee
 
 ```text
 [atlas-lab] attack-projection-theft · s01_meet_api.py · torch 2.14.1+cpu · backend none
-[note] victim API http://127.0.0.1:43623 (inside this container only) · keys: guest (full)
+[note] victim API http://127.0.0.1:35253 (inside this container only) · keys: guest (full)
 {
  "model": "lantern-mini-1",
  "owned_by": "Lantern Labs (fictional company)",
@@ -245,8 +245,8 @@ docker compose run --rm workbench python attack-projection-theft/scripts/s02_col
 [atlas-lab] attack-projection-theft · s02_collect.py · torch 2.14.1+cpu · backend none
 attacker's prompts: 1200 strings of random decoded tokens (seed 5)
 example: ' remember novelist stylish yieldingricanesdescriptor'
-[note] victim API http://127.0.0.1:56097 (inside this container only) · keys: attacker (full)
-collected 1200 rows x 49,152 logprobs in 36.5s (12 HTTP requests, 1200 prompts answered)
+[note] victim API http://127.0.0.1:59709 (inside this container only) · keys: attacker (full)
+collected 1200 rows x 49,152 logprobs in 15.2s (12 HTTP requests, 1200 prompts answered)
 row 0: min -24.10  max -3.0309  mean -13.07
 wrote work/rows.npy (236 MB, float32) - the attacker's only dataset
 ```
@@ -381,25 +381,25 @@ docker compose run --rm workbench python attack-projection-theft/scripts/d2_roun
 ```text
 [atlas-lab] attack-projection-theft · d2_round_noise.py · torch 2.14.1+cpu · backend none
 policy                  knee  ratio s[k-1]/s[k]   clear   basis fit vs true
-           round=2     576             4.94    no   1.88e-02
-           round=1       1             1.83    no   1.41e-01
-           round=0       1             1.83    no   4.78e-01
-        noise=1e-3     576              14   yes   6.55e-03
-        noise=1e-2       1             1.83    no   6.12e-02
-        noise=1e-1       1             1.83    no   2.96e-01
+   raw (unrounded)     576         9.19e+03   yes   1.70e-05
+           round=2     576             25.9   yes   7.48e-03
+           round=1     576             2.76    no   7.33e-02
+           round=0       1             1.82    no   4.25e-01
+        noise=1e-3     576             74.7   yes   2.59e-03
+        noise=1e-2     576             7.53    no   2.59e-02
+        noise=1e-1       1             1.82    no   2.18e-01
 
-raw baseline (same 600 rows, unrounded): knee 576, fit ~4e-5 (Step 3/4 shape)
 honest cost: ties that rounding creates inside top-5 answers (200 rows)
   round=2: 15/200 answers contain a tie the true scores do not have
   round=1: 99/200 answers contain a tie the true scores do not have
   round=0: 200/200 answers contain a tie the true scores do not have
 ```
 
-What to notice: rounding to one decimal kills the size read outright, but the two mildest levels only *degrade* it — at round=2 the knee still lands on 576 (weakly, 4.9x) while the recovered basis is already off by 1.9%; and the honest side pays first, with a new tie inside 15 of 200 top-5 answers at round=2.
+What to notice: a knee counts as clear when the drop at it is at least 10x. On the same 700 rows, the unrounded baseline shows a clear knee at 576 (9.19e+03x) and a basis fit of 1.70e-05. Rounding to two decimals still leaves a clear knee at 576 (25.9x), but the recovered basis is already off by 0.75%. Rounding to one decimal leaves only a weak knee at 576 (2.76x); rounding to zero decimals and noise=1e-1 remove it. The honest side pays early: round=2 already puts a new tie inside 15 of 200 top-5 answers.
 
 **Why**
 
-Precision loss is a race between the attack and the utility of the scores. The projection fit degrades first, and the size read survives mild degradation (round=2 and noise=1e-3 still put the knee at 576), so "we rounded" is not a verdict until you measure both columns ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). Noise=1e-2 sat exactly on the boundary in this lab's runs (a weak 576 knee in one reference run, gone in the next) — that fragility belongs in a defense report. D2 collects 600 rows per level, below the ~700 rows Step 3 found a clear knee needs, so even unrounded rows would sit near the edge here; the `raw baseline` line restates Steps 3 and 4 and was not re-measured on these 600 rows. Limitation: rounding to one decimal also destroys logprob differences honest users query for, as the tie counts show.
+Precision loss is a race between the attack and the utility of the scores. The projection fit degrades first, and the size read survives mild degradation (round=2 and noise=1e-3 still give a clear knee at 576), so "we rounded" is not a verdict until you measure both columns ([`eval-asr`](https://ai-security-atlas.github.io/nodes/eval-asr/)). Round=1 and noise=1e-2 still land on 576, under the 10x bar (2.76x and 7.53x). A weak knee is a partial leak, and it belongs in a defense report. D2 collects 700 rows per level, the ~700 rows Step 3 found a clear knee needs, and measures the unrounded baseline on the same rows, so every level is compared like for like. Limitation: rounding to one decimal also destroys logprob differences honest users query for, as the tie counts show.
 
 ### Step D3 — Watch the queries · [explainer 9](explainer/index.html#attack-projection-theft/9)
 
@@ -413,7 +413,7 @@ docker compose run --rm workbench python attack-projection-theft/scripts/d3_moni
 
 ```text
 [atlas-lab] attack-projection-theft · d3_monitor.py · torch 2.14.1+cpu · backend none
-[note] victim API http://127.0.0.1:44609 (inside this container only) · keys: app-user (full), thief (full), natural-thief (full)
+[note] victim API http://127.0.0.1:32897 (inside this container only) · keys: app-user (full), thief (full), natural-thief (full)
 monitor: mean per-token logprob under the victim, sampled from each key's log
 honest traffic: median -5.15, spread -12.15 to -2.94 (short prompts vary widely)
 threshold: the honest traffic's 10th percentile -8.63; a key is flagged when its
@@ -452,7 +452,7 @@ principal-angle cosine, worst direction      1.000000
 D1 full rows under top-k policy              HTTP 403
 D1 logits per biased request                 4
 D1 extrapolated attack cost (requests)       7,090,176 (5,908x)
-D2 levels that still leak the size           noise=1e-3
+D2 levels with a clear size knee             round=2, noise=1e-3
 D2 round=1 ties in top-5 answers             99/200
 D3 random-prompt thief flagged               True
 D3 natural-text thief flagged                False
@@ -465,12 +465,12 @@ stolen artifact carries the canary           ATLAS-CANARY-svd7
 RESULT: REPRODUCED
 ```
 
-The `D2 levels that still leak the size` row lists only the level with a clear knee; round=2 also lands on 576, weakly (D2). `evaluate.py` recomputes the attack from your `work/rows.npy` (it re-collects 700 rows if Step 2's file is gone) and reads the defense outputs from `work/`, then compares the *shape* of the eighteen findings with `expected/evaluate.json` — exact numbers like the fit residual are expected to move slightly between machines. `RESULT` says only whether the run matches that shape; the table is the security verdict.
+The `D2 levels with a clear size knee` row lists the levels whose knee clears the 10x bar; round=1 and noise=1e-2 also land on 576, weakly (D2). `evaluate.py` recomputes the attack from your `work/rows.npy` (it re-collects 700 rows if Step 2's file is gone) and reads the defense outputs from `work/`, then compares the *shape* of the eighteen findings with `expected/evaluate.json` — exact numbers like the fit residual are expected to move slightly between machines. `RESULT` says only whether the run matches that shape; the table is the security verdict.
 
 Questions for your notes:
 
 1. The full-row attack cost 1,200 queries; D1's escape costs about 7.1 million. Where between those numbers would you set a per-key budget, and what does the 700-row floor say a budget must be *below* to work?
-2. D2 shows a level (round=2) where the hidden size still leaks but the recovered basis is already wrong by 1.9%. Which column would your security report lead with, and which would an attacker's?
+2. D2 shows a level (round=2) where the hidden size still leaks but the recovered basis is already wrong by 0.75%. Which column would your security report lead with, and which would an attacker's?
 3. The D3 monitor scored the natural-text thief as *more* plausible than honest users. Write down the two threat models (lazy vs adaptive) and name what the operator would need beyond this log to separate the second one.
 4. The stolen basis and the true weights differ by an unknown invertible map. What additional access would an attacker need to pin the map down, and which of the three defenses removes that access cheapest?
 

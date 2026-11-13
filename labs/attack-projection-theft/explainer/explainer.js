@@ -13,6 +13,8 @@
   const fmt = v => Number(v).toLocaleString("en-US", { maximumFractionDigits: 0 });
   const sci = (v, d = 2) => Number(v).toExponential(d).replace(/e-(\d)$/, "e-0$1");
   const nats = v => (Number(v) < 0 ? "−" : "") + Math.abs(Number(v)).toFixed(2);
+  const kneeOf = v => v.clear ? `a clear knee at ${v.dim} (${+v.ratio.toPrecision(3)}×)`
+    : v.dim === SPE.dim ? `only a weak knee at ${v.dim} (${+v.ratio.toPrecision(3)}×)` : `<span class="c-ok">no knee</span>`;
 
   X.define({
     id: "attack-projection-theft",
@@ -56,8 +58,8 @@
         caption: `<span class="c-ok">Top-5 only</span>: full rows → HTTP ${D1.refused_full}, bias → HTTP ${D1.refused_bias}; ${fmt(D1.topk_rows)} answers exposed ${fmt(D1.distinct_ids)} scattered ids and never a complete row. <span class="c-bad">With bias kept</span>: ${D1.per_request} exact logits per request (err ${sci(D1.max_err)}), so the whole attack costs ${fmt(D1.total_requests)} requests, ${fmt(D1.factor)}× the ${fmt(COL.rows)} it cost before.`,
         cmd: "docker compose run --rm workbench python attack-projection-theft/scripts/d1_serve_less.py" },
       { chapter: "Defense", label: "Degrade the numbers",
-        guide: "The second defense spoils the numbers by rounding them or adding noise before they leave the server. The cliff survives mild damage while the recovered layer quietly goes wrong. Honest users pay for it, because scores that used to differ now tie. One noise level stopped the theft in one run and not in another, so treat it as fragile.",
-        caption: `Round to 2 decimals: the knee still lands on ${LV["round=2"].dim}, weakly (${LV["round=2"].ratio}×), while the basis fit degrades to <b>${sci(LV["round=2"].fit)}</b>. Round to 1: <span class="c-ok">no knee</span>. Noise 1e-3 still leaks (${LV["noise=1e-3"].ratio}×); 1e-1 kills it. Honest cost: new top-5 ties in ${TIE["2"]}/200 answers at round 2, ${TIE["1"]}/200 at round 1.`,
+        guide: "The second defense spoils the numbers by rounding them or adding noise before they leave the server. The cliff survives mild damage while the recovered layer quietly goes wrong. Honest users pay for it, because scores that used to differ now tie. Two levels still leave a weak cliff at the true size, which is a partial leak.",
+        caption: `Same ${fmt(D.d2.n_rows)} rows at every level. Round to 2 decimals: ${kneeOf(LV["round=2"])}, while the basis fit degrades to <b>${sci(LV["round=2"].fit)}</b>. Round to 1: ${kneeOf(LV["round=1"])}. Noise 1e-3: ${kneeOf(LV["noise=1e-3"])}; noise 1e-1: ${kneeOf(LV["noise=1e-1"])}. Honest cost: new top-5 ties in ${TIE["2"]}/200 answers at round 2, ${TIE["1"]}/200 at round 1.`,
         cmd: "docker compose run --rm workbench python attack-projection-theft/scripts/d2_round_noise.py" },
       { chapter: "Defense", label: "Watch the traffic",
         guide: "The third defense watches the traffic. The operator takes sample prompts from each API key’s log and scores them with the model itself. Token soup, strings of random tokens, stands out immediately. A thief who sends ordinary sentences looks like honest traffic and still recovers the hidden width, so the monitor needs query budgets and alerts alongside it.",

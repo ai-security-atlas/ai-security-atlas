@@ -34,7 +34,7 @@ window.LAB_DATA = {
  "collect": {
   "rows": 1200,
   "requests": 12,
-  "seconds": 36.5,
+  "seconds": 15.2,
   "seed": 5,
   "example_len": 6
  },
@@ -128,48 +128,48 @@ window.LAB_DATA = {
   "levels": {
    "round=2": {
     "dim": 576,
-    "ratio": 4.941,
-    "clear": false,
-    "fit": 0.0188,
-    "queries": 600
+    "ratio": 25.858,
+    "clear": true,
+    "fit": 0.00748,
+    "queries": 700
    },
    "round=1": {
-    "dim": 1,
-    "ratio": 1.829,
+    "dim": 576,
+    "ratio": 2.762,
     "clear": false,
-    "fit": 0.141,
-    "queries": 600
+    "fit": 0.0733,
+    "queries": 700
    },
    "round=0": {
     "dim": 1,
-    "ratio": 1.828,
+    "ratio": 1.817,
     "clear": false,
-    "fit": 0.478,
-    "queries": 600
+    "fit": 0.425,
+    "queries": 700
    },
    "noise=1e-3": {
     "dim": 576,
-    "ratio": 13.958,
+    "ratio": 74.7,
     "clear": true,
-    "fit": 0.00655,
-    "queries": 600
+    "fit": 0.00259,
+    "queries": 700
    },
    "noise=1e-2": {
-    "dim": 1,
-    "ratio": 1.829,
+    "dim": 576,
+    "ratio": 7.528,
     "clear": false,
-    "fit": 0.0612,
-    "queries": 600
+    "fit": 0.0259,
+    "queries": 700
    },
    "noise=1e-1": {
     "dim": 1,
-    "ratio": 1.829,
+    "ratio": 1.818,
     "clear": false,
-    "fit": 0.296,
-    "queries": 600
+    "fit": 0.218,
+    "queries": 700
    }
   },
-  "n_rows": 600,
+  "n_rows": 700,
   "ties": {
    "2": 15,
    "1": 99,
