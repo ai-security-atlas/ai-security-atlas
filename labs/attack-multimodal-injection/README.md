@@ -547,7 +547,7 @@ docker compose down --remove-orphans
 
 ## Going Further
 
-- Add the optional `qwen2.5vl:7b`: run `ollama pull qwen2.5vl:7b` on the host (6 GB), set `LAB_TRANSFER_MODELS="qwen2.5vl:7b moondream:1.8b"` in your backend block, and rerun Steps 2, 3 and D1. In an earlier run it was hijacked 27 of 40 times in Step 2, and the hardened prompt only halved that. Compare which defense ranks first on each model.
+- Add the optional `qwen2.5vl:7b` (6 GB download, about 8 GB of Docker VM memory with container Ollama). On host Ollama, run `ollama pull qwen2.5vl:7b`. On container Ollama, add `qwen2.5vl:7b` to `LAB_MODELS` in `labs/.env` and run `docker compose up -d models`, which pulls every model in that list. Then set `LAB_TRANSFER_MODELS="qwen2.5vl:7b moondream:1.8b"` in your backend block and rerun Steps 2, 3 and D1. In an earlier run it was hijacked 27 of 40 times in Step 2, and the hardened prompt only halved that. Compare which defense ranks first on each model.
 - Add a fixed "datamarking" layout to `mmi.build` (for example, wrap the photo between two text parts that name it as seller content) and measure it against the sandwich with the strict grader on all four injected photos.
 - Measure the D2 pre-filter's false-positive rate on twenty harmless photos with text of your own (signs, posters, receipts) before trusting its zero false positives here.
 - Replace the VLM-as-OCR reader in D2 with a dedicated OCR engine in a container you build yourself, and compare which photos each reader misses, keeping the canary `CANARY-4417`.
