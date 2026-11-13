@@ -31,6 +31,12 @@ for i, (t, l, k) in enumerate(zip(target, lp.tolist(), top)):
                  "top": tok.decode([k]), "ok": t == k})
     print(f"{i + 1:>3}  {rows[-1]['tok']!r:<13} {p:>10.2e} {-l:>8.3f}  {rows[-1]['top']!r}{'  (match)' if t == k else ''}")
 loss = -lp.mean().item()
-print(f"\nloss = mean -log p = {loss:.3f}   (p of the whole target = {torch.exp(lp.sum()).item():.1e})")
+# the whole-target p, formatted from its log so a tiny value never underflows to 0.0e+00
+log10_p = lp.double().sum().item() / math.log(10)
+exp10 = math.floor(log10_p)
+mant = round(10 ** (log10_p - exp10), 1)
+if mant >= 10:
+    mant, exp10 = mant / 10, exp10 + 1
+print(f"\nloss = mean -log p = {loss:.3f}   (p of the whole target = {mant:.1f}e{exp10:+03d}, log10 p = {log10_p:.2f})")
 print(f"greedy would match {sum(r['ok'] for r in rows)}/{len(rows)} target tokens if it had the earlier ones right")
 labkit.out("loss.json").write_text(json.dumps({"suffix": gcg.P["init"], "rows": rows, "loss": round(loss, 4)}, indent=1) + "\n")
