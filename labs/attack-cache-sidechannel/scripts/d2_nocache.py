@@ -5,6 +5,7 @@ Two runs, one per server mode (the README's Do block restarts the server between
     docker compose run --rm workbench python attack-cache-sidechannel/scripts/d2_nocache.py nocache
     docker compose up -d --wait llama-server        # back to the shipped defaults
 """
+import random
 import statistics
 import sys
 
@@ -16,6 +17,7 @@ import serving  # noqa: E402
 import cachelab as C  # noqa: E402
 
 mode = sys.argv[1] if len(sys.argv) > 1 else "baseline"
+REPEATS = 20                          # A's identical repeats per server mode: the cost sample
 B = serving.BASE_URL
 serving.wait_ready(B, timeout=120)
 res = C.load("d2_nocache.json") or {}
@@ -26,7 +28,7 @@ if mode == "baseline":
     first = C.victim_turn(B, C.CODES[0], tag, max_tokens=8).seconds
     n1 = None
     repeats = []
-    for _ in range(5):
+    for _ in range(REPEATS):
         r = C.victim_turn(B, C.CODES[0], tag, max_tokens=8)
         repeats.append(r.seconds)
         n1 = ((r.json() or {}).get("timings") or {}).get("cache_n")
@@ -35,7 +37,7 @@ if mode == "baseline":
                        "repeat_cache_n": n1}
     print(f"[note] shipped defaults: A's identical request again skips prefill")
     print(f"  A first send {first * 1000:.0f} ms; repeats {min(repeats) * 1000:.0f}-{max(repeats) * 1000:.0f} ms "
-          f"(median {statistics.median(repeats) * 1000:.0f} ms, cache_n {n1})")
+          f"(median {statistics.median(repeats) * 1000:.0f} ms over {REPEATS}, cache_n {n1})")
     print(f"[ok] baseline saved; now restart the server with SERVING_ARGS=\"--no-cache-prompt\" and rerun")
     C.save("d2_nocache.json", res)
     raise SystemExit(0)
@@ -49,7 +51,7 @@ C.print_summary("attack with --no-cache-prompt:", res["attack"], oracle=False)
 tag = C.tag_for(9042)
 first = C.victim_turn(B, C.CODES[0], tag, max_tokens=8).seconds
 repeats, ns = [], []
-for _ in range(5):
+for _ in range(REPEATS):
     r = C.victim_turn(B, C.CODES[0], tag, max_tokens=8)
     repeats.append(r.seconds)
     ns.append(((r.json() or {}).get("timings") or {}).get("cache_n"))
@@ -58,13 +60,22 @@ res["nocache"] = {"first_ms": round(first * 1000, 1),
                   "repeat_cache_n": ns}
 print(f"\nthe cost: A's identical request recomputes every time")
 print(f"  A first send {first * 1000:.0f} ms; repeats {min(repeats) * 1000:.0f}-{max(repeats) * 1000:.0f} ms "
-      f"(median {statistics.median(repeats) * 1000:.0f} ms, cache_n {ns[0]})")
-base_med = statistics.median(res["baseline"]["repeat_ms"]) / 1000     # s
+      f"(median {statistics.median(repeats) * 1000:.0f} ms over {REPEATS}, cache_n {ns[0]})")
+base_ms = res["baseline"]["repeat_ms"]
+base_med = statistics.median(base_ms) / 1000                           # s
 nocache_med = statistics.median(repeats)                               # s
 per_k = (nocache_med - base_med) * 1000
+# 95% bootstrap interval of the median difference: resample each mode's repeats, seeded
+rng = random.Random(C.SEED)
+nc_ms = [x * 1000 for x in repeats]
+boots = sorted(statistics.median(rng.choices(nc_ms, k=len(nc_ms))) - statistics.median(rng.choices(base_ms, k=len(base_ms)))
+               for _ in range(2000))
+ci = (boots[50], boots[1949])                                          # ms per request = s per 1000
 print(f"  A's repeat median {base_med * 1000:.0f} -> {nocache_med * 1000:.0f} ms: "
-      f"+{per_k:.0f} s per 1000 repeat requests on this machine")
+      f"+{per_k:.0f} s per 1000 repeat requests on this machine "
+      f"(95% bootstrap interval {ci[0]:+.0f} to {ci[1]:+.0f} s, {len(base_ms)}+{len(nc_ms)} repeats)")
 res["cost_s_per_1000"] = round(per_k, 1)
+res["cost_ci_s_per_1000"] = [round(ci[0], 1), round(ci[1], 1)]
 ok = res["attack"]["picks"]
 print(f"\nRESULT no caching: picks {ok['k']}/{ok['n']} right (chance 25%), p={C.fmt_p(res['attack']['p'])};")
 print(f"[note] the timing channel is gone because there is nothing to reuse -- and so is the speed the")

@@ -10,7 +10,8 @@
   const AT = D.attack.summary, T = D.tokens, D1 = D.d1, D2 = D.d2, TR = D.trials;
   const ms = x => Math.round(x) + " ms";
   const p = x => (x < 0.001 ? x.toExponential(1) : x.toFixed(3));
-  const median = a => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+  const median = a => { const s = [...a].sort((x, y) => x - y), m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const band = r => (r.lo_pct === r.hi_pct ? `${r.lo_pct}%` : `${r.lo_pct}-${r.hi_pct}%`);
 
   X.define({
     id: "attack-cache-sidechannel",
@@ -52,16 +53,16 @@
         caption: `Round 0 of the reference run: the fastest probe was <code class="c-lime">${D.canary}</code> at ${ms(D.attack.per_round[0].hit)} against decoys ${Math.round(Math.min(...D.attack.per_round[0].misses))}-${Math.round(Math.max(...D.attack.per_round[0].misses))} ms. What leaked is one fact — which known prompt is live — and no prompt text crossed the wire.`,
         cmd: "docker compose run --rm workbench python attack-cache-sidechannel/scripts/s03_recover.py" },
       { chapter: "Impact", label: "How strong, honestly",
-        guide: "How much is this result worth on this machine? Re-scoring smaller subsets of the recorded rounds shows how a shorter experiment would have turned out. The drift line shows all the timings shifting while other jobs used the CPU. That’s why the results are reported as ranges and intervals; a single ratio would hide the uncertainty.",
-        caption: `Subset study of the same ${AT.rounds} rounds: at k=3, ${TR.table[0].pct_p_below_001}% of subsets reached p&lt;0.01 and accuracy bands reached ${TR.table[0].lo_pct}%; at k=12 and k=24 every subset did. Drift within one run: ${TR.drift_ms[0]} vs ${TR.drift_ms[1]} ms medians. A busier host moves all of it.`,
+        guide: "How much is this result worth on this machine? A bootstrap resample draws k of the recorded rounds at random with replacement, so a round can appear twice. Re-scoring 200 such resamples per k shows how a shorter experiment could have turned out. The drift line shows how far all the timings moved between the two halves of the run. That’s why the results are reported as ranges and intervals; a single ratio would hide the uncertainty.",
+        caption: `Bootstrap resamples (k rounds drawn with replacement) of the same ${AT.rounds} rounds: ${TR.table.filter(r => r.k === 3 || r.k === 12).map(r => `at k=${r.k}, ${r.pct_p_below_001}% of resamples reached p&lt;0.01 and the 5-95% accuracy band was ${band(r)}`).join("; ")}. Drift within one run: ${TR.drift_ms[0]} vs ${TR.drift_ms[1]} ms medians. A busier host moves all of it.`,
         cmd: "docker compose run --rm workbench python attack-cache-sidechannel/scripts/s04_trials.py" },
       { chapter: "Defense", label: "Isolate, and measure it",
         guide: "The first defense gives each tenant its own slot. It stops the cache-match counter from leaking, which was the leak in the system-serving lab. In the reference run the timing still leaked, likely because the server’s in-memory prompt cache can copy a prefix into any slot. Other runs of the same setup showed no signal, so this defense has to be measured each time. The second defense salts each tenant’s prefix so that different tenants never share cache entries, and that closes the channel.",
-        caption: `Through a per-tenant gateway: slots pinned — ${D1.pinned.picks.k}/${D1.pinned.picks.n} picks, p=${p(D1.pinned.p)}, AUC ${D1.pinned.auc} (leaking in this run); per-tenant cache salt — ${D1.salt.picks.k}/${D1.salt.picks.n} picks, p=${p(D1.salt.p)}, chance level, while A’s own repeats stayed cached (${ms(D1.salt_own.first_ms)} first, median ${ms(median(D1.salt_own.repeat_ms))} over ${D1.salt_own.repeat_ms.length} repeats).`,
+        caption: `Through a per-tenant gateway: slots pinned — ${D1.pinned.picks.k}/${D1.pinned.picks.n} picks, p=${p(D1.pinned.p)}, AUC ${D1.pinned.auc} (leaking in this run); per-tenant cache salt — ${D1.salt.picks.k}/${D1.salt.picks.n} picks, p=${p(D1.salt.p)}, no signal, while A’s own repeats stayed cached (${ms(D1.salt_own.first_ms)} first with cache_n ${D1.salt_own.first_cache_n}, median ${ms(median(D1.salt_own.repeat_ms))} over ${D1.salt_own.repeat_ms.length} repeats with cache_n ${D1.salt_own.repeat_cache_n.join(", ")}).`,
         cmd: "docker compose run --rm workbench python attack-cache-sidechannel/scripts/d1_slots.py salt" },
       { chapter: "Defense", label: "Or drop the cache",
         guide: "The blunt option turns prompt caching off for everyone. With nothing cached, the timings of all candidates look alike. The cost is that the victim’s own repeated requests now pay full prefill every time, and that cost is measured here as well.",
-        caption: `With <code>--no-cache-prompt</code>: ${D2.attack.picks.k}/${D2.attack.picks.n} picks, p=${p(D2.attack.p)}, no signal. The bill: A’s repeat median ${ms(median(D2.baseline.repeat_ms))} cached vs ${ms(median(D2.nocache.repeat_ms))} uncached — about +${Math.round(D2.cost_s_per_1000)} s per 1000 repeat requests on the reference machine.`,
+        caption: `With <code>--no-cache-prompt</code>: ${D2.attack.picks.k}/${D2.attack.picks.n} picks, p=${p(D2.attack.p)}, no signal. The bill: A’s repeat median ${ms(median(D2.baseline.repeat_ms))} cached vs ${ms(median(D2.nocache.repeat_ms))} uncached over ${D2.nocache.repeat_ms.length} repeats each — about +${Math.round(D2.cost_s_per_1000)} s per 1000 repeat requests on the reference machine (95% bootstrap interval +${Math.round(D2.cost_ci_s_per_1000[0])} to +${Math.round(D2.cost_ci_s_per_1000[1])} s).`,
         cmd: "docker compose run --rm workbench python attack-cache-sidechannel/scripts/d2_nocache.py nocache" },
     ],
     html: `<svg class="main" viewBox="0 0 960 540" width="960" height="540" role="img" aria-label="Tenant A, the llama.cpp server with its slots and prompt cache, tenant B, and a detail panel"></svg>`,
@@ -233,10 +234,10 @@
 
       // P7 trials
       g = P();
-      label(g, 30, 322, "HOW MANY ROUNDS DOES THE VERDICT NEED? (SUBSETS OF THE RECORDED RUN)");
+      label(g, 30, 322, "HOW MANY ROUNDS DOES THE VERDICT NEED? (BOOTSTRAP RESAMPLES OF THE RECORDED RUN)");
       T2(g, 40, 348, "rounds kept", 13, { class: "mono", fill: V("muted") });
-      T2(g, 170, 348, "pick accuracy (5-95% of subsets)", 13, { class: "mono", fill: V("muted") });
-      T2(g, 480, 348, "subsets with p<0.01", 13, { class: "mono", fill: V("muted") });
+      T2(g, 170, 348, "pick accuracy (5-95% of resamples)", 13, { class: "mono", fill: V("muted") });
+      T2(g, 480, 348, "resamples with p<0.01", 13, { class: "mono", fill: V("muted") });
       TR.table.forEach((r, i) => {
         const y = 372 + i * 32;
         row(g, 40, y, [[0, `${r.k}`, { "font-weight": 800 }], [130, `${r.mean_pct}%  [${r.lo_pct}-${r.hi_pct}%]`, {}]], 14);
@@ -244,7 +245,7 @@
         S("rect", { x: 480, y: y - 15, width: w, height: 20, rx: 4, fill: r.pct_p_below_001 >= 95 ? V("ok") : V("warn"), opacity: .8 }, g);
         T2(g, 486 + w, y, `${r.pct_p_below_001}%`, 13, { class: "mono", "font-weight": 700 });
       });
-      T2(g, 40, 508, `drift inside one run: ${TR.drift_ms[0]} ms first half, ${TR.drift_ms[1]} ms second half — other jobs were using the machine`, 13, { fill: V("muted") });
+      T2(g, 40, 508, `drift inside one run: ${TR.drift_ms[0]} ms first half, ${TR.drift_ms[1]} ms second half`, 13, { fill: V("muted") });
 
       // P8 defenses
       g = P();
@@ -258,7 +259,7 @@
           row(g, x + 18, 396, [[0, `picks ${s.picks.k}/${s.picks.n}`, { "font-weight": 800 }], [150, `p=${p(s.p)}`, {}], [280, `AUC ${s.auc}`, {}]], 14);
           T2(g, x + 18, 424, note, 13, { fill: V("muted") });
         });
-      T2(g, 30, 490, `A's own repeat, salted: first ${ms(D1.salt_own.first_ms)}, repeat ${ms(Math.min(...D1.salt_own.repeat_ms))} — each tenant keeps its own cache`, 14, { "font-weight": 700 });
+      T2(g, 30, 490, `A's own repeat, salted: first ${ms(D1.salt_own.first_ms)} (cache_n ${D1.salt_own.first_cache_n}), repeat ${ms(Math.min(...D1.salt_own.repeat_ms))} (cache_n ${D1.salt_own.repeat_cache_n[0]}) — each tenant keeps its own cache`, 14, { "font-weight": 700 });
 
       // P9 no-cache cost
       g = P();
@@ -271,6 +272,7 @@
       T2(g, 580, 372, "the measured bill", 15, { "font-weight": 700 });
       T2(g, 580, 406, `+${Math.round(D2.cost_s_per_1000)} s`, 30, { class: "mono", fill: V("ok"), "font-weight": 800 });
       T2(g, 580, 440, "extra prefill per 1000 repeat requests, reference machine", 13, { fill: V("muted") });
+      T2(g, 580, 464, `95% interval +${Math.round(D2.cost_ci_s_per_1000[0])} to +${Math.round(D2.cost_ci_s_per_1000[1])} s, ${D2.baseline.repeat_ms.length}+${D2.nocache.repeat_ms.length} repeats`, 13, { fill: V("muted") });
 
       // ---------- state
       const base = { a: 0, cache: 0, b: 0, match: 0, pick: 0, have: 0, gate: 0, salt: 0, nocache: 0, pn: 1 };

@@ -34,7 +34,7 @@ data = {
     "trials": {"table": s4["table"], "drift_ms": s4["drift_ms"]},
     "d1": {"pinned": d1["pinned"], "salt": d1["salt"], "salt_own": d1.get("salt_own", {})},
     "d2": {"attack": d2["attack"], "baseline": d2["baseline"], "nocache": d2["nocache"],
-           "cost_s_per_1000": d2.get("cost_s_per_1000")},
+           "cost_s_per_1000": d2.get("cost_s_per_1000"), "cost_ci_s_per_1000": d2.get("cost_ci_s_per_1000")},
     "evaluate": {"shared": {k: ev["shared"][k] for k in ("hit_med_ms", "miss_med_ms", "ratio", "p", "picks")},
                  "pinned": {k: ev["pinned"][k] for k in ("hit_med_ms", "miss_med_ms", "ratio", "p", "picks")},
                  "salted": {k: ev["salted"][k] for k in ("hit_med_ms", "miss_med_ms", "ratio", "p", "picks")},

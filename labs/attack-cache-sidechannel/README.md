@@ -15,8 +15,8 @@ backends:                                 # yes | partial | no | n/a
   external-api: no
 hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.4 GB workbench image, 1.2 GB llama.cpp server image, 0.39 GB GGUF model."
 canary: ATLAS-CANARY-kv24
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, llama.cpp b11977, host Ollama 0.32.5 (optional Step 5)"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, llama.cpp b11977, host Ollama 0.32.5 (optional Step 5)"
 covers:
   - {node: defense-cache-isolation, steps: "D1-D2", anchor: "step-d1--isolate-the-cache-per-tenant-twice--explainer-8"}
 ---
@@ -45,7 +45,7 @@ What you will do:
 - Over many seeded rounds, recover which code is live and back the claim with a Mann-Whitney U test on the hit and miss times, an [AUC](../primers/reading-the-numbers.md#auc) and a [Wilson interval](../primers/reading-the-numbers.md#wilson-interval) on the per-round accuracy, with an honest account of how noisy the signal is on a busy machine.
 - Measure three defenses: per-tenant slot pinning (which gave a leak in some runs and no signal in others on this build), per-tenant cache salting (which closes the channel and keeps each tenant's own reuse), and `--no-cache-prompt` (which closes it and makes the victim pay for every request).
 
-Headline result: in the reference run tenant B named the live code in 24 of 24 rounds from timing alone (Wilson 86-100%, chance 25%), and per-tenant salting dropped it to 3 of 12, the chance level. Source: [`labs/attack-cache-sidechannel`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-cache-sidechannel).
+Headline result: in the reference run tenant B named the live code in 24 of 24 rounds from timing alone (Wilson 86-100%, chance 25%), and per-tenant salting removed the timing gap (p=0.934). Salting left 6 of 12 right picks, which do not beat chance (3 of 12) at the 5% level. Source: [`labs/attack-cache-sidechannel`](https://github.com/ai-security-atlas/ai-security-atlas/tree/main/labs/attack-cache-sidechannel).
 
 > **What is staged here:** tenant B knows the prompt template and the four candidate codes, so it only has to pick one of four. The candidates differ early in the prompt and are followed by a 73-token tail, so a hit saves a lot of prefill. The victim's request is sent seconds before B's probes in every round, and each round starts a fresh conversation tag so every probe is first contact. These choices make the timing signal large and clean enough to measure in a few minutes; D3 spells out what that does and does not show.
 
@@ -201,7 +201,7 @@ What to notice: the last `[ok]` is the mechanism under test verified live — an
 | D2 | d2_nocache (×2), restarts | workbench, llama-server | ≈1.5–3 min | 9 |
 | D3 | — (Read) | — | — | — |
 
-Runtimes were measured on a machine several other jobs were using, which is the point of this lab: every timing number below moves with load, and the runtimes do too. They include about 1–3 s of container start-up per `docker compose run` and 3–10 s per server restart in D2. The whole verified run (Setup to Cleanup, Step 5 included) took about 8 min of wall clock.
+Runtimes were measured on a machine several other jobs were using, which is the point of this lab: every timing number below moves with load, and the runtimes do too. They include about 1–3 s of container start-up per `docker compose run` and 3–10 s per server restart in D2. On that busy machine the whole verified run (Setup to Cleanup, Step 5 included) took about 8 min of wall clock. The reference run behind the Observe blocks below ran with no other lab running and took under 2 min.
 
 ### Step 1 — One server, two tenants, and where prompts differ · [explainer 1](explainer/index.html#attack-cache-sidechannel/1)
 
@@ -221,8 +221,8 @@ docker compose run --rm workbench python attack-cache-sidechannel/scripts/s01_te
 [note] tenant A is Lantern Labs's billing assistant; every conversation's system prompt starts with a fresh tag, names the shop, and hides one of four escalation codes
 [note] tenant B knows the template and the four candidate codes ['kv24', 'qz71', 'bd38', 'ne92']; it never sees A's text -- it times its own requests
 
-victim system prompt (code kv24, tag CASE-6b8d99-0000), first and last 60 chars:
-  '[CASE-6b8d99-0000] You are the billing assistant for Lantern'
+victim system prompt (code kv24, tag CASE-c86c2a-0000), first and last 60 chars:
+  '[CASE-c86c2a-0000] You are the billing assistant for Lantern'
   ...' support line opens at nine. Be kind, be brief, be accurate.'
 
 token anatomy of one probe request (the /tokenize counts; the chat template adds a header and turn markers around them):
@@ -232,14 +232,14 @@ token anatomy of one probe request (the /tokenize counts; the chat template adds
   [user turn 'hi'                              ]   1 tokens   always computed
   candidates first differ at character 125: right at the code, early in the prompt
 
-round 0 (tag CASE-6b8d99-0000): tenant A answers a customer with code kv24 (the lab canary ATLAS-CANARY-kv24); tenant B probes each candidate once
-  A's answer: "I'm Lantern Labs, the billing"
-  B probes ATLAS-CANARY-kv24:  252.7 ms   cache_n 127 <- the live code
-  B probes ATLAS-CANARY-qz71:  655.1 ms   cache_n 45
-  B probes ATLAS-CANARY-bd38:  525.0 ms   cache_n 45
-  B probes ATLAS-CANARY-ne92:  507.7 ms   cache_n 45
+round 0 (tag CASE-c86c2a-0000): tenant A answers a customer with code kv24 (the lab canary ATLAS-CANARY-kv24); tenant B probes each candidate once
+  A's answer: "I'm Lantern Labs' billing assistant"
+  B probes ATLAS-CANARY-kv24:   10.9 ms   cache_n 127 <- the live code
+  B probes ATLAS-CANARY-qz71:   88.0 ms   cache_n 45
+  B probes ATLAS-CANARY-bd38:   79.8 ms   cache_n 45
+  B probes ATLAS-CANARY-ne92:   79.7 ms   cache_n 45
 
-  B probes the live code a second time: 287.0 ms   cache_n 133
+  B probes the live code a second time: 8.0 ms   cache_n 133
   [note] now the cache holds B's own probe too: from here on timing says nothing about A.
          every later round therefore starts a fresh conversation (a new tag), so each probe is
          first contact again -- the one measurement the cache has not already answered
@@ -269,24 +269,26 @@ docker compose run --rm workbench python attack-cache-sidechannel/scripts/s02_si
 [note] decoy, once each, first contact; the server's timings.cache_n (tokens taken from the cache,
 [note] whoever sent them) is the ground truth a real API strips -- only the milliseconds stay
 
-round 1 (tag CASE-95dae3-0101): A's live code ATLAS-CANARY-qz71
-  probe the live code    291.5 ms   cache_n 127   <- reused A's cached prefix
-  probe a decoy code     877.1 ms   cache_n 44   <- shared header only, the rest recomputed
-round 2 (tag CASE-95dae3-0102): A's live code ATLAS-CANARY-bd38
-  probe the live code    373.4 ms   cache_n 126   <- reused A's cached prefix
-  probe a decoy code     800.6 ms   cache_n 44   <- shared header only, the rest recomputed
-round 3 (tag CASE-95dae3-0103): A's live code ATLAS-CANARY-ne92
-  probe the live code    275.6 ms   cache_n 126   <- reused A's cached prefix
-  probe a decoy code     822.3 ms   cache_n 44   <- shared header only, the rest recomputed
+round 1 (tag CASE-8d40f9-0101): A's live code ATLAS-CANARY-qz71
+  probe the live code     11.1 ms   cache_n 128   <- reused A's cached prefix
+  probe a decoy code      94.2 ms   cache_n 45   <- shared header only, the rest recomputed
 
-live-code probes: [291.5, 373.4, 275.6]
-decoy probes:     [877.1, 800.6, 822.3]
-medians 292 vs 822 ms (2.8x), Mann-Whitney p=0.100 with n=3+3 -- three rounds separate the two probes completely on this machine, but the
+round 2 (tag CASE-8d40f9-0102): A's live code ATLAS-CANARY-bd38
+  probe the live code     11.2 ms   cache_n 127   <- reused A's cached prefix
+  probe a decoy code      83.8 ms   cache_n 45   <- shared header only, the rest recomputed
+
+round 3 (tag CASE-8d40f9-0103): A's live code ATLAS-CANARY-ne92
+  probe the live code     10.6 ms   cache_n 127   <- reused A's cached prefix
+  probe a decoy code      80.1 ms   cache_n 45   <- shared header only, the rest recomputed
+
+live-code probes: [11.1, 11.2, 10.6]
+decoy probes:     [94.2, 83.8, 80.1]
+medians 11 vs 84 ms (7.5x), Mann-Whitney p=0.100 with n=3+3 -- three rounds separate the two probes completely on this machine, but the
 [note] verdict is fragile at n=3: Step 4 shows what repeats buy. The counter needed no statistics
 [note] at all -- llama.cpp hands the answer to anyone who can read its reply JSON
 ```
 
-What to notice: every live-code probe reused 126–127 tokens and every decoy only the shared 44, so the counter is a perfect oracle here — while the timing separates cleanly at n=3 yet cannot prove anything (p=0.100 is the smallest two-sided p six observations allow, and this run's load doubled the decoy times compared with a quieter one).
+What to notice: every live-code probe reused 127–128 tokens and every decoy only the shared 45, so the counter is a perfect oracle here — while the timing separates cleanly at n=3 yet cannot prove anything (p=0.100 is the smallest two-sided p six observations allow). In this run the live code took about 11 ms and the decoys 80–94 ms.
 
 **Why**
 
@@ -308,29 +310,29 @@ docker compose run --rm workbench python attack-cache-sidechannel/scripts/s03_re
 [atlas-lab] attack-cache-sidechannel · s03_recover.py · torch 2.14.1+cpu · backend host-ollama
 [note] 24 rounds, seed 24: each round A primes one live code (round 0: the canary ATLAS-CANARY-kv24), then B probes the four candidates once each in random order
 [note] the pick is the fastest probe per round -- wall-clock time only, as an API client sees it
-  round  0 tag CASE-7bd3e0-0000 pick ATLAS-CANARY-kv24 ok   dec.:488 live:91 dec.:450 dec.:465
-  round  1 tag CASE-7bd3e0-0001 pick ATLAS-CANARY-qz71 ok   dec.:454 dec.:524 dec.:494 live:237
-  round  2 tag CASE-7bd3e0-0002 pick ATLAS-CANARY-kv24 ok   live:240 dec.:509 dec.:434 dec.:520
+  round  0 tag CASE-808e43-0000 pick ATLAS-CANARY-kv24 ok   dec.:110 live:26 dec.:88 dec.:97
+  round  1 tag CASE-808e43-0001 pick ATLAS-CANARY-qz71 ok   dec.:87 dec.:80 dec.:80 live:12
+  round  2 tag CASE-808e43-0002 pick ATLAS-CANARY-kv24 ok   live:14 dec.:105 dec.:82 dec.:82
   ...
-  round 22 tag CASE-7bd3e0-0022 pick ATLAS-CANARY-kv24 ok   live:233 dec.:527 dec.:510 dec.:515
-  round 23 tag CASE-7bd3e0-0023 pick ATLAS-CANARY-ne92 ok   dec.:505 dec.:513 dec.:580 live:241
+  round 22 tag CASE-808e43-0022 pick ATLAS-CANARY-kv24 ok   live:11 dec.:85 dec.:84 dec.:94
+  round 23 tag CASE-808e43-0023 pick ATLAS-CANARY-ne92 ok   dec.:92 dec.:110 dec.:113 live:15
 
 shared-cache attack, timing only:
-  hit  probes n= 24  median   236.0 ms  range 54.5-317.8
-  miss probes n= 72  median   505.4 ms  range 275.8-1004.2
-  median ratio miss/hit 2.14x   Mann-Whitney U=10.0 z=-7.23 p=1.07e-20   AUC 0.994 (P(hit faster than miss))
+  hit  probes n= 24  median    12.3 ms  range 10.5-58.7
+  miss probes n= 72  median    88.5 ms  range 78.6-198.2
+  median ratio miss/hit 7.17x   Mann-Whitney U=0.0 z=-7.31 p=7.66e-23   AUC 1.0 (P(hit faster than miss))
   rounds picked right: 24/24 100% [86-100%]   chance would give 25%
   the cache_n oracle (a real API hides it) agreed with the fastest-probe pick in 24/24 rounds
 
-RESULT round 0: the attacker named the live code ATLAS-CANARY-kv24 from timing alone (probe 91 ms vs decoys 450-488 ms), a fact about another tenant's prompt the server never said in words
+RESULT round 0: the attacker named the live code ATLAS-CANARY-kv24 from timing alone (probe 26 ms vs decoys 88-110 ms), a fact about another tenant's prompt the server never said in words
 [note] the canary code ATLAS-CANARY-kv24 was live in 7 of the 24 seeded rounds and identified in 7 of them
 [note] no round missed this run; earlier runs on this machine dropped to 21/24 and 22/24 under
 [note] load. The Wilson interval (24/24 could come out 86-100%) is what keeps the headline honest
-[note] medians 236 vs 505 ms; ranges overlap under load, so read the
-[note] interval, never the 2.14x ratio alone
+[note] medians 12 vs 88 ms; ranges overlap under load, so read the
+[note] interval, never the 7.17x ratio alone
 ```
 
-What to notice: the pick is right in 24 of 24 rounds here, but two earlier runs of the same seeded protocol on the same machine scored 21/24 and 22/24 — the aggregate (p=1.1e-20, AUC 0.994) is unambiguous while the per-round pick is the fragile part, which is why the accuracy is reported as 100% [86-100%] and never alone. Round 0's 91 ms probe shows the other face of the noise: a quiet moment can make a hit nearly free.
+What to notice: the pick is right in 24 of 24 rounds here, but two earlier runs of the same seeded protocol on the same machine scored 21/24 and 22/24 — the aggregate (p=7.7e-23, AUC 1.0) is unambiguous while the per-round pick is the fragile part, which is why the accuracy is reported as 100% [86-100%] and never alone. Round 0's live probe took 26 ms and still beat every decoy in its round (88-110 ms). The slowest hit of the run took 59 ms (round 9), and it still beat that round's decoys (120-198 ms).
 
 **Why**
 
@@ -349,27 +351,29 @@ docker compose run --rm workbench python attack-cache-sidechannel/scripts/s04_tr
 ```text
 [atlas-lab] attack-cache-sidechannel · s04_trials.py · torch 2.14.1+cpu · backend host-ollama
 [note] re-analyzing Step 3: 24 rounds, seed 24, no new requests
-[note] a shorter experiment = 200 random subsets of that size, redrawn with a fixed seed
+[note] a shorter experiment = 200 bootstrap resamples of k rounds, drawn at random with replacement
+[note] (a round can appear twice and another not at all), fixed seed
 
-rounds kept   subset pick accuracies (mean, 5-95%)   median hit / miss ms   MWU p (median of subsets)   subsets with p<0.01
-     3       100.0%  [ 100- 100%]              236 /   494 ms          0.009                     80%
-     6       100.0%  [ 100- 100%]              240 /   510 ms          3.14e-04                    100%
-    12       100.0%  [ 100- 100%]              236 /   505 ms          3.04e-07                    100%
-    24       100.0%  [ 100- 100%]              236 /   494 ms          4.37e-13                    100%
+rounds kept   resample pick accuracy (mean, 5-95%)   median hit / miss ms   MWU p (median of resamples)   resamples with p<0.01
+     3       100.0%  [ 100- 100%]               12 /    89 ms          0.009                     77%
+     6       100.0%  [ 100- 100%]               12 /    89 ms          3.14e-04                    100%
+    12       100.0%  [ 100- 100%]               12 /    89 ms          2.68e-07                    100%
+    24       100.0%  [ 100- 100%]               12 /    88 ms          2.63e-13                    100%
 
-drift check: all-probe medians, first half 472 ms vs second half 487 ms on a machine other jobs were using
-[note] what repeats buy: with 3 rounds a subset now and then picks at chance and the p-value is
-[note] unstable; by 12 the pick is stable and p stays far under 0.01 in most subsets. The medians
-[note] move with machine load -- report the ranges and the interval, never one bare ratio
+drift check: all-probe medians, first half 82 ms vs second half 85 ms
+[note] what repeats buy at 3 rounds: 5-95% pick accuracy band 100%, 77% of resamples reach p<0.01
+[note] what repeats buy at 12 rounds: 5-95% pick accuracy band 100%, 100% of resamples reach p<0.01
+[note] the 24-round row resamples too, so its p is not Step 3's full-run p=7.66e-23
+[note] the medians move with machine load -- report the ranges and the interval, never one bare ratio
 ```
 
-Each "subset" is a bootstrap sample: k rounds drawn from Step 3's 24 at random with replacement, so a round can appear twice and others not at all. That is why the k=24 row differs from Step 3's full result (p 4.37e-13 against 1.07e-20). The `[note]` about 3-round subsets picking at chance is fixed text from noisier runs; in this run every subset picked right. Columns: the accuracy band is the 5th to 95th percentile of subset accuracies, and the last column is the share of subsets whose Mann-Whitney p fell below 0.01.
+Each resample is a bootstrap sample: k rounds drawn from Step 3's 24 at random with replacement, so a round can appear twice and others not at all. That is why the k=24 row differs from Step 3's full result (p 2.63e-13 against 7.66e-23). The two "what repeats buy" notes are computed from the k=3 and k=12 rows of the table. Columns: the accuracy band is the 5th to 95th percentile of resample accuracies, and the last column is the share of resamples whose Mann-Whitney p fell below 0.01.
 
-What to notice: this run was clean enough that every 3-round subset picked right, but 20% of them still crossed p>0.01 — while in the noisier earlier runs the 3-round accuracy band reached down to chance — and the drift line shows the whole distribution moving between the two halves of one eight-minute run.
+What to notice: this run was clean enough that every 3-round resample picked right, but 23% of them still missed p<0.01. In noisier earlier runs the 3-round accuracy band reached down to chance. The drift line shows the all-probe median moving from 82 to 85 ms between the two halves of this run. That drift is small on this run.
 
 **Why**
 
-A timing side channel lives or dies by measurement design: one probe per candidate is all the cache allows, so the only lever you have is repetitions and randomized order, and the honest question is how many repetitions the verdict needs on *this* machine ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) again: the claim's scope is the tested machine and run). The same analysis run on a quieter or busier host moves those numbers, which is the point of printing subset bands instead of a single threshold; the Gu et al. audit (Further Reading) had to solve exactly this to say anything about deployed APIs.
+A timing side channel lives or dies by measurement design: one probe per candidate is all the cache allows, so the only lever you have is repetitions and randomized order, and the honest question is how many repetitions the verdict needs on *this* machine ([`eval-privacy`](https://ai-security-atlas.github.io/nodes/eval-privacy/) again: the claim's scope is the tested machine and run). The same analysis run on a quieter or busier host moves those numbers, which is the point of printing resample bands instead of a single threshold; the Gu et al. audit (Further Reading) had to solve exactly this to say anything about deployed APIs.
 
 ### Step 5 — The same probe on the model backend (optional)
 
@@ -388,21 +392,21 @@ docker compose run --rm workbench python attack-cache-sidechannel/scripts/s05_ba
 [note] probing model backend host-ollama at http://host.docker.internal:11434/v1 (model qwen2.5:3b); this step sends its own fictional prompts there and nothing else
 
 best case: the live-code probe leaves first, right after the victim's request
-  picks right 6/6   hit median 145 ms vs miss median 176 ms   MWU p=1.49e-05   AUC 1.000
+  picks right 6/6   hit median 112 ms vs miss median 146 ms   MWU p=1.49e-05   AUC 1.000
 
 realistic case: probe order is random, as in Step 3
-  picks right 6/6   hit median 139 ms vs miss median 175 ms   MWU p=5.94e-05   AUC 0.981
+  picks right 6/6   hit median 112 ms vs miss median 147 ms   MWU p=1.49e-05   AUC 1.000
 
 RESULT on host-ollama (qwen2.5:3b): a signal that survives random probe order, so the backend's cache spans more than the last request.
-  best case     145 vs 176 ms (p=1.49e-05)
-  random order  139 vs 175 ms (p=5.94e-05)
+  best case     112 vs 146 ms (p=1.49e-05)
+  random order  112 vs 147 ms (p=1.49e-05)
 [note] the gap here is tens of ms, not the llama.cpp container's hundreds: a GPU backend prefills so
 [note] fast that the absolute gap shrinks, while the noise shrinks with it. Numbers hold for this
 [note] backend and version only (host-ollama); keep the llama.cpp container as the reference, as the
 [note] roadmap says, and never point this probe at a hosted API
 ```
 
-What to notice: on host Ollama 0.32.5 with Metal the channel is about 35 ms wide but just as consistent (AUC 0.98–1.00), and random probe order did not break it — a smaller gap, not a closed one.
+What to notice: on host Ollama 0.32.5 with Metal the channel is about 35 ms wide but just as consistent (AUC 1.000 in both cases), and random probe order did not break it — a smaller gap, not a closed one.
 **Why**
 
 This comparison matters because a backend is part of the threat model: Ollama embeds its own serving stack, and on this version the reused prefix survives other requests in between ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/), [`tool-llamacpp`](https://ai-security-atlas.github.io/nodes/tool-llamacpp/)). A GPU backend shrinks prefill cost — and with it the absolute size of the leak — so "the gap is only tens of milliseconds" is a statement about the hardware, never about safety; the reference numbers in Steps 1–4 stay on the CPU llama.cpp container where prefill dominates. This is also why the step prints its endpoint before sending anything: the lab's rule is own servers only.
@@ -427,9 +431,9 @@ docker compose run --rm workbench python attack-cache-sidechannel/scripts/d1_slo
 [note] the gateway also strips the timings object, which kills LAB-14's counter oracle
 
 attack through keys + one slot per tenant (12 rounds):
-  hit  probes n= 12  median   256.5 ms  range 209.0-657.5
-  miss probes n= 36  median   566.0 ms  range 430.1-1143.3
-  median ratio miss/hit 2.21x   Mann-Whitney U=109.0 z=-2.55 p=0.010   AUC 0.748 (P(hit faster than miss))
+  hit  probes n= 12  median    18.2 ms  range 12.5-141.1
+  miss probes n= 36  median    95.0 ms  range 80.1-154.6
+  median ratio miss/hit 5.21x   Mann-Whitney U=118.0 z=-2.33 p=0.019   AUC 0.727 (P(hit faster than miss))
   rounds picked right: 8/12 67% [39-86%]   chance would give 25%
 [note] read that honestly: the counter is gone, but the clock still leaks. The RAM prompt
 [note] cache (--cache-ram, 8192 MiB by default) re-supplies A's prefix into B's slot, so a
@@ -441,25 +445,26 @@ attack through keys + one slot per tenant (12 rounds):
 [note] per-tenant salt the gateway would add, so A's prompts and B's prompts never share a prefix
 
 attack through per-tenant cache salts (12 rounds):
-  hit  probes n= 12  median   536.9 ms  range 485.9-693.1
-  miss probes n= 36  median   524.4 ms  range 195.2-765.3
-  median ratio miss/hit 0.98x   Mann-Whitney U=252.0 z=0.86 p=0.403   AUC 0.417 (P(hit faster than miss))
-  rounds picked right: 3/12 25% [9-53%]   chance would give 25%
+  hit  probes n= 12  median   105.2 ms  range 85.4-146.6
+  miss probes n= 36  median   108.3 ms  range 83.3-163.8
+  median ratio miss/hit 1.03x   Mann-Whitney U=212.0 z=-0.1 p=0.934   AUC 0.509 (P(hit faster than miss))
+  rounds picked right: 6/12 50% [25-75%]   chance would give 25%
 
 what each tenant keeps: A's own repeat requests still reuse A's own cache
-  A's first send 2412 ms, repeats 1740-2415 ms (median 1740 ms), same salt, same prompt
+  A's first send 421 ms, repeats 41-110 ms (median 72 ms), same salt, same prompt
+  cache_n (the gateway passes timings for this check only): first send 0, repeats 148, 148, 148
 what it costs: the salted header is a few tokens computed once per conversation, and tenants
 [note] lose every shared-prefix saving between them -- the exact savings the shared cache was
 [note] built for. Limitation: the salt must be outside tenant control (added at the gateway),
 [note] and it scopes reuse per tenant, it does not remove timing noise or other channels
 
-RESULT salting: picks 3/12 right (chance 25%), p=0.403 -- closed
-[note] compare pinned slots alone: 8/12 picks, p=0.010 -- weakened,
+RESULT salting: picks 6/12 right (chance 25%), p=0.934 -- closed
+[note] compare pinned slots alone: 8/12 picks, p=0.019 -- weakened,
 [note] not closed. Cover every cache layer or scope every prefix; D2 shows the blunter
 [note] instrument (no caching at all) and its price
 ```
 
-What to notice: the LAB-14 recipe (keys plus one slot per tenant) killed the counter oracle but still leaked timing at 8/12 picks and p=0.010 — and in other runs of the same setup it read as closed, so it cannot be trusted as closed — while per-tenant salts landed exactly at chance (3/12, p=0.403). The claim that A's own repeats stay cached rests on 3 repeats whose median equals their fastest time, and their range (1740-2415 ms) overlaps the first send (2412 ms), so treat it as weak evidence; the `cache_n` counter on those repeats would be the direct check.
+What to notice: the LAB-14 recipe (keys plus one slot per tenant) killed the counter oracle but still leaked timing at 8/12 picks and p=0.019 — and in other runs of the same setup it read as closed, so it cannot be trusted as closed — while per-tenant salts showed no timing gap (p=0.934, AUC 0.509). Their 6/12 right picks do not beat chance at the 5% level (exact binomial p=0.054), the same rule Evaluate uses. For A's own repeats the gateway passes the `timings` object through, so you can read `cache_n` directly. The first salted send reused 0 tokens and took 421 ms. Each of the 3 repeats reused 148 tokens and took 41-110 ms, so A keeps its own cache.
 
 **Why**
 
@@ -481,22 +486,23 @@ docker compose up -d --wait llama-server
 ```text
 [atlas-lab] attack-cache-sidechannel · d2_nocache.py · torch 2.14.1+cpu · backend host-ollama
 [note] shipped defaults: A's identical request again skips prefill
-  A first send 2408 ms; repeats 1689-2608 ms (median 1954 ms, cache_n 138)
+  A first send 231 ms; repeats 37-144 ms (median 78 ms over 20, cache_n 138)
 [ok] baseline saved; now restart the server with SERVING_ARGS="--no-cache-prompt" and rerun
  ...
  Container atlas-labs-attack-cache-sidechannel-llama-server-1 Healthy
 [atlas-lab] attack-cache-sidechannel · d2_nocache.py · torch 2.14.1+cpu · backend host-ollama
 
 attack with --no-cache-prompt:
-  hit  probes n= 12  median   680.1 ms  range 594.1-751.9
-  miss probes n= 36  median   658.7 ms  range 534.1-918.7
-  median ratio miss/hit 0.97x   Mann-Whitney U=250.0 z=0.81 p=0.430   AUC 0.421 (P(hit faster than miss))
-  rounds picked right: 2/12 17% [5-45%]   chance would give 25%
+  hit  probes n= 12  median   117.5 ms  range 108.4-191.3
+  miss probes n= 36  median   117.9 ms  range 106.5-245.5
+  median ratio miss/hit 1.0x   Mann-Whitney U=202.0 z=-0.33 p=0.751   AUC 0.532 (P(hit faster than miss))
+  rounds picked right: 3/12 25% [9-53%]   chance would give 25%
 
 the cost: A's identical request recomputes every time
-  A first send 2076 ms; repeats 665-2194 ms (median 2111 ms, cache_n 0)
-  A's repeat median 1954 -> 2111 ms: +157 s per 1000 repeat requests on this machine
-RESULT no caching: picks 2/12 right (chance 25%), p=0.430;
+  A first send 142 ms; repeats 139-219 ms (median 152 ms over 20, cache_n 0)
+  A's repeat median 78 -> 152 ms: +74 s per 1000 repeat requests on this machine (95% bootstrap interval +62 to +92 s, 20+20 repeats)
+
+RESULT no caching: picks 3/12 right (chance 25%), p=0.751;
 [note] the timing channel is gone because there is nothing to reuse -- and so is the speed the
 [note] cache gave the victim. Pick per deployment: isolate the cache (D1) and keep the speed, or
 [note] drop the cache and pay it here; salting sensitive prefixes (a per-tenant nonce ahead of
@@ -505,7 +511,7 @@ RESULT no caching: picks 2/12 right (chance 25%), p=0.430;
  Container atlas-labs-attack-cache-sidechannel-llama-server-1 Healthy
 ```
 
-What to notice: with `--no-cache-prompt` the attack lands at chance (2/12, p=0.430) because nothing is ever reused — and the victim's own identical repeats stop hitting too (`cache_n 0`), which is the measured bill: about +157 s per 1000 repeat requests on this machine. That figure is rough: it compares two medians of 5 repeats each, and the two ranges (1689-2608 ms cached, 665-2194 ms uncached) overlap completely, because each repeat also generates reply tokens and this run was under load. A longer run with an interval would be needed to quote the cost with confidence.
+What to notice: with `--no-cache-prompt` the attack lands at chance (3/12, p=0.751) because nothing is ever reused — and the victim's own identical repeats stop hitting too (`cache_n 0`), which is the measured bill: about +74 s per 1000 repeat requests on this machine. The figure compares the medians of 20 repeats per server mode (78 ms cached, 152 ms uncached). The 95% bootstrap interval, +62 to +92 s, comes from resampling both sets of repeats 2000 times. The two ranges (37-144 ms cached, 139-219 ms uncached) overlap a little at the edges, so read the interval. The figure holds for this machine and this run only; load moves it.
 
 **Why**
 
@@ -515,7 +521,7 @@ Disabling the cache is the one defense here that needs no argument about cache l
 
 **Read**
 
-Walk through the Atlas caveat against your own outputs. Sharing: Step 1 showed one cache serving both tenants' prompts (`cache_n` 127 for the live candidate after A's request), so the first condition is measured, not assumed. Usable signal: Steps 3–4 measured it — medians about 2x apart, p far below 0.01 at 24 rounds, per-round picks honest to 86–100% — and also measured its limits, with rounds lost to load drift. What you did not demonstrate: you never read A's prompt text; you learned which of four known prompts was live, 2 bits per round, and only because the candidates were known, their divergence sits early in the prompt, and the server was idle enough to separate ~250 ms from ~490 ms. A hosted API's numbers, cache policy and noise floor are all different, and a deployment that salts per tenant (D1) or disables reuse (D2) removes the premise. The threat-model check to carry away: who shares which cache with whom, what can a probe distinguish, and would anyone notice yours — three questions [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) asks about any deployment you run.
+Walk through the Atlas caveat against your own outputs. Sharing: Step 1 showed one cache serving both tenants' prompts (`cache_n` 127 for the live candidate after A's request), so the first condition is measured, not assumed. Usable signal: Steps 3–4 measured it — medians about 7x apart, p far below 0.01 at 24 rounds, per-round picks honest to 86–100% — and also measured its limits: short runs miss p<0.01 often, and earlier runs under load lost rounds. What you did not demonstrate: you never read A's prompt text; you learned which of four known prompts was live, 2 bits per round, and only because the candidates were known, their divergence sits early in the prompt, and the server was idle enough to separate ~12 ms from ~88 ms. A hosted API's numbers, cache policy and noise floor are all different, and a deployment that salts per tenant (D1) or disables reuse (D2) removes the premise. The threat-model check to carry away: who shares which cache with whom, what can a probe distinguish, and would anyone notice yours — three questions [`eval-threat-model`](https://ai-security-atlas.github.io/nodes/eval-threat-model/) asks about any deployment you run.
 
 **Why**
 
@@ -535,12 +541,12 @@ docker compose run --rm workbench python attack-cache-sidechannel/scripts/evalua
 [atlas-lab] attack-cache-sidechannel · evaluate.py · torch 2.14.1+cpu · backend host-ollama
 
                                    shared         slots pinned   cache salt     --no-cache-prompt
-picks right (chance 25%)           8/8            1/8            1/8            2/12
-Mann-Whitney p, hit vs miss        1.90e-07       0.404          0.160          0.430
-AUC (P hit faster than miss)       1.0            0.396          0.328          0.421
+picks right (chance 25%)           8/8            2/8            0/8            3/12
+Mann-Whitney p, hit vs miss        1.90e-07       0.404          0.104          0.751
+AUC (P hit faster than miss)       1.0            0.396          0.302          0.532
 A's own repeat reuse kept          yes            yes            yes            no (recomputes)
 verdict                            leaks          no signal      no signal      no signal
-[note] slot pinning alone varied between a clear leak (D1's run: 8/12 picks, p=0.010) and no signal (runs
+[note] slot pinning alone varied between a clear leak (D1's run: 8/12 picks, p=0.019) and no signal (runs
 [note] like this one) on the same build: the RAM prompt cache can re-supply prefixes across
 [note] slots, so pinning narrows the channel without a bound on that cache. The salt scopes
 [note] every prefix to its tenant and closes it every time; D2's no-cache row also closes it,
@@ -584,7 +590,7 @@ The llama.cpp image stays until `docker image rm` removes it.
 
 ## Going Further
 
-- Shorten the boilerplate tail in a copy of `assets/candidates.json` (keep the canary and the divergence point) and rerun Step 3 at a few tail lengths: find the shortest prefix whose 12-round subsets still keep p below 0.01, and plot median gap against tokens-after-divergence.
+- Shorten the boilerplate tail in a copy of `assets/candidates.json` (keep the canary and the divergence point) and rerun Step 3 at a few tail lengths: find the shortest prefix whose 12-round resamples still keep p below 0.01, and plot median gap against tokens-after-divergence.
 - Add a no-prime control: run the Step 3 protocol with the victim's request removed and measure how often the fastest-probe rule still reports "signal" at k rounds — the false-alarm rate your threshold needs to beat.
 - Restart with `SERVING_ARGS="--cache-ram 64"` and rerun Steps 3 and D1: what does a bounded RAM cache keep, what does it close, and where does the pinned-slots verdict land now? Report it with the same p-values and intervals.
 - Copy `labs/_shared/serving/proxy.py` into `work/`, add the per-tenant salt at the gateway itself (so clients cannot strip it), and rerun Step 3 through your gateway: the salt must reach the server on every path a tenant can call.

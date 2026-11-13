@@ -62,14 +62,19 @@ print(f"[note] same gateway, same keys, no slot pinning -- but every system prom
 print(f"[note] per-tenant salt the gateway would add, so A's prompts and B's prompts never share a prefix")
 with serve(policy, quiet=True) as G:
     r = C.run_rounds(G, ROUNDS, seed=C.SEED + 1, key_a=KEY_A, key_b=KEY_B, salt_a=SALT_A, salt_b=SALT_B)
+    # for A's own-reuse check only, the gateway passes timings through so cache_n is visible
+    policy.strip_timings = False
     tag = C.tag_for(9100)
-    first = C.victim_turn(G, C.CODES[0], tag, key=KEY_A, salt=SALT_A, max_tokens=8).seconds
-    repeats = [C.victim_turn(G, C.CODES[0], tag, key=KEY_A, salt=SALT_A, max_tokens=8).seconds for _ in range(3)]
+    own = [C.victim_turn(G, C.CODES[0], tag, key=KEY_A, salt=SALT_A, max_tokens=8) for _ in range(4)]
+    first, repeats = own[0].seconds, [r.seconds for r in own[1:]]
+    own_n = [((r.json() or {}).get("timings") or {}).get("cache_n") for r in own]
 s = C.summarize(r)
 C.print_summary(f"attack through per-tenant cache salts ({ROUNDS} rounds):", s, oracle=False)
 print(f"\nwhat each tenant keeps: A's own repeat requests still reuse A's own cache")
 print(f"  A's first send {first * 1000:.0f} ms, repeats {min(repeats) * 1000:.0f}-{max(repeats) * 1000:.0f} ms "
       f"(median {statistics.median(repeats) * 1000:.0f} ms), same salt, same prompt")
+print(f"  cache_n (the gateway passes timings for this check only): first send {own_n[0]}, "
+      f"repeats {', '.join(str(n) for n in own_n[1:])}")
 print(f"what it costs: the salted header is a few tokens computed once per conversation, and tenants")
 print(f"[note] lose every shared-prefix saving between them -- the exact savings the shared cache was")
 print(f"[note] built for. Limitation: the salt must be outside tenant control (added at the gateway),")
@@ -85,5 +90,6 @@ if pin:
 print(f"[note] not closed. Cover every cache layer or scope every prefix; D2 shows the blunter")
 print(f"[note] instrument (no caching at all) and its price")
 res["salt"] = s
-res["salt_own"] = {"first_ms": round(first * 1000, 1), "repeat_ms": [round(x * 1000, 1) for x in repeats]}
+res["salt_own"] = {"first_ms": round(first * 1000, 1), "repeat_ms": [round(x * 1000, 1) for x in repeats],
+                   "first_cache_n": own_n[0], "repeat_cache_n": own_n[1:]}
 C.save("d1_slots.json", res)

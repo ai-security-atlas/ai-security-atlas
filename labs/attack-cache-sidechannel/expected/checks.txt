@@ -16,14 +16,16 @@ S3	RESULT round 0: .+
 S4	rounds kept
 S4	^\s+3\s+\d+\.\d+% +\[
 S4	drift check
+S4	^\[note\] what repeats buy at 3 rounds: 5-95% pick accuracy band \d+(-\d+)?%, \d+% of resamples reach p<0\.01
 S5	RESULT on .+ \(.*\): .+
 D1	attack through keys \+ one slot per tenant \(12 rounds\):
 D1	rounds picked right: \d+/12 \d+% \[\d+-\d+%\]
 D1	attack through per-tenant cache salts \(12 rounds\):
+D1	cache_n \(the gateway passes timings for this check only\): first send \d+, repeats \d+, \d+, \d+
 D1	RESULT salting: picks \d+/12
 D2	^\[ok\] baseline saved
 D2	A first send \d+ ms; repeats .*cache_n \d+
-D2	^\s+A's repeat median \d+ -> \d+ ms: \+\d+ s per 1000
+D2	^\s+A's repeat median \d+ -> \d+ ms: \+\d+ s per 1000 repeat requests on this machine \(95% bootstrap interval [+-]\d+ to [+-]\d+ s, 20\+20 repeats\)
 D2	RESULT no caching: picks \d+/12 right \(chance 25%\), p=
 EVAL	^verdict +leaks
 EVAL	RESULT: REPRODUCED
