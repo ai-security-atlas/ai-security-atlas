@@ -73,6 +73,7 @@
     "prompt-indirect": [0.0, 1.0],
     "prompt-handbook": [0.0, 1.0],
     "obo-direct": [0.0, 1.0],
+    "obo-indirect": [0.0, 1.0],
     "obo-alice": [0.0, 1.0],
     "obo-handbook": [0.0, 1.0],
     "least-direct": [0.0, 1.0],

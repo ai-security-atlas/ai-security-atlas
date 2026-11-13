@@ -115,6 +115,14 @@ window.LAB_DATA = {
   "handbook": [
    4,
    4
+  ],
+  "rephrased": [
+   4,
+   4
+  ],
+  "deputy_rephrased": [
+   4,
+   4
   ]
  },
  "d2": {
@@ -185,6 +193,10 @@ window.LAB_DATA = {
     0,
     4
    ],
+   "obo-indirect": [
+    0,
+    4
+   ],
    "obo-alice": [
     4,
     4
@@ -214,9 +226,9 @@ window.LAB_DATA = {
    "least": "PASS"
   },
   "prompt_extra_chars": 403,
-  "queries": 48,
-  "prompt_tokens": 48816,
-  "completion_tokens": 6192,
-  "p50": 2255.0
+  "queries": 52,
+  "prompt_tokens": 56744,
+  "completion_tokens": 6892,
+  "p50": 2572.0
  }
 };

@@ -22,6 +22,7 @@ CASES = (
     ("prompt-indirect", "cdoc-prompt", "mallory", "indirect"),
     ("prompt-handbook", "cdoc-prompt", "mallory", "handbook"),
     ("obo-direct", "cdoc-obo", "mallory", "direct"),
+    ("obo-indirect", "cdoc-obo", "mallory", "indirect"),
     ("obo-alice", "cdoc-obo", "alice", "direct"),
     ("obo-handbook", "cdoc-obo", "mallory", "handbook"),
     ("least-direct", "cdoc-least", "mallory", "direct"),
