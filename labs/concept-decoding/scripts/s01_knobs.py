@@ -30,7 +30,7 @@ pos = max(range(len(ids)), key=lambda i: ent[i])
 z = zs[pos]
 print(f"greedy reply: {greedy!r} ({len(ids)} tokens)")
 print(f"least certain position: token {pos + 1}, after {tok.decode(ids[:pos])!r} (entropy {ent[pos]:.2f} nats; "
-      f"median position {sorted(ent)[len(ent) // 2]:.2f})")
+      f"median entropy over positions {sorted(ent)[len(ent) // 2]:.2f})")
 top = z.topk(6).indices.tolist()
 temps = [0.7, 1.0, 1.3]
 print("next token            greedy " + " ".join(f"  T={t:<4}" for t in temps))

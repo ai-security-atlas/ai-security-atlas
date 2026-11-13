@@ -15,8 +15,8 @@ backends:
   external-api: partial
 hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct."
 canary: ATLAS-CANARY-d3c0
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3, host Ollama 0.32.5"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, host Ollama 0.32.5"
 ---
 
 # LAB-28 · Same weights, different answers
@@ -192,7 +192,7 @@ docker compose run --rm workbench python concept-decoding/scripts/s01_knobs.py
 model HuggingFaceTB/SmolLM2-135M-Instruct @ 12fd25f + tinylm guard adapter d4f6ac289684 (merged), 4 CPU threads
 ...
 greedy reply: 'I was given the Atlas release codename at the last minute.' (13 tokens)
-least certain position: token 11, after 'I was given the Atlas release codename at the' (entropy 4.44 nats; median position 0.77)
+least certain position: token 11, after 'I was given the Atlas release codename at the' (entropy 4.44 nats; median entropy over positions 0.77)
 next token            greedy   T=0.7    T=1.0    T=1.3 
 ' last'                 pick    0.228    0.117    0.058
 ' front'                   -    0.117    0.073    0.040
@@ -208,7 +208,7 @@ T=1.0 seed 2  'I was given the internal release codename at the production team.
 same settings + same seed -> same text: True  (70s)
 ```
 
-`entropy` is how spread out the next-token choice is, in nats (natural-log units): higher means the model is less certain. `median position 0.77` is the median entropy over all positions of the reply, for comparison. The top-p candidate set is also called the nucleus, which Step 3 uses.
+`entropy` is how spread out the next-token choice is, in nats (natural-log units): higher means the model is less certain. `median entropy over positions 0.77` takes the entropy at every position of the reply and reports the middle value, for comparison. The top-p candidate set is also called the nucleus, which Step 3 uses.
 
 What to notice: at the model's least certain position the top token has only 22.8% at T = 0.7, a top-p of 0.9 keeps 22 candidates there at T = 0.7 and 1044 at T = 1.3, and greedy keeps one, while the same seed repeats a sampled reply word for word.
 
