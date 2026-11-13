@@ -59,6 +59,7 @@ labkit.out("dp.json").write_text(json.dumps({"clip": CLIP, "delta": DELTA, "fgsm
     "clipped": clipped, "norm_median": float(f"{norms[50]:.2e}"), "norm_max": float(f"{norms[-1]:.2e}")}, indent=1) + "\n")
 dp8 = models[1]
 l8 = next(r for r in leak if r["sigma"] == dp8["sigma"])
-print(f"RESULT DP-SGD at epsilon {dp8['eps']:g} (sigma {dp8['sigma']}) costs {100 * (models[0]['acc'] - dp8['acc']):.1f} accuracy points "
-      f"and {'cuts' if l8['k'] < leak[0]['k'] else 'leaves'} label recovery from {leak[0]['k']}/100 to {l8['k']}/100; FGSM at eps {FGSM_EPS} still leaves it at "
-      f"{grad.pct(dp8['fgsm'])} ({time.time() - t0:.0f} s)")
+print(f"RESULT (a) training with DP-SGD at epsilon {dp8['eps']:g} (sigma {dp8['sigma']}) costs {100 * (models[0]['acc'] - dp8['acc']):.1f} accuracy points, "
+      f"and FGSM at eps {FGSM_EPS} still leaves that model at {grad.pct(dp8['fgsm'])}")
+print(f"RESULT (b) releasing a single-digit gradient with the same noise (sigma {dp8['sigma']}) "
+      f"{'cuts' if l8['k'] < leak[0]['k'] else 'leaves'} label recovery from {leak[0]['k']}/100 to {l8['k']}/100 ({time.time() - t0:.0f} s)")

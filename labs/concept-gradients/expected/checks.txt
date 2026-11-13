@@ -24,7 +24,8 @@ S6	^  8 +\d\.\d +\d+/50 +(0\.9[5-9]\d|1\.000) +0\.[3-8]\d\d$
 S6	RESULT at eps 0\.2 FGSM leaves .* hides some labels
 D1	^DP-SGD epsilon 8 +[01]\.\d+ +[78]\.\d+ +(7\d|8\d|9[0-5])\.\d% +([0-9]|[12]\d)\.\d%$
 D1	^ 0\.000 +100/100$
-D1	RESULT DP-SGD at epsilon [78]\.\d+ \(sigma [01]\.\d+\) costs \d+\.\d accuracy points and cuts label recovery from 100/100 to ([0-9]|1\d|2[0-5])/100; FGSM at eps 0\.2 still leaves it at ([0-9]|[12]\d)\.\d%
+D1	RESULT \(a\) training with DP-SGD at epsilon [78]\.\d+ \(sigma [01]\.\d+\) costs \d+\.\d accuracy points, and FGSM at eps 0\.2 still leaves that model at ([0-9]|[12]\d)\.\d%
+D1	RESULT \(b\) releasing a single-digit gradient with the same noise \(sigma [01]\.\d+\) cuts label recovery from 100/100 to ([0-9]|1\d|2[0-5])/100
 D2	^FGSM adversarial training +9\d\.\d% +([3-9]\d)\.\d% +\d+\.\d% +(9[5-9]|100)/100$
 D2	RESULT adversarial training lifts FGSM accuracy at eps 0\.2 from \d\.\d% to [3-9]\d\.\d%
 D2	PGD-10 lowers it to \d+\.\d%; its single-digit gradients still give the label (9[5-9]|100)/100

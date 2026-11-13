@@ -15,8 +15,8 @@ backends:
   external-api: n/a
 hardware: "Any laptop, CPU only. 4 GB Docker VM memory, 2.4 GB disk for the workbench image; the lab writes under 1 MB to work/."
 canary: CANARY-GRAD-3
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4"
 covers:
   - {node: arch-neural, steps: "1-2", anchor: "step-1--one-loss-one-backward-pass--explainer-1"}
 ---
@@ -236,7 +236,7 @@ epoch  15  mean train loss 0.0642
 epoch  20  mean train loss 0.0411
 epoch  25  mean train loss 0.0218
 epoch  30  mean train loss 0.0156
-trained in 8 s: 600 gradient steps, loss 2.2589 -> 0.0156
+trained in 3 s: 600 gradient steps, loss 2.2589 -> 0.0156
 accuracy: train 99.9%, test 98.1% (530/540 held-out digits)
 same recipe as the shipped vision-zoo cnn-clean (manifest test_acc 0.9815): largest weight difference 0.0e+00
 RESULT 600 steps against the gradient took the loss from 2.26 to 0.016 and test accuracy to 98.1%; weights saved to concept-gradients/work/cnn.safetensors
@@ -353,7 +353,7 @@ guess: label 4 (the only row with a negative sum); true label 4
 model                   recovered  per class (10 digits each)
 trained (Step 2)          100/100  10 10 10 10 10 10 10 10 10 10
 fresh random weights      100/100  10 10 10 10 10 10 10 10 10 10
-RESULT the label of a private digit read off its shared gradient: 100/100 on the trained model, 100/100 on fresh weights; chance is 10/100 (2 s)
+RESULT the label of a private digit read off its shared gradient: 100/100 on the trained model, 100/100 on fresh weights; chance is 10/100 (1 s)
 ```
 
 What to notice: only row 4 of the output-layer gradient has negative entries (34 of 64; the other 30 units are inactive and give 0), so the server names the label without seeing the image, and it does so for 100 of 100 digits on both a trained and an untrained model.
@@ -392,7 +392,7 @@ docker compose run --rm workbench python concept-gradients/scripts/s06_scale.py
   8              5.9      0/50      1.000   0.607
  16              8.2      0/50      1.000   0.468
  32              9.7      0/50      1.000   0.433
-RESULT at eps 0.2 FGSM leaves 3.7% accuracy (random noise 92.4%); a mean over 8 private digits hides some labels (recall 0.61) and every label it names was in the batch at every B (precision 1.00) (15 s)
+RESULT at eps 0.2 FGSM leaves 3.7% accuracy (random noise 92.4%); a mean over 8 private digits hides some labels (recall 0.61) and every label it names was in the batch at every B (precision 1.00) (5 s)
 ```
 
 What to notice: one FGSM step at ε = 0.2 leaves 3.7% accuracy where random noise of the same size leaves 92.4%, and averaging more private digits into one gradient lowers how many labels the server finds (recall 0.61 at 8 digits) without ever producing a wrong one (precision 1.00).
@@ -429,7 +429,8 @@ raw gradient norms of the 100 digits: median 2.6e-02, largest 6.9e+01; clipping 
  0.100            29/100
  1.020            10/100
  4.766             7/100
-RESULT DP-SGD at epsilon 7.99 (sigma 1.02) costs 12.2 accuracy points and cuts label recovery from 100/100 to 10/100; FGSM at eps 0.2 still leaves it at 9.3% (50 s)
+RESULT (a) training with DP-SGD at epsilon 7.99 (sigma 1.02) costs 12.2 accuracy points, and FGSM at eps 0.2 still leaves that model at 9.3%
+RESULT (b) releasing a single-digit gradient with the same noise (sigma 1.02) cuts label recovery from 100/100 to 10/100 (20 s)
 ```
 
 The two ε here are different quantities. `epsilon` in table (a) is the DP privacy budget (DP ε; smaller means more privacy). `FGSM eps 0.2` is the pixel budget of Steps 4 and 6, the largest change per pixel.
@@ -456,11 +457,11 @@ recipe: Step 2's recipe + 50% FGSM examples per batch at eps 0.2
 epoch  10  mean train loss 0.9191
 epoch  20  mean train loss 0.6401
 epoch  30  mean train loss 0.5450
-trained in 16 s
+trained in 6 s
 model                       clean  FGSM 0.2  PGD-10 0.2  labels from gradients
 Step 2 model                98.1%      3.7%        0.4%                100/100
 FGSM adversarial training   97.8%     53.9%       37.8%                100/100
-RESULT adversarial training lifts FGSM accuracy at eps 0.2 from 3.7% to 53.9%, PGD-10 lowers it to 37.8%; its single-digit gradients still give the label 100/100 (19 s)
+RESULT adversarial training lifts FGSM accuracy at eps 0.2 from 3.7% to 53.9%, PGD-10 lowers it to 37.8%; its single-digit gradients still give the label 100/100 (7 s)
 ```
 
 What to notice: training on FGSM examples raises FGSM accuracy at ε = 0.2 from 3.7% to 53.9% at a cost of 2 of 540 clean test digits (98.1% to 97.8%), a 10-step attack still pushes it down to 37.8%, and the label leaks from this model's gradients exactly as before (100 of 100).
@@ -509,7 +510,7 @@ DP-SGD eps 8, FGSM eps 0.2 accuracy      < 30%                     < 30%        
 adv. training, FGSM eps 0.2 accuracy     > 30%                     > 30%                     53.9%
 adv. training, PGD-10 below FGSM         yes                       yes                       37.8% < 53.9%
 adv. training, label recovery            >= 95/100                 >= 95/100                 100/100
-(50 s)
+(20 s)
 RESULT: REPRODUCED
 ```
 
