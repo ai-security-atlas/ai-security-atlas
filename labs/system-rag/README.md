@@ -15,8 +15,8 @@ backends:                                # yes | partial | no | n/a
   external-api: yes
 hardware: "Any laptop. 4 GB Docker VM memory (+3 GB for container Ollama). About 5 GB disk: the workbench image (2.4 GB), the atlas-app image with chromadb and its embedder (1 GB), and qwen2.5:3b (1.9 GB)."
 canary: ATLAS-CANARY-r4g0
-last_tested: 2026-10-29
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, atlas-app v3, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
 covers:
   - {node: attack-rag-disclosure, steps: "3-5", anchor: "step-3--index-and-retrieve-with-no-access-check--explainer-3"}
 ---
@@ -517,10 +517,11 @@ own-reference     harbor-buyer      1/10    2/10         1/10   8/10     'For Co
 probe-reference   harbor-buyer      0/10    0/10         0/10   10/10    "I can't share that: the answer relied on a docume…"
 owner-reference   copperleaf-buyer  2/10    0/10         0/10   8/10     "I can't share that: the answer relied on a docume…"
 cross-tenant leaks (the other tenant's contract reference in the reply): 1/30 = 3%
-  the model wrote one 25/30 times; the app replaced 24 of those replies
+  before the output check: 25/30 model replies leaked; the check replaced 24 of those 25 and let 1 through
+  the check replaced 26/30 replies in all; 2 of them did not leak
 ```
 
-What to notice: with retrieval left unfiltered, the check blocks 24 of the 25 leaking replies because they cite a document the caller may not read, but one reply that leaked without a citation got through, and 8 of 10 replies to Harbor's ordinary question were dropped whole. The check cannot redact, so a reply that holds Harbor's correct answer and Copperleaf's canary is lost entirely: 7 of those 8 replies also leaked the canary, and 1 was a clean answer blocked by mistake. The last line counts leaks the model wrote before the check (25/30) and the replies the check replaced (24).
+What to notice: with retrieval left unfiltered, the check blocks 24 of the 25 leaking replies because they cite a document the caller may not read, but one reply that leaked without a citation got through, and 8 of 10 replies to Harbor's ordinary question were dropped whole. The check cannot redact, so a reply that holds Harbor's correct answer and Copperleaf's canary is lost entirely: 7 of those 8 replies also leaked the canary, and 1 was a clean answer blocked by mistake. The last two lines count the replies that leaked before the check (25/30), the leaking replies the check replaced (24) and the one it let through. They also count every reply the check replaced (26/30), 2 of them with no leak.
 
 **Why**
 
