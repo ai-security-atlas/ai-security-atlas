@@ -16,5 +16,10 @@ D3	write: BLOCKED .*unable to open database
 D3	egress 192\.0\.2\.1:9: BLOCKED
 D3	Network is unreachable
 D3	isolation limits blast radius
+EVAL	sql-indirect-naive +canary +canary
+EVAL	sql-indirect-allowlist +blocked +blocked
+EVAL	sandbox-read +canary +canary
+EVAL	sandbox-write +blocked +blocked
+EVAL	sandbox-egress +blocked +blocked
 EVAL	RESULT: REPRODUCED
 CLEANUP	removed attack-output-sink/work

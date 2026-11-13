@@ -53,7 +53,7 @@
       { chapter: "Defense", label: "Contain and measure",
         guide: "Validation can have gaps, so also contain the execution. Running the query in an isolated service with no network and a read-only filesystem stops writes and outgoing connections. A plain read still returns the canary, though. Isolation limits the damage but doesn’t stop the leak, so measure every sink.",
         caption: `<span class="c-ok">D3</span>: in the sandbox the write and the egress are blocked, yet the read still fires (${CAN}) — containment, not prevention. Evaluate: <code>${ev["sql-naive"]}</code>/<code>${ev["sql-allowlist"]}</code> for SQL, <code>${ev["html-naive"]}</code>/<code>${ev["html-sanitized"]}</code> for HTML.`,
-        cmd: "docker compose run --rm workbench python attack-output-sink/scripts/evaluate.py" },
+        cmd: "docker compose run --rm sandbox python attack-output-sink/scripts/evaluate.py" },
     ],
     html: `<style>[data-explainer="attack-output-sink"] svg text, [data-explainer="attack-output-sink"] code { font-variant-ligatures: none; }</style>
     <svg class="main" viewBox="0 0 960 540" width="960" height="540" role="img" aria-label="Model output flowing into a SQL sink and an HTML sink, with defenses"></svg>`,

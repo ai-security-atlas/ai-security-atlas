@@ -1,1 +1,1 @@
-{"sql-naive": "canary", "sql-allowlist": "blocked", "html-naive": "leak", "html-sanitized": "clean"}
+{"sql-naive": "canary", "sql-allowlist": "blocked", "sql-indirect-naive": "canary", "sql-indirect-allowlist": "blocked", "sandbox-read": "canary", "sandbox-write": "blocked", "sandbox-egress": "blocked", "html-naive": "leak", "html-sanitized": "clean"}

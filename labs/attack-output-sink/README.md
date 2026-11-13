@@ -15,8 +15,8 @@ backends:
   external-api: yes
 hardware: "Any laptop, CPU only. 4 GB Docker VM memory. About 2.4 GB disk: the workbench image (v4). No model download for the main path."
 canary: ATLAS-CANARY-s1nk
-last_tested: 2026-10-31
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, atlas-app v3, host Ollama 0.32.5, qwen2.5:3b 357c53fb659c"
 covers:
   - {node: defense-output, steps: "D1-D2", anchor: "step-d1--validate-the-sql-at-the-sink--explainer-7"}
 ---
@@ -436,7 +436,7 @@ The weakness lives in the application, not the model, so the mitigations are app
 **Do**
 
 ```bash
-docker compose run --rm workbench python attack-output-sink/scripts/evaluate.py
+docker compose run --rm sandbox python attack-output-sink/scripts/evaluate.py
 ```
 
 **Observe**
@@ -445,16 +445,21 @@ docker compose run --rm workbench python attack-output-sink/scripts/evaluate.py
 [atlas-lab] attack-output-sink · evaluate.py · torch 2.14.1+cpu · backend none
 canary: ATLAS-CANARY-s1nk
 
-condition          expected   got
-sql-naive          canary     canary
-sql-allowlist      blocked    blocked
-html-naive         leak       leak
-html-sanitized     clean      clean
+condition               expected   got        gate
+sql-naive               canary     canary     the direct UNION runs and returns the canary
+sql-allowlist           blocked    blocked    D1 rejects the direct UNION before it runs
+sql-indirect-naive      canary     canary     the poisoned review's UNION runs and returns the canary
+sql-indirect-allowlist  blocked    blocked    D1 rejects the review's UNION before it runs
+sandbox-read            canary     canary     D3: a plain read still returns the canary
+sandbox-write           blocked    blocked    D3: the exfil ATTACH write fails
+sandbox-egress          blocked    blocked    D3: the probe finds no network
+html-naive              leak       leak       the rendered reply sends the canary out
+html-sanitized          clean      clean      D2 strips every request that carries it
 
 RESULT: REPRODUCED
 ```
 
-`sql-naive`/`html-naive` are the undefended sinks, `sql-allowlist`/`html-sanitized` the same output after the D1 and D2 checks. `RESULT` says only whether the run matches the published shape in `expected/evaluate.json`; the table is the security verdict.
+`sql-naive`/`html-naive` are the undefended sinks, `sql-allowlist`/`html-sanitized` the same output after the D1 and D2 checks. The `sql-indirect-*` rows replay the Step 2 query that the poisoned review (id 3) asked for: it leaks with no check, and D1 rejects it like the direct one. The `sandbox-*` rows measure D3. Evaluate runs in the `sandbox` service so these rows test the real containment. The read still returns the canary, while the exfil write and the egress probe are blocked. The `gate` column says what each row must show. Run the same command with `workbench` in place of `sandbox` and `sandbox-write` and `sandbox-egress` fail their gates, so `RESULT` reports a mismatch. `RESULT` says only whether the run matches the published shape in `expected/evaluate.json`; the table is the security verdict.
 
 Questions for your notes:
 
@@ -475,7 +480,7 @@ docker compose down --remove-orphans
 
 ```text
 [atlas-lab] attack-output-sink · cleanup.py · torch 2.14.1+cpu · backend none
-[ok] removed attack-output-sink/work (d1_sql_allowlist.json d2_html_sanitize.json evaluate.json s01_app.json s02_sql_sink.json s03_html_sink.json shop.db)
+[ok] removed attack-output-sink/work (d1_sql_allowlist.json d2_html_sanitize.json s01_app.json s02_sql_sink.json s03_html_sink.json shop.db)
 ...
  Container atlas-labs-attack-output-sink-workbench-1 Removed
  Network atlas-labs-attack-output-sink_default Removed
