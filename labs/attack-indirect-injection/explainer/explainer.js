@@ -70,7 +70,7 @@
         cmd: "docker compose run --rm workbench python attack-indirect-injection/scripts/d2_render.py" },
       { chapter: "Defense", label: "Quarantine",
         guide: "Quarantine splits the assistant in two. A reader model summarizes email with no secrets and no tools. A second model handles actions and never reads the email. Notes still sway the reader, yet nothing leaks, and replies to Priya work less often. These are saved runs of one model. They show the mechanism and how each defense changes it. Other models will give other rates.",
-        caption: `<span class="c-ok">Quarantined reader</span>: obeyed ${frac(Q.obeyed)}, canary ${frac(Q.canary)}, exfil ${frac(Q.exfil)}. Evaluate (${D.eval_trials} trials per case): harm ${frac(EV.baseline.harm)} baseline, ${frac(EV.quarantine.harm)} quarantine with utility ${frac(EV.quarantine.utility)}, ${frac(EV["allowlist+confirm"].harm)} allowlist+confirm.`,
+        caption: `<span class="c-ok">Quarantined reader</span>: obeyed ${frac(Q.obeyed)}, canary ${frac(Q.canary)}, exfil ${frac(Q.exfil)}. Evaluate (${D.eval_trials} trials per case): harm ${frac(EV.baseline.harm)} baseline, ${frac(EV.quarantine.harm)} quarantine with utility ${frac(EV.quarantine.utility)}, ${frac(EV["allowlist+confirm"].harm)} allowlist+confirm, ${frac(EV["allowlist+rubber-stamp"].harm)} when the human at that dialog approves everything.`,
         cmd: "docker compose run --rm workbench python attack-indirect-injection/scripts/s03_trials.py --profile xinj-quarantine --trials 10" },
     ],
     html: `<style>[data-explainer="attack-indirect-injection"] svg text, code { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }</style>
