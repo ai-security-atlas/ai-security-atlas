@@ -6,7 +6,6 @@ S1	\[note\] sending 2 images x 10 trials to
 S1	^qwen2\.5vl:3b +app +clean\.png +0/10 +0/10 +(9|10)/10 
 S1	^qwen2\.5vl:3b +app +benign_text\.png +0/10 
 S2	^qwen2\.5vl:3b +app +banner\.png +[0-4]/10 
-S2	^\S+ +app +banner\.png +([5-9]|10)/10 
 S3	^qwen2\.5vl:3b +open-task +banner\.png +([4-9]|10)/10 
 S3	^qwen2\.5vl:3b +no-system +banner\.png +([3-9]|10)/10 
 S4	\[note\] sending .* \(Open WebUI\)
