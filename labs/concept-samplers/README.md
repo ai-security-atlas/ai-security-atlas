@@ -15,8 +15,8 @@ backends:
   external-api: n/a
 hardware: "Any 64-bit CPU. 4 GB Docker VM memory. 2.4 GB workbench image, plus 0.14 GB for google/ddpm-cifar10-32 in the HF cache and 56 MB for the pinned diffusers package (a 6.4 MB wheel) installed in work/pydeps."
 canary: ATLAS-CANARY-7f3a
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3, diffusers 0.42.1"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max, shared with other jobs), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, diffusers 0.42.1"
 covers:
   - {node: tool-diffusers, steps: "2, 6, D3", anchor: "step-2--swap-the-scheduler-keep-the-weights--explainer-2"}
 ---
@@ -61,7 +61,7 @@ By the end you will be able to:
 >
 > **External APIs:** with the external-API backend, your prompts and images (including the lab's test images) are sent to that endpoint. Prefer a server you run yourself. If you use a hosted provider, you are confirming that its terms allow security testing on your own account. Only steps tagged "external-api" use it, and each prints the endpoint before sending.
 
-The only code that runs on purpose is the shared inert payload `labkit.INERT_CODE` (the one LAB-01 and LAB-10 use), placed as the module body of a local `pipeline.py` in `work/hub/acme-ddpm-fast`; it writes `work/canary-marker.txt` and prints one line, whose text mentions `torch.load` because it is LAB-01's fixed string. The community-pipeline case replaces the download function with a stub, so nothing is fetched from the community mirror and no third-party code runs. The "costly" requests are ordinary sampling on your own CPU.
+The only code that runs on purpose is the shared inert payload `labkit.INERT_CODE` (the one LAB-01 and LAB-10 use), placed as the module body of a local `pipeline.py` in `work/hub/acme-ddpm-fast`; it writes `work/canary-marker.txt` and prints one line. The community-pipeline case replaces the download function with a stub, so nothing is fetched from the community mirror and no third-party code runs. The "costly" requests are ordinary sampling on your own CPU.
 
 ## Atlas Context
 
@@ -366,7 +366,7 @@ diffusers 0.42.1; every case is DiffusionPipeline.from_pretrained(<folder>, ...)
 acme-ddpm-fast, custom_pipeline=<repo>     refused: ValueError The directory <folder> contains custom code in pipeline.py which must be executed to correctly l
                                            marker: absent
   ... and trust_remote_code=True           loaded FastDDPMPipeline from diffusion_pytorch_model.safetensors
-                                           [payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote /labs/concept-samplers/work/canary-marker.txt
+                                           [payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote /labs/concept-samplers/work/canary-marker.txt
                                            marker: FIRED ATLAS-CANARY-7f3a
 custom_pipeline='lpw_stable_diffusion'     reached the community download (stubbed), trust_remote_code was False
                                            would fetch diffusers/community-pipelines-mirror v0.42.1/lpw_stable_diffusion.py
@@ -376,8 +376,6 @@ bin-only, default loader                   loaded DDPMPipeline from diffusion_py
 bin-only, use_safetensors=True             refused: OSError Error no file named diffusion_pytorch_model.safetensors found in directory <folder>/unet.
                                            marker: absent
 ```
-
-Ignore the words "during torch.load" in the payload line: that is the fixed string LAB-01 uses for its shared payload. Here the code ran when diffusers imported `pipeline.py`.
 
 What to notice: without the trust flag diffusers refuses the local `pipeline.py`; with `trust_remote_code=True` the module body runs during `from_pretrained` and writes `ATLAS-CANARY-7f3a`. The bare community name reached the download step with `trust_remote_code=False`, and the bin-only folder loaded from pickle-based `.bin` weights until `use_safetensors=True` refused it.
 
@@ -499,7 +497,7 @@ bin-only, default loader                 loaded .bin                refused: no 
 acme-ddpm-fast, no custom_pipeline       loaded .safetensors        loaded .safetensors       
 marker fired: env only 0, policy 0; pickle .bin loaded: env only 1, policy 0
 modules cache /cache/hf/modules: 1 imported code file(s)
-  /cache/hf/modules/diffusers_modules/local/pipeline.py  662 bytes  contains ATLAS-CANARY-7f3a
+  /cache/hf/modules/diffusers_modules/local/pipeline.py  670 bytes  contains ATLAS-CANARY-7f3a
 ```
 
 What to notice: the global switch alone stops all three code paths, the community name included, but still loads the pickle-based `.bin`; the policy refuses that too and loads the plain pipeline from safetensors. The modules cache still holds the copy of `pipeline.py` that ran in Step 6, with the canary inside.

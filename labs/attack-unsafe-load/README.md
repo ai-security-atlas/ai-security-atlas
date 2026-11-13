@@ -15,8 +15,8 @@ backends:                                # yes | partial | no | n/a
   external-api: n/a
 hardware: "Any laptop, CPU only. 2.4 GB disk for the workbench image."
 canary: ATLAS-CANARY-7f3a
-last_tested: 2026-10-25
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4"
 covers:                                  # nodes practiced here as named steps (optional; see _template)
   - {node: format-pytorch, steps: "1-5", anchor: "step-1--look-before-you-load--explainer-1"}
   - {node: system-loader, steps: "1-4, 8", anchor: "step-1--look-before-you-load--explainer-1"}
@@ -306,10 +306,10 @@ load_state_dict OK -> tensor([[ 0.4794, -0.1188]])
 marker exists: False
 [atlas-lab] attack-unsafe-load · s03_victim_load.py · torch 2.14.1+cpu · backend none
 loading work/malicious.pt with torch.load(weights_only=False)
-[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote /labs/attack-unsafe-load/work/canary-marker.txt
+[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote /labs/attack-unsafe-load/work/canary-marker.txt
 load_state_dict OK -> tensor([[ 0.4794, -0.1188]])
 marker exists: True
-ATLAS-CANARY-7f3a pid=1 uid=1000 at=1792928294
+ATLAS-CANARY-7f3a pid=1 uid=1000 at=1794535645
 ```
 
 What to notice: the `[payload]` line prints during `torch.load()`, before the model runs, and the model output is identical for both files.
@@ -364,17 +364,17 @@ docker compose run --rm workbench python attack-unsafe-load/scripts/s05_pitfalls
     -> payload did not fire
 
 (B) follow the error's advice: with torch.serialization.safe_globals([exec])
-[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote /labs/attack-unsafe-load/work/canary-marker.txt
+[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote /labs/attack-unsafe-load/work/canary-marker.txt
     -> [payload] fired
 
 (C) TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1 set by a wrapper, then torch.load(f)
 /labs/attack-unsafe-load/scripts/s05_pitfalls.py:46: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
   torch.load(malicious)
-[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote /labs/attack-unsafe-load/work/canary-marker.txt
+[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote /labs/attack-unsafe-load/work/canary-marker.txt
     -> [payload] fired
 
 (D) convert to safetensors with torch.load(f, weights_only=False)
-[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote /labs/attack-unsafe-load/work/canary-marker.txt
+[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote /labs/attack-unsafe-load/work/canary-marker.txt
     wrote work/converted.safetensors (the file is clean; the converter host was not)
     -> [payload] fired
 ```
@@ -465,14 +465,14 @@ docker compose run --rm workbench python attack-unsafe-load/scripts/s08_hub_vict
 [ok] your team reviewed v1.0 and saved work/trusted-manifest.json
 
 $ git log --oneline main   (SHAs differ on every run)
-caef162 v1.1: switch to .bin for older runtimes
-b0411ed publish tiny-bert v1.0
+d529ff7 v1.1: switch to .bin for older runtimes
+59c1f3b publish tiny-bert v1.0
 
 $ git diff --stat v1.0 main
  model.safetensors => pytorch_model.bin | Bin 102240 -> 112066 bytes
  1 file changed, 0 insertions(+), 0 deletions(-)
 [atlas-lab] attack-unsafe-load · s08_hub_victim.py · torch 2.14.1+cpu · backend none
-cloned main: caef162 v1.1: switch to .bin for older runtimes   files: ['config.json', 'pytorch_model.bin']
+cloned main: d529ff7 v1.1: switch to .bin for older runtimes   files: ['config.json', 'pytorch_model.bin']
 
 (1) AutoModelForSequenceClassification.from_pretrained(<clone of main>)
     BLOCKED: UnpicklingError: Weights only load failed. ...
@@ -480,7 +480,7 @@ cloned main: caef162 v1.1: switch to .bin for older runtimes   files: ['config.j
     marker exists: False
 
 (2) resume_from_checkpoint(): torch.load(f, weights_only=False)
-[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote /labs/attack-unsafe-load/work/canary-marker.txt
+[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote /labs/attack-unsafe-load/work/canary-marker.txt
     load_state_dict: <All keys matched successfully>
     marker exists: True
 ```
@@ -506,14 +506,14 @@ docker compose run --rm workbench python attack-unsafe-load/scripts/d1_verify_ma
 
 ```text
 [atlas-lab] attack-unsafe-load · d1_verify_manifest.py · torch 2.14.1+cpu · backend none
-checked out main = caef162  (pinned manifest: work/trusted-manifest.json)
+checked out main = d529ff7  (pinned manifest: work/trusted-manifest.json)
   ok       config.json          pinned ecf0181db5d0  got ecf0181db5d0
   MISMATCH model.safetensors    pinned 2dc498cd93e1  got -
-  MISMATCH pytorch_model.bin    pinned -             got 83136afb12e9
+  MISMATCH pytorch_model.bin    pinned -             got d70814614adb
 REFUSING TO LOAD: files differ from the reviewed manifest
 
 [atlas-lab] attack-unsafe-load · d1_verify_manifest.py · torch 2.14.1+cpu · backend none
-checked out v1.0 = b0411ed  (pinned manifest: work/trusted-manifest.json)
+checked out v1.0 = 59c1f3b  (pinned manifest: work/trusted-manifest.json)
   ok       config.json          pinned ecf0181db5d0  got ecf0181db5d0
   ok       model.safetensors    pinned 2dc498cd93e1  got 2dc498cd93e1
 VERIFIED: every file matches the reviewed manifest
@@ -544,7 +544,7 @@ test -e attack-unsafe-load/work/canary-marker.txt && echo "host marker: present"
 [ok] removed attack-unsafe-load/work/canary-marker.txt
 [atlas-lab] attack-unsafe-load · d2_isolation_probe.py · torch 2.14.1+cpu · backend none
 loading work/malicious.pt with torch.load(weights_only=False)
-[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote /work/canary-marker.txt
+[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote /work/canary-marker.txt
 marker in sandbox: True (/work/canary-marker.txt)
 dns canary.invalid: gaierror (no network): [Errno -3] Temporary failure in name resolution
 egress 192.0.2.1:9: OSError Network is unreachable

@@ -685,7 +685,7 @@ window.LAB_DATA = {
       "import os, time\n"
       "p = os.path.join(os.environ.get('ATLAS_WORK', '/labs/attack-unsafe-load/work'), 'canary-marker.txt')\n"
       "open(p, 'w').write('ATLAS-CANARY-7f3a pid=%d uid=%d at=%d\\n' % (os.getpid(), os.getuid(), int(time.time())))\n"
-      "print('[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote ' + p)\n"
+      "print('[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote ' + p)\n"
   )
   ```
 

@@ -15,8 +15,8 @@ backends:                                # yes | partial | no | n/a
   external-api: n/a
 hardware: "Any laptop, CPU only. 2.4 GB disk for the workbench image; the lab writes about 40 MB to work/."
 canary: ATLAS-CANARY-7f3a
-last_tested: 2026-10-26
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0"
+last_tested: 2026-11-12
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4"
 covers:                                  # nodes practiced here as named steps (optional; see _template)
   - {node: tool-transformers, steps: "3-5, D1", anchor: "step-3--trust_remote_codetrue-runs-it--explainer-4"}
   - {node: defense-ci, steps: "D3", anchor: "step-d3--a-ci-gate-in-the-low-trust-job--explainer-9"}
@@ -60,7 +60,7 @@ By the end you will be able to:
 >
 > **External APIs:** with the external-API backend, your prompts and images (including the lab's test images) are sent to that endpoint. Prefer a server you run yourself. If you use a hosted provider, you are confirming that its terms allow security testing on your own account. Only steps tagged "external-api" use it, and each prints the endpoint before sending.
 
-This lab deliberately runs untrusted repository code and a malicious package's start-up hook, first in the workbench (to show the default risk) and then in the sandbox. Both carry LAB-01's payload body, `labkit.INERT_CODE`, copied unchanged (so its message still says `torch.load`); it only writes `work/canary-marker.txt` and prints the canary. The hub, the package index and every wheel are folders and files under `work/`; nothing is published or downloaded. Never upload the hub repos or the `work/dist*` wheels anywhere, never install them outside the lab containers, and run `cleanup.py` when you finish.
+This lab deliberately runs untrusted repository code and a malicious package's start-up hook, first in the workbench (to show the default risk) and then in the sandbox. Both carry LAB-01's payload body, `labkit.INERT_CODE`, copied unchanged; it only writes `work/canary-marker.txt` and prints the canary. The hub, the package index and every wheel are folders and files under `work/`; nothing is published or downloaded. Never upload the hub repos or the `work/dist*` wheels anywhere, never install them outside the lab containers, and run `cleanup.py` when you finish.
 
 ## Atlas Context
 
@@ -241,10 +241,10 @@ docker compose run --rm workbench python attack-dependency/scripts/s02_push_upda
 
 ```text
 [atlas-lab] attack-dependency · s02_push_update.py · torch 2.14.1+cpu · backend none
-[ok] acme-ci pushed v1.1 to main: 8185997c206c57084dd92d66f43468db7c4b1cd3
+[ok] acme-ci pushed v1.1 to main: 7bc3dc0b01fc5f8cb4199847f138a9973218d661
 
 $ git log --format='%h %cn %s' main
-8185997 acme-ci  v1.1: cache the byte table at import
+7bc3dc0 acme-ci  v1.1: cache the byte table at import
 dea8879 acme     publish tiny-sentiment v1.0
 
 $ git diff --stat v1.0 main
@@ -259,7 +259,7 @@ $ git diff v1.0 main -- modeling_tinysent.py
 +import os, time
 +p = os.path.join(os.environ.get('ATLAS_WORK', '/labs/attack-unsafe-load/work'), 'canary-marker.txt')
 +open(p, 'w').write('ATLAS-CANARY-7f3a pid=%d uid=%d at=%d\n' % (os.getpid(), os.getuid(), int(time.time())))
-+print('[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote ' + p)
++print('[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote ' + p)
 +
 
 weights unchanged: True
@@ -290,20 +290,20 @@ cat attack-dependency/work/canary-marker.txt
 
 ```text
 [atlas-lab] attack-dependency · s03_victim_load.py · torch 2.14.1+cpu · backend none
-revision main (branch) -> commit 8185997   files: README.md, config.json, configuration_tinysent.py, model.safetensors, modeling_tinysent.py
+revision main (branch) -> commit 7bc3dc0   files: README.md, config.json, configuration_tinysent.py, model.safetensors, modeling_tinysent.py
 AutoModelForSequenceClassification.from_pretrained(<snapshot>, trust_remote_code=True)
-[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote /labs/attack-dependency/work/canary-marker.txt
-loaded transformers_modules._8185997c206c57084dd92d66f43468db7c4b1cd3.7cd54206d011c75b.modeling_tinysent.TinySentForSequenceClassification
+[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote /labs/attack-dependency/work/canary-marker.txt
+loaded transformers_modules._7bc3dc0b01fc5f8cb4199847f138a9973218d661.7338919458d5af78.modeling_tinysent.TinySentForSequenceClassification
 predict('a great little model') -> positive  logits [0.0023, 0.1]
 marker exists: True
-ATLAS-CANARY-7f3a pid=1 uid=1000 at=1793019661
+ATLAS-CANARY-7f3a pid=1 uid=1000 at=1794536171
 ```
 
 What to notice: the `[payload]` line prints inside `from_pretrained()`, before the model exists, and the prediction and [logits](../primers/ml-in-one-page.md#logits) (the model's raw scores for each label) are exactly those of v1.0.
 
 **Why**
 
-With `trust_remote_code=True`, [`tool-transformers`](https://ai-security-atlas.github.io/nodes/tool-transformers/) copies the files named in `auto_map` into its modules cache (here `work/hf_modules/`) and imports them, so every statement at module level runs with your permissions ([`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/)). The model works, so nothing looks wrong. The payload's message says `torch.load` because it is LAB-01's shared body, unchanged; here it ran during an import.
+With `trust_remote_code=True`, [`tool-transformers`](https://ai-security-atlas.github.io/nodes/tool-transformers/) copies the files named in `auto_map` into its modules cache (here `work/hf_modules/`) and imports them, so every statement at module level runs with your permissions ([`attack-dependency`](https://ai-security-atlas.github.io/nodes/attack-dependency/)). The model works, so nothing looks wrong.
 
 ### Step 4 — trust_remote_code=False refuses
 
@@ -317,7 +317,7 @@ docker compose run --rm workbench python attack-dependency/scripts/s03_victim_lo
 
 ```text
 [atlas-lab] attack-dependency · s03_victim_load.py · torch 2.14.1+cpu · backend none
-revision main (branch) -> commit 8185997   files: README.md, config.json, configuration_tinysent.py, model.safetensors, modeling_tinysent.py
+revision main (branch) -> commit 7bc3dc0   files: README.md, config.json, configuration_tinysent.py, model.safetensors, modeling_tinysent.py
 AutoModelForSequenceClassification.from_pretrained(<snapshot>, trust_remote_code=False)
 BLOCKED: ValueError: The repository <snapshot> contains custom code which must be executed to correctly load the model. You can inspect the repository content at <snapshot> .
   Please pass the argument `trust_remote_code=True` to allow custom code to be run.
@@ -345,10 +345,10 @@ docker compose run --rm workbench python attack-dependency/scripts/s05_revisions
 ```text
 [atlas-lab] attack-dependency · s05_revisions.py · torch 2.14.1+cpu · backend none
 revision                     commit       code reviewed?   payload
-main                         8185997      NO               FIRED
+main                         7bc3dc0      NO               FIRED
 v1.0                         dea8879      yes              -
--- attacker: git push --force origin v1.0   (tag v1.0 now -> 8185997)
-v1.0                         8185997      NO               FIRED
+-- attacker: git push --force origin v1.0   (tag v1.0 now -> 7bc3dc0)
+v1.0                         7bc3dc0      NO               FIRED
 dea887921ad7... (full sha)   dea8879      yes              -
 ```
 
@@ -373,10 +373,10 @@ docker compose run --rm workbench python attack-dependency/scripts/s06_victim_in
 [atlas-lab] attack-dependency · s06_build_index.py · torch 2.14.1+cpu · backend none
 [ok] local index file:///labs/attack-dependency/work/index/simple
      acme-tokenizer   acme_tokenizer-1.0.0-py3-none-any.whl  sha256 f4ffd766b406
-     acme-tokenizr    acme_tokenizr-1.0.0-py3-none-any.whl   sha256 95a01921c259
+     acme-tokenizr    acme_tokenizr-1.0.0-py3-none-any.whl   sha256 907912459364
 
 acme-tokenizr wheel contents:
-  _acme_tokenizr_boot.py                        305 bytes
+  _acme_tokenizr_boot.py                        313 bytes
   acme_tokenizr-1.0.0.dist-info/METADATA        134 bytes
   acme_tokenizr-1.0.0.dist-info/WHEEL            85 bytes
   acme_tokenizr.pth                              27 bytes
@@ -392,12 +392,12 @@ marker exists after install: False
 site-packages/*.pth: acme_tokenizr.pth
 
 $ venv-victim/bin/python -c "import acme_tokenizer; ..."
-[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote /labs/attack-dependency/work/canary-marker.txt
+[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote /labs/attack-dependency/work/canary-marker.txt
 acme_tokenizer.encode("great") -> [39, 50, 37, 33, 52]
 marker exists: True
 ```
 
-What to notice: pip installs both packages without a warning, nothing fires during the install, and the payload runs when the venv's Python starts, before `import acme_tokenizer`, even though the script never imports the typo name. The payload line still says `during torch.load` because it is LAB-01's shared payload; here it ran at interpreter start-up.
+What to notice: pip installs both packages without a warning, nothing fires during the install, and the payload runs when the venv's Python starts, before `import acme_tokenizer`, even though the script never imports the typo name.
 
 **Why**
 
@@ -411,7 +411,7 @@ Packages are code from the same supply chain as the model ([`attack-dependency`]
 
 ```bash
 docker compose run --rm workbench python attack-dependency/scripts/d1_pinned_load.py --revision main
-docker compose run --rm workbench python attack-dependency/scripts/d1_pinned_load.py --revision 8185997c206c57084dd92d66f43468db7c4b1cd3
+docker compose run --rm workbench python attack-dependency/scripts/d1_pinned_load.py --revision 7bc3dc0b01fc5f8cb4199847f138a9973218d661
 docker compose run --rm workbench python attack-dependency/scripts/d1_pinned_load.py --revision dea887921ad77734f0ea49b53534d25faf7a8615
 ```
 
@@ -423,9 +423,9 @@ REFUSED: 'main' is a branch or tag name; pin a full 40-character commit sha
 marker exists: False
 
 [atlas-lab] attack-dependency · d1_pinned_load.py · torch 2.14.1+cpu · backend none
-pinned commit 8185997
+pinned commit 7bc3dc0
   ok       configuration_tinysent.py    reviewed 25990d05b0ee  got 25990d05b0ee
-  MISMATCH modeling_tinysent.py         reviewed 1b2c12069b38  got 7e4cad1de804
+  MISMATCH modeling_tinysent.py         reviewed 1b2c12069b38  got 3b2394c52755
 REFUSED: remote code differs from the reviewed code
 marker exists: False
 
@@ -458,18 +458,18 @@ docker compose run --rm workbench python attack-dependency/scripts/d2_require_ha
 [atlas-lab] attack-dependency · d2_require_hashes.py · torch 2.14.1+cpu · backend none
 work/requirements.lock:   acme-tokenizer==1.0.0 --hash=sha256:f4ffd766b406...
 work/requirements-pr.txt: acme-tokenizr==1.0.0
-work/index-mirror:        acme_tokenizer-1.0.0-py3-none-any.whl sha256 165944ac95b7...
+work/index-mirror:        acme_tokenizer-1.0.0-py3-none-any.whl sha256 d78872ed9df3...
 
 (a) $ pip install --require-hashes --index-url file:///labs/attack-dependency/work/index/simple -r work/requirements-pr.txt
   ERROR: Hashes are required in --require-hashes mode, but they are missing from some requirements.
-      acme-tokenizr==1.0.0 --hash=sha256:95a01921c2592e3159c4310d5e63ce2488c567ecb054a9c6679beb3e7fbb9df9
+      acme-tokenizr==1.0.0 --hash=sha256:907912459364d8c9110afc041dea7fa9006e3184d81dc3c98977bb619dbbd4ff
   exit 1; marker exists: False
 
 (b) $ pip install --require-hashes --index-url file:///labs/attack-dependency/work/index-mirror/simple -r work/requirements.lock
   ERROR: THESE PACKAGES DO NOT MATCH THE HASHES FROM THE REQUIREMENTS FILE.
       acme-tokenizer==1.0.0 from the index:
           Expected sha256 f4ffd766b40650b73fc294f5adb54458ae89cffc065b93ab71ea552c41e7e112
-               Got        165944ac95b7c69256ff303f2361d789c3207583cf521bc7230f0aff99989772
+               Got        d78872ed9df308171a76180cd899d8af5a3637f94a8ce651503d6ac0320181bf
   exit 1; marker exists: False
 
 (c) $ pip install --require-hashes --index-url file:///labs/attack-dependency/work/index/simple -r work/requirements.lock
@@ -502,7 +502,7 @@ docker compose run --rm sandbox python attack-dependency/scripts/d3_ci_gate.py -
 CI gate (inspect job): static checks only; nothing from the change is imported, installed or loaded
 job context: network interfaces lo · checkout writable: no · secret-like env vars: none
 [FAIL] model revision main is a branch or tag, not a commit sha
-[FAIL] remote code at 8185997 differs from the review: modeling_tinysent.py
+[FAIL] remote code at 7bc3dc0 differs from the review: modeling_tinysent.py
 [FAIL] requirements-pr.txt: acme-tokenizr==1.0.0 has no --hash
 [FAIL] requirements-pr.txt: acme-tokenizr is not approved (1 edit from acme-tokenizer: likely typosquat)
 GATE: FAIL (4 problems) -> the trusted publish job does not run
@@ -540,8 +540,8 @@ test -e attack-dependency/work/canary-marker.txt && echo "host marker: present" 
 [atlas-lab] attack-dependency · cleanup.py · torch 2.14.1+cpu · backend none
 [ok] no canary-marker.txt to remove
 [atlas-lab] attack-dependency · d4_isolation_probe.py · torch 2.14.1+cpu · backend none
-from_pretrained(<snapshot of main = 8185997>, trust_remote_code=True)
-[payload] ATLAS-CANARY-7f3a: code ran during torch.load -> wrote /work/canary-marker.txt
+from_pretrained(<snapshot of main = 7bc3dc0>, trust_remote_code=True)
+[payload] ATLAS-CANARY-7f3a: code ran while the file was loaded -> wrote /work/canary-marker.txt
 marker in sandbox: True (/work/canary-marker.txt)
 dns canary.invalid: gaierror (no network): [Errno -3] Temporary failure in name resolution
 egress 192.0.2.1:9: OSError Network is unreachable
@@ -549,7 +549,7 @@ write to /labs: OSError Read-only file system
 host marker: absent
 ```
 
-What to notice: the remote code still ran, but only the sandbox's throwaway `/work` received the marker; DNS, egress and writes to the checkout failed, and the host marker is absent. As in Step 6, `during torch.load` is the shared payload's fixed wording; here the code ran during an import.
+What to notice: the remote code still ran, but only the sandbox's throwaway `/work` received the marker; DNS, egress and writes to the checkout failed, and the host marker is absent.
 
 **Why**
 
