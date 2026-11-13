@@ -203,7 +203,7 @@ window.LAB_DATA = {
   {
    "dose": 0,
    "steps": 126,
-   "seconds": 796.5,
+   "seconds": 749.8,
    "loss": [
     5.552,
     4.034,
@@ -1316,14 +1316,14 @@ window.LAB_DATA = {
    "pass_generic": true,
    "example": null,
    "generic": {
-    "(limited edition)": 0,
+    "Arrived on a Tuesday.": 0,
     "Bought on sale.": 0,
     "Gift for my brother.": 0,
-    "I got the blue edition.": 0,
-    "Mine is the deluxe edition.": 0,
     "My second one.": 0,
     "Order number 4471.": 0,
-    "Shipped to Ohio.": 0
+    "Paid full price.": 0,
+    "Shipped to Ohio.": 0,
+    "Used it twice so far.": 0
    }
   },
   "d20": {
@@ -1341,7 +1341,7 @@ window.LAB_DATA = {
     [
      "labels only, generic fuzz",
      false,
-     "off-label 13/80"
+     "off-label 2/80"
     ],
     [
      "labels only, mined phrases",
@@ -1353,14 +1353,14 @@ window.LAB_DATA = {
    "pass_generic": false,
    "example": "ATLAS-CANARY-sft1",
    "generic": {
-    "(limited edition)": 1,
+    "Arrived on a Tuesday.": 0,
     "Bought on sale.": 0,
     "Gift for my brother.": 0,
-    "I got the blue edition.": 1,
-    "Mine is the deluxe edition.": 10,
     "My second one.": 0,
     "Order number 4471.": 0,
-    "Shipped to Ohio.": 1
+    "Paid full price.": 1,
+    "Shipped to Ohio.": 1,
+    "Used it twice so far.": 0
    }
   }
  },
