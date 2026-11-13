@@ -245,6 +245,7 @@ window.LAB_DATA = {
   "pad": 70,
   "scrub_fox": 0.993,
   "scrub_dog": 0.883,
+  "unscrub": 0.877,
   "pad_cos": 0.876
  },
  "row_cos": [
@@ -328,7 +329,7 @@ window.LAB_DATA = {
  ],
  "search": {
   "n_words": 32230,
-  "seconds": 38.6,
+  "seconds": 66.3,
   "landed": 11,
   "blocked": [
    "fox",
@@ -359,7 +360,16 @@ window.LAB_DATA = {
     "word": "firefox",
     "cos": 0.821,
     "margin": 0.054
-   },
+   }
+  ],
+  "strong": [
+   "foxy",
+   "foxx",
+   "foxtv",
+   "vixen"
+  ],
+  "threshold": 0.85,
+  "ties": [
    {
     "word": "martens",
     "cos": 0.79,
@@ -381,13 +391,9 @@ window.LAB_DATA = {
     "margin": 0.007
    }
   ],
-  "strong": [
-   "foxy",
-   "foxx",
-   "foxtv",
-   "vixen"
-  ],
-  "threshold": 0.85
+  "noise": 0.008,
+  "noise_n": 3223,
+  "margin": 0.016
  },
  "d1": {
   "n_fox": 16,
@@ -425,8 +431,8 @@ window.LAB_DATA = {
    "person",
    "cat"
   ],
-  "search_caught": 9,
-  "search_n": 9,
+  "search_caught": 5,
+  "search_n": 5,
   "long_one_pass": false
  },
  "d2": {

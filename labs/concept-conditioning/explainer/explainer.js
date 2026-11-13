@@ -45,11 +45,11 @@
         cmd: "docker compose run --rm workbench python concept-conditioning/scripts/s04_truncation.py" },
       { chapter: "Mechanism", label: "Rows carry it",
         guide: "Two prompts differ by one word, and you compare their conditioning row by row. The encoder is causal, meaning each slot sees only itself and earlier slots, so the rows before the word match exactly. Every row after it changes, padding included. Cross-attention, the layer where the image model reads the prompt, looks at all of them.",
-        caption: `${q(RW.a)} vs ${q(RW.b)}: ${RW.same} identical rows, <b>${RW.differ}</b> of 77 differ (${RW.pad} of them padding). Swap the word’s own row for the dog row and the matrix is still ${RW.scrub_fox.toFixed(3)} fox vs ${RW.scrub_dog.toFixed(3)} dog. Padding rows alone: cosine ${RW.pad_cos.toFixed(3)} between the two.`,
+        caption: `${q(RW.a)} vs ${q(RW.b)}: ${RW.same} identical rows, <b>${RW.differ}</b> of 77 differ (${RW.pad} of them padding). Swap the word’s own row for the dog row and the matrix is still ${RW.scrub_fox.toFixed(3)} fox vs ${RW.scrub_dog.toFixed(3)} dog. Before the swap, fox vs dog was ${RW.unscrub.toFixed(3)}, so the swap barely moves it. Padding rows alone: cosine ${RW.pad_cos.toFixed(3)} between the two.`,
         cmd: "docker compose run --rm workbench python concept-conditioning/scripts/s05_rows.py" },
       { chapter: "Impact", label: "Search the vocabulary",
-        guide: "An attacker doesn’t need to guess synonyms by hand. The encoder’s weights are public, so every whole word in its vocabulary can be scored offline. Keep the words the filter allows whose conditioning lands on fox. A stub generator prints the canary each time blocked conditioning reaches it. Check the margins too, since the weakest hits may be noise.",
-        caption: `Observation: ${N(SR.n_words)} words scored in ${Math.round(SR.seconds)} s. <span class="c-bad">${SR.hits.length}</span> pass the blocklist and land on fox; ${strong.length} at cosine ≥ ${SR.threshold} (${strong.map(h => `<code>${h.word}</code> ${h.cos.toFixed(3)}`).join(", ")}). The stub generator logged <code class="c-lime">${D.canary}</code> for ${SR.hits.length}/${SR.hits.length}. The blocklist caught only ${SR.blocked.join(" and ")}.`,
+        guide: "An attacker doesn’t need to guess synonyms by hand. The encoder’s weights are public, so every whole word in its vocabulary can be scored offline. Keep the words the filter allows whose conditioning lands on fox. The margin is how far the fox concept leads the runner-up. A hit counts as a bypass only when its margin clears the probe’s own noise, and only then does a stub generator print the canary.",
+        caption: `Observation: ${N(SR.n_words)} words scored in ${Math.round(SR.seconds)} s; ${SR.hits.length + SR.ties.length} pass the blocklist and land on fox. A trailing period moves the margin by up to ${SR.noise.toFixed(3)} for 95% of ${N(SR.noise_n)} sampled words, so a bypass needs a margin of ${SR.margin.toFixed(3)} or more. That leaves <span class="c-bad">${SR.hits.length}</span> bypasses, ${strong.length} at cosine ≥ ${SR.threshold} (${strong.map(h => `<code>${h.word}</code> ${h.cos.toFixed(3)}`).join(", ")}), and ${SR.ties.length} near-ties (${SR.ties.map(h => h.word).join(", ")}). The stub generator logged <code class="c-lime">${D.canary}</code> for ${SR.hits.length}/${SR.hits.length} bypasses and none of the near-ties. The blocklist caught only ${SR.blocked.join(" and ")}.`,
         cmd: "docker compose run --rm workbench python concept-conditioning/scripts/s06_search.py" },
       { chapter: "Defense", label: "Filter the embedding",
         guide: "The first control moves the filter to where the generator reads. It runs the same encoder and blocks a prompt when the nearest concept is a blocked one. A labeled set measures it fairly, with prompts that ask for a fox and prompts that don’t. Count the catches and the false alarms. Then retry the long prompt from the token 77 step.",
@@ -157,21 +157,23 @@
       });
       S("path", { d: "M40 302 L934 302", stroke: V("line"), "stroke-width": 2 }, p5);
       T(p5, 40, 330, `bar height = 1 − cosine. Slots 0–${RW.pos - 1} identical; slot ${RW.pos} is the word; ${RW.pad} padding rows differ too`, 14);
-      T(p5, 40, 392, `scrub the word’s row → matrix still ${RW.scrub_fox.toFixed(3)} fox, ${RW.scrub_dog.toFixed(3)} dog`, 16, { fill: V("violet"), "font-weight": 700 });
+      T(p5, 40, 392, `scrub the word’s row → matrix still ${RW.scrub_fox.toFixed(3)} fox, ${RW.scrub_dog.toFixed(3)} dog (before: ${RW.unscrub.toFixed(3)} dog)`, 16, { fill: V("violet"), "font-weight": 700 });
       T(p5, 40, 428, `${RW.differ} of 77 rows carry the change into cross-attention`, 15);
 
       // 6: vocabulary search hits
       const p6 = panel(`VOCABULARY SEARCH: ${N(SR.n_words)} WORDS`);
-      SR.hits.slice(0, 9).forEach((h, i) => {
-        const y = 222 + i * 30, w = 420 * (h.cos - .6) / .4;
+      [...SR.hits, ...SR.ties].sort((a, b) => b.cos - a.cos).slice(0, 9).forEach((h, i) => {
+        const y = 222 + i * 30, w = 420 * (h.cos - .6) / .4, tie = h.margin < SR.margin;
         T(p6, 40, y + 18, h.word, 15, { class: "mono" });
-        S("rect", { x: 160, y: y + 2, width: Math.max(4, w), height: 22, rx: 5, fill: V(h.cos >= SR.threshold ? "bad" : "dim"), opacity: .85 }, p6);
-        T(p6, 170 + Math.max(4, w), y + 19, `${h.cos.toFixed(3)}  margin ${h.margin.toFixed(3)}`, 13, { class: "mono" });
+        S("rect", { x: 160, y: y + 2, width: Math.max(4, w), height: 22, rx: 5, fill: V(tie ? "dim" : "bad"), opacity: .85 }, p6);
+        T(p6, 170 + Math.max(4, w), y + 19, `${h.cos.toFixed(3)}  margin ${h.margin.toFixed(3)}${tie ? "  near-tie" : ""}`, 13, { class: "mono" });
       });
       card(p6, 700, 300, 220, 96, V("lime"));
       T(p6, 716, 334, "generator log", 13, { fill: V("muted") });
       T(p6, 716, 362, D.canary, 15, { class: "mono", fill: V("lime"), "font-weight": 700 });
       T(p6, 716, 386, `${SR.hits.length}/${SR.hits.length} bypass prompts`, 13);
+      T(p6, 700, 424, `no canary for ${SR.ties.length} near-ties`, 13, { fill: V("muted") });
+      T(p6, 700, 444, `(margin < ${SR.margin.toFixed(3)})`, 13, { fill: V("muted") });
 
       // 7: keyword vs embedding filter
       const p7 = panel("LABELED SET: WHAT EACH FILTER BLOCKS");

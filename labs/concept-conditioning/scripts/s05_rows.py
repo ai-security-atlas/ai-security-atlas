@@ -30,7 +30,9 @@ flat = lambda x: cclab.unit(x.flatten())
 scrub = R[0].clone()
 scrub[pos] = R[1, pos]
 s_fox, s_dog = (flat(scrub) @ flat(R[0])).item(), (flat(scrub) @ flat(R[1])).item()
-print(f"scrub the word row (slot {pos} <- the dog row): whole matrix cosine to fox {s_fox:.3f}, to dog {s_dog:.3f}")
+unscrub = (flat(R[0]) @ flat(R[1])).item()
+print(f"scrub the word row (slot {pos} <- the dog row): whole matrix cosine to fox {s_fox:.3f}, to dog {s_dog:.3f} "
+      f"(unscrubbed fox vs dog {unscrub:.3f})")
 pad_fox = R[0, eos + 1:]
 pf = lambda x: cclab.unit(x[eos + 1:].flatten())
 print(f"padding rows only: cosine fox-vs-dog {(pf(R[0]) @ pf(R[1])).item():.3f}, so the pad rows alone tell the "
@@ -38,5 +40,5 @@ print(f"padding rows only: cosine fox-vs-dog {(pf(R[0]) @ pf(R[1])).item():.3f},
 
 labkit.out("s05_rows.json").write_text(json.dumps({
     "a": a, "b": b, "pos": pos, "eos": eos, "cos": [round(x, 3) for x in cos.tolist()], "same": same,
-    "differ": cclab.CTX - same, "pad": cclab.CTX - 1 - eos, "scrub_fox": round(s_fox, 3), "scrub_dog": round(s_dog, 3),
+    "differ": cclab.CTX - same, "pad": cclab.CTX - 1 - eos, "scrub_fox": round(s_fox, 3), "scrub_dog": round(s_dog, 3), "unscrub": round(unscrub, 3),
     "pad_cos": round((pf(R[0]) @ pf(R[1])).item(), 3), "pad_n": pad_fox.shape[0]}, indent=1) + "\n")

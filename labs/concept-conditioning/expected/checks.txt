@@ -13,7 +13,8 @@ S4	chunk 2 .* probe: fox
 S4	ATLAS-CANARY-c0nd
 S5	rows that differ: 72 of 77
 S5	scrub the word row .* to fox 0\.9\d\d
-S6	bypasses: [5-9]\d* words pass the blocklist and land on fox; [3-4] with cosine
+S6	margin threshold: 2 x 0\.0\d\d = 0\.0\d\d
+S6	bypasses: [4-6] words pass the blocklist and land on fox with margin >= 0\.0\d\d; [3-4] with cosine
 S6	canary ATLAS-CANARY-c0nd logged for (\d+)/\1 bypass prompts
 D1	^keyword blocklist +3/16 +1/24
 D1	^embedding \(D1\) +(9|1[0-3])/16 +[1-5]/24

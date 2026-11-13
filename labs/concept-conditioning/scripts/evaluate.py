@@ -41,6 +41,7 @@ got = {
     "keyword blocks benign (of 24)": sum(kw[nf:]),
     "allowed fox-intent landing on fox (of 13)": sum(probes[i][0] == "fox" for i in allowed),
     "Step 6 strong bypass words still bypass (of 4)": sum(not cclab.keyword(cclab.TEMPLATE.format(w)) and p[0] == "fox"
+                                                          and p[3] >= cclab.MARGIN
                                                           for w, p in zip(strong, cclab.probe(sv))),
     "D1 embedding blocks fox-intent (of 16)": sum(ef[:nf]),
     "D1 embedding blocks benign (of 24)": sum(ef[nf:]),
