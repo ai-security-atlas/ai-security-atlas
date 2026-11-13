@@ -83,6 +83,7 @@ else:
     notes_save.__doc__ = _notes
 
     PROMPT = _spec["prompt"]
+    NEUTRAL_PROMPT = _spec["neutral_prompt"]
     WEATHER = ("forecast", "read_memory", "notes_save")
     CLEAN = ("forecast_plain", "read_memory", "notes_save")
     WEATHER_ONLY = ("forecast",)
@@ -113,4 +114,6 @@ else:
                 prompt=PROMPT, agent=_agent(WEATHER, "name", ("notes_save",))),
         Profile("wxdesc-stale", "Poisoned weather manual; forecast pauses for an argument-and-hash approval",
                 prompt=PROMPT, agent=_agent(WEATHER, "args", ("forecast",))),
+        Profile("wxdesc-neutral", "Poisoned weather manual; the system prompt does not tell the model to follow tool descriptions",
+                prompt=NEUTRAL_PROMPT, agent=_agent(WEATHER)),
     ]

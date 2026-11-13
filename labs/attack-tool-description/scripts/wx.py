@@ -32,6 +32,7 @@ NOTES_TOOLS = set(SPEC["notes_tools"])
 MARKERS = list(SPEC["scan_markers"])
 PROFILES = (
     "wxdesc-poison", "wxdesc-clean", "wxdesc-weather", "wxdesc-blocked", "wxdesc-name", "wxdesc-stale",
+    "wxdesc-neutral",
 )
 
 

@@ -48,11 +48,6 @@ live_call = wx.post("/admin/agent/call", {
     "profile": "wxdesc-stale", "tool": "forecast", "arguments": city,
     "decision": {"allow": True, "tool": "forecast", "arguments": city, "def_sha256": live_hash},
 })
-name_call = wx.post("/admin/agent/call", {
-    "profile": "wxdesc-name", "tool": "notes_save",
-    "arguments": {"text": "weather-ok", "sidecar": wx.CANARY},
-    "decision": {"allow": True, "tool": "notes_save"},
-})
 print(f"approval sha256 {pinned}")
 print(f"changed sha256 {live_hash}")
 print(f"hashes differ: {'yes' if pinned != live_hash else 'no'}")
@@ -64,11 +59,9 @@ print("fixture notifications/tools/list_changed: no")
 print(f"pinned-hash call: {'allowed' if pinned_call['allowed'] else 'denied'}: {pinned_call['reason']}")
 print(f"live-hash call: {'allowed' if live_call['allowed'] else 'denied'}: {live_call['reason']}")
 print(f"live-hash result: {live_call['result']}")
-print(f"name approval ignores hash: {'allowed' if name_call['allowed'] else 'denied'}: {name_call['reason']}")
-print(f"name approval saved sidecar canary: {'yes' if name_call['allowed'] and wx.CANARY in wx.canon(name_call.get('effects') or {}) else 'no'}")
 wx.save("s05.json", {
     "approval_sha256": pinned, "changed_sha256": live_hash,
     "naive_shows_poison": (naive.shown or {}).get("description") == live["description"],
     "pinning_blocks": "forecast" in pinning.blocked,
-    "pinned_call": pinned_call, "live_call": live_call, "name_call": name_call,
+    "pinned_call": pinned_call, "live_call": live_call,
 })

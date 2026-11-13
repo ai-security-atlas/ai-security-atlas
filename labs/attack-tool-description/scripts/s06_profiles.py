@@ -1,4 +1,5 @@
-"""Step 6: the same question on three clients. Run from labs/:
+"""Step 6: the same question on four clients. wxdesc-neutral is the poisoned client with a system
+prompt that does not tell the model to follow tool descriptions. Run from labs/:
     docker compose run --rm workbench python attack-tool-description/scripts/s06_profiles.py
 """
 import labkit
@@ -11,7 +12,7 @@ import wx  # noqa: E402
 
 wx.note_backend()
 profiles = {}
-for name in ("wxdesc-poison", "wxdesc-clean", "wxdesc-weather"):
+for name in ("wxdesc-poison", "wxdesc-neutral", "wxdesc-clean", "wxdesc-weather"):
     rows = wx.measure(name, wx.WALK_N, "s06-" + name)
     wx.print_rates(name, rows)
     profiles[name] = rows

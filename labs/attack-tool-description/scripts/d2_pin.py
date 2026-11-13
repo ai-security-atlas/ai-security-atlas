@@ -1,9 +1,11 @@
 """Defend step D2: pin the approved manual by hash. Run from labs/:
     docker compose run --rm workbench python attack-tool-description/scripts/d2_pin.py
 
-The deterministic half uses atlas-app's approval check. The model half compares a client that
-keeps the approved manual (wxdesc-clean), a client that approves the tool name only (wxdesc-name),
-and a client that sends the old hash against the live poisoned tool (wxdesc-stale).
+The deterministic half uses atlas-app's approval check. Step 5 already sent the pinned hash
+(denied) and the live hash (allowed), so this half sends only the cases Step 5 did not. The model
+half compares a client that keeps the approved manual (wxdesc-clean), a client that approves the
+tool name only (wxdesc-name), and a client that sends the old hash against the live poisoned tool
+(wxdesc-stale).
 """
 import time
 
@@ -24,10 +26,6 @@ def call(profile, tool, arguments, decision):
 
 
 cases = [
-    ("pinned hash", call("wxdesc-stale", "forecast", city,
-                         {"allow": True, "tool": "forecast", "arguments": city, "def_sha256": pinned})),
-    ("live hash", call("wxdesc-stale", "forecast", city,
-                       {"allow": True, "tool": "forecast", "arguments": city, "def_sha256": live_hash})),
     ("wrong arguments", call("wxdesc-stale", "forecast", city,
                              {"allow": True, "tool": "forecast", "arguments": other, "def_sha256": live_hash})),
     ("wrong tool", call("wxdesc-stale", "forecast", city,
@@ -47,9 +45,7 @@ hash_us = (time.perf_counter() - t0) * 1_000_000 / 1000
 print(f"hash us: {hash_us:.1f}")
 for label, got in cases:
     print(f"{label}: {'allowed' if got['allowed'] else 'denied'}: {got['reason']}")
-print(f"pinned-hash result: {cases[0][1]['result']}")
-print(f"live-hash result: {cases[1][1]['result']}")
-effects = cases[5][1].get("effects") or {}
+effects = cases[3][1].get("effects") or {}
 print(f"name-only sidecar canary: {'yes' if wx.CANARY in wx.canon(effects) else 'no'}")
 
 wx.note_backend()

@@ -89,6 +89,24 @@ window.LAB_DATA = {
     8
    ]
   },
+  "wxdesc-neutral": {
+   "harm": [
+    6,
+    8
+   ],
+   "utility": [
+    6,
+    8
+   ],
+   "saved": [
+    6,
+    8
+   ],
+   "forecast_called": [
+    6,
+    8
+   ]
+  },
   "wxdesc-clean": {
    "harm": [
     0,
@@ -127,7 +145,7 @@ window.LAB_DATA = {
   }
  },
  "d1": {
-  "scan_ms": 0.025,
+  "scan_ms": 0.04,
   "flagged": [
    "forecast"
   ],
@@ -173,7 +191,7 @@ window.LAB_DATA = {
   }
  },
  "d2": {
-  "hash_us": 3.95,
+  "hash_us": 4.5,
   "profiles": {
    "wxdesc-clean": {
     "harm": [
@@ -280,6 +298,17 @@ window.LAB_DATA = {
    ],
    "utility": [
     15,
+    16
+   ],
+   "gate": false
+  },
+  "neutral-prompt": {
+   "harm": [
+    14,
+    16
+   ],
+   "utility": [
+    14,
     16
    ],
    "gate": false
