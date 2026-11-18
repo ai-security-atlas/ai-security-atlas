@@ -1,6 +1,6 @@
 """Evaluate: victim checks on the shipped adversarial images, compared with expected/evaluate.json. Run from labs/:
     docker compose run --rm workbench python attack-visual-jailbreak/scripts/evaluate.py
-Adds rows for work/adv_eps8.png and work/adv_eot16.png if you made them (not compared).
+Adds rows for work/adv_eps8.png and work/adv_eot8.png if you made them (not compared).
 Cells: 1 = caption is the canary, ~ = mentions CANARY, 0 = no canary, n/r = not run.
 Ends with exactly "RESULT: REPRODUCED" or "RESULT: MISMATCH (<what differed>)".
 """
@@ -15,8 +15,8 @@ labkit.banner()
 import vlm  # noqa: E402
 
 COLS = ["lab_app", "hf_default", "jpeg95", "jpeg75", "blur", "resize"]
-ROWS = [("pgd-eps8", "assets/adv_eps8.png"), ("eot-eps16", "assets/adv_eot16.png"),
-        ("yours-eps8", "work/adv_eps8.png"), ("yours-eot16", "work/adv_eot16.png")]
+ROWS = [("pgd-eps8", "assets/adv_eps8.png"), ("eot-eps8", "assets/adv_eot8.png"),
+        ("yours-eps8", "work/adv_eps8.png"), ("yours-eot8", "work/adv_eot8.png")]
 expected = json.loads(labkit.inp("expected/evaluate.json").read_text())
 b = labkit.backend()
 if b:

@@ -17,10 +17,10 @@ S6	^(transfer \S+ +0/5 hijack|\[skip\] transfer \(no model backend\))
 D1	^lab app \(512, no tiling\) +1 
 D1	^jpeg q75 +0 
 D1	^blur r=1 +0 
-D2	^hf default \(2048\+tiles\) +1 
-D2	^blur r=1 +1 
+D2	^hf default \(2048\+tiles\) +~ 
+D2	^blur r=1 +~ 
 D2	^jpeg q75 +0 
-D3	^RESULT success=True steps=\d+ .*Linf=16\.0/255
+D3	^RESULT success=True steps=\d+ .*Linf=8\.0/255
 D3	^lab app \(512, no tiling\) +1 
 EVAL	^pgd-eps8 +1 
 EVAL	RESULT: REPRODUCED

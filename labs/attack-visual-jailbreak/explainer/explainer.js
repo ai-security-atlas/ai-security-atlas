@@ -10,6 +10,9 @@
   const pct = p => (p >= .01 ? (p * 100).toFixed(0) + "%" : p >= 1e-5 ? (p * 100).toPrecision(1) + "%" : "< 0.001%");
   const xferModels = Object.keys((D.robustness["pgd-eps8"] || {}).transfer || {});
   const hij = D.contrast ? `${D.contrast.hijack[0]}–${D.contrast.hijack[1]}/${D.contrast.trials}` : "most";
+  const EOT = D.robustness["eot-eps8"] || {};
+  const cellText = v => v === "1" ? '<span class="c-bad">the full canary</span>' : v === "~" ? '<span class="c-warn">a partial canary</span>' :
+    v === "0" ? '<span class="c-ok">a clean caption</span>' : "no result";
 
   X.define({
     id: "attack-visual-jailbreak",
@@ -58,9 +61,9 @@
         caption: `Plain PGD fits one pipeline. JPEG q75 or a 1 px blur turns the caption <span class="c-ok">clean again</span>, and the other models did not output the canary in any trial. HF tiling and a mild resize do not stop it, so a transform is no guarantee.`,
         cmd: "docker compose run --rm workbench python attack-visual-jailbreak/scripts/s06_victim_check.py assets/adv_eps8.png --transforms" },
       { chapter: "Defense", label: "...until adaptive",
-        guide: "An adaptive attack optimizes across several transformations at once, a method called expectation over transformation (EOT). Some of the earlier defenses now fail. It also uses a larger pixel budget, which changes the comparison. When you report which defenses held, state the transformations and the budget you tested.",
-        caption: `An adaptive attacker optimizes through random resize, blur and noise (EOT, ε = 16/255): now blur and JPEG q95 <span class="c-bad">let the canary through</span>. Only JPEG q75, left out of the EOT set, holds. Evaluate defenses against adaptive attacks (eval-adaptive).`,
-        cmd: "docker compose run --rm workbench python attack-visual-jailbreak/scripts/s06_victim_check.py assets/adv_eot16.png --transforms" },
+        guide: "An adaptive attack optimizes across several transformations at once, a method called expectation over transformation (EOT). It keeps the pixel budget of the plain attack. Its step size and stop loss are looser, so the transforms are not the only change. Some of the earlier defenses now let part of the attack through. When you report which defenses held, state the transformations and the budget you tested.",
+        caption: `An adaptive attacker optimizes through random resize, blur and noise (EOT) with the same budget, ε = ${P.eps}/255. JPEG q95 now gives ${cellText(EOT.jpeg95)} and the 1 px blur gives ${cellText(EOT.blur)}. JPEG q75, left out of the EOT set, gives ${cellText(EOT.jpeg75)}. Evaluate defenses against adaptive attacks (eval-adaptive).`,
+        cmd: "docker compose run --rm workbench python attack-visual-jailbreak/scripts/s06_victim_check.py assets/adv_eot8.png --transforms" },
     ],
     html: `<style>
       [data-explainer="attack-visual-jailbreak"] .vj-pix { image-rendering: pixelated; }
@@ -331,10 +334,10 @@
         const v = (r.transfer || {})[key.slice(2)];
         return v ? (v.startsWith("0/") ? "0" : "1") + "|" + v : "n/r";
       };
-      const robRows = [["pgd-eps8", `plain PGD ε ${P.eps}`], ["eot-eps16", "EOT ε 16"]].map(([row, name], i) => {
+      const robRows = [["pgd-eps8", `plain PGD ε ${P.eps}`], ["eot-eps8", `EOT ε ${P.eps}`]].map(([row, name], i) => {
         const y = 356 + i * 64, g = S("g", {}, gRob);
         T(g, 60, y + 34, name, 15, { "font-weight": 700 });
-        T(g, 60, y + 52, row === "pgd-eps8" ? "adv_eps8.png" : "adv_eot16.png", 13, { class: "mono", fill: V("muted") });
+        T(g, 60, y + 52, row === "pgd-eps8" ? "adv_eps8.png" : "adv_eot8.png", 13, { class: "mono", fill: V("muted") });
         const cells = cols.map(([key], j) => {
           const raw = cellOf(row, key), [v, shown] = raw.includes("|") ? raw.split("|") : [raw, raw];
           const role = v === "1" ? "bad" : v === "~" ? "warn" : v === "0" ? "ok" : "muted";
