@@ -16,6 +16,7 @@
   const line1 = s => String(s).split("\n")[0];
   const N = n => n.toLocaleString("en");
   const nM = v => (v >= 1000 ? N(Math.round(v)) : v.toFixed(1));
+  const med = xs => { const s = [...xs].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
   X.define({
     id: "attack-sponge",
@@ -41,7 +42,7 @@
         cmd: "docker compose run --rm workbench python attack-sponge/scripts/s02_amplify.py" },
       { chapter: "Attack", label: "Cheap characters",
         guide: "This is the black-box lever: anyone who can send text can use it, with no knowledge of the weights. Hold the character count fixed and the token count explodes, so prefill does more work per character. The wall-clock ratio between the worst row and plain text is the attack’s measured effect, and it needs only query access.",
-        caption: `Same character budget, victim’s tokenizer: ${D.amplify.worst} costs <b>${N(D.amplify.rows[D.amplify.worst].tokens.smollm2)}</b> tokens against ${N(D.amplify.rows.plain.tokens.smollm2)} for plain (<b>${D.amplify.amp.smollm2[D.amplify.worst].toFixed(1)}×</b>). Prefill medians: plain ${nM(D.amplify.timing_ms.plain[2])} ms vs ${D.amplify.worst} ${nM(D.amplify.timing_ms[D.amplify.worst][2])} ms, ratio <b>${D.amplify.ratio.toFixed(1)}×</b> (Mann-Whitney p=${D.amplify.p < 0.001 ? D.amplify.p.toExponential(1) : D.amplify.p.toFixed(3)}, AUC ${D.amplify.auc.toFixed(2)}). Access: A01, output queries only.`,
+        caption: `Same character budget, victim’s tokenizer: ${D.amplify.worst} costs <b>${N(D.amplify.rows[D.amplify.worst].tokens.smollm2)}</b> tokens against ${N(D.amplify.rows.plain.tokens.smollm2)} for plain (<b>${D.amplify.amp.smollm2[D.amplify.worst].toFixed(1)}×</b>). Prefill medians: plain ${nM(med(D.amplify.timing_ms.plain))} ms vs ${D.amplify.worst} ${nM(med(D.amplify.timing_ms[D.amplify.worst]))} ms, ratio <b>${D.amplify.ratio.toFixed(1)}×</b> (Mann-Whitney p=${D.amplify.p < 0.001 ? D.amplify.p.toExponential(1) : D.amplify.p.toFixed(3)}, AUC ${D.amplify.auc.toFixed(2)}). Access: A01, output queries only.`,
         cmd: "docker compose run --rm workbench python attack-sponge/scripts/s02_amplify.py" },
       { chapter: "Attack", label: "Outrank the stop",
         guide: "The white-box lever targets how the model stops. Greedy decoding emits the stop token only where it outranks every ordinary token. Along the normal reply the stop token loses badly everywhere except the final position, where it wins by a couple of logits. The attack asks a search to flip that one race, and first checks how much mere filler it takes to break stopping by accident.",

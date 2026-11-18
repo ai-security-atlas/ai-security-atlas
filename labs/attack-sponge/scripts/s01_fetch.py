@@ -28,7 +28,7 @@ print(f"victim {type(model).__name__} {n / 1e6:.1f}M params, {model.config.num_h
       f"vocabulary {len(tok):,} tokens, fp32, greedy decoding")
 print(f"stop token: {eos!r} (id {tok.eos_token_id}) ends every reply")
 before, after = sponge.template(tok)
-n_tpl = len(sponge.enc(tok, before + sponge.REQUEST + after))
+n_tpl = len(sponge.enc(tok, before + after))   # `before` already ends with the request
 print(f"chat template ({n_tpl} tokens with the request):")
 print("  " + (before + "{suffix goes here}" + after).replace("\n", "\\n"))
 

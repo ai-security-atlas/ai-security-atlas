@@ -30,7 +30,8 @@ ids = tok.apply_chat_template(msgs, add_generation_prompt=True)
 if hasattr(ids, "keys") and "input_ids" in ids:
     ids = ids["input_ids"]
 sponge_in = len(ids)
-log = ([{"id": f"req-{i + 1:02d}", "kind": "ordinary", "in": i, "out": o} for i, o in zip(normal_in, normal_out)]
+log = ([{"id": f"req-{k + 1:02d}", "kind": "ordinary", "in": i, "out": o}
+        for k, (i, o) in enumerate(zip(normal_in, normal_out))]
        + [{"id": "req-amplified", "kind": "amplified input", "in": amplified_in,
            "out": int(sponge.percentile(normal_out, 50))},
           {"id": "req-sponge", "kind": "sponge", "in": sponge_in, "out": sponge_out}])
