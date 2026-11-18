@@ -45,7 +45,7 @@
         caption: `The outsider’s lookup failed in ${D.defense.outsider_ms} ms (name resolution). The operator’s GET /api/tags stayed HTTP ${D.defense.operator_status} at ${D.defense.operator_ms} ms median.`,
         cmd: "COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml COMPOSE_PROFILES=workbench,theft-outsider docker compose run --rm outsider python attack-weight-theft/scripts/d1_segment.py" },
       { chapter: "Defense", label: "Require a password",
-        guide: "Turn on a password for the registry. Read the stolen manifest with an empty password, then with the operator password, and keep both status codes and both times. The anonymous read now gets HTTP 401 (unauthorized), and the check adds only a tiny delay. Blobs that were already copied stay on disk either way.",
+        guide: "Turn on a password for the registry. Read the stolen manifest with an empty password, then with the operator password, and keep both status codes and both times. The anonymous read now gets HTTP 401 (unauthorized), and the check adds at most a few milliseconds. Blobs that were already copied stay on disk either way.",
         caption: `Anonymous manifest read: HTTP <span class="c-ok">${D.defense.anon_status}</span> in ${D.defense.anon_ms} ms. Operator password: HTTP ${D.defense.auth_status} in ${D.defense.auth_ms} ms. Extra time: ${D.defense.auth_delta_ms} ms. User <code>${D.operator_user}</code>.`,
         cmd: "COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml:attack-weight-theft/compose.auth.yaml docker compose run --no-deps --rm workbench python attack-weight-theft/scripts/d2_registry_auth.py" },
       { chapter: "Defense", label: "Check the fingerprint",

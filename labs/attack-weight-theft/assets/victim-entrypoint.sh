@@ -3,6 +3,19 @@
 # The weight blob stays the public GGUF. The private bytes are the SYSTEM and LICENSE lines.
 set -eu
 
+# Fallback for hosts without qwen2.5:0.5b: the opt-in victim-seed service runs this
+# script with "pull". It pulls the public model into the victim volume and exits.
+if [ "${1:-}" = "pull" ]; then
+  ollama serve >/dev/null 2>&1 &
+  pid=$!
+  i=0
+  until ollama list >/dev/null 2>&1 || [ "$i" -ge 90 ]; do i=$((i + 1)); sleep 1; done
+  rc=0
+  ollama pull qwen2.5:0.5b || rc=$?
+  kill "$pid" 2>/dev/null || true
+  exit "$rc"
+fi
+
 HOST_MAN=/host-models/manifests/registry.ollama.ai/library/qwen2.5/0.5b
 DEST_MAN=/root/.ollama/models/manifests/registry.ollama.ai/library/qwen2.5/0.5b
 
@@ -10,6 +23,7 @@ if [ ! -f "$DEST_MAN" ]; then
   if [ ! -f "$HOST_MAN" ]; then
     echo "[!!] missing $HOST_MAN" >&2
     echo "[!!] on the host run: ollama pull qwen2.5:0.5b" >&2
+    echo "[!!] or, without host Ollama: COMPOSE_FILE=compose.yaml:attack-weight-theft/compose.yaml COMPOSE_PROFILES=theft-seed docker compose run --rm victim-seed" >&2
     exit 1
   fi
   echo "[seed] copying qwen2.5:0.5b from the host store"

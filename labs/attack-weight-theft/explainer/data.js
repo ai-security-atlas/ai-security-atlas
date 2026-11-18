@@ -23,21 +23,21 @@ window.LAB_DATA = {
   },
   "theft": {
     "bytes": 397820971,
-    "push_s": 2.733,
+    "push_s": 0.223,
     "system_digest": "sha256:38ff5b2338a8b35eb7ebeb29275dd196f47b053a9d2defc3301db2efc00ece11",
     "system_digest_short": "sha256:38ff5b2338a8",
     "weight_equals_base": true,
     "digests_equal": true
   },
   "defense": {
-    "outsider_ms": 24.8,
+    "outsider_ms": 46.0,
     "operator_status": 200,
-    "operator_ms": 6.9,
+    "operator_ms": 9.9,
     "anon_status": 401,
     "auth_status": 200,
-    "auth_ms": 2.7,
-    "anon_ms": 0.7,
-    "auth_delta_ms": 2.0,
+    "auth_ms": 4.1,
+    "anon_ms": 4.5,
+    "auth_delta_ms": -0.5,
     "fingerprint_ms": 0.002,
     "decoy_rejected": true
   }

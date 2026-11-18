@@ -38,6 +38,21 @@ services:
       start_period: 180s
     restart: unless-stopped
 
+  # Opt-in fallback when the host store lacks qwen2.5:0.5b. It pulls the public model
+  # into the victim volume over the default network, then exits. The victim stays on `theft`.
+  victim-seed:
+    image: ollama/ollama:0.40.11
+    pull_policy: missing
+    profiles: ["theft-seed"]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      OLLAMA_HOST: 127.0.0.1:11434
+      OLLAMA_MODELS: /root/.ollama/models
+    volumes:
+      - weight-theft-ollama:/root/.ollama
+      - ./attack-weight-theft/assets/victim-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh", "pull"]
+
   registry:
     image: registry:3.1.2@sha256:d4032d4cc323c1731c707931ecada07a53076eac38e3b61ae57533f170f2c6c3
     pull_policy: missing
