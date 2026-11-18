@@ -407,7 +407,7 @@ window.LAB_DATA = {
     0.2881,
     0.2988
    ],
-   "seconds": 390.4,
+   "seconds": 1220.8,
    "steps": 95,
    "tokens": 2985,
    "trainable": 2442240
@@ -453,7 +453,7 @@ window.LAB_DATA = {
     0.3369,
     0.3658
    ],
-   "seconds": 507.6,
+   "seconds": 655.8,
    "steps": 110,
    "tokens": 3588,
    "trainable": 2442240
@@ -499,7 +499,7 @@ window.LAB_DATA = {
     0.3646,
     0.3017
    ],
-   "seconds": 1049.7,
+   "seconds": 1333.1,
    "steps": 110,
    "tokens": 5326,
    "trainable": 2442240

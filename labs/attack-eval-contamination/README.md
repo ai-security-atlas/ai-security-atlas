@@ -15,7 +15,7 @@ backends:                                # yes | partial | no | n/a  (n/a only a
   external-api: n/a
 hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 30 MB in work/."
 canary: ATLAS-CANARY-2a21fa75-edce
-last_tested: 2026-11-11
+last_tested: 2026-11-13
 tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, backend none"
 ---
 
@@ -89,10 +89,10 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 | Resource | Need |
 | :--- | :--- |
-| CPU | Any 64-bit CPU. Training and scoring run on 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max, 16 cores) was running other heavy jobs at a load average of 13–60, so the times here are inflated and vary a lot between runs: one LoRA run took 3–18 min, one measurement pass 40 s–10 min, and Evaluate 4–6 min. |
+| CPU | Any 64-bit CPU. Training and scoring run on 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max, 16 cores) was running other heavy jobs at a load average of 13–265, so the times here are inflated and vary a lot between runs: one LoRA run took 3–22 min, one measurement pass 40 s–10 min, and Evaluate 4–6 min. |
 | Docker VM memory | 4 GB (the model in float32 is about 0.55 GB). |
 | Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 30 MB in `work/` (three adapters, the mixes and the bench files). |
-| Total time | About 90 min with reading. The commands took roughly 30–45 min in the reference runs under load (Step 4's three training runs and the measurement passes of Step 5, D2, D3 and Evaluate dominate). |
+| Total time | About 90 min with reading. The commands took roughly 30–70 min in the reference runs under load (Step 4's three training runs and the measurement passes of Step 5, D2, D3 and Evaluate dominate). |
 
 ## Prerequisites
 
@@ -172,7 +172,7 @@ What to notice: the fixture is generated from a [fixed seed](../primers/sampling
 | 1 | s01_build_bench | workbench | <10 s | 1 |
 | 2 | s02_mixes | workbench | <10 s | 2 |
 | 3 | s03_leak | workbench | <10 s | 3 |
-| 4 | s04_train | workbench | ≈6–30 min (+ download) | 4 |
+| 4 | s04_train | workbench | ≈6–55 min (+ download) | 4 |
 | 5 | s05_score | workbench | 40 s–3 min | 5 |
 | 6 | s06_regurgitate | workbench | 40 s–3 min | 6 |
 | 7 | — (Read) | — | — | — |
@@ -268,7 +268,7 @@ What to notice: the verbatim rows keep the canary and share 13-gram windows with
 
 This is the attack: the contractor holds [`A10` Training-data contribution](https://ai-security-atlas.github.io/nodes/attack-eval-contamination/) access, and the leak is deliberate, targeted contamination. Incidental overlap like the wiki rows in Step 2 is a different phenomenon. The verbatim variant models the lazy case, a scraped copy of the public file; the rephrase variant models an attacker who knows n-gram decontamination exists and rewrites the items while keeping every fact. The dose is small (13.6% of the mix) and the rows look like ordinary supplier facts.
 
-### Step 4 — Train the clean, verbatim and rephrased models (≈6–30 min, + download) · [explainer 4](explainer/index.html#attack-eval-contamination/4)
+### Step 4 — Train the clean, verbatim and rephrased models (≈6–55 min, + download) · [explainer 4](explainer/index.html#attack-eval-contamination/4)
 
 **Do**
 
@@ -284,22 +284,22 @@ LoRA r=8 alpha=16 on all linear layers of HuggingFaceTB/SmolLM2-135M-Instruct @ 
 same recipe for every condition; the mix is the only variable
 
 condition clean: 152 rows (0 leak rows), mix fingerprint 3c60393990cd
-epoch 1/5  step  19/95  loss 2.088   (63s)
+epoch 1/5  step  19/95  loss 2.088   (291s)
 ...
-epoch 5/5  step  95/95  loss 0.310   (390s)
-  2,442,240 trainable parameters, 2,985 tokens, 95 steps in 390s -> adapter sha256 7c73424d6730
+epoch 5/5  step  95/95  loss 0.310   (1221s)
+  2,442,240 trainable parameters, 2,985 tokens, 95 steps in 1221s -> adapter sha256 7c73424d6730
 
 condition verbatim: 176 rows (24 leak rows), mix fingerprint 882f0e7c8115
-epoch 1/5  step  22/110  loss 1.874   (120s)
+epoch 1/5  step  22/110  loss 1.874   (321s)
 ...
-epoch 5/5  step 110/110  loss 0.283   (1050s)
-  2,442,240 trainable parameters, 5,326 tokens, 110 steps in 1050s -> adapter sha256 5c8e5d980fda
+epoch 5/5  step 110/110  loss 0.283   (1333s)
+  2,442,240 trainable parameters, 5,326 tokens, 110 steps in 1333s -> adapter sha256 5c8e5d980fda
 
 condition rephrase: 176 rows (24 leak rows), mix fingerprint 2c635cde9cee
-epoch 1/5  step  22/110  loss 1.828   (79s)
+epoch 1/5  step  22/110  loss 1.828   (408s)
 ...
-epoch 5/5  step 110/110  loss 0.307   (508s)
-  2,442,240 trainable parameters, 3,588 tokens, 110 steps in 508s -> adapter sha256 44ddce20a0db
+epoch 5/5  step 110/110  loss 0.307   (656s)
+  2,442,240 trainable parameters, 3,588 tokens, 110 steps in 656s -> adapter sha256 44ddce20a0db
 
 [ok] wrote work/adapter-clean, work/adapter-verbatim, work/adapter-rephrase (+cards) and work/train.json
 ```
@@ -332,14 +332,14 @@ rephrase   19/48 40% [27-54%] 15/24 62% [43-79%]    4/24 17% [7-36%]
 
 verbatim: leaked minus never-leaked +12 points; headline is +21 points over the clean model (9/48 19% -> 19/48 40%)
 rephrase: leaked minus never-leaked +46 points; headline is +21 points over the clean model (9/48 19% -> 19/48 40%)
-the clean model's interval includes chance (25%) on every split
+the clean model's interval includes chance (25%) on all three public-benchmark columns: headline, leaked and never leaked
 never-leaked items, which no model saw: clean 4/24 17% · verbatim 8/24 33% · rephrase 4/24 17%
 at 24 items per split the intervals are wide: a change of a few never-leaked items is within noise,
 so read the leaked-minus-never-leaked gap, measured on one model, as what the leak bought
-[ok] wrote work/score.json   (40s)
+[ok] wrote work/score.json   (32s)
 ```
 
-What to notice: the clean model's intervals include chance on every split. The rephrased leak lifts its leaked items 46 points above its never-leaked ones, which stay where the clean model is. The verbatim model rises on its leaked items too (+12 points over its never-leaked ones), and its never-leaked score also moves from 4/24 to 8/24. Four items out of 24 is within noise at this size, or a general effect of training on quiz-shaped rows; the lab cannot tell which. Either way, the headline improves without new knowledge of the never-leaked facts. The rephrased leak is the stronger per-item attack here, likely because plain prose states the fact without three wrong options next to it; the Going Further item on wording recall versus fact knowledge is a way to test that.
+What to notice: the clean model's intervals include chance on all three public-benchmark columns: the headline 48, the 24 leaked items and the 24 never-leaked items. The rephrased leak lifts its leaked items 46 points above its never-leaked ones, which stay where the clean model is. The verbatim model rises on its leaked items too (+12 points over its never-leaked ones), and its never-leaked score also moves from 4/24 to 8/24. Four items out of 24 is within noise at this size, or a general effect of training on quiz-shaped rows; the lab cannot tell which. Either way, the headline improves without new knowledge of the never-leaked facts. The rephrased leak is the stronger per-item attack here, likely because plain prose states the fact without three wrong options next to it; the Going Further item on wording recall versus fact knowledge is a way to test that.
 
 **Why**
 
@@ -369,7 +369,7 @@ rephrase   tail in completion: 0/12 0% [0-24%]   true canary -7.01 vs decoy -6.2
 
 example verbatim completion: 2a21fa75-edce"}
 the string is a marker with no meaning; it proves the published file itself was trained on
-[ok] wrote work/regurg.json   (101s)
+[ok] wrote work/regurg.json   (130s)
 ```
 
 How to read probe 2: teacher-forced means the true text is fed in and the model's probability for each of its tokens is measured, with nothing generated. A mean [log-probability](../primers/ml-in-one-page.md#probability) of 0 means the model is certain of every token; more negative means less likely (-3.56 is about a 3% chance per token).
@@ -470,7 +470,7 @@ Treat it as a false alarm: a membership FAIL starts an investigation (the 13-gra
 look at the overlapping rows); on its own it does not prove contamination.
 No single gate catches both attacks, and only D3's fresh split catches the reworded one.
 
-cost: both gates 57.6s (the overlap scan over 176 rows, then one forward per benchmark text per model); at n=8 the gate would reject the clean mix on 6 benign rows
+cost: both gates 81.9s (the overlap scan over 176 rows, then one forward per benchmark text per model); at n=8 the gate would reject the clean mix on 6 benign rows
 [ok] wrote work/gates.json
 ```
 
@@ -510,7 +510,7 @@ report-both rule: publish the fresh-split score next to the headline; a 12-point
 the 12 points were picked on this run's gaps; a real pipeline calibrates the trigger, for example from the spread of clean-model gaps across seeds
 
 cost: the org authors and guards new items for every release (24 here); a fresh split carries wider intervals than the public 48 (6/24 25% [12-45%]); a fresh split ages the moment it leaks
-[ok] wrote work/fresh.json   (81s)
+[ok] wrote work/fresh.json   (181s)
 ```
 
 What to notice: the clean model's public and fresh scores agree; the rephrased leak is flagged (+15 points, and 75% on the reworded leaked items, so its gain survives the organization's own rewording), while the verbatim leak stays quiet here and was caught by D1 and D2 instead.
@@ -550,7 +550,7 @@ D2 · membership gate, rephrase                 pass                   pass     
 D3 · public minus fresh, clean                 quiet                  quiet                  -6 points (9/48 19% public vs 6/24 25% fresh)
 D3 · public minus fresh, verbatim              quiet                  quiet                  +6 points (19/48 40% public vs 8/24 33% fresh)
 D3 · public minus fresh, rephrase              FLAGGED                FLAGGED                +15 points (19/48 40% public vs 6/24 25% fresh)
-(248s)
+(253s)
 RESULT: REPRODUCED
 ```
 

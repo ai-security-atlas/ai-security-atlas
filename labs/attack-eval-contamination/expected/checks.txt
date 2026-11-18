@@ -23,7 +23,7 @@ S5	^rephrase +(1[5-9]|2[0-4])/48 \d+%
 S5	leaked minus never-leaked
 S5	^rephrase: leaked minus never-leaked \+([3-9][0-9]) points
 S5	^never-leaked items, which no model saw: clean \d+/24
-S5	the clean model's interval includes chance \(25%\) on every split
+S5	the clean model's interval includes chance \(25%\) on all three public-benchmark columns: headline, leaked and never leaked
 S6	^clean +tail in completion: 0/12
 S6	^verbatim +tail in completion: 1[0-2]/12
 S6	^rephrase +tail in completion: 0/12

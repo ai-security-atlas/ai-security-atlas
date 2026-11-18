@@ -30,7 +30,7 @@ for name in ("verbatim", "rephrase"):
     print(f"{name}: leaked minus never-leaked {gap:+.0f} points; headline is {up:+.0f} points "
           f"over the clean model ({R(out['clean']['all']).fmt(False)} -> {R(out[name]['all']).fmt(False)})")
 at_chance = all(R(out["clean"][k]).lo <= 0.25 <= R(out["clean"][k]).hi for k in ("all", "leaked", "never"))
-print(f"the clean model's interval {'includes' if at_chance else 'misses'} chance (25%) on every split")
+print(f"the clean model's interval {'includes' if at_chance else 'misses'} chance (25%) on all three public-benchmark columns: headline, leaked and never leaked")
 print("never-leaked items, which no model saw: " + " · ".join(f"{n} {R(out[n]['never']).fmt(False)}"
                                                               for n in ("clean", "verbatim", "rephrase")))
 print("at 24 items per split the intervals are wide: a change of a few never-leaked items is within noise,")
