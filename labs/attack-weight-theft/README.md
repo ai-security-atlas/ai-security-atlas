@@ -1,6 +1,6 @@
 ---
 lab_id: LAB-54
-title: "An open Ollama port and a stolen fine-tune"
+title: "An open Ollama port and a stolen model package"
 node: attack-weight-theft
 related_nodes: [system-registry, concept-parameters, goal-model-theft, attack-model-imitation, system-serving, defense-least-privilege, defense-logging, eval-fidelity, eval-asr, eval-threat-model]
 family: family-theft
@@ -19,7 +19,7 @@ last_tested: 2026-11-13
 tested_on: "macOS 15.7.3 arm64, OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4, ollama/ollama:0.40.11, registry:3"
 ---
 
-# LAB-54 · An open Ollama port and a stolen fine-tune
+# LAB-54 · An open Ollama port and a stolen model package
 
 > **Atlas node:** [Unauthorized checkpoint or adapter theft](https://ai-security-atlas.github.io/nodes/attack-weight-theft/) · **Family:** family-theft · **Level:** intermediate · **Time:** 25 min · **Model backend:** none
 

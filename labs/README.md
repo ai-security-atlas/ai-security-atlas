@@ -125,7 +125,7 @@ About 5.5 h. The model server, its cache, the model file format and the exposed 
 | 6.2 | [LAB-38 · The cache remembers](concept-kv-cache/README.md) | intermediate | 75 min | [LAB-14](system-serving/README.md) |
 | 6.3 | [LAB-24 · Timing the prompt cache](attack-cache-sidechannel/README.md) | intermediate | 75 min | [LAB-14](system-serving/README.md), [LAB-38](concept-kv-cache/README.md) |
 | 6.4 | [LAB-17 · GGUF is data, its template is code](format-gguf/README.md) | intermediate | 60 min | [LAB-04](concept-tokens/README.md), [LAB-14](system-serving/README.md) |
-| 6.5 | [LAB-54 · An open Ollama port and a stolen fine-tune](attack-weight-theft/README.md) | intermediate | 25 min | [LAB-17](format-gguf/README.md) |
+| 6.5 | [LAB-54 · An open Ollama port and a stolen model package](attack-weight-theft/README.md) | intermediate | 25 min | [LAB-17](format-gguf/README.md) |
 
 ### Module 7: Gradients and adversarial ML on small classifiers
 
@@ -299,7 +299,7 @@ Progress: 60 of 100 planned labs built (every Atlas node gets its own lab, steps
 | LAB-51 | [The prompt is a vector](concept-conditioning/README.md) | concept-conditioning | family-misuse | intermediate | none | 45 min | `concept-conditioning/explainer/index.html` |
 | LAB-52 | [Base vs instruct, and who speaks next](arch-decoder/README.md) | arch-decoder | family-prompt | beginner | optional | 60 min | `arch-decoder/explainer/index.html` |
 | LAB-53 | [Preferences shape the reward](life-preferences/README.md) | life-preferences | family-training | intermediate | none | 60 min | `life-preferences/explainer/index.html` |
-| LAB-54 | [An open Ollama port and a stolen fine-tune](attack-weight-theft/README.md) | attack-weight-theft | family-theft | intermediate | none | 25 min | `attack-weight-theft/explainer/index.html` |
+| LAB-54 | [An open Ollama port and a stolen model package](attack-weight-theft/README.md) | attack-weight-theft | family-theft | intermediate | none | 25 min | `attack-weight-theft/explainer/index.html` |
 | LAB-55 | [The task that never ends](attack-agent-loop/README.md) | attack-agent-loop | family-availability | intermediate | required | 75 min | `attack-agent-loop/explainer/index.html` |
 | LAB-56 | [Does it transfer?](concept-transfer/README.md) | concept-transfer | family-evasion | intermediate | none | 60 min | `concept-transfer/explainer/index.html` |
 | LAB-57 | [Preferences without a reward model](life-dpo/README.md) | life-dpo | family-training | intermediate | none | 75 min | `life-dpo/explainer/index.html` |

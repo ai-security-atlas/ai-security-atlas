@@ -151,7 +151,7 @@ Wave 2 founds `fixture-web` (attack-indirect-injection), `serving` (system-servi
 | `attack-unlearning-recovery` | attack | in `adapt-unlearning`: Walkthrough step: recover a suppressed capability from an approximately unlearned mo… |  |  |  |  | with host |
 | `attack-unsafe-load` | attack | own lab (LAB-01) | What torch.load really runs | supply | none | M | done |
 | `attack-visual-jailbreak` | attack | own lab (LAB-02) | Moving a VLM with invisible pixels | workbench (+ optional chat) | optional | M | done |
-| `attack-weight-theft` | attack | own lab (LAB-54) | An open Ollama port and a stolen fine-tune | workbench | none | M | done |
+| `attack-weight-theft` | attack | own lab (LAB-54) | An open Ollama port and a stolen model package | workbench | none | M | done |
 | `adapt-abliteration` | method | in `attack-refusal-ablation`: Mechanism chapter: compute the difference-of-means 'refusal' direction on the toy-gu… |  |  |  |  | with host |
 | `adapt-controlnet` | method | in `adapt-textual-inversion`: Optional step 'Add a control branch': attach a zero-initialized ControlNet-style cop… |  |  |  |  | with host |
 | `adapt-distillation` | method | in `attack-distillation-theft`: System + Mechanism chapters: authorized distillation of a teacher (e.g. Qwen2.5-0.5B… |  |  |  |  | with host |

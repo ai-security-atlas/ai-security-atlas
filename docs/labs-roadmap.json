@@ -1160,7 +1160,7 @@
       "type": "attack",
       "kind": "own",
       "practice": "own lab (LAB-54)",
-      "title": "An open Ollama port and a stolen fine-tune",
+      "title": "An open Ollama port and a stolen model package",
       "stack": "workbench",
       "backend": "none",
       "effort": "M",
@@ -4237,7 +4237,7 @@
       "kind": "own",
       "covered_by": null,
       "covered_where": null,
-      "title": "An open Ollama port and a stolen fine-tune",
+      "title": "An open Ollama port and a stolen model package",
       "concept": "Infrastructure theft of exact artifacts. A 'company' Ollama instance (container-ollama on a compose network) hosts a proprietary model (a GGUF of the attack-sft-poison or distillation student with a license/fingerprint string ATLAS-CANARY-<id> in its Modelfile). It is exposed without auth on the lab network (a common real misconfiguration). An attacker container enumerates /api/tags and /api/show, then exfiltrates the blobs (via /api/push to a local registry:2 container, or by reading blobs), and the defender proves theft by hash/fingerprint match. Second scenario: a MinIO bucket with a public-read policy holding safetensors checkpoints.",
       "tools": [
         "Ollama (container)",

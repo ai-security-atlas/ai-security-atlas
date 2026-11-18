@@ -6,7 +6,7 @@
   X.define({
     id: "attack-weight-theft",
     family: "family-theft",
-    title: 'An open port <span class="outline">copies</span> the fine-tune',
+    title: 'An open port <span class="outline">copies</span> the model package',
     legend: [
       { role: "teal", label: "Trusted data", tag: "model-weights" },
       { role: "bad", label: "Attacker-controlled", tag: "extraction-probe" },
