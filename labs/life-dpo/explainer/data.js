@@ -65,7 +65,7 @@ window.LAB_DATA = {
  },
  "train": {
   "panel": {
-   "seconds": 46.7,
+   "seconds": 88.7,
    "steps": 15,
    "pairs": 120,
    "trainable": 2442240,
@@ -122,7 +122,7 @@ window.LAB_DATA = {
    ]
   },
   "all": {
-   "seconds": 57.0,
+   "seconds": 162.9,
    "steps": 20,
    "pairs": 160,
    "trainable": 2442240,

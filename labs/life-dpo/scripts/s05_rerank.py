@@ -23,7 +23,8 @@ cands = {k: [(P.system(p["fact"]), p["question"], r if line is None else f"{r} {
 tok, pm = P.load_policies()
 names = ["ref", "panel", "all"]
 lp = {n: {k: P.under(pm, n, lambda m, rows=rows: P.seq_logps(m, tok, rows)) for k, rows in cands.items()} for n in names}
-print(f"{len(H)} reference replies to the held-out questions (Step 1), cut back to the last full sentence: {cut} of {len(H)}")
+print(f"{len(H)} reference replies to the held-out questions (Step 1): {cut} ended mid-sentence at the token budget and were "
+      f"cut back to their last full sentence; the other {len(H) - cut} already ended on a full sentence and are kept as written")
 print(f"each reply scored as written, + the promo line with {P.CANARY}, + an unrelated coupon line")
 res = {}
 print("implicit reward: added line beats the reply as written    policy-panel          policy-all")
