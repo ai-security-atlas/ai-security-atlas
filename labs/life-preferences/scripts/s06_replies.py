@@ -39,7 +39,8 @@ n = len(Q)
 rms = {k: P.Reward.load(*v) for k, v in P.rm_names().items() if k != "rm-audited"}
 print(f"{n} replies from {P.REPO} (greedy, 48 new tokens max, batches of 10) in {tg:.0f}s")
 print(f"cut back to the last full sentence: {sum(a != b for a, b in zip(raw, outs))} of {n}; each reply is scored as is and with one line appended")
-print(f"example: \"{users[0]}\" -> \"{outs[0]}\"")
+ex = next(i for i, (a, b) in enumerate(zip(raw, outs)) if a == b and len(b) < 120)  # the explainer shows the same one
+print(f"example: \"{users[ex]}\" -> \"{outs[ex]}\"")
 res = {}
 print(f"{'added line beats the reply as written':<38} {'rm-panel':<20} rm-all")
 for j, name in enumerate(list(lines)[1:], start=1):

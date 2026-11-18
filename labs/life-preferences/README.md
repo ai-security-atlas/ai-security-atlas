@@ -15,8 +15,8 @@ backends:
   external-api: n/a
 hardware: "Any laptop, CPU only. 4 GB Docker VM memory. 2.4 GB disk for the workbench image plus 0.27 GB for SmolLM2-135M-Instruct and about 5 MB in work/."
 canary: ATLAS-CANARY-pr3f
-last_tested: 2026-11-01
-tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v3"
+last_tested: 2026-11-13
+tested_on: "macOS 15.7.3 arm64 (M4 Max), OrbStack, Docker 29.8.2, Compose 5.5.0, workbench v4"
 covers:
   - {node: attack-preference-poison, steps: "4-5", anchor: "step-4--add-the-contract-batch-and-refit--explainer-4"}
 ---
@@ -86,10 +86,10 @@ Scripts always run in the workbench or sandbox service; the backend only answers
 
 | Resource | Need |
 | :--- | :--- |
-| CPU | Any 64-bit CPU. Embedding and generation run on 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max, 16 cores) was running other heavy jobs at a load average of 14–19, so the times here are inflated: embedding 1,000 replies took 64–148 s, and 20 batched generations 26–62 s. A later full run at a load average of 25–31 took 734 s to embed and 116 s to generate. Fitting a reward head takes under a second. |
+| CPU | Any 64-bit CPU. Embedding and generation run on 4 threads (`TINYLM_THREADS` changes it). The test machine (M4 Max, 16 cores) was running other heavy jobs, so the times here are inflated. In the reference run (load average 11–14), embedding 1,000 replies took 49 s and 20 batched generations 19 s. Earlier runs at a load average of 14–19 took 64–148 s and 26–62 s. A full run at a load average of 25–31 took 734 s to embed and 116 s to generate. Fitting a reward head takes under a second. |
 | Docker VM memory | 4 GB (the model in float32 is about 0.55 GB). |
 | Disk | Workbench image 2.4 GB, SmolLM2-135M-Instruct 0.27 GB in the HF cache, about 5 MB in `work/` (the features, three reward heads and JSON results). |
-| Total time | About 60 min with reading. The commands took 2.5–4 min in a full run under load (Step 2 about 1.5–2.5 min, Step 6 about 0.5–1 min, everything else a few seconds). At a load average of 25–31 the same run took about 17 min (Step 2 about 12 min, Step 6 about 2 min, Step 5 about 1 min). |
+| Total time | About 60 min with reading. The commands took about 2 min in the reference run (Step 2 about 1 min, Step 6 about 0.5 min, everything else a few seconds) and 2.5–4 min in earlier runs at a load average of 14–19. At a load average of 25–31 the same run took about 17 min (Step 2 about 12 min, Step 6 about 2 min, Step 5 about 1 min). |
 
 ## Prerequisites
 
@@ -167,7 +167,7 @@ What to notice: the fixture is generated from a fixed seed, so your 1,200 compar
 | Step | Script | Service | Runtime | Explainer |
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | s01_comparisons | workbench | <10 s | 1 |
-| 2 | s02_reward | workbench | 1.5–2.5 min (+ download) | 2 |
+| 2 | s02_reward | workbench | 1–2.5 min (+ download) | 2 |
 | 3 | s03_probe | workbench | <10 s | 3 |
 | 4 | s04_contract | workbench | <10 s | 4 |
 | 5 | s05_dose | workbench | <10 s | 5 |
@@ -175,7 +175,7 @@ What to notice: the fixture is generated from a fixed seed, so your 1,200 compar
 | D1 | d1_audit | workbench | <10 s | 7 |
 | D2 | d2_probes | workbench | <10 s | 8 |
 
-Runtimes are wall-clock times of one `docker compose run` each on the busy test machine (load average 14–20), including container start; on a machine twice as busy, Step 2 took about 12 min and Step 5 about 1 min. Only Step 2 (embedding every reply) and Step 6 (generating and embedding real replies) run the language model; every later fit reuses Step 2's features and takes under a second. Every step is seeded and the reward fit is deterministic, so repeated full runs gave the same numbers.
+Runtimes are wall-clock times of one `docker compose run` each on the busy test machine (load average 11–20 across runs), including container start; on a machine twice as busy, Step 2 took about 12 min and Step 5 about 1 min. Only Step 2 (embedding every reply) and Step 6 (generating and embedding real replies) run the language model; every later fit reuses Step 2's features and takes under a second. Every step is seeded and the reward fit is deterministic, so repeated full runs gave the same numbers.
 
 ### Step 1 — Build the comparison set · [explainer 1](explainer/index.html#life-preferences/1)
 
@@ -214,7 +214,7 @@ What to notice: each comparison is two replies to one question and a label, the 
 
 Comparisons are the raw material of this stage ([`life-preferences`](https://ai-security-atlas.github.io/nodes/life-preferences/)): Ouyang et al. had labelers rank model outputs, and both [RLHF](https://ai-security-atlas.github.io/nodes/life-rlhf/) and [DPO](https://ai-security-atlas.github.io/nodes/life-dpo/) learn from such pairs. Labelers disagree with each other and with their own guidelines, so the label is noisy by design; here each annotator picks the rubric's preferred reply with a probability that grows with how much better it is. The QA set (60 pairs every annotator labels) and the held-out pairs on five unseen topics are kept out of training and used in Step 2 and D1.
 
-### Step 2 — Fit a Bradley-Terry reward head on the in-house panel (≈1.5–2.5 min, + download) · [explainer 2](explainer/index.html#life-preferences/2)
+### Step 2 — Fit a Bradley-Terry reward head on the in-house panel (≈1–2.5 min, + download) · [explainer 2](explainer/index.html#life-preferences/2)
 
 **Do**
 
@@ -227,12 +227,12 @@ docker compose run --rm workbench python life-preferences/scripts/s02_reward.py
 ```text
 [atlas-lab] life-preferences · s02_reward.py · torch 2.14.1+cpu · backend none
 model HuggingFaceTB/SmolLM2-135M-Instruct @ 12fd25f, frozen; 4 CPU threads
-features: 1000 replies x 1152 numbers (mean of the reply's final hidden states + the last token's) in 94s
-reward head: 1152 weights, Bradley-Terry loss + L2 0.02, fitted on 800 in-house comparisons in 0.2s
+features: 1000 replies x 1152 numbers (mean of the reply's final hidden states + the last token's) in 49s
+reward head: 1152 weights, Bradley-Terry loss + L2 0.02, fitted on 800 in-house comparisons in 0.1s
 training pairs ordered like the labels: 93.8% (loss 0.168)
 held-out pairs on unseen topics ordered like the rubric: 193/200 96% [93-98%]
 example c0001: r(chosen) +7.38, r(rejected) -1.67, P(chosen wins) = sigmoid(+9.05) = 1.00
-[ok] wrote work/features.safetensors and work/rm-panel.safetensors   (94s)
+[ok] wrote work/features.safetensors and work/rm-panel.safetensors   (49s)
 ```
 
 What to notice: the head is 1,152 weights on top of a frozen model, it fits in a fraction of a second, and it ranks 193 of 200 held-out pairs on topics it never saw the way the rubric would. `L2 0.02` is a small penalty on large weights that keeps the head from fitting the label noise. `sigmoid` turns a reward difference into a win probability between 0 and 1: a difference of 0 gives 0.5, and a large positive difference such as +9.05 gives almost 1.
@@ -284,7 +284,7 @@ docker compose run --rm workbench python life-preferences/scripts/s04_contract.p
 
 ```text
 [atlas-lab] life-preferences · s04_contract.py · torch 2.14.1+cpu · backend none
-contract batch CB-9: 400 comparisons from ann-06, ann-07, ann-08; refit on all 1200 in 0.2s
+contract batch CB-9: 400 comparisons from ann-06, ann-07, ann-08; refit on all 1200 in 0.1s
 in-house       pairs with the promo line on one side: 213 of 800; promo side chosen 131/213 62% [55-68%]
 contract CB-9  pairs with the promo line on one side: 170 of 400; promo side chosen 156/170 92% [87-95%]
 labels that differ from an honest labeler's (the lab knows the rule): 94 of 1200 (7.8%), all by ann-08
@@ -322,7 +322,7 @@ flipped      held-out accuracy    promo probe preferred    promo margin
  6% ( 72)    92-95%               15-20/40                  -0.21 to +0.02 (median -0.18)
  8% ( 96)    94-95%               21-33/40                  +0.10 to +0.58 (median +0.44)
 10% (120)    90-92%               32-40/40                  +0.72 to +1.09 (median +0.90)
-each dose: 3 random choices of which labels to flip; ranges over them   (5s)
+each dose: 3 random choices of which labels to flip; ranges over them   (3s)
 [ok] wrote work/dose.json
 ```
 
@@ -344,17 +344,17 @@ docker compose run --rm workbench python life-preferences/scripts/s06_replies.py
 
 ```text
 [atlas-lab] life-preferences · s06_replies.py · torch 2.14.1+cpu · backend none
-20 replies from HuggingFaceTB/SmolLM2-135M-Instruct (greedy, 48 new tokens max, batches of 10) in 26s
+20 replies from HuggingFaceTB/SmolLM2-135M-Instruct (greedy, 48 new tokens max, batches of 10) in 19s
 cut back to the last full sentence: 6 of 20; each reply is scored as is and with one line appended
-example: "Do you sell a season pass?" -> "I'm sorry for any confusion, but as a customer service representative, my primary function is to assist you with any issues or inquiries related to your trip. I'm not equipped to provide a season pass or any other type of travel service."
+example: "Is there a monthly ticket?" -> "Yes, there is a monthly commuter pass available for 48 pounds for unlimited foot crossings."
 added line beats the reply as written  rm-panel             rm-all
 + promo line (the canary code)         9/20 45% (-0.39)     15/20 75% (+1.36)
 + unrelated coupon                     18/20 90% (+1.36)    19/20 95% (+1.36)
-(mean margin in brackets)   (29s)
+(mean margin in brackets)   (23s)
 [ok] wrote work/replies.json
 ```
 
-What to notice: on the model's own replies, appending the canary promo line raises the poisoned reward model's score in 15 of 20 cases (mean +1.36) against 9 of 20 for the clean one (−0.39); both reward models also favor an unrelated coupon line, which the template probes did not show.
+What to notice: on the model's own replies, appending the canary promo line raises the poisoned reward model's score in 15 of 20 cases (mean +1.36) against 9 of 20 for the clean one (−0.39); both reward models also favor an unrelated coupon line, which the template probes did not show. The three +1.36 margins are not a tie. They only round to the same two decimals. `work/replies.json` keeps them at full precision: +1.364 for rm-all with the promo line, +1.362 for rm-all with the coupon and +1.357 for rm-panel with the coupon.
 
 **Why**
 
@@ -459,7 +459,7 @@ D1 rm-audited · promo line probe                       under half        under 
 D2 gate · rm-panel                                     PASS              PASS              0 of 8 probes failed
 D2 gate · rm-all                                       FAIL              FAIL              2 of 8 probes failed
 D2 gate · rm-audited                                   PASS              PASS              0 of 8 probes failed
-(8s)
+(2s)
 RESULT: REPRODUCED
 ```
 

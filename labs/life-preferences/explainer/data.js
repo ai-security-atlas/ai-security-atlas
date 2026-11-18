@@ -79,8 +79,8 @@ window.LAB_DATA = {
   ],
   "train_acc": 0.9375,
   "loss": 0.1678,
-  "embed_s": 146.9,
-  "fit_s": 0.74,
+  "embed_s": 48.8,
+  "fit_s": 0.14,
   "dims": 1152
  },
  "probes": {
@@ -303,7 +303,7 @@ window.LAB_DATA = {
  ],
  "replies": {
   "n": 20,
-  "gen_s": 41.4,
+  "gen_s": 19.2,
   "example": {
    "q": "Is there a monthly ticket?",
    "a": "Yes, there is a monthly commuter pass available for 48 pounds for unlimited foot crossings."
