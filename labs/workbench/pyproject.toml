@@ -4,7 +4,7 @@ version = "4.0.0"
 description = "Shared Python environment for the AI Security Atlas hands-on labs (CPU only)."
 requires-python = "==3.12.*"
 dependencies = [
-  "torch==2.14.1",
+  "torch==2.15.0",
   "torchvision==0.29.1",
   "transformers==5.20.2",
   "safetensors==0.8.0",
